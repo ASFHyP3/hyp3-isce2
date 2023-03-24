@@ -13,4 +13,4 @@ jobs:
       user: tools-bot
       email: UAF-asf-apd@alaska.edu
     secrets:
-      USER_TOKEN: ${{ secrets.GITHUB_PAK }}
+      USER_TOKEN: ${{ secrets.TOOLS_BOT_PAK }}
