@@ -31,4 +31,4 @@ jobs:
       develop_branch: develop
       user: tools-bot
     secrets:
-      USER_TOKEN: ${{ secrets.TOOLS_BOT_PAK }}
+      USER_TOKEN: ${{ secrets.GITHUB_TOKEN }}
