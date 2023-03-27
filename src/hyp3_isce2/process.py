@@ -4,37 +4,39 @@ ISCE2 processing
 
 import argparse
 import logging
+import os
+import subprocess
+from typing import Iterable
 from pathlib import Path
 
 from hyp3_isce2 import __version__
 
 log = logging.getLogger(__name__)
 
+TOPSAPP = str(Path(os.getenv('ISCE_HOME')) / 'applications' / 'topsApp.py')
 
-def process_isce2(greeting: str = 'Hello world!') -> Path:
-    """Create a greeting product
+
+def process_topsapp_burst_ifg(arg_list: Iterable[str] = ['-h']) -> None:
+    """Create a burst interferogram
 
     Args:
-        greeting: Write this greeting to a product file (Default: "Hello world!" )
+        arg_list: args to pass to topsApp.py
     """
-    log.debug(f'Greeting: {greeting}')
-    product_file = Path('greeting.txt')
-    product_file.write_text(greeting)
-    return product_file
+    subprocess.run(['python', TOPSAPP] + arg_list)
+
+    return None
 
 
 def main():
     """process_isce2 entrypoint"""
     parser = argparse.ArgumentParser(
-        prog='process_isce2',
+        prog='process_topsapp_burst_ifg',
         description=__doc__,
     )
-    parser.add_argument('--greeting', default='Hello world!',
-                        help='Write this greeting to a product file')
     parser.add_argument('--version', action='version', version=f'%(prog)s {__version__}')
     args = parser.parse_args()
 
-    process_isce2(**args.__dict__)
+    process_topsapp_burst_ifg(**args.__dict__)
 
 
 if __name__ == "__main__":
