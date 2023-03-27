@@ -6,6 +6,7 @@ dependencies:
   - python>=3.8
   - pip
   - isce2
+  - shapely
   # For packaging, and testing
   - flake8
   - flake8-import-order

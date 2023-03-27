@@ -1,6 +1,4 @@
 import copy
-import io
-import netrc
 import re
 import time
 import xml.etree.ElementTree as ET
@@ -8,13 +6,16 @@ from dataclasses import dataclass
 from pathlib import Path
 from typing import Iterator, List, Tuple, Union
 
-import aiohttp
-import fsspec
 import pandas as pd
 import requests
 from shapely import geometry
 
-URL = 'https://zc42k0jwg3.execute-api.us-west-2.amazonaws.com'
+# URL = 'https://zc42k0jwg3.execute-api.us-west-2.amazonaws.com'
+URL = 'https://sentinel1-burst.asf.alaska.edu'
+"""Example:
+
+https://sentinel1-burst.asf.alaska.edu/S1A_IW_SLC__1SDV_20230321T001351_20230321T001418_047735_05BBF8_2C3A/IW2/VV/5.xml
+"""
 
 @dataclass
 class BurstParams:
@@ -101,23 +102,6 @@ def create_burst_request(params: BurstParams, content: str) -> dict:
     return {'url': url}
 
 
-# def download_metadata(
-#     asf_session: requests.Session, burst_params: BurstParams, out_file: Union[Path, str] = None
-# ) -> ET.Element:
-#     burst_request = create_burst_request(burst_params, content='metadata')
-#     burst_request['cookies'] = {'asf-urs': asf_session.cookies['asf-urs']}
-#
-#     response = asf_session.get(**burst_request)
-#     response.raise_for_status()
-#
-#     metadata = ET.fromstring(response.content)
-#
-#     if out_file:
-#         ET.ElementTree(metadata).write(out_file, encoding='UTF-8', xml_declaration=True)
-#
-#     return metadata
-
-
 def wait_for_extractor(response: requests.Response, sleep_time: int = 15) -> bool:
     if response.status_code == 202:
         time.sleep(15)
@@ -164,51 +148,6 @@ def download_burst(asf_session: requests.Session, burst_params: BurstParams, out
         f.write(content)
 
     return str(out_file)
-
-
-def download_manifest(safe_url: str, out_file: Union[Path, str] = None) -> ET.Element:
-
-    safe_name = Path(safe_url).with_suffix('.SAFE').name
-
-    my_netrc = netrc.netrc()
-    username, _, password = my_netrc.authenticators('urs.earthdata.nasa.gov')
-    auth = aiohttp.BasicAuth(username, password)
-    storage_options = {'client_kwargs': {'trust_env': True, 'auth': auth}}
-
-    http_fs = fsspec.filesystem('https', **storage_options)
-    with http_fs.open(safe_url) as fo:
-        safe_zip = fsspec.filesystem('zip', fo=fo)
-        with safe_zip.open(str(Path(safe_name) / 'manifest.safe')) as f:
-            manifest = f.read()
-
-    if out_file:
-        with open(out_file, 'wb') as f:
-            f.write(manifest)
-
-    manifest = ET.parse(io.BytesIO(manifest)).getroot()
-    return manifest
-
-
-def download_swath(safe_url: str, measurement_path: Path, measurement_name: str) -> str:
-    safe_name = Path(safe_url).with_suffix('.SAFE').name
-    swath_path = safe_name / Path('measurement') / measurement_name
-    out_path = measurement_path / measurement_name
-
-    my_netrc = netrc.netrc()
-    username, _, password = my_netrc.authenticators('urs.earthdata.nasa.gov')
-    auth = aiohttp.BasicAuth(username, password)
-    storage_options = {'client_kwargs': {'trust_env': True, 'auth': auth}}
-
-    http_fs = fsspec.filesystem('https', **storage_options)
-    with http_fs.open(safe_url) as fo:
-        safe_zip = fsspec.filesystem('zip', fo=fo)
-        with safe_zip.open(str(swath_path)) as f:
-            swath = f.read()
-
-    with open(out_path, 'wb') as f:
-        f.write(swath)
-
-    return str(out_path)
 
 
 def spoof_safe(
@@ -308,14 +247,14 @@ def download_bursts(param_list: Iterator[BurstParams]) -> List[BurstMetadata]:
         4. Write metadata
         5. Download and write geotiff
     """
-    asf_session = get_asf_session()
     bursts = []
-    for i, params in enumerate(param_list):
-        print(f'Creating SAFE {i+1}...')
-        metadata_xml = download_metadata(asf_session, params)
-        burst = BurstMetadata(metadata_xml, params)
-        bursts.append(burst)
-        spoof_safe(asf_session, burst)
+    with get_asf_session() as asf_session:
+        for i, params in enumerate(param_list):
+            print(f'Creating SAFE {i+1}...')
+            metadata_xml = download_metadata(asf_session, params)
+            burst = BurstMetadata(metadata_xml, params)
+            spoof_safe(asf_session, burst)
+            bursts.append(burst)
 
     print('SAFEs created!')
 
@@ -323,7 +262,8 @@ def download_bursts(param_list: Iterator[BurstParams]) -> List[BurstMetadata]:
 
 
 if __name__ == '__main__':
-    burst_params1 = BurstParams('S1A_IW_SLC__1SDV_20200604T022251_20200604T022318_032861_03CE65_7C85', 'IW2', 'VV', 6)
-    session = get_asf_session()
-    metadata_xml = download_metadata(session, burst_params1, 'metadata.xml')
-    metadata_xml = download_burst(session, burst_params1, 'extracted_07.tif')
+    # burst_params1 = BurstParams('S1A_IW_SLC__1SDV_20200604T022251_20200604T022318_032861_03CE65_7C85', 'IW2', 'VV', 6)
+    burst_params1 = BurstParams('S1A_IW_SLC__1SDV_20230321T001351_20230321T001418_047735_05BBF8_2C3A', 'IW2', 'VV', 6)
+    with get_asf_session() as session:
+        metadata_path = download_metadata(session, burst_params1, 'metadata.xml')
+        burst_path = download_burst(session, burst_params1, 'extracted_07.tif')
