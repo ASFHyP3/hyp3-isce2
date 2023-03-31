@@ -5,8 +5,9 @@ from pathlib import Path
 import numpy as np
 import pytest
 import requests
-from hyp3_isce2 import burst
 from shapely import geometry
+
+from hyp3_isce2 import burst
 
 URL_BASE = 'https://datapool.asf.alaska.edu/SLC'
 

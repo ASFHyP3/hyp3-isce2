@@ -5,9 +5,10 @@ import copy
 import logging
 from argparse import ArgumentParser
 
-from hyp3_isce2.process import topsapp_burst
 from hyp3lib.aws import upload_file_to_s3
 from hyp3lib.image import create_thumbnail
+
+from hyp3_isce2.process import topsapp_burst
 
 
 def main():
