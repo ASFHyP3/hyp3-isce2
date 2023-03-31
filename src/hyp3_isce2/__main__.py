@@ -1,14 +1,14 @@
 """
 ISCE2 processing for HyP3
 """
+import copy
 import logging
 from argparse import ArgumentParser
 
 from hyp3lib.aws import upload_file_to_s3
 from hyp3lib.image import create_thumbnail
 
-
-from hyp3_isce2.process import process_isce2
+from hyp3_isce2.process import topsapp_burst
 
 
 def main():
@@ -18,19 +18,25 @@ def main():
     parser = ArgumentParser()
     parser.add_argument('--bucket', help='AWS S3 bucket HyP3 for upload the final product(s)')
     parser.add_argument('--bucket-prefix', default='', help='Add a bucket prefix to product(s)')
-
-    # TODO: Your arguments here
-    parser.add_argument('--greeting', default='Hello world!',
-                        help='Write this greeting to a product file')
+    parser.add_argument('--reference-scene', type=str, required=True)
+    parser.add_argument('--secondary-scene', type=str, required=True)
+    parser.add_argument('--swath-number', type=int, required=True)
+    parser.add_argument('--polarization', type=str, default='VV')
+    parser.add_argument('--reference-burst-number', type=int, required=True)
+    parser.add_argument('--secondary-burst-number', type=int, required=True)
+    parser.add_argument('--azimuth-looks', type=int, default=4)
+    parser.add_argument('--range-looks', type=int, default=20)
 
     args = parser.parse_args()
 
-    logging.basicConfig(format='%(asctime)s - %(levelname)s - %(message)s',
-                        datefmt='%m/%d/%Y %I:%M:%S %p', level=logging.INFO)
-
-    product_file = process_isce2(
-        greeting=args.greeting,
+    logging.basicConfig(
+        format='%(asctime)s - %(levelname)s - %(message)s', datefmt='%m/%d/%Y %I:%M:%S %p', level=logging.INFO
     )
+
+    args_dict = copy.copy(args.__dict__)
+    del args_dict['bucket']
+    del args_dict['bucket_prefix']
+    product_file = topsapp_burst(**args_dict)
 
     if args.bucket:
         upload_file_to_s3(product_file, args.bucket, args.bucket_prefix)
