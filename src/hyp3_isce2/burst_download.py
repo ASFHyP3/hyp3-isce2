@@ -10,12 +10,8 @@ import pandas as pd
 import requests
 from shapely import geometry
 
-# URL = 'https://zc42k0jwg3.execute-api.us-west-2.amazonaws.com'
 URL = 'https://sentinel1-burst.asf.alaska.edu'
-"""Example:
 
-https://sentinel1-burst.asf.alaska.edu/S1A_IW_SLC__1SDV_20230321T001351_20230321T001418_047735_05BBF8_2C3A/IW2/VV/5.xml
-"""
 
 @dataclass
 class BurstParams:
@@ -150,12 +146,7 @@ def download_burst(asf_session: requests.Session, burst_params: BurstParams, out
     return str(out_file)
 
 
-def spoof_safe(
-    asf_session: requests.Session,
-    burst: BurstMetadata,
-    base_path: Path = Path('.'),
-    download_strategy: str = 'single_burst',
-) -> Path:
+def spoof_safe(asf_session: requests.Session, burst: BurstMetadata, base_path: Path = Path('.')) -> Path:
     """Creates this file structure:
     SLC.SAFE/
     ├── manifest.safe
@@ -183,28 +174,8 @@ def spoof_safe(
     ET.ElementTree(burst.noise).write(calibration_path / burst.noise_name, **et_args)
     ET.ElementTree(burst.manifest).write(safe_path / 'manifest.safe', **et_args)
 
-    if download_strategy == 'single_burst':
-        burst_params = BurstParams(burst.safe_name, burst.swath, burst.polarization, burst.burst_number)
-        download_burst(asf_session, burst_params, measurement_path / burst.measurement_name)
-    elif download_strategy == 'surrounding_burst':
-        n_bursts = len(burst.annotation.find('.//burstList'))
-        names = {
-            'burst_pre.tiff': burst.burst_number - 1,
-            burst.measurement_name: burst.burst_number,
-            'burst_post.tiff': burst.burst_number + 1,
-        }
-        names = {k: v for k, v in names.items() if 0 < v <= n_bursts}
-        for n in names:
-            burst_params = BurstParams(safe_url=burst.safe_url, image_number=burst.image_number, burst_number=names[n])
-            download_geotiff(asf_session, burst_params, measurement_path / n)
-    elif download_strategy == 'swath':
-        download_swath(
-            burst.safe_url,
-            measurement_path,
-            burst.measurement_name,
-        )
-    else:
-        raise NotImplementedError(f'Download strategy {download_strategy} is not implemented, check spelling.')
+    burst_params = BurstParams(burst.safe_name, burst.swath, burst.polarization, burst.burst_number)
+    download_burst(asf_session, burst_params, measurement_path / burst.measurement_name)
 
     return safe_path
 
@@ -262,8 +233,5 @@ def download_bursts(param_list: Iterator[BurstParams]) -> List[BurstMetadata]:
 
 
 if __name__ == '__main__':
-    # burst_params1 = BurstParams('S1A_IW_SLC__1SDV_20200604T022251_20200604T022318_032861_03CE65_7C85', 'IW2', 'VV', 6)
     burst_params1 = BurstParams('S1A_IW_SLC__1SDV_20230321T001351_20230321T001418_047735_05BBF8_2C3A', 'IW2', 'VV', 6)
-    with get_asf_session() as session:
-        metadata_path = download_metadata(session, burst_params1, 'metadata.xml')
-        burst_path = download_burst(session, burst_params1, 'extracted_07.tif')
+    metadata = download_bursts([burst_params1])
