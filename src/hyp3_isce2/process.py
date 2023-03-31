@@ -2,13 +2,11 @@
 ISCE2 processing
 """
 
-import argparse
 import logging
 import os
 import subprocess
 from argparse import ArgumentDefaultsHelpFormatter, ArgumentParser
 from pathlib import Path
-from typing import Iterable
 
 from hyp3_isce2 import __version__
 from hyp3_isce2.burst import (BurstParams, download_bursts,
@@ -45,9 +43,10 @@ def topsapp_burst(
     sec_params = BurstParams(secondary_scene, f'IW{swath_number}', polarization.upper(), secondary_burst_number)
     ref_metadata, sec_metadata = download_bursts([ref_params, sec_params])
 
-    intersection = ref_metadata.footprint.intersection(sec_metadata.footprint).bounds
     is_ascending = ref_metadata.orbit_direction == 'ascending'
-    roi = get_region_of_interest(ref_metadata.footprint, sec_metadata.footprint, is_ascending=is_ascending)
+    insar_roi = get_region_of_interest(ref_metadata.footprint, sec_metadata.footprint, is_ascending=is_ascending)
+    dem_roi = ref_metadata.footprint.intersection(sec_metadata.footprint).bounds
+    print(insar_roi, dem_roi)
     subprocess.run(['python', TOPSAPP, '-h'])
 
     return None
