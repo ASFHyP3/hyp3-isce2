@@ -160,7 +160,7 @@ def spoof_safe(asf_session: requests.Session, burst: BurstMetadata, base_path: P
             ├── calibration.xml
             └── noise.xml
     """
-    safe_path = base_path / burst.safe_name
+    safe_path = base_path / f'{burst.safe_name}.SAFE'
     annotation_path = safe_path / 'annotation'
     calibration_path = safe_path / 'annotation' / 'calibration'
     measurement_path = safe_path / 'measurement'
@@ -235,6 +235,9 @@ def download_bursts(param_list: Iterator[BurstParams]) -> List[BurstMetadata]:
 
 
 if __name__ == '__main__':
-    burst_params1 = BurstParams('S1A_IW_SLC__1SDV_20211229T231926_20211229T231953_041230_04E66A_3DBE', 'IW2', 'VV', 2)
-    burst_params2 = BurstParams('S1A_IW_SLC__1SDV_20220110T231926_20220110T231953_041405_04EC57_103E', 'IW2', 'VV', 2)
+    burst_params1 = BurstParams('S1A_IW_SLC__1SDV_20211229T231926_20211229T231953_041230_04E66A_3DBE', 'IW2', 'VV', 3)
+    burst_params2 = BurstParams('S1A_IW_SLC__1SDV_20220110T231926_20220110T231953_041405_04EC57_103E', 'IW2', 'VV', 3)
     metadata = download_bursts([burst_params1, burst_params2])
+    # with get_asf_session() as asf_session:
+    #     download_metadata(asf_session, burst_params1, 'reference.xml')
+    #     download_metadata(asf_session, burst_params2, 'secondary.xml')
