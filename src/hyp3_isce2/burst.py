@@ -233,5 +233,6 @@ def download_bursts(param_list: Iterator[BurstParams]) -> List[BurstMetadata]:
 
 
 if __name__ == '__main__':
-    burst_params1 = BurstParams('S1A_IW_SLC__1SDV_20230321T001351_20230321T001418_047735_05BBF8_2C3A', 'IW2', 'VV', 6)
-    metadata = download_bursts([burst_params1])
+    burst_params1 = BurstParams('S1A_IW_SLC__1SDV_20211229T231926_20211229T231953_041230_04E66A_3DBE', 'IW2', 'VV', 2)
+    burst_params2 = BurstParams('S1A_IW_SLC__1SDV_20220110T231926_20220110T231953_041405_04EC57_103E', 'IW2', 'VV', 2)
+    metadata = download_bursts([burst_params1, burst_params2])
