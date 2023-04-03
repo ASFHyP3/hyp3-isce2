@@ -74,20 +74,23 @@ def download_dem_for_isce2(extent: list,
 
     extent_geo = box(*extent)
     extent_buffered = list(extent_geo.buffer(buffer).bounds)
-    extent_buffered = [np.floor(extent_buffered[0]), np.floor(extent_buffered[1]),
-                       np.ceil(extent_buffered[2]), np.ceil(extent_buffered[3])]
+    extent_buffered = [
+        np.floor(extent_buffered[0]),
+        np.floor(extent_buffered[1]),
+        np.ceil(extent_buffered[2]),
+        np.ceil(extent_buffered[3])
+    ]
 
     dem_res = 0.0002777777777777777775
-    dem_array, dem_profile = stitch_dem(extent_buffered,
-                                        dem_name,
-                                        dst_ellipsoidal_height=True,
-                                        dst_area_or_point='Point',
-                                        n_threads_downloading=5,
-                                        # ensures square resolution
-                                        dst_resolution=dem_res
-                                        )
-
-    dem_path = dem_dir / 'full_res.dem.wgs84'
+    dem_array, dem_profile = stitch_dem(
+        extent_buffered,
+        dem_name,
+        dst_ellipsoidal_height=True,
+        dst_area_or_point='Point',
+        n_threads_downloading=5,
+        # ensures square resolution
+        dst_resolution=dem_res,
+    )
     dem_array[np.isnan(dem_array)] = 0.
 
     dem_profile_isce = dem_profile.copy()
@@ -96,6 +99,7 @@ def download_dem_for_isce2(extent: list,
     # remove keys that do not work with ISCE gdal format
     [dem_profile_isce.pop(key) for key in ['blockxsize', 'blockysize', 'compress', 'interleave', 'tiled']]
 
+    dem_path = dem_dir / 'full_res.dem.wgs84'
     with rasterio.open(dem_path, 'w', **dem_profile_isce) as ds:
         ds.write(dem_array, 1)
 
