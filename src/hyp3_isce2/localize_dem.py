@@ -90,14 +90,6 @@ def download_dem_for_isce2(extent: list,
     with rasterio.open(full_res_dem_path, 'w', **dem_profile_isce) as ds:
         ds.write(dem_array, 1)
 
-    geocode_res = dem_res * 3
-    dst_profile = update_profile_resolution(dem_profile_isce, geocode_res)
-    dem_geocode_arr, dem_geocode_profile = reproject_arr_to_match_profile(dem_array,
-                                                                          dem_profile_isce,
-                                                                          dst_profile,
-                                                                          num_threads=5,
-                                                                          resampling='bilinear')
-    dem_geocode_profile['driver'] = 'ISCE'
     full_res_dem_xml = tag_dem_xml_as_ellipsoidal(full_res_dem_path)
     fix_image_xml(full_res_dem_xml)
 
