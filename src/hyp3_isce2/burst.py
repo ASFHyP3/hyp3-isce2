@@ -154,7 +154,7 @@ def spoof_safe(asf_session: requests.Session, burst: BurstMetadata, base_path: P
     │   └── burst.tif
     └── annotation/
         ├── annotation.xml
-        └── calbiration/
+        └── calibration/
             ├── calibration.xml
             └── noise.xml
     """
