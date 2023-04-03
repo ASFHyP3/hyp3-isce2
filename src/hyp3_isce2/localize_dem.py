@@ -53,6 +53,7 @@ def download_dem_for_isce2(
         dem_name: str = 'glo_30',
         dem_dir: Path = None,
         buffer: float = .1) -> dict:
+    # FIXME: second ymin should be ymax in `extent` description; open PR to original repo as well
     """
     Parameters
     ----------
