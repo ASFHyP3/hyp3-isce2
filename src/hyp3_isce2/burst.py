@@ -88,9 +88,6 @@ class BurstMetadata:
 
 
 def create_burst_request(params: BurstParams, content: str) -> dict:
-    """
-    Syntax: www.API-URL.com/<granule>/<subswath>/<pol>/<burst_number>.(xml|tiff)
-    """
     filetypes = {'metadata': 'xml', 'geotiff': 'tiff'}
     extension = filetypes[content]
     burst_number_zero_indexed = params.burst_number - 1
