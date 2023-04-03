@@ -163,8 +163,7 @@ def spoof_safe(asf_session: requests.Session, burst: BurstMetadata, base_path: P
     measurement_path = safe_path / 'measurement'
     paths = [annotation_path, calibration_path, measurement_path]
     for p in paths:
-        if not p.exists():
-            p.mkdir(parents=True)
+        p.mkdir(parents=True, exist_ok=True)
 
     et_args = {'encoding': 'UTF-8', 'xml_declaration': True}
 
