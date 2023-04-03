@@ -53,7 +53,7 @@ def fix_image_xml(isce_raster_path: str) -> str:
 
 def download_dem_for_isce2(extent: list,
                            dem_name: str = 'glo_30',
-                           full_res_dem_dir: Path = None,
+                           dem_dir: Path = None,
                            buffer: float = .1) -> dict:
     """
     Parameters
@@ -62,15 +62,15 @@ def download_dem_for_isce2(extent: list,
         [xmin, ymin, xmax, ymin] for epsg:4326 (i.e. (x, y) = (lon, lat))
     dem_name : str, optional
         See names in `dem_stitcher`
-    full_res_dem_dir : Path, optional
+    dem_dir : Path, optional
     buffer : float, optional
         In degrees, by default .1, which is about 11 km at equator
     Returns
     -------
     dict
     """
-    full_res_dem_dir = full_res_dem_dir or Path('.')
-    full_res_dem_dir.mkdir(exist_ok=True, parents=True)
+    dem_dir = dem_dir or Path('.')
+    dem_dir.mkdir(exist_ok=True, parents=True)
 
     extent_geo = box(*extent)
     extent_buffered = list(extent_geo.buffer(buffer).bounds)
@@ -87,7 +87,7 @@ def download_dem_for_isce2(extent: list,
                                         dst_resolution=dem_res
                                         )
 
-    full_res_dem_path = full_res_dem_dir / 'full_res.dem.wgs84'
+    dem_path = dem_dir / 'full_res.dem.wgs84'
     dem_array[np.isnan(dem_array)] = 0.
 
     dem_profile_isce = dem_profile.copy()
@@ -96,10 +96,10 @@ def download_dem_for_isce2(extent: list,
     # remove keys that do not work with ISCE gdal format
     [dem_profile_isce.pop(key) for key in ['blockxsize', 'blockysize', 'compress', 'interleave', 'tiled']]
 
-    with rasterio.open(full_res_dem_path, 'w', **dem_profile_isce) as ds:
+    with rasterio.open(dem_path, 'w', **dem_profile_isce) as ds:
         ds.write(dem_array, 1)
 
-    full_res_dem_xml = tag_dem_xml_as_ellipsoidal(full_res_dem_path)
-    fix_image_xml(full_res_dem_xml)
+    dem_xml = tag_dem_xml_as_ellipsoidal(dem_path)
+    fix_image_xml(dem_xml)
 
-    return {'extent_buffered': extent_buffered, 'full_res_dem_path': full_res_dem_path}
+    return {'extent_buffered': extent_buffered, 'dem_path': dem_path}
