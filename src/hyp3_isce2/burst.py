@@ -105,8 +105,10 @@ def wait_for_extractor(response: requests.Response, sleep_time: int = 15) -> boo
 
 
 def download_from_extractor(asf_session: requests.Session, burst_params: BurstParams, content: str):
-    burst_request = create_burst_request(burst_params, content=content)
-    burst_request['cookies'] = {'asf-urs': asf_session.cookies['asf-urs']}
+    burst_request = {
+        'url': get_burst_request_url(burst_params, content=content),
+        'cookies': {'asf-urs': asf_session.cookies['asf-urs']}
+    }
 
     for ii in range(1, 11):
         print(f'Download attempt #{ii}')
