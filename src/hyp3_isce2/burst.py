@@ -189,8 +189,7 @@ def get_region_of_interest(
 
     x, y = (0, 1) if is_ascending else (2, 1)
     roi = geometry.Point(bounds[x], bounds[y]).buffer(0.005)
-    bounds = roi.bounds  # returns (minx, miny, maxx, maxy)
-    return bounds
+    return roi.bounds  # returns (minx, miny, maxx, maxy)
 
 
 def get_asf_session() -> requests.Session:
