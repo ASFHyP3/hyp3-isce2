@@ -9,37 +9,16 @@ from shapely import geometry
 
 from hyp3_isce2 import burst
 
+
 URL_BASE = 'https://datapool.asf.alaska.edu/SLC'
+REF_DESC = burst.BurstParams('S1A_IW_SLC__1SDV_20200604T022251_20200604T022318_032861_03CE65_7C85', 'IW2', 'VV', 3)
+SEC_DESC = burst.BurstParams('S1A_IW_SLC__1SDV_20200616T022252_20200616T022319_033036_03D3A3_5D11', 'IW2', 'VV', 3)
 
 
-@pytest.fixture()
-def ref_metadata():
+def load_metadata(metadata):
     metadata_path = Path(__file__).parent.absolute() / 'data' / 'reference.xml'
     xml = ET.parse(metadata_path).getroot()
     return xml
-
-
-@pytest.fixture()
-def sec_metadata():
-    metadata_path = Path(__file__).parent.absolute() / 'data' / 'secondary.xml'
-    xml = ET.parse(metadata_path).getroot()
-    return xml
-
-
-@pytest.fixture()
-def ref_burst(ref_metadata):
-    safe_url = 'S1A_IW_SLC__1SDV_20200604T022251_20200604T022318_032861_03CE65_7C85'
-    params = burst.BurstParams(safe_url, 'IW2', 'VV', 3)
-    burst_metadata = burst.BurstMetadata(ref_metadata, params)
-    return burst_metadata
-
-
-@pytest.fixture()
-def sec_burst(sec_metadata):
-    safe_url = 'S1A_IW_SLC__1SDV_20200616T022252_20200616T022319_033036_03D3A3_5D11'
-    params = burst.BurstParams(safe_url, 'IW2', 'VV', 3)
-    burst_metadata = burst.BurstMetadata(sec_metadata, params)
-    return burst_metadata
 
 
 @pytest.fixture()
@@ -48,7 +27,38 @@ def tempdir():
         yield tempdir
 
 
-def test_create_gcp_df(ref_burst):
+# @pytest.fixture()
+# def ref_metadata():
+#     metadata_path = Path(__file__).parent.absolute() / 'data' / 'reference.xml'
+#     xml = ET.parse(metadata_path).getroot()
+#     return xml
+#
+#
+# @pytest.fixture()
+# def sec_metadata():
+#     metadata_path = Path(__file__).parent.absolute() / 'data' / 'secondary.xml'
+#     xml = ET.parse(metadata_path).getroot()
+#     return xml
+
+
+# @pytest.fixture()
+# def ref_burst(ref_metadata):
+#     safe_url = 'S1A_IW_SLC__1SDV_20200604T022251_20200604T022318_032861_03CE65_7C85'
+#     params = burst.BurstParams(safe_url, 'IW2', 'VV', 3)
+#     burst_metadata = burst.BurstMetadata(ref_metadata, params)
+#     return burst_metadata
+#
+#
+# @pytest.fixture()
+# def sec_burst(sec_metadata):
+#     safe_url = 'S1A_IW_SLC__1SDV_20200616T022252_20200616T022319_033036_03D3A3_5D11'
+#     params = burst.BurstParams(safe_url, 'IW2', 'VV', 3)
+#     burst_metadata = burst.BurstMetadata(sec_metadata, params)
+#     return burst_metadata
+
+
+def test_create_gcp_df():
+    ref_burst = burst.BurstMetadata(load_metadata('reference.xml'), REF_DESC)
     n_bursts = int(ref_burst.annotation.findall('.//burstList')[0].attrib['count'])
     lines_per_burst = int(ref_burst.annotation.findtext('.//{*}linesPerBurst'))
 
