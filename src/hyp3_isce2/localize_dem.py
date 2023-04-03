@@ -48,10 +48,11 @@ def fix_image_xml(isce_raster_path: str) -> str:
     return isce_raster_path
 
 
-def download_dem_for_isce2(extent: list,
-                           dem_name: str = 'glo_30',
-                           dem_dir: Path = None,
-                           buffer: float = .1) -> dict:
+def download_dem_for_isce2(
+        extent: list,
+        dem_name: str = 'glo_30',
+        dem_dir: Path = None,
+        buffer: float = .1) -> dict:
     """
     Parameters
     ----------
