@@ -13,10 +13,12 @@ from hyp3_isce2 import burst
 URL_BASE = 'https://datapool.asf.alaska.edu/SLC'
 REF_DESC = burst.BurstParams('S1A_IW_SLC__1SDV_20200604T022251_20200604T022318_032861_03CE65_7C85', 'IW2', 'VV', 3)
 SEC_DESC = burst.BurstParams('S1A_IW_SLC__1SDV_20200616T022252_20200616T022319_033036_03D3A3_5D11', 'IW2', 'VV', 3)
+REF_ASC = burst.BurstParams('S1A_IW_SLC__1SDV_20211229T231926_20211229T231953_041230_04E66A_3DBE', 'IW1', 'VV', 4)
+SEC_ASC = burst.BurstParams('S1A_IW_SLC__1SDV_20220110T231926_20220110T231953_041405_04EC57_103E', 'IW1', 'VV', 4)
 
 
 def load_metadata(metadata):
-    metadata_path = Path(__file__).parent.absolute() / 'data' / 'reference.xml'
+    metadata_path = Path(__file__).parent.absolute() / 'data' / metadata
     xml = ET.parse(metadata_path).getroot()
     return xml
 
@@ -27,38 +29,8 @@ def tempdir():
         yield tempdir
 
 
-# @pytest.fixture()
-# def ref_metadata():
-#     metadata_path = Path(__file__).parent.absolute() / 'data' / 'reference.xml'
-#     xml = ET.parse(metadata_path).getroot()
-#     return xml
-#
-#
-# @pytest.fixture()
-# def sec_metadata():
-#     metadata_path = Path(__file__).parent.absolute() / 'data' / 'secondary.xml'
-#     xml = ET.parse(metadata_path).getroot()
-#     return xml
-
-
-# @pytest.fixture()
-# def ref_burst(ref_metadata):
-#     safe_url = 'S1A_IW_SLC__1SDV_20200604T022251_20200604T022318_032861_03CE65_7C85'
-#     params = burst.BurstParams(safe_url, 'IW2', 'VV', 3)
-#     burst_metadata = burst.BurstMetadata(ref_metadata, params)
-#     return burst_metadata
-#
-#
-# @pytest.fixture()
-# def sec_burst(sec_metadata):
-#     safe_url = 'S1A_IW_SLC__1SDV_20200616T022252_20200616T022319_033036_03D3A3_5D11'
-#     params = burst.BurstParams(safe_url, 'IW2', 'VV', 3)
-#     burst_metadata = burst.BurstMetadata(sec_metadata, params)
-#     return burst_metadata
-
-
 def test_create_gcp_df():
-    ref_burst = burst.BurstMetadata(load_metadata('reference.xml'), REF_DESC)
+    ref_burst = burst.BurstMetadata(load_metadata('reference_descending.xml'), REF_DESC)
     n_bursts = int(ref_burst.annotation.findall('.//burstList')[0].attrib['count'])
     lines_per_burst = int(ref_burst.annotation.findtext('.//{*}linesPerBurst'))
 
@@ -68,7 +40,8 @@ def test_create_gcp_df():
     assert gcp_df.line.max() == (n_bursts * lines_per_burst) - 1
 
 
-def test_create_geometry(ref_burst):
+def test_create_geometry():
+    ref_burst = burst.BurstMetadata(load_metadata('reference_descending.xml'), REF_DESC)
     burst_number = 3
     real_box = (100.509898817751, 37.69349213923167, 101.5989880944895, 38.00276647361588)
 
@@ -87,27 +60,29 @@ def test_create_geometry(ref_burst):
         '*SAFE/annotation/calibration/noise*xml',
     ),
 )
-def test_spoof_safe(ref_burst, tempdir, mocker, pattern):
+def test_spoof_safe(tempdir, mocker, pattern):
+    ref_burst = burst.BurstMetadata(load_metadata('reference_descending.xml'), REF_DESC)
     tempdir_path = Path(tempdir)
     mocker.patch('hyp3_isce2.burst.download_burst', return_value='')
     burst.spoof_safe(requests.Session(), ref_burst, tempdir_path)
     assert len(list(tempdir_path.glob(pattern))) == 1
 
 
-def test_get_region_of_interest(ref_burst, sec_burst, ref_metadata):
-    granule_name = 'S1A_IW_SLC__1SDV_20200616T022252_20200616T022319_033036_03D3A3_5D11'
-    burst_pre = burst.BurstMetadata(
-        ref_metadata,
-        burst.BurstParams(granule_name, 'IW2', 'VV', 2),
-    )
-    burst_on = burst.BurstMetadata(
-        ref_metadata,
-        burst.BurstParams(granule_name, 'IW2', 'VV', 3),
-    )
-    burst_post = burst.BurstMetadata(
-        ref_metadata,
-        burst.BurstParams(granule_name, 'IW2', 'VV', 4),
-    )
+@pytest.mark.parametrize('orbit', ('ascending', 'descending'))
+def test_get_region_of_interest(orbit):
+    options = {'descending': REF_DESC, 'ascending': REF_ASC}
+    params = options[orbit]
+    ref_metadata = load_metadata(f'reference_{orbit}.xml')
+    ref_burst = burst.BurstMetadata(ref_metadata, params)
+    granule_name = params.granule
+    burst_number = params.burst_number
+
+    sec_burst = burst.BurstMetadata(load_metadata(f'secondary_{orbit}.xml'), params)
+
+    burst_pre = burst.BurstMetadata(ref_metadata, burst.BurstParams(granule_name, 'IW2', 'VV', burst_number - 1))
+    burst_on = burst.BurstMetadata(ref_metadata, burst.BurstParams(granule_name, 'IW2', 'VV', burst_number))
+    burst_post = burst.BurstMetadata(ref_metadata, burst.BurstParams(granule_name, 'IW2', 'VV', burst_number + 1))
+
     asc = ref_burst.orbit_direction == 'ascending'
     roi = geometry.box(*burst.get_region_of_interest(ref_burst.footprint, sec_burst.footprint, asc))
 
