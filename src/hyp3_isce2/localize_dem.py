@@ -45,7 +45,6 @@ def fix_image_xml(isce_raster_path: str) -> str:
 def download_dem_for_isce2(extent: list,
                            dem_name: str = 'glo_30',
                            full_res_dem_dir: Path = None,
-                           low_res_dem_dir: Path = None,
                            buffer: float = .1) -> dict:
     """
     Parameters
@@ -55,7 +54,6 @@ def download_dem_for_isce2(extent: list,
     dem_name : str, optional
         See names in `dem_stitcher`
     full_res_dem_dir : Path, optional
-    low_res_dem_dir : Path, optional
     buffer : float, optional
         In degrees, by default .1, which is about 11 km at equator
     Returns
@@ -63,10 +61,7 @@ def download_dem_for_isce2(extent: list,
     dict
     """
     full_res_dem_dir = full_res_dem_dir or Path('.')
-    low_res_dem_dir = low_res_dem_dir or Path('.')
-
     full_res_dem_dir.mkdir(exist_ok=True, parents=True)
-    low_res_dem_dir.mkdir(exist_ok=True, parents=True)
 
     extent_geo = box(*extent)
     extent_buffered = list(extent_geo.buffer(buffer).bounds)
@@ -102,19 +97,8 @@ def download_dem_for_isce2(extent: list,
                                                                           dst_profile,
                                                                           num_threads=5,
                                                                           resampling='bilinear')
-    dem_geocode_arr = dem_geocode_arr[0, ...]
-    low_res_dem_path = low_res_dem_dir / 'low_res.dem.wgs84'
-
     dem_geocode_profile['driver'] = 'ISCE'
-    with rasterio.open(low_res_dem_path, 'w', **dem_geocode_profile) as ds:
-        ds.write(dem_geocode_arr, 1)
-
-    low_res_dem_xml = tag_dem_xml_as_ellipsoidal(low_res_dem_path)
     full_res_dem_xml = tag_dem_xml_as_ellipsoidal(full_res_dem_path)
-
-    fix_image_xml(low_res_dem_xml)
     fix_image_xml(full_res_dem_xml)
 
-    return {'extent_buffered': extent_buffered,
-            'full_res_dem_path': full_res_dem_path,
-            'low_res_dem_path': low_res_dem_path}
+    return {'extent_buffered': extent_buffered, 'full_res_dem_path': full_res_dem_path}
