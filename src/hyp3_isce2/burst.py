@@ -94,7 +94,7 @@ def create_burst_request(params: BurstParams, content: str) -> dict:
     filetypes = {'metadata': 'xml', 'geotiff': 'tiff'}
     extension = filetypes[content]
     burst_number_zero_indexed = params.burst_number - 1
-    url = f'{URL}/{params.granule}/{params.swath}/{params.polarization}/{burst_number_zero_indexed}.{exstension}'
+    url = f'{URL}/{params.granule}/{params.swath}/{params.polarization}/{burst_number_zero_indexed}.{extension}'
     return {'url': url}
 
 
