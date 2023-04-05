@@ -21,7 +21,7 @@ URL = 'https://sentinel1-burst.asf.alaska.edu'
 
 @dataclass
 class BurstParams:
-    """Class that contains the parameters nessecary to request a burst from the API."""
+    """Parameters necessary to request a burst from the API."""
 
     granule: str
     swath: str
@@ -30,7 +30,7 @@ class BurstParams:
 
 
 class BurstMetadata:
-    """Class that contains the metadata for a burst."""
+    """Metadata for a burst."""
 
     def __init__(self, metadata: ET.Element, burst_params: BurstParams):
         self.safe_name = burst_params.granule
@@ -245,8 +245,8 @@ def spoof_safe(asf_session: requests.Session, burst: BurstMetadata, base_path: P
     calibration_path = safe_path / 'annotation' / 'calibration'
     measurement_path = safe_path / 'measurement'
     paths = [annotation_path, calibration_path, measurement_path]
-    for p in paths:
-        p.mkdir(parents=True, exist_ok=True)
+    for path in paths:
+        path.mkdir(parents=True, exist_ok=True)
 
     et_args = {'encoding': 'UTF-8', 'xml_declaration': True}
 
