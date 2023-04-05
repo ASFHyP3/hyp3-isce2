@@ -33,10 +33,16 @@ def main():
         format='%(asctime)s - %(levelname)s - %(message)s', datefmt='%m/%d/%Y %I:%M:%S %p', level=logging.INFO
     )
 
-    args_dict = copy.copy(args.__dict__)
-    del args_dict['bucket']
-    del args_dict['bucket_prefix']
-    product_file = topsapp_burst(**args_dict)
+    product_file = topsapp_burst(
+        reference_scene=args.reference_scene,
+        secondary_scene=args.secondary_scene,
+        swath_number=args.swath_number,
+        polarization=args.polarization,
+        reference_burst_number=args.reference_burst_number,
+        secondary_burst_number=args.secondary_burst_number,
+        azimuth_looks=args.azimuth_looks,
+        range_looks=args.range_looks,
+    )
 
     if args.bucket:
         upload_file_to_s3(product_file, args.bucket, args.bucket_prefix)
