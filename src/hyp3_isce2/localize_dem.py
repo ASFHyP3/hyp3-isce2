@@ -23,6 +23,8 @@ from dem_stitcher.stitcher import stitch_dem
 from lxml import etree
 from shapely.geometry import box
 
+DEM_RESOLUTION = 0.0002777777777777777775
+
 
 def tag_dem_xml_as_ellipsoidal(dem_path: Path) -> str:
     xml_path = str(dem_path) + '.xml'
@@ -85,7 +87,6 @@ def download_dem_for_isce2(
 
     extent_buffered = buffer_extent(extent, buffer)
 
-    dem_res = 0.0002777777777777777775
     dem_array, dem_profile = stitch_dem(
         extent_buffered,
         dem_name,
@@ -93,7 +94,7 @@ def download_dem_for_isce2(
         dst_area_or_point='Point',
         n_threads_downloading=5,
         # ensures square resolution
-        dst_resolution=dem_res,
+        dst_resolution=DEM_RESOLUTION,
     )
     dem_array[np.isnan(dem_array)] = 0.
 
