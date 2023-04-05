@@ -1,5 +1,5 @@
 """Miscellaneous examples of downloading data from the ASF Burst
-Exctraction API. These examples are not intended to be run as part of
+Extraction API. These examples are not intended to be run as part of
 the test suite, but are provided as a reference for how to use the
 hyp3_isce2.burst module.
 
