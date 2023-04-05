@@ -264,7 +264,6 @@ def spoof_safe(asf_session: requests.Session, burst: BurstMetadata, base_path: P
     return safe_path
 
 
-# TODO currently only validated for descending orbits
 def get_region_of_interest(poly1: geometry.Polygon, poly2: geometry.Polygon, is_ascending: bool = True) -> Tuple[float]:
     """Get the region of interest for two bursts that will lead to single burst ISCE2 processing.
 

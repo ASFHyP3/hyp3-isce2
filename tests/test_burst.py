@@ -71,17 +71,20 @@ def test_spoof_safe(tempdir, mocker, pattern):
 @pytest.mark.parametrize('orbit', ('ascending', 'descending'))
 def test_get_region_of_interest(orbit):
     options = {'descending': REF_DESC, 'ascending': REF_ASC}
+
     params = options[orbit]
     ref_metadata = load_metadata(f'reference_{orbit}.xml')
     ref_burst = burst.BurstMetadata(ref_metadata, params)
-    granule_name = params.granule
-    burst_number = params.burst_number
-
     sec_burst = burst.BurstMetadata(load_metadata(f'secondary_{orbit}.xml'), params)
 
-    burst_pre = burst.BurstMetadata(ref_metadata, burst.BurstParams(granule_name, 'IW2', 'VV', burst_number - 1))
-    burst_on = burst.BurstMetadata(ref_metadata, burst.BurstParams(granule_name, 'IW2', 'VV', burst_number))
-    burst_post = burst.BurstMetadata(ref_metadata, burst.BurstParams(granule_name, 'IW2', 'VV', burst_number + 1))
+    granule = params.granule
+    burst_number = params.burst_number
+    swath = params.swath
+    pol = params.polarization
+
+    burst_pre = burst.BurstMetadata(ref_metadata, burst.BurstParams(granule, swath, pol, burst_number - 1))
+    burst_on = burst.BurstMetadata(ref_metadata, burst.BurstParams(granule, swath, pol, burst_number))
+    burst_post = burst.BurstMetadata(ref_metadata, burst.BurstParams(granule, swath, pol, burst_number + 1))
 
     asc = ref_burst.orbit_direction == 'ascending'
     roi = geometry.box(*burst.get_region_of_interest(ref_burst.footprint, sec_burst.footprint, asc))
