@@ -43,12 +43,15 @@ def test_create_gcp_df():
 def test_create_geometry():
     ref_burst = burst.BurstMetadata(load_metadata('reference_descending.xml'), REF_DESC)
     burst_number = 3
-    real_box = (100.509898817751, 37.69349213923167, 101.5989880944895, 38.00276647361588)
+    real_bounds = (100.509898817751, 37.69349213923167, 101.5989880944895, 38.00276647361588)
+    real_centroid = (101.05172443720475, 37.84869966086432)
 
     gcp_df = ref_burst.create_gcp_df()
-    box = ref_burst.create_geometry(gcp_df)[1]
+    _, bounds, centroid = ref_burst.create_geometry(gcp_df)
+
     assert ref_burst.burst_number == burst_number
-    assert np.all([np.isclose(a, b) for a, b in zip(box, real_box)])
+    assert np.all([np.isclose(test, real) for test, real in zip(bounds, real_bounds)])
+    assert np.all([np.isclose(test, real) for test, real in zip(centroid, real_centroid)])
 
 
 @pytest.mark.parametrize(
