@@ -74,10 +74,7 @@ class BurstMetadata:
             A dictionary containing the geolocation grid point's line, pixel, latitude, longitude, and height.
         """
         attribs = ['line', 'pixel', 'latitude', 'longitude', 'height']
-        values = {}
-        for attrib in attribs:
-            values[attrib] = float(point.find(attrib).text)
-        return values
+        return {attrib: float(point.find(attrib).text) for attrib in attribs}
 
     def create_gcp_df(self) -> pd.DataFrame:
         """Create a dataframe of geolocation grid points.
@@ -86,9 +83,8 @@ class BurstMetadata:
             A dataframe containing the geolocation grid points for the burst.
         """
         points = self.annotation.findall('.//{*}geolocationGridPoint')
-        gcp_df = pd.DataFrame([self.reformat_gcp(x) for x in points])
-        gcp_df = gcp_df.sort_values(['line', 'pixel']).reset_index(drop=True)
-        return gcp_df
+        gcp_df = pd.DataFrame([self.reformat_gcp(point) for point in points])
+        return gcp_df.sort_values(['line', 'pixel']).reset_index(drop=True)
 
     def create_geometry(self, gcp_df: pd.DataFrame) -> Tuple[geometry.Polygon, Tuple[float], Tuple[float]]:
         """Create a shapely polygon and centroid for the burst.
