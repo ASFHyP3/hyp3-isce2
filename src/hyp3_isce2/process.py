@@ -59,7 +59,7 @@ def topsapp_burst(
     insar_roi = get_region_of_interest(ref_metadata.footprint, sec_metadata.footprint, is_ascending=is_ascending)
     dem_roi = ref_metadata.footprint.intersection(sec_metadata.footprint).bounds
     print(insar_roi, dem_roi)
-    
+
     download_aux_cal(aux_cal_dir)
     for granule in (ref_params.granule, sec_params.granule):
         orbit_file, _ = downloadSentinelOrbitFile(granule, orbit_dir)
