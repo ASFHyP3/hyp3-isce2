@@ -25,7 +25,13 @@ S1A_AUX_URL = 'https://sar-mpc.eu/download/55282da1-679d-4ecf-aeef-d06b024451cf'
 S1B_AUX_URL = 'https://sar-mpc.eu/download/3c8b7c8d-d3de-4381-a19d-7611fb8734b9'
 
 
-def download_platform(url, aux_cal_dir):
+def _download_platform(url: str, aux_cal_dir: Path):
+    """Download and extract the aux cal files for a given satellite platform.
+
+    Args:
+        url: URL to download the aux cal files from.
+        aux_cal_dir: Directory to download the aux cal files to.
+    """
     resp = requests.get(url)
     resp.raise_for_status()
 
@@ -35,13 +41,19 @@ def download_platform(url, aux_cal_dir):
 
 
 def download_aux_cal(aux_cal_dir: Union[str, Path] = 'aux_cal'):
+    """Download and extract the aux cal files for Sentinel-1A/B.
+
+    Args:
+        aux_cal_dir: Directory to download the aux cal files to.
+    """
     if not isinstance(aux_cal_dir, Path):
         aux_cal_dir = Path(aux_cal_dir)
 
     aux_cal_dir.mkdir(exist_ok=True, parents=True)
     for url in [S1A_AUX_URL, S1B_AUX_URL]:
-        download_platform(url, aux_cal_dir)
+        _download_platform(url, aux_cal_dir)
 
 
 if __name__ == '__main__':
+    """Provides a command line interface to download the aux cal files."""
     download_aux_cal()
