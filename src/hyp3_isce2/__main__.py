@@ -1,7 +1,6 @@
 """
 ISCE2 processing for HyP3
 """
-import copy
 import logging
 from argparse import ArgumentParser
 
