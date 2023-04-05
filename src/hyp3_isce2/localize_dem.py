@@ -98,17 +98,19 @@ def download_dem_for_isce2(
     )
     dem_array[np.isnan(dem_array)] = 0.
 
-    dem_profile_isce = dem_profile.copy()
-    dem_profile_isce['nodata'] = None
-    dem_profile_isce['driver'] = 'ISCE'
+    dem_profile['nodata'] = None
+    dem_profile['driver'] = 'ISCE'
+
     # remove keys that do not work with ISCE gdal format
-    [dem_profile_isce.pop(key) for key in ['blockxsize', 'blockysize', 'compress', 'interleave', 'tiled']]
+    for key in ['blockxsize', 'blockysize', 'compress', 'interleave', 'tiled']:
+        del dem_profile[key]
 
     dem_path = dem_dir / 'full_res.dem.wgs84'
-    with rasterio.open(dem_path, 'w', **dem_profile_isce) as ds:
+    with rasterio.open(dem_path, 'w', **dem_profile) as ds:
         ds.write(dem_array, 1)
 
     dem_xml = tag_dem_xml_as_ellipsoidal(dem_path)
     fix_image_xml(dem_xml)
 
+    # TODO correct return value format?
     return {'extent_buffered': extent_buffered, 'dem_path': dem_path}
