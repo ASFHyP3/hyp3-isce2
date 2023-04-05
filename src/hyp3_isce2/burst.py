@@ -112,17 +112,18 @@ class BurstMetadata:
         return footprint, footprint.bounds, centroid
 
 
-def create_burst_request_url(params: BurstParams, content: str) -> str:
+def create_burst_request_url(params: BurstParams, content_type: str) -> str:
     """Create a URL to request a burst from the API.
 
     Args:
         params: The burst search parameters.
+        content_type: The content type of the burst to request.
 
     Returns:
         A URL to request a burst from the API.
     """
     filetypes = {'metadata': 'xml', 'geotiff': 'tiff'}
-    extension = filetypes[content]
+    extension = filetypes[content_type]
     burst_number_zero_indexed = params.burst_number - 1
     url = f'{URL}/{params.granule}/{params.swath}/{params.polarization}/{burst_number_zero_indexed}.{extension}'
     return url
@@ -146,19 +147,19 @@ def wait_for_extractor(response: requests.Response, sleep_time: int = 15) -> boo
     return True
 
 
-def download_from_extractor(asf_session: requests.Session, burst_params: BurstParams, content: str) -> bytes:
+def download_from_extractor(asf_session: requests.Session, burst_params: BurstParams, content_type: str) -> bytes:
     """Download burst data from the extractor.
 
     Args:
         asf_session: A requests session with an ASF URS cookie.
         burst_params: The burst search parameters.
-        content: The type of content to download (metadata or geotiff).
+        content_type: The type of content to download (metadata or geotiff).
 
     Returns:
         The downloaded content.
     """
     burst_request = {
-        'url': create_burst_request_url(burst_params, content=content),
+        'url': create_burst_request_url(burst_params, content_type=content_type),
         'cookies': {'asf-urs': asf_session.cookies['asf-urs']},
     }
 
