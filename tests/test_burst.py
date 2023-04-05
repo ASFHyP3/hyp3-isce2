@@ -1,4 +1,3 @@
-import tempfile
 import xml.etree.ElementTree as ET
 from pathlib import Path
 
@@ -21,12 +20,6 @@ def load_metadata(metadata):
     metadata_path = Path(__file__).parent.absolute() / 'data' / metadata
     xml = ET.parse(metadata_path).getroot()
     return xml
-
-
-@pytest.fixture()
-def tempdir():
-    with tempfile.TemporaryDirectory() as tempdir:
-        yield tempdir
 
 
 def test_create_gcp_df():
