@@ -17,9 +17,9 @@ import site
 import subprocess
 from pathlib import Path
 
+import dem_stitcher
 import numpy as np
 import rasterio
-from dem_stitcher.stitcher import stitch_dem
 from lxml import etree
 from shapely.geometry import box
 
@@ -85,7 +85,7 @@ def download_dem_for_isce2(
 
     extent_buffered = buffer_extent(extent, buffer)
 
-    dem_array, dem_profile = stitch_dem(
+    dem_array, dem_profile = dem_stitcher.stitch_dem(
         extent_buffered,
         dem_name,
         dst_ellipsoidal_height=True,
