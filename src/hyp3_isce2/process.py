@@ -5,12 +5,21 @@ ISCE2 processing
 import logging
 import os
 import subprocess
-from argparse import ArgumentDefaultsHelpFormatter, ArgumentParser
+from argparse import (
+    ArgumentDefaultsHelpFormatter,
+    ArgumentParser
+)
 from pathlib import Path
 
+from hyp3lib.get_orb import downloadSentinelOrbitFile
+
 from hyp3_isce2 import __version__
-from hyp3_isce2.burst import (BurstParams, download_bursts,
-                              get_region_of_interest)
+from hyp3_isce2.burst import (
+    BurstParams,
+    download_bursts,
+    get_region_of_interest
+)
+
 
 log = logging.getLogger(__name__)
 
@@ -39,6 +48,7 @@ def topsapp_burst(
         azimuth_looks: Number of azimuth looks
         range_looks: Number of range looks
     """
+    orbit_dir = 'orbits'
     ref_params = BurstParams(reference_scene, f'IW{swath_number}', polarization.upper(), reference_burst_number)
     sec_params = BurstParams(secondary_scene, f'IW{swath_number}', polarization.upper(), secondary_burst_number)
     ref_metadata, sec_metadata = download_bursts([ref_params, sec_params])
@@ -47,6 +57,9 @@ def topsapp_burst(
     insar_roi = get_region_of_interest(ref_metadata.footprint, sec_metadata.footprint, is_ascending=is_ascending)
     dem_roi = ref_metadata.footprint.intersection(sec_metadata.footprint).bounds
     print(insar_roi, dem_roi)
+
+    for granule in (ref_params.granule, sec_params.granule):
+        orbit_file, _ = downloadSentinelOrbitFile(granule, orbit_dir)
     # TODO replace with the actual processing call once we have the functionality for downloading the input data
     subprocess.run(['python', TOPSAPP, '-h'])
 
