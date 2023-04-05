@@ -41,9 +41,9 @@ class BurstMetadata:
         self.manifest_name = 'manifest.safe'
         metadata = metadata[1]
 
-        names = [x.attrib['source_filename'] for x in metadata]
-        lengths = [len(x.split('-')) for x in names]
-        swaths = [x.split('-')[y - 8] for x, y in zip(names, lengths)]
+        names = [file.attrib['source_filename'] for file in metadata]
+        lengths = [len(name.split('-')) for name in names]
+        swaths = [name.split('-')[length - 8] for name, length in zip(names, lengths)]
         products = [x.tag for x in metadata]
         swaths_and_products = list(zip(swaths, products))
 
@@ -55,9 +55,9 @@ class BurstMetadata:
             setattr(self, files[name], content)
             setattr(self, f'{files[name]}_name', elem.attrib['source_filename'])
 
-        file_paths = [x.attrib['href'] for x in self.manifest.findall('.//fileLocation')]
+        file_paths = [elements.attrib['href'] for elements in self.manifest.findall('.//fileLocation')]
         pattern = f'^./measurement/s1.*{self.swath.lower()}.*{self.polarization.lower()}.*.tiff$'
-        self.measurement_name = [Path(x).name for x in file_paths if re.search(pattern, x)][0]
+        self.measurement_name = [Path(path).name for path in file_paths if re.search(pattern, path)][0]
 
         self.gcp_df = self.create_gcp_df()
         self.footprint = self.create_geometry(self.gcp_df)[0]
@@ -108,7 +108,7 @@ class BurstMetadata:
         x = x1 + x2
         y = y1 + y2
         footprint = geometry.Polygon(zip(x, y))
-        centroid = tuple([x[0] for x in footprint.centroid.xy])
+        centroid = tuple([coord[0] for coord in footprint.centroid.xy])
         return footprint, footprint.bounds, centroid
 
 
