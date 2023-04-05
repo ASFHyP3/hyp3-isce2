@@ -31,8 +31,6 @@ DEM_PROFILE = {
 
 def test_download_dem_for_isce2():
     # TODO use temp dir for dem_dir
-    # FIXME this patch is not working, changing parameters to `called_once_with` does not cause the
-    #  test to fail as expected
     with patch('dem_stitcher.stitch_dem') as mock_stitch_dem:
         mock_stitch_dem.return_value = (DEM_PROFILE, DEM_ARRAY)
         localize_dem.download_dem_for_isce2(
@@ -41,7 +39,7 @@ def test_download_dem_for_isce2():
             dem_dir=Path('isce_dem'),
             buffer=0,
         )
-        assert mock_stitch_dem.called_once_with(
+        mock_stitch_dem.assert_called_once_with(
             [-169, 53, -168, 54],
             'glo_30',
             dst_ellipsoidal_height=True,
