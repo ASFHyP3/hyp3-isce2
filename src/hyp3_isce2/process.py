@@ -76,7 +76,7 @@ def topsapp_burst(
     print(template_filename)
 
     # TODO replace with the actual processing call once we have the functionality for downloading the input data
-    subprocess.run(['python', TOPSAPP, '-h'])
+    # subprocess.run(['python', TOPSAPP, '-h'])
 
     return None
 
