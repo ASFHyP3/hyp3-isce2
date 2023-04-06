@@ -56,12 +56,11 @@ def test_create_geometry():
         '*SAFE/annotation/calibration/noise*xml',
     ),
 )
-def test_spoof_safe(tempdir, mocker, pattern):
+def test_spoof_safe(tmp_path, mocker, pattern):
     ref_burst = burst.BurstMetadata(load_metadata('reference_descending.xml'), REF_DESC)
-    tempdir_path = Path(tempdir)
     mocker.patch('hyp3_isce2.burst.download_burst', return_value='')
-    burst.spoof_safe(requests.Session(), ref_burst, tempdir_path)
-    assert len(list(tempdir_path.glob(pattern))) == 1
+    burst.spoof_safe(requests.Session(), ref_burst, tmp_path)
+    assert len(list(tmp_path.glob(pattern))) == 1
 
 
 @pytest.mark.parametrize('orbit', ('ascending', 'descending'))

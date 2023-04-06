@@ -5,20 +5,13 @@ ISCE2 processing
 import logging
 import os
 import subprocess
-from argparse import (
-    ArgumentDefaultsHelpFormatter,
-    ArgumentParser
-)
+from argparse import ArgumentDefaultsHelpFormatter, ArgumentParser
 from pathlib import Path
 
 from hyp3lib.get_orb import downloadSentinelOrbitFile
 
 from hyp3_isce2 import __version__
-from hyp3_isce2.burst import (
-    BurstParams,
-    download_bursts,
-    get_region_of_interest
-)
+from hyp3_isce2.burst import BurstParams, download_bursts, get_region_of_interest
 from hyp3_isce2.s1_auxcal import download_aux_cal
 
 

@@ -4,12 +4,7 @@ import time
 import xml.etree.ElementTree as ET
 from dataclasses import dataclass
 from pathlib import Path
-from typing import (
-    Iterator,
-    List,
-    Tuple,
-    Union
-)
+from typing import Iterator, List, Tuple, Union
 
 import pandas as pd
 import requests

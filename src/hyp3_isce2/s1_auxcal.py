@@ -55,5 +55,5 @@ def download_aux_cal(aux_cal_dir: Union[str, Path] = 'aux_cal'):
 
 
 if __name__ == '__main__':
-    """Provides a command line interface to download the aux cal files."""
+    # Provides a command line interface to download the aux cal files
     download_aux_cal()
