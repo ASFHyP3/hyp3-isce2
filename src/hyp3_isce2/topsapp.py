@@ -1,6 +1,6 @@
 import os
 from pathlib import Path
-from typing import Iterable
+from typing import Iterable, Union
 
 from jinja2 import Template
 
@@ -66,7 +66,7 @@ class TopsappBurstConfig:
             template = Template(file.read())
         return template.render(self.__dict__)
 
-    def write_template(self, filename: str | Path = 'topsapp.xml') -> Path:
+    def write_template(self, filename: Union[str, Path] = 'topsapp.xml') -> Path:
         """Write the topsApp.py jinja2 template to a file
 
         Args:
