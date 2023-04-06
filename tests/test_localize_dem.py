@@ -8,8 +8,11 @@ from rasterio import CRS
 
 from hyp3_isce2 import localize_dem
 
-# TODO should we assert stuff related to these values in the unit test?
-DEM_PROFILE = {
+MOCK_DEM_ARRAY = np.ones((3600, 3600), dtype=float)
+MOCK_DEM_ARRAY[:, 1000] = np.nan
+MOCK_DEM_ARRAY[:, 2000] = 2
+
+MOCK_DEM_PROFILE = {
     'blockxsize': 1024,
     'blockysize': 1024,
     'compress': 'deflate',
@@ -30,15 +33,11 @@ DEM_PROFILE = {
 
 
 def test_download_dem_for_isce2(tmp_path):
-    mock_dem_array = np.ones((3600, 3600), dtype=float)
-    mock_dem_array[:, 1000] = np.nan
-    mock_dem_array[:, 2000] = 2
-
     dem_dir = tmp_path / 'isce2_dem'
     dem_dir.mkdir()
 
     with patch('dem_stitcher.stitch_dem') as mock_stitch_dem:
-        mock_stitch_dem.return_value = (mock_dem_array, DEM_PROFILE)
+        mock_stitch_dem.return_value = (MOCK_DEM_ARRAY, MOCK_DEM_PROFILE)
 
         dem_path = localize_dem.download_dem_for_isce2(
             extent=[-168.7, 53.2, -168.2, 53.7],
