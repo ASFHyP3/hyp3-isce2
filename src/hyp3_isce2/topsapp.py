@@ -20,6 +20,7 @@ TOPSAPP_GEOCODE_LIST = [
 
 
 class TopsappBurstConfig:
+    """Configuration for a topsApp.py run"""
     def __init__(
         self,
         reference_safe: str,
@@ -56,11 +57,23 @@ class TopsappBurstConfig:
         self.geocode_list = TOPSAPP_GEOCODE_LIST
 
     def generate_template(self) -> str:
+        """Generate the topsApp.py jinja2 template
+
+        Returns:
+            The rendered template
+        """
         with open(TEMPLATE_DIR / 'topsapp.xml', 'r') as file:
             template = Template(file.read())
         return template.render(self.__dict__)
 
     def write_template(self, filename: str | Path = 'topsapp.xml') -> Path:
+        """Write the topsApp.py jinja2 template to a file
+
+        Args:
+            filename: Filename to write the template to
+        Returns:
+            The path of the written template
+        """
         if not isinstance(filename, Path):
             filename = Path(filename)
 
