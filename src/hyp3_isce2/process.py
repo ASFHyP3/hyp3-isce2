@@ -13,10 +13,10 @@ from hyp3lib.get_orb import downloadSentinelOrbitFile
 from hyp3_isce2 import __version__
 from hyp3_isce2.burst import BurstParams, download_bursts, get_region_of_interest
 from hyp3_isce2.s1_auxcal import download_aux_cal
+from hyp3_isce2.topsapp import TopsappBurstConfig
 
 
 log = logging.getLogger(__name__)
-
 TOPSAPP = str(Path(os.getenv('ISCE_HOME')) / 'applications' / 'topsApp.py')
 
 
@@ -42,8 +42,8 @@ def topsapp_burst(
         azimuth_looks: Number of azimuth looks
         range_looks: Number of range looks
     """
-    orbit_dir = 'orbits'
-    aux_cal_dir = 'aux_cal'
+    orbit_dir = Path('orbits')
+    aux_cal_dir = Path('aux_cal')
     ref_params = BurstParams(reference_scene, f'IW{swath_number}', polarization.upper(), reference_burst_number)
     sec_params = BurstParams(secondary_scene, f'IW{swath_number}', polarization.upper(), secondary_burst_number)
     ref_metadata, sec_metadata = download_bursts([ref_params, sec_params])
@@ -53,12 +53,30 @@ def topsapp_burst(
     dem_roi = ref_metadata.footprint.intersection(sec_metadata.footprint).bounds
     print(insar_roi, dem_roi)
 
+    # TODO placeholder for downloading the DEM
+    dem_filename = 'dem.tif'
     download_aux_cal(aux_cal_dir)
+
+    orbit_dir.mkdir(exist_ok=True, parents=True)
     for granule in (ref_params.granule, sec_params.granule):
         orbit_file, _ = downloadSentinelOrbitFile(granule, orbit_dir)
 
+    config = TopsappBurstConfig(
+        reference_safe=f'{ref_params.granule}.SAFE',
+        secondary_safe=f'{sec_params.granule}.SAFE',
+        orbit_directory=orbit_dir,
+        aux_cal_directory=aux_cal_dir,
+        region_of_interest=insar_roi,
+        dem_filename=dem_filename,
+        swath=swath_number,
+        azimuth_looks=azimuth_looks,
+        range_looks=range_looks,
+    )
+    template_filename = config.write_template()
+    print(template_filename)
+
     # TODO replace with the actual processing call once we have the functionality for downloading the input data
-    subprocess.run(['python', TOPSAPP, '-h'])
+    # subprocess.run(['python', TOPSAPP, '-h'])
 
     return None
 
