@@ -29,25 +29,22 @@ DEM_RESOLUTION = 0.0002777777777777777775
 def tag_dem_xml_as_ellipsoidal(dem_path: Path) -> str:
     xml_path = str(dem_path) + '.xml'
     assert Path(xml_path).exists()
-    tree = etree.parse(xml_path)
-    root = tree.getroot()
+    root = etree.parse(xml_path).getroot()
 
-    y = etree.Element("property", name='reference')
-    etree.SubElement(y, "value").text = "WGS84"
-    etree.SubElement(y, "doc").text = "Geodetic datum"
+    element = etree.Element("property", name='reference')
+    etree.SubElement(element, "value").text = "WGS84"
+    etree.SubElement(element, "doc").text = "Geodetic datum"
 
-    root.insert(0, y)
+    root.insert(0, element)
     with open(xml_path, 'wb') as file:
         file.write(etree.tostring(root, pretty_print=True))
     return xml_path
 
 
-def fix_image_xml(isce_raster_path: str) -> str:
+def fix_image_xml(xml_path: str) -> None:
     isce_apps_path = site.getsitepackages()[0] + '/isce/applications'
-    fix_cmd = [f'{isce_apps_path}/fixImageXml.py', '-i', str(isce_raster_path), '--full']
-    fix_cmd_line = ' '.join(fix_cmd)
-    subprocess.check_call(fix_cmd_line, shell=True)
-    return isce_raster_path
+    fix_cmd = ' '.join([f'{isce_apps_path}/fixImageXml.py', '-i', xml_path, '--full'])
+    subprocess.check_call(fix_cmd, shell=True)
 
 
 def buffer_extent(extent: list, buffer: float) -> list:
@@ -65,7 +62,7 @@ def download_dem_for_isce2(
         extent: list,
         dem_name: str = 'glo_30',
         dem_dir: Path = None,
-        buffer: float = .4) -> dict:
+        buffer: float = .4) -> Path:
     """
     Parameters
     ----------
@@ -96,9 +93,9 @@ def download_dem_for_isce2(
     )
     dem_array[np.isnan(dem_array)] = 0.
 
+    # TODO should we assert something related to these dem_profile changes in the unit test?
     dem_profile['nodata'] = None
     dem_profile['driver'] = 'ISCE'
-
     # remove keys that do not work with ISCE gdal format
     for key in ['blockxsize', 'blockysize', 'compress', 'interleave', 'tiled']:
         del dem_profile[key]
@@ -107,8 +104,7 @@ def download_dem_for_isce2(
     with rasterio.open(dem_path, 'w', **dem_profile) as ds:
         ds.write(dem_array, 1)
 
-    dem_xml = tag_dem_xml_as_ellipsoidal(dem_path)
-    fix_image_xml(dem_xml)
+    xml_path = tag_dem_xml_as_ellipsoidal(dem_path)
+    fix_image_xml(xml_path)
 
-    # TODO correct return value format?
-    return {'extent_buffered': extent_buffered, 'dem_path': dem_path}
+    return dem_path

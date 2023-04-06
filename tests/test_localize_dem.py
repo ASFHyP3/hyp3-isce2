@@ -1,14 +1,14 @@
-from pathlib import Path
+import xml.etree.ElementTree as ET
 from unittest.mock import patch
 
 import numpy as np
+import rasterio
 from affine import Affine
 from rasterio import CRS
 
 from hyp3_isce2 import localize_dem
 
-DEM_ARRAY = None  # TODO
-
+# TODO should we assert stuff related to these values in the unit test?
 DEM_PROFILE = {
     'blockxsize': 1024,
     'blockysize': 1024,
@@ -29,16 +29,24 @@ DEM_PROFILE = {
 }
 
 
-def test_download_dem_for_isce2():
-    # TODO use temp dir for dem_dir
+def test_download_dem_for_isce2(tmp_path):
+    mock_dem_array = np.ones((3600, 3600), dtype=float)
+    mock_dem_array[:, 1000] = np.nan
+    mock_dem_array[:, 2000] = 2
+
+    dem_dir = tmp_path / 'isce2_dem'
+    dem_dir.mkdir()
+
     with patch('dem_stitcher.stitch_dem') as mock_stitch_dem:
-        mock_stitch_dem.return_value = (DEM_PROFILE, DEM_ARRAY)
-        localize_dem.download_dem_for_isce2(
-            extent=[-169, 53, -168, 54],
+        mock_stitch_dem.return_value = (mock_dem_array, DEM_PROFILE)
+
+        dem_path = localize_dem.download_dem_for_isce2(
+            extent=[-168.7, 53.2, -168.2, 53.7],
             dem_name='glo_30',
-            dem_dir=Path('isce_dem'),
+            dem_dir=dem_dir,
             buffer=0,
         )
+
         mock_stitch_dem.assert_called_once_with(
             [-169, 53, -168, 54],
             'glo_30',
@@ -47,7 +55,19 @@ def test_download_dem_for_isce2():
             n_threads_downloading=5,
             dst_resolution=localize_dem.DEM_RESOLUTION,
         )
-        # TODO more asserts
+
+        root = ET.parse(str(dem_path) + '.xml').getroot()
+        assert root.find("./property[@name='reference']/value").text == 'WGS84'
+        assert root.find("./property[@name='reference']/doc").text == 'Geodetic datum'
+
+        with rasterio.open(dem_path, 'r') as ds:
+            dem_array = ds.read(1)
+
+        assert np.all(dem_array[:, 0:1000] == 1)
+        assert np.all(dem_array[:, 1000] == 0)
+        assert np.all(dem_array[:, 1001:2000] == 1)
+        assert np.all(dem_array[:, 2000] == 2)
+        assert np.all(dem_array[:, 2001:] == 1)
 
 
 def test_buffer_extent():
