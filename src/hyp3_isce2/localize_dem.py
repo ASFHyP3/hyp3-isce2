@@ -95,6 +95,7 @@ def download_dem_for_isce2(
 
     dem_profile['nodata'] = None
     dem_profile['driver'] = 'ISCE'
+
     # remove keys that do not work with ISCE gdal format
     for key in ['blockxsize', 'blockysize', 'compress', 'interleave', 'tiled']:
         del dem_profile[key]
