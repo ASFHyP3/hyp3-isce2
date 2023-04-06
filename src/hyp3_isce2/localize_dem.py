@@ -93,7 +93,6 @@ def download_dem_for_isce2(
     )
     dem_array[np.isnan(dem_array)] = 0.
 
-    # TODO should we assert something related to these dem_profile changes in the unit test?
     dem_profile['nodata'] = None
     dem_profile['driver'] = 'ISCE'
     # remove keys that do not work with ISCE gdal format
