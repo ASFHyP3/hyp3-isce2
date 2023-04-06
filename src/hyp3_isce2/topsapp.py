@@ -60,7 +60,11 @@ class TopsappBurstConfig:
             template = Template(file.read())
         return template.render(self.__dict__)
 
-    def write_template(self, filename: str = 'topsapp.xml') -> str:
+    def write_template(self, filename: str | Path = 'topsapp.xml') -> Path:
+        if not isinstance(filename, Path):
+            filename = Path(filename)
+
         with open(filename, 'w') as file:
             file.write(self.generate_template())
+
         return filename
