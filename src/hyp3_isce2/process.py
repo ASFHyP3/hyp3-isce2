@@ -47,6 +47,7 @@ def topsapp_burst(
     insar_roi = get_region_of_interest(ref_metadata.footprint, sec_metadata.footprint, is_ascending=is_ascending)
     dem_roi = ref_metadata.footprint.intersection(sec_metadata.footprint).bounds
     print(insar_roi, dem_roi)
+    # TODO replace with the actual processing call once we have the functionality for downloading the input data
     subprocess.run(['python', TOPSAPP, '-h'])
 
     return None
