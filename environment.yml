@@ -9,6 +9,7 @@ dependencies:
   - isce2
   - rasterio
   - shapely
+  - jinja2
   # For packaging, and testing
   - flake8
   - flake8-import-order
