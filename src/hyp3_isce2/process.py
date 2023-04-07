@@ -3,20 +3,18 @@ ISCE2 processing
 """
 
 import logging
-import site
 from argparse import ArgumentDefaultsHelpFormatter, ArgumentParser
 from pathlib import Path
 
 from hyp3lib.get_orb import downloadSentinelOrbitFile
 
 from hyp3_isce2 import __version__
+from hyp3_isce2 import topsapp
 from hyp3_isce2.burst import BurstParams, download_bursts, get_region_of_interest
 from hyp3_isce2.s1_auxcal import download_aux_cal
-from hyp3_isce2.topsapp import TopsappBurstConfig
 
 
 log = logging.getLogger(__name__)
-TOPSAPP = str(Path(site.getsitepackages()[0]) / 'isce' / 'applications')
 
 
 def topsapp_burst(
@@ -60,7 +58,7 @@ def topsapp_burst(
     for granule in (ref_params.granule, sec_params.granule):
         downloadSentinelOrbitFile(granule, orbit_dir)
 
-    config = TopsappBurstConfig(
+    config = topsapp.TopsappBurstConfig(
         reference_safe=f'{ref_params.granule}.SAFE',
         secondary_safe=f'{sec_params.granule}.SAFE',
         orbit_directory=orbit_dir,
@@ -71,11 +69,10 @@ def topsapp_burst(
         azimuth_looks=azimuth_looks,
         range_looks=range_looks,
     )
-    template_filename = config.write_template()
-    print(template_filename)
+    config.write_template('topsApp.xml')
 
-    # TODO replace with the actual processing call once we have the functionality for downloading the input data
-    # subprocess.run(['python', TOPSAPP, '-h'])
+    for step in topsapp.TOPSAPP_STEPS[0:1]:
+        topsapp.run_topsapp(dostep=step, config_xml='topsApp.xml')
 
     return None
 

@@ -1,11 +1,36 @@
-import site
 from pathlib import Path
 from typing import Iterable, Union
 
+from isce.applications.topsApp import TopsInSAR
 from jinja2 import Template
 
 TEMPLATE_DIR = Path(__file__).parent / 'templates'
-TOPSAPP = str(Path(site.getsitepackages()[0]) / 'isce' / 'applications')
+TOPSAPP_STEPS = [
+    'startup',
+    'preprocess',
+    'computeBaselines',
+    'verifyDEM',
+    'topo',
+    'subsetoverlaps',
+    'coarseoffsets',
+    'coarseresamp',
+    'overlapifg',
+    'prepesd',
+    'esd',
+    'rangecoreg',
+    'fineoffsets',
+    'fineresamp',
+    'ion',
+    'burstifg',
+    'mergebursts',
+    'filter',
+    'unwrap',
+    'unwrap2stage',
+    'geocode',
+    'denseoffsets',
+    'filteroffsets',
+    'geocodeoffsets',
+]
 TOPSAPP_GEOCODE_LIST = [
     'merged/phsig.cor',
     'merged/filt_topophase.unw',
@@ -66,7 +91,7 @@ class TopsappBurstConfig:
             template = Template(file.read())
         return template.render(self.__dict__)
 
-    def write_template(self, filename: Union[str, Path] = 'topsapp.xml') -> Path:
+    def write_template(self, filename: Union[str, Path] = 'topsApp.xml') -> Path:
         """Write the topsApp.py jinja2 template to a file
 
         Args:
@@ -81,3 +106,28 @@ class TopsappBurstConfig:
             file.write(self.generate_template())
 
         return filename
+
+
+def run_topsapp(dostep='', start='', stop='', config_xml='topsApp.xml'):
+    if dostep and (start or stop):
+        raise ValueError('If dostep is specified, start and stop cannot be used')
+
+    if not Path(config_xml).exists():
+        raise IOError(f'The config file {config_xml} does note exist!')
+
+    step_args = []
+    options = {
+        'dostep': dostep,
+        'start': start,
+        'stop': stop,
+    }
+    for key, value in options.items():
+        if value:
+            if value not in TOPSAPP_STEPS:
+                raise ValueError(f'{value} is not a valid step')
+            step_args.append(f'--{key}={value}')
+
+    cmd_line = [config_xml] + step_args
+    insar = TopsInSAR(name='topsApp', cmdline=cmd_line)
+    insar.configure()
+    insar.run()
