@@ -6,7 +6,7 @@ import rasterio
 from affine import Affine
 from rasterio import CRS
 
-from hyp3_isce2 import localize_dem
+from hyp3_isce2 import dem
 
 MOCK_DEM_ARRAY = np.ones((3600, 3600), dtype=float)
 MOCK_DEM_ARRAY[:, 1000] = np.nan
@@ -39,7 +39,7 @@ def test_download_dem_for_isce2(tmp_path):
     with patch('dem_stitcher.stitch_dem') as mock_stitch_dem:
         mock_stitch_dem.return_value = (MOCK_DEM_ARRAY, MOCK_DEM_PROFILE)
 
-        dem_path = localize_dem.download_dem_for_isce2(
+        dem_path = dem.download_dem_for_isce2(
             extent=[-168.7, 53.2, -168.2, 53.7],
             dem_name='glo_30',
             dem_dir=dem_dir,
@@ -52,7 +52,7 @@ def test_download_dem_for_isce2(tmp_path):
             dst_ellipsoidal_height=True,
             dst_area_or_point='Point',
             n_threads_downloading=5,
-            dst_resolution=localize_dem.DEM_RESOLUTION,
+            dst_resolution=dem.DEM_RESOLUTION,
         )
 
         root = ET.parse(str(dem_path) + '.xml').getroot()
@@ -71,11 +71,11 @@ def test_download_dem_for_isce2(tmp_path):
 
 def test_buffer_extent():
     extent1 = [1, 2, 3, 4]
-    assert localize_dem.buffer_extent(extent1, 0) == extent1
-    assert localize_dem.buffer_extent(extent1, 0.1) == [0, 1, 4, 5]
+    assert dem.buffer_extent(extent1, 0) == extent1
+    assert dem.buffer_extent(extent1, 0.1) == [0, 1, 4, 5]
 
     extent2 = [-169.7, 53.3, -167.3, 54.7]
-    assert localize_dem.buffer_extent(extent2, 0) == [-170, 53, -167, 55]
-    assert localize_dem.buffer_extent(extent2, 0.1) == [-170, 53, -167, 55]
-    assert localize_dem.buffer_extent(extent2, 0.3) == [-170, 53, -167, 55]
-    assert localize_dem.buffer_extent(extent2, 0.4) == [-171, 52, -166, 56]
+    assert dem.buffer_extent(extent2, 0) == [-170, 53, -167, 55]
+    assert dem.buffer_extent(extent2, 0.1) == [-170, 53, -167, 55]
+    assert dem.buffer_extent(extent2, 0.3) == [-170, 53, -167, 55]
+    assert dem.buffer_extent(extent2, 0.4) == [-171, 52, -166, 56]
