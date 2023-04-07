@@ -55,7 +55,7 @@ def topsapp_burst(
 
     download_aux_cal(aux_cal_dir)
     for granule in (ref_params.granule, sec_params.granule):
-        orbit_file, _ = downloadSentinelOrbitFile(granule, orbit_dir)
+        downloadSentinelOrbitFile(granule, orbit_dir)
 
     # TODO replace with the actual processing call once we have the functionality for downloading the input data
     subprocess.run(['python', TOPSAPP, '-h'])

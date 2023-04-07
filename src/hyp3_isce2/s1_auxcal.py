@@ -50,7 +50,7 @@ def download_aux_cal(aux_cal_dir: Union[str, Path] = 'aux_cal'):
         aux_cal_dir = Path(aux_cal_dir)
 
     aux_cal_dir.mkdir(exist_ok=True, parents=True)
-    for url in [S1A_AUX_URL, S1B_AUX_URL]:
+    for url in (S1A_AUX_URL, S1B_AUX_URL):
         _download_platform(url, aux_cal_dir)
 
 
