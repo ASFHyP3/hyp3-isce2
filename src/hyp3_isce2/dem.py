@@ -64,19 +64,16 @@ def download_dem_for_isce2(
         dem_name: str = 'glo_30',
         dem_dir: Path = None,
         buffer: float = .4) -> Path:
-    """
-    Parameters
-    ----------
-    extent : list
-        [xmin, ymin, xmax, ymax] for epsg:4326 (i.e. (x, y) = (lon, lat))
-    dem_name : str, optional
-        See names in `dem_stitcher`
-    dem_dir : Path, optional
-    buffer : float, optional
-        In degrees, by default .4, which is about 44 km at equator (or about 2.5 bursts at the equator)
-    Returns
-    -------
-    dict
+    """Download the given DEM for the given extent.
+
+    Args:
+        extent: A list [xmin, ymin, xmax, ymax] for epsg:4326 (i.e. (x, y) = (lon, lat)).
+        dem_name: One of the names from `dem_stitcher`.
+        dem_dir: The output directory.
+        buffer: The extent buffer in degrees, by default .4, which is about 44 km at the equator
+                (or about 2.5 bursts at the equator).
+    Returns:
+        The path to the downloaded DEM.
     """
     dem_dir = dem_dir or Path('.')
     dem_dir.mkdir(exist_ok=True, parents=True)
