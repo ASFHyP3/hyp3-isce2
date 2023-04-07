@@ -151,7 +151,7 @@ def run_topsapp_burst(dostep: str = '', start: str = '', stop: str = '', config_
         ValueError: If the step is not a valid step (see TOPSAPP_STEPS)
     """
     if not config_xml.exists():
-        raise IOError(f'The config file {config_xml} doe not exist!')
+        raise IOError(f'The config file {config_xml} does not exist!')
 
     if dostep and (start or stop):
         raise ValueError('If dostep is specified, start and stop cannot be used')

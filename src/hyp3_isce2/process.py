@@ -48,7 +48,8 @@ def topsapp_burst(
     is_ascending = ref_metadata.orbit_direction == 'ascending'
     insar_roi = get_region_of_interest(ref_metadata.footprint, sec_metadata.footprint, is_ascending=is_ascending)
     dem_roi = ref_metadata.footprint.intersection(sec_metadata.footprint).bounds
-    print(insar_roi, dem_roi)
+    print(f'InSAR ROI: {insar_roi}')
+    print(f'DEM ROI: {dem_roi}')
 
     # TODO placeholder for downloading the DEM
     dem_filename = 'dem.tif'
@@ -74,7 +75,7 @@ def topsapp_burst(
     for step in topsapp.TOPSAPP_STEPS:
         if step == 'computeBaselines':
             topsapp.swap_burst_vrts()
-        topsapp.run_topsapp_burst(dostep=step, config_xml='topsApp.xml')
+        topsapp.run_topsapp_burst(dostep=step, config_xml=Path('topsApp.xml'))
 
     return None
 
