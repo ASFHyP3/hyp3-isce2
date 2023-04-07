@@ -120,7 +120,7 @@ def swap_burst_vrts():
     if len(ref_vrt_list) + len(sec_vrt_list) != 2:
         raise ValueError(
             'There should only be 2 VRT files in the reference and secondary directories, '
-            'check that you are performing a single burst run.',
+            'check that you are performing a single burst run.'
         )
 
     for vrt_list in (ref_vrt_list, sec_vrt_list):
