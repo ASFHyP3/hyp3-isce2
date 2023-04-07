@@ -71,8 +71,9 @@ def topsapp_burst(
     )
     config.write_template('topsApp.xml')
 
-    # TODO: need to add burst swapping code before running other steps
-    for step in topsapp.TOPSAPP_STEPS[0:1]:
+    for step in topsapp.TOPSAPP_STEPS:
+        if step == 'computeBaselines':
+            topsapp.swap_burst_vrts()
         topsapp.run_topsapp_burst(dostep=step, config_xml='topsApp.xml')
 
     return None
