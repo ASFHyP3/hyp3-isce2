@@ -32,10 +32,10 @@ def _download_platform(url: str, aux_cal_dir: Path):
         url: URL to download the aux cal files from.
         aux_cal_dir: Directory to download the aux cal files to.
     """
-    resp = requests.get(url)
-    resp.raise_for_status()
+    response = requests.get(url)
+    response.raise_for_status()
 
-    content = BytesIO(resp.content)
+    content = BytesIO(response.content)
     with zipfile.ZipFile(content) as zip_file:
         zip_file.extractall(aux_cal_dir)
 
@@ -55,5 +55,4 @@ def download_aux_cal(aux_cal_dir: Union[str, Path] = 'aux_cal'):
 
 
 if __name__ == '__main__':
-    # Provides a command line interface to download the aux cal files
     download_aux_cal()
