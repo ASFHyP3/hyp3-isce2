@@ -115,21 +115,24 @@ def swap_burst_vrts():
     To convince topsApp to process a burst pair, we need to swap the VRTs it generates for the
     reference and secondary bursts with custom VRTs that point to the actual burst rasters.
     """
-    ref_vrt_list = [str(x) for x in Path('reference').glob('**/*.vrt')]
-    sec_vrt_list = [str(x) for x in Path('secondary').glob('**/*.vrt')]
-    if len(ref_vrt_list) + len(sec_vrt_list) != 2:
+    ref_vrt_list = [str(path) for path in Path('reference').glob('**/*.vrt')]
+    sec_vrt_list = [str(path) for path in Path('secondary').glob('**/*.vrt')]
+    if len(ref_vrt_list) != 1 or len(sec_vrt_list) != 1:
         raise ValueError(
             'There should only be 2 VRT files in the reference and secondary directories, '
             'check that you are performing a single burst run.'
         )
 
-    for vrt_list in (ref_vrt_list, sec_vrt_list):
-        vrt = gdal.Open(vrt_list[0])
+    for vrt_path in (ref_vrt_list[0], sec_vrt_list[0]):
+        vrt = gdal.Open(vrt_path)
         base = gdal.Open(vrt.GetFileList()[1])
-        vrt_shape, base_shape = [(x.RasterXSize, x.RasterYSize) for x in (vrt, base)]
+
+        # FIXME these variables are not used, are they needed?
+        # vrt_shape, base_shape = [(x.RasterXSize, x.RasterYSize) for x in (vrt, base)]
+
         del vrt
 
-        gdal.Translate(vrt_list[0], base, format='VRT')
+        gdal.Translate(vrt_path, base, format='VRT')
         del base
 
 
