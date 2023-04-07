@@ -59,7 +59,7 @@ def topsapp_burst(
 
     orbit_dir.mkdir(exist_ok=True, parents=True)
     for granule in (ref_params.granule, sec_params.granule):
-        orbit_file, _ = downloadSentinelOrbitFile(granule, orbit_dir)
+        downloadSentinelOrbitFile(granule, orbit_dir)
 
     config = TopsappBurstConfig(
         reference_safe=f'{ref_params.granule}.SAFE',
