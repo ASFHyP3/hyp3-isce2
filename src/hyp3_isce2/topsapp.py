@@ -108,7 +108,21 @@ class TopsappBurstConfig:
         return filename
 
 
-def run_topsapp(dostep='', start='', stop='', config_xml='topsApp.xml'):
+def run_topsapp(dostep: str = '', start: str = '', stop: str = '', config_xml: str = 'topsApp.xml'):
+    """Run topsApp.py with the desired steps and config file
+
+    Args:
+        dostep: The step to run
+        start: The step to start at
+        stop: The step to stop at
+        config_xml: The config file to use
+
+    Raises:
+        ValueError: If dostep is specified, start and stop cannot be used
+        IOError: If the config file does not exist
+        ValueError: If the step is not a valid step (see TOPSAPP_STEPS)
+    """
+
     if dostep and (start or stop):
         raise ValueError('If dostep is specified, start and stop cannot be used')
 
@@ -122,10 +136,11 @@ def run_topsapp(dostep='', start='', stop='', config_xml='topsApp.xml'):
         'stop': stop,
     }
     for key, value in options.items():
-        if value:
-            if value not in TOPSAPP_STEPS:
-                raise ValueError(f'{value} is not a valid step')
-            step_args.append(f'--{key}={value}')
+        if not value:
+            continue
+        if value not in TOPSAPP_STEPS:
+            raise ValueError(f'{value} is not a valid step')
+        step_args.append(f'--{key}={value}')
 
     cmd_line = [config_xml] + step_args
     insar = TopsInSAR(name='topsApp', cmdline=cmd_line)
