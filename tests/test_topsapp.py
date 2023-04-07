@@ -1,4 +1,8 @@
-from hyp3_isce2.topsapp import TopsappBurstConfig
+import os
+
+import pytest
+
+from hyp3_isce2.topsapp import TopsappBurstConfig, run_topsapp_burst
 
 
 def test_topsapp_burst_config(tmp_path):
@@ -23,3 +27,30 @@ def test_topsapp_burst_config(tmp_path):
     template_path = tmp_path / 'topsapp.xml'
     config.write_template(template_path)
     assert template_path.exists()
+
+
+def test_run_topsapp_burst(tmp_path):
+    with pytest.raises(IOError):
+        run_topsapp_burst('topsApp.xml')
+
+    config = TopsappBurstConfig(
+        reference_safe='',
+        secondary_safe='',
+        orbit_directory='',
+        aux_cal_directory='',
+        region_of_interest=[0, 1, 2, 3],
+        dem_filename='',
+        swath=1,
+        azimuth_looks=1,
+        range_looks=1,
+    )
+    template_path = config.write_template(tmp_path / 'topsApp.xml')
+
+    with pytest.raises(ValueError):
+        run_topsapp_burst('notastep', config_xml=template_path)
+
+    with pytest.raises(ValueError):
+        run_topsapp_burst('preprocess', 'startup', config_xml=template_path)
+
+    os.chdir(tmp_path)
+    run_topsapp_burst('preprocess', config_xml=template_path)
