@@ -1,12 +1,11 @@
 from pathlib import Path
 from typing import Iterable, Union
-import isce
 
+import isce
 from jinja2 import Template
 
-
 TEMPLATE_DIR = Path(__file__).parent / 'templates'
-TOPSAPP = str(Path(isce.__file__).parent / 'applications'/ 'topsApp.py')
+TOPSAPP = str(Path(isce.__file__).parent / 'applications' / 'topsApp.py')
 TOPSAPP_GEOCODE_LIST = [
     'merged/phsig.cor',
     'merged/filt_topophase.unw',
@@ -21,6 +20,7 @@ TOPSAPP_GEOCODE_LIST = [
 
 class TopsappBurstConfig:
     """Configuration for a topsApp.py run"""
+
     def __init__(
         self,
         reference_safe: str,

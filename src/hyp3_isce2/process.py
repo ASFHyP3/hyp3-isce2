@@ -3,11 +3,11 @@ ISCE2 processing
 """
 
 import logging
-import isce
 import subprocess
 from argparse import ArgumentDefaultsHelpFormatter, ArgumentParser
 from pathlib import Path
 
+import isce
 from hyp3lib.get_orb import downloadSentinelOrbitFile
 
 from hyp3_isce2 import __version__
@@ -17,7 +17,7 @@ from hyp3_isce2.topsapp import TopsappBurstConfig
 
 
 log = logging.getLogger(__name__)
-TOPSAPP = str(Path(isce.__file__).parent / 'applications'/ 'topsApp.py')
+TOPSAPP = str(Path(isce.__file__).parent / 'applications' / 'topsApp.py')
 
 
 def topsapp_burst(
