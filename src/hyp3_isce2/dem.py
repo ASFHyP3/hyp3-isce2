@@ -42,8 +42,9 @@ def tag_dem_xml_as_ellipsoidal(dem_path: Path) -> str:
 
 
 def fix_image_xml(xml_path: str) -> None:
-    isce_apps_path = site.getsitepackages()[0] + '/isce/applications'
-    fix_cmd = ' '.join([f'{isce_apps_path}/fixImageXml.py', '-i', xml_path, '--full'])
+    isce_apps_path = Path(site.getsitepackages()[0]) / 'isce' / 'applications'
+    fix_image_path = isce_apps_path / 'fixImageXml.py'
+    fix_cmd = ' '.join([f'{str(fix_image_path)}, '-i', xml_path, '--full'])
     subprocess.check_call(fix_cmd, shell=True)
 
 
