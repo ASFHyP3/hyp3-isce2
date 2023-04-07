@@ -129,10 +129,9 @@ def swap_burst_vrts():
         vrt = gdal.Open(vrt_list[0])
         base = gdal.Open(vrt.GetFileList()[1])
         vrt_shape, base_shape = [(x.RasterXSize, x.RasterYSize) for x in (vrt, base)]
-
         del vrt
-        if vrt_shape == base_shape:
-            gdal.Translate(vrt_list[0], base, format='VRT')
+
+        gdal.Translate(vrt_list[0], base, format='VRT')
         del base
 
 
