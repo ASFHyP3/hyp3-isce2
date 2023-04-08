@@ -11,6 +11,7 @@ from hyp3lib.get_orb import downloadSentinelOrbitFile
 from hyp3_isce2 import __version__
 from hyp3_isce2 import topsapp
 from hyp3_isce2.burst import BurstParams, download_bursts, get_region_of_interest
+from hyp3_isce2.dem import download_dem_for_isce2
 from hyp3_isce2.s1_auxcal import download_aux_cal
 
 
@@ -34,7 +35,7 @@ def topsapp_burst(
         secondary_scene: Secondary SLC name
         swath_number: Number of swath to grab bursts from (1, 2, or 3) for IW
         reference_burst_number: Number of burst to download for reference (0-indexed from first collect)
-        secondary_burst_numbe: Number of burst to download for secondary (0-indexed from first collect)
+        secondary_burst_number: Number of burst to download for secondary (0-indexed from first collect)
         polarization: Polarization to use
         azimuth_looks: Number of azimuth looks
         range_looks: Number of range looks
@@ -51,21 +52,20 @@ def topsapp_burst(
     print(f'InSAR ROI: {insar_roi}')
     print(f'DEM ROI: {dem_roi}')
 
-    # TODO placeholder for downloading the DEM
-    dem_filename = 'dem.tif'
+    dem_path = download_dem_for_isce2(dem_roi, dem_name='glo_30', dem_dir=Path('dem'), buffer=0)
     download_aux_cal(aux_cal_dir)
 
     orbit_dir.mkdir(exist_ok=True, parents=True)
     for granule in (ref_params.granule, sec_params.granule):
-        downloadSentinelOrbitFile(granule, orbit_dir)
+        downloadSentinelOrbitFile(granule, str(orbit_dir))
 
     config = topsapp.TopsappBurstConfig(
         reference_safe=f'{ref_params.granule}.SAFE',
         secondary_safe=f'{sec_params.granule}.SAFE',
-        orbit_directory=orbit_dir,
-        aux_cal_directory=aux_cal_dir,
+        orbit_directory=str(orbit_dir),
+        aux_cal_directory=str(aux_cal_dir),
         region_of_interest=insar_roi,
-        dem_filename=dem_filename,
+        dem_filename=str(dem_path),
         swath=swath_number,
         azimuth_looks=azimuth_looks,
         range_looks=range_looks,
