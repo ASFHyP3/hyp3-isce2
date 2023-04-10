@@ -32,6 +32,7 @@ def _download_platform(url: str, aux_cal_dir: Path):
         url: URL to download the aux cal files from.
         aux_cal_dir: Directory to download the aux cal files to.
     """
+    # TODO increase retries for this request: https://github.com/ASFHyP3/hyp3-isce2/issues/18
     response = requests.get(url)
     response.raise_for_status()
 

@@ -1,4 +1,8 @@
-from hyp3_isce2.topsapp import TopsappBurstConfig
+import os
+
+import pytest
+
+from hyp3_isce2.topsapp import TopsappBurstConfig, run_topsapp_burst, swap_burst_vrts
 
 
 def test_topsapp_burst_config(tmp_path):
@@ -7,7 +11,7 @@ def test_topsapp_burst_config(tmp_path):
         secondary_safe='S1A_IW_SLC__1SDV_20200616T022252_20200616T022319_033036_03D3A3_5D11.SAFE',
         orbit_directory='orbits',
         aux_cal_directory='aux_cal',
-        region_of_interest=[-118.0, 37.0, -117.0, 38.0],
+        roi=[-118.0, 37.0, -117.0, 38.0],
         dem_filename='dem.tif',
         swath=1,
     )
@@ -23,5 +27,47 @@ def test_topsapp_burst_config(tmp_path):
         assert 'orbits' in template
         assert 'aux_cal' in template
         assert 'dem.tif' in template
-        assert '[-118.0, 37.0, -117.0, 38.0]' in template
+        assert '[37.0, 38.0, -118.0, -117.0]' in template
         assert '[1]' in template
+
+
+def test_swap_burst_vrts(tmp_path, monkeypatch):
+    ref_vrt_dir = tmp_path / 'reference' / 'tmp'
+    ref_vrt_dir.mkdir(parents=True)
+    (ref_vrt_dir / 'reference.vrt').touch()
+
+    sec_vrt_dir = tmp_path / 'secondary' / 'tmp'
+    sec_vrt_dir.mkdir(parents=True)
+    (sec_vrt_dir / 'secondary.vrt').touch()
+    (sec_vrt_dir / 'bad.vrt').touch()
+
+    monkeypatch.chdir(str(tmp_path))
+    with pytest.raises(ValueError, match=r'There should only be 2 VRT files .*'):
+        swap_burst_vrts()
+
+
+def test_run_topsapp_burst(tmp_path):
+    with pytest.raises(IOError):
+        run_topsapp_burst('topsApp.xml')
+
+    config = TopsappBurstConfig(
+        reference_safe='',
+        secondary_safe='',
+        orbit_directory='',
+        aux_cal_directory='',
+        roi=[0, 1, 2, 3],
+        dem_filename='',
+        swath=1,
+        azimuth_looks=1,
+        range_looks=1,
+    )
+    template_path = config.write_template(tmp_path / 'topsApp.xml')
+
+    with pytest.raises(ValueError, match=r'.*not a valid step.*'):
+        run_topsapp_burst('notastep', config_xml=template_path)
+
+    with pytest.raises(ValueError, match=r'^If dostep is specified, start and stop cannot be used$'):
+        run_topsapp_burst('preprocess', 'startup', config_xml=template_path)
+
+    os.chdir(tmp_path)
+    run_topsapp_burst('preprocess', config_xml=template_path)
