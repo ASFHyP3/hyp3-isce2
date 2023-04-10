@@ -63,7 +63,7 @@ def test_run_topsapp_burst(tmp_path):
     )
     template_path = config.write_template(tmp_path / 'topsApp.xml')
 
-    with pytest.raises(ValueError):
+    with pytest.raises(ValueError, match=r'.*not a valid step.*'):
         run_topsapp_burst('notastep', config_xml=template_path)
 
     with pytest.raises(ValueError, match=r'^If dostep is specified, start and stop cannot be used$'):
