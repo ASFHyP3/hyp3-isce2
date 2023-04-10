@@ -1,9 +1,9 @@
-import xml.etree.ElementTree as ET
 from pathlib import Path
 
 import numpy as np
 import pytest
 import requests
+from lxml import etree
 from shapely import geometry
 
 from hyp3_isce2 import burst
@@ -18,7 +18,7 @@ SEC_ASC = burst.BurstParams('S1A_IW_SLC__1SDV_20220110T231926_20220110T231953_04
 
 def load_metadata(metadata):
     metadata_path = Path(__file__).parent.absolute() / 'data' / metadata
-    xml = ET.parse(metadata_path).getroot()
+    xml = etree.parse(metadata_path).getroot()
     return xml
 
 

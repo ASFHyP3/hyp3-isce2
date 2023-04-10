@@ -1,13 +1,13 @@
 import copy
 import re
 import time
-import xml.etree.ElementTree as ET
 from dataclasses import dataclass
 from pathlib import Path
 from typing import Iterator, List, Tuple, Union
 
 import pandas as pd
 import requests
+from lxml import etree
 from shapely import geometry
 
 
@@ -27,7 +27,7 @@ class BurstParams:
 class BurstMetadata:
     """Metadata for a burst."""
 
-    def __init__(self, metadata: ET.Element, burst_params: BurstParams):
+    def __init__(self, metadata: etree.Element, burst_params: BurstParams):
         self.safe_name = burst_params.granule
         self.swath = burst_params.swath
         self.polarization = burst_params.polarization
@@ -59,7 +59,7 @@ class BurstMetadata:
         self.orbit_direction = self.manifest.findtext('.//{*}pass').lower()
 
     @staticmethod
-    def reformat_gcp(point: ET.Element) -> dict:
+    def reformat_gcp(point: etree.Element) -> dict:
         """Reformat a burst geolocation grid point to a dictionary.
 
         Args:
@@ -181,8 +181,10 @@ def download_metadata(asf_session: requests.Session, burst_params: BurstParams, 
     Returns:
         The metadata as an ElementTree object or the path to the saved metadata file.
     """
+    # TODO confirm whether the return type is still an ElementTree after refactor to lxml
+
     content = download_from_extractor(asf_session, burst_params, 'metadata')
-    metadata = ET.fromstring(content)
+    metadata = etree.fromstring(content)
 
     if not out_file:
         return metadata
@@ -244,10 +246,10 @@ def spoof_safe(asf_session: requests.Session, burst: BurstMetadata, base_path: P
 
     et_args = {'encoding': 'UTF-8', 'xml_declaration': True}
 
-    ET.ElementTree(burst.annotation).write(annotation_path / burst.annotation_name, **et_args)
-    ET.ElementTree(burst.calibration).write(calibration_path / burst.calibration_name, **et_args)
-    ET.ElementTree(burst.noise).write(calibration_path / burst.noise_name, **et_args)
-    ET.ElementTree(burst.manifest).write(safe_path / 'manifest.safe', **et_args)
+    etree.ElementTree(burst.annotation).write(annotation_path / burst.annotation_name, **et_args)
+    etree.ElementTree(burst.calibration).write(calibration_path / burst.calibration_name, **et_args)
+    etree.ElementTree(burst.noise).write(calibration_path / burst.noise_name, **et_args)
+    etree.ElementTree(burst.manifest).write(safe_path / 'manifest.safe', **et_args)
 
     burst_params = BurstParams(burst.safe_name, burst.swath, burst.polarization, burst.burst_number)
     download_burst(asf_session, burst_params, measurement_path / burst.measurement_name)
