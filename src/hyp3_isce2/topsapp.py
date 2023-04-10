@@ -28,9 +28,6 @@ TOPSAPP_STEPS = [
     'unwrap',
     'unwrap2stage',
     'geocode',
-    'denseoffsets',
-    'filteroffsets',
-    'geocodeoffsets',
 ]
 TOPSAPP_GEOCODE_LIST = [
     'merged/phsig.cor',
@@ -64,7 +61,7 @@ class TopsappBurstConfig:
         self.secondary_safe = secondary_safe
         self.orbit_directory = orbit_directory
         self.aux_cal_directory = aux_cal_directory
-        self.region_of_interest = [roi[1], roi[3], roi[0], roi[2]]
+        self.roi = [roi[1], roi[3], roi[0], roi[2]]
         self.dem_filename = dem_filename
         self.geocode_dem_filename = dem_filename
         self.swath = swath

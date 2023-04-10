@@ -11,7 +11,7 @@ def test_topsapp_burst_config(tmp_path):
         secondary_safe='S1A_IW_SLC__1SDV_20200616T022252_20200616T022319_033036_03D3A3_5D11.SAFE',
         orbit_directory='orbits',
         aux_cal_directory='aux_cal',
-        region_of_interest=[-118.0, 37.0, -117.0, 38.0],
+        roi=[-118.0, 37.0, -117.0, 38.0],
         dem_filename='dem.tif',
         swath=1,
     )
@@ -27,7 +27,7 @@ def test_topsapp_burst_config(tmp_path):
         assert 'orbits' in template
         assert 'aux_cal' in template
         assert 'dem.tif' in template
-        assert '[-118.0, 37.0, -117.0, 38.0]' in template
+        assert '[37.0, 38.0, -118.0, -117.0]' in template
         assert '[1]' in template
 
 
@@ -44,7 +44,7 @@ def test_run_topsapp_burst(tmp_path):
         secondary_safe='',
         orbit_directory='',
         aux_cal_directory='',
-        region_of_interest=[0, 1, 2, 3],
+        roi=[0, 1, 2, 3],
         dem_filename='',
         swath=1,
         azimuth_looks=1,
