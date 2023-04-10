@@ -124,9 +124,6 @@ def swap_burst_vrts():
         vrt = gdal.Open(vrt_path)
         base = gdal.Open(vrt.GetFileList()[1])
 
-        # FIXME these variables are not used, are they needed?
-        # vrt_shape, base_shape = [(x.RasterXSize, x.RasterYSize) for x in (vrt, base)]
-
         del vrt
 
         gdal.Translate(vrt_path, base, format='VRT')
