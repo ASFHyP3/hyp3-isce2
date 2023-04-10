@@ -30,6 +30,7 @@ def test_topsapp_burst_config(tmp_path):
         assert '[-118.0, 37.0, -117.0, 38.0]' in template
         assert '[1]' in template
 
+
 def test_run_topsapp_burst(tmp_path):
     with pytest.raises(IOError):
         run_topsapp_burst('topsApp.xml')
