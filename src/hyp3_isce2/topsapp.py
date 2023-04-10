@@ -129,7 +129,7 @@ def swap_burst_vrts():
         del base
 
 
-def run_topsapp_burst(dostep: str = '', start: str = '', stop: str = '', config_xml: Path = Path('topsApp.xml')):
+def run_topsapp_burst(dostep: str = '', start: str = '', end: str = '', config_xml: Path = Path('topsApp.xml')):
     """Run topsApp.py for a burst pair with the desired steps and config file
 
     Args:
@@ -146,14 +146,14 @@ def run_topsapp_burst(dostep: str = '', start: str = '', stop: str = '', config_
     if not config_xml.exists():
         raise IOError(f'The config file {config_xml} does not exist!')
 
-    if dostep and (start or stop):
+    if dostep and (start or end):
         raise ValueError('If dostep is specified, start and stop cannot be used')
 
     step_args = []
     options = {
         'dostep': dostep,
         'start': start,
-        'stop': stop,
+        'end': end,
     }
     for key, value in options.items():
         if not value:
