@@ -66,7 +66,7 @@ def test_run_topsapp_burst(tmp_path):
     with pytest.raises(ValueError):
         run_topsapp_burst('notastep', config_xml=template_path)
 
-    with pytest.raises(ValueError):
+    with pytest.raises(ValueError, match=r'^If dostep is specified, start and stop cannot be used$'):
         run_topsapp_burst('preprocess', 'startup', config_xml=template_path)
 
     os.chdir(tmp_path)
