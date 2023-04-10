@@ -117,13 +117,12 @@ def swap_burst_vrts():
     if len(ref_vrt_list) != 1 or len(sec_vrt_list) != 1:
         raise ValueError(
             'There should only be 2 VRT files in the reference and secondary directories, '
-            'check that you are performing a single burst run.'
+            'this indicates there is likely a bug in the region of interest generation.'
         )
 
     for vrt_path in (ref_vrt_list[0], sec_vrt_list[0]):
         vrt = gdal.Open(vrt_path)
         base = gdal.Open(vrt.GetFileList()[1])
-
         del vrt
 
         gdal.Translate(vrt_path, base, format='VRT')

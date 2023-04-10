@@ -2,7 +2,7 @@ import os
 
 import pytest
 
-from hyp3_isce2.topsapp import TopsappBurstConfig, run_topsapp_burst
+from hyp3_isce2.topsapp import TopsappBurstConfig, run_topsapp_burst, swap_burst_vrts
 
 
 def test_topsapp_burst_config(tmp_path):
@@ -31,9 +31,21 @@ def test_topsapp_burst_config(tmp_path):
         assert '[1]' in template
 
 
-# TODO write a test for swap_burst_vrts
-# def test_swap_burst_vrts():
-#     assert False
+def test_swap_burst_vrts(tmp_path, monkeypatch):
+    ref_vrt_dir = tmp_path / 'reference' / 'tmp'
+    ref_vrt_dir.mkdir(parents=True)
+    (ref_vrt_dir / 'reference.vrt').touch()
+
+    sec_vrt_dir = tmp_path / 'secondary' / 'tmp'
+    sec_vrt_dir.mkdir(parents=True)
+    (sec_vrt_dir / 'secondary.vrt').touch()
+    (sec_vrt_dir / 'bad.vrt').touch()
+
+    monkeypatch.chdir(str(tmp_path))
+    with pytest.raises(ValueError, match=r'There should only be 2 VRT files .*'):
+        swap_burst_vrts()
+
+
 def test_run_topsapp_burst(tmp_path):
     with pytest.raises(IOError):
         run_topsapp_burst('topsApp.xml')
