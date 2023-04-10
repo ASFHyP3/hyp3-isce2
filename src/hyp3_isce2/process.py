@@ -19,7 +19,7 @@ from hyp3_isce2.s1_auxcal import download_aux_cal
 
 log = logging.getLogger(__name__)
 
-# ISCE needs it's applications to be on the system path.
+# ISCE needs its applications to be on the system path.
 # See https://github.com/isce-framework/isce2#setup-your-environment
 ISCE_APPLICATIONS = Path(site.getsitepackages()[0]) / 'isce' / 'applications'
 if str(ISCE_APPLICATIONS) not in os.environ['PATH'].split(os.pathsep):
