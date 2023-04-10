@@ -79,12 +79,9 @@ def topsapp_burst(
     )
     config_path = config.write_template('topsApp.xml')
 
-    for step in topsapp.TOPSAPP_STEPS:
-        if step == 'computeBaselines':
-            topsapp.swap_burst_vrts()
-        topsapp.run_topsapp_burst(dostep=step, config_xml=config_path)
-
-    return None
+    topsapp.run_topsapp_burst(start='startup', end='preprocess', config_xml=config_path)
+    topsapp.swap_burst_vrts()
+    topsapp.run_topsapp_burst(start='computeBaselines', end='geocode', config_xml=config_path)
 
 
 def main():
