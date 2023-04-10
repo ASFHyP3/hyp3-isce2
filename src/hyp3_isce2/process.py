@@ -41,7 +41,7 @@ def topsapp_burst(
         secondary_scene: Secondary SLC name
         swath_number: Number of swath to grab bursts from (1, 2, or 3) for IW
         reference_burst_number: Number of burst to download for reference (0-indexed from first collect)
-        secondary_burst_numbe: Number of burst to download for secondary (0-indexed from first collect)
+        secondary_burst_number: Number of burst to download for secondary (0-indexed from first collect)
         polarization: Polarization to use
         azimuth_looks: Number of azimuth looks
         range_looks: Number of range looks
@@ -56,6 +56,8 @@ def topsapp_burst(
     is_ascending = ref_metadata.orbit_direction == 'ascending'
     insar_roi = get_region_of_interest(ref_metadata.footprint, sec_metadata.footprint, is_ascending=is_ascending)
     dem_roi = ref_metadata.footprint.intersection(sec_metadata.footprint).bounds
+    print(f'InSAR ROI: {insar_roi}')
+    print(f'DEM ROI: {dem_roi}')
 
     dem_path = download_dem_for_isce2(dem_roi, dem_name='glo_30', dem_dir=dem_dir, buffer=0)
     download_aux_cal(aux_cal_dir)
@@ -67,8 +69,8 @@ def topsapp_burst(
     config = topsapp.TopsappBurstConfig(
         reference_safe=f'{ref_params.granule}.SAFE',
         secondary_safe=f'{sec_params.granule}.SAFE',
-        orbit_directory=orbit_dir,
-        aux_cal_directory=aux_cal_dir,
+        orbit_directory=str(orbit_dir),
+        aux_cal_directory=str(aux_cal_dir),
         roi=insar_roi,
         dem_filename=str(dem_path),
         swath=swath_number,

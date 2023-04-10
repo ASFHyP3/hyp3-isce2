@@ -119,8 +119,7 @@ def create_burst_request_url(params: BurstParams, content_type: str) -> str:
     """
     filetypes = {'metadata': 'xml', 'geotiff': 'tiff'}
     extension = filetypes[content_type]
-    burst_number_zero_indexed = params.burst_number - 1
-    url = f'{URL}/{params.granule}/{params.swath}/{params.polarization}/{burst_number_zero_indexed}.{extension}'
+    url = f'{URL}/{params.granule}/{params.swath}/{params.polarization}/{params.burst_number}.{extension}'
     return url
 
 
@@ -159,7 +158,7 @@ def download_from_extractor(asf_session: requests.Session, burst_params: BurstPa
     }
 
     for i in range(1, 11):
-        print(f'Download attempt #{i}')
+        print(f'Download attempt #{i} for {burst_request["url"]}')
         response = asf_session.get(**burst_request)
         downloaded = wait_for_extractor(response)
         if downloaded:
