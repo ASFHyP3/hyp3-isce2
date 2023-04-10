@@ -27,7 +27,6 @@ def test_topsapp_burst_config(tmp_path):
         assert 'orbits' in template
         assert 'aux_cal' in template
         assert 'dem.tif' in template
-        # assert '[-118.0, 37.0, -117.0, 38.0]' in template
         assert '[37.0, 38.0, -118.0, -117.0]' in template
         assert '[1]' in template
 
