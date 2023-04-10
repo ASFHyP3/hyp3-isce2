@@ -3,6 +3,8 @@ ISCE2 processing
 """
 
 import logging
+import os
+import site
 from argparse import ArgumentDefaultsHelpFormatter, ArgumentParser
 from pathlib import Path
 
@@ -16,6 +18,10 @@ from hyp3_isce2.s1_auxcal import download_aux_cal
 
 
 log = logging.getLogger(__name__)
+
+ISCE_APPLICATIONS = Path(site.getsitepackages()[0]) / 'isce' / 'applications'
+if str(ISCE_APPLICATIONS) not in os.environ['PATH'].split(os.pathsep):
+    os.environ['PATH'] = str(ISCE_APPLICATIONS) + os.pathsep + os.environ['PATH']
 
 
 def topsapp_burst(
@@ -42,6 +48,7 @@ def topsapp_burst(
     """
     orbit_dir = Path('orbits')
     aux_cal_dir = Path('aux_cal')
+    dem_dir = Path('dem')
     ref_params = BurstParams(reference_scene, f'IW{swath_number}', polarization.upper(), reference_burst_number)
     sec_params = BurstParams(secondary_scene, f'IW{swath_number}', polarization.upper(), secondary_burst_number)
     ref_metadata, sec_metadata = download_bursts([ref_params, sec_params])
@@ -52,7 +59,7 @@ def topsapp_burst(
     print(f'InSAR ROI: {insar_roi}')
     print(f'DEM ROI: {dem_roi}')
 
-    dem_path = download_dem_for_isce2(dem_roi, dem_name='glo_30', dem_dir=Path('dem'), buffer=0)
+    dem_path = download_dem_for_isce2(dem_roi, dem_name='glo_30', dem_dir=dem_dir, buffer=0)
     download_aux_cal(aux_cal_dir)
 
     orbit_dir.mkdir(exist_ok=True, parents=True)
@@ -64,18 +71,18 @@ def topsapp_burst(
         secondary_safe=f'{sec_params.granule}.SAFE',
         orbit_directory=str(orbit_dir),
         aux_cal_directory=str(aux_cal_dir),
-        region_of_interest=insar_roi,
+        roi=insar_roi,
         dem_filename=str(dem_path),
         swath=swath_number,
         azimuth_looks=azimuth_looks,
         range_looks=range_looks,
     )
-    config.write_template('topsApp.xml')
+    config_path = config.write_template('topsApp.xml')
 
     for step in topsapp.TOPSAPP_STEPS:
         if step == 'computeBaselines':
             topsapp.swap_burst_vrts()
-        topsapp.run_topsapp_burst(dostep=step, config_xml=Path('topsApp.xml'))
+        topsapp.run_topsapp_burst(dostep=step, config_xml=config_path)
 
     return None
 

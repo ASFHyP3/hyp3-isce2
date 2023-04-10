@@ -53,7 +53,7 @@ class TopsappBurstConfig:
         secondary_safe: str,
         orbit_directory: str,
         aux_cal_directory: str,
-        region_of_interest: Iterable[float],
+        roi: Iterable[float],
         dem_filename: str,
         swath: int,
         azimuth_looks: int = 4,
@@ -64,7 +64,7 @@ class TopsappBurstConfig:
         self.secondary_safe = secondary_safe
         self.orbit_directory = orbit_directory
         self.aux_cal_directory = aux_cal_directory
-        self.region_of_interest = region_of_interest
+        self.region_of_interest = [roi[1], roi[3], roi[0], roi[2]]
         self.dem_filename = dem_filename
         self.geocode_dem_filename = dem_filename
         self.swath = swath
