@@ -5,7 +5,6 @@ ISCE2 processing
 import logging
 import os
 import site
-import sys
 from argparse import ArgumentDefaultsHelpFormatter, ArgumentParser
 from pathlib import Path
 
