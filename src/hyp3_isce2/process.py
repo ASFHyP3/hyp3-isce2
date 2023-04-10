@@ -13,6 +13,7 @@ from hyp3lib.get_orb import downloadSentinelOrbitFile
 from hyp3_isce2 import __version__
 from hyp3_isce2 import topsapp
 from hyp3_isce2.burst import BurstParams, download_bursts, get_region_of_interest
+from hyp3_isce2.dem import download_dem_for_isce2
 from hyp3_isce2.s1_auxcal import download_aux_cal
 
 
@@ -21,6 +22,7 @@ log = logging.getLogger(__name__)
 ISCE_APPLICATIONS = Path(site.getsitepackages()[0]) / 'isce' / 'applications'
 if str(ISCE_APPLICATIONS) not in os.environ['PATH'].split(os.pathsep):
     os.environ['PATH'] = str(ISCE_APPLICATIONS) + os.pathsep + os.environ['PATH']
+
 
 def topsapp_burst(
     reference_scene: str,
@@ -46,6 +48,7 @@ def topsapp_burst(
     """
     orbit_dir = Path('orbits')
     aux_cal_dir = Path('aux_cal')
+    dem_dir = Path('dem')
     ref_params = BurstParams(reference_scene, f'IW{swath_number}', polarization.upper(), reference_burst_number)
     sec_params = BurstParams(secondary_scene, f'IW{swath_number}', polarization.upper(), secondary_burst_number)
     ref_metadata, sec_metadata = download_bursts([ref_params, sec_params])
@@ -53,15 +56,13 @@ def topsapp_burst(
     is_ascending = ref_metadata.orbit_direction == 'ascending'
     insar_roi = get_region_of_interest(ref_metadata.footprint, sec_metadata.footprint, is_ascending=is_ascending)
     dem_roi = ref_metadata.footprint.intersection(sec_metadata.footprint).bounds
-    print(insar_roi, dem_roi)
 
-    # TODO placeholder for downloading the DEM
-    dem_filename = 'dem.tif'
+    dem_path = download_dem_for_isce2(dem_roi, dem_name='glo_30', dem_dir=dem_dir, buffer=0)
     download_aux_cal(aux_cal_dir)
 
     orbit_dir.mkdir(exist_ok=True, parents=True)
     for granule in (ref_params.granule, sec_params.granule):
-        downloadSentinelOrbitFile(granule, orbit_dir)
+        downloadSentinelOrbitFile(granule, str(orbit_dir))
 
     config = topsapp.TopsappBurstConfig(
         reference_safe=f'{ref_params.granule}.SAFE',
@@ -69,17 +70,17 @@ def topsapp_burst(
         orbit_directory=orbit_dir,
         aux_cal_directory=aux_cal_dir,
         region_of_interest=insar_roi,
-        dem_filename=dem_filename,
+        dem_filename=str(dem_path),
         swath=swath_number,
         azimuth_looks=azimuth_looks,
         range_looks=range_looks,
     )
-    config.write_template('topsApp.xml')
+    config_path = config.write_template('topsApp.xml')
 
     for step in topsapp.TOPSAPP_STEPS:
         if step == 'computeBaselines':
             topsapp.swap_burst_vrts()
-        topsapp.run_topsapp_burst(dostep=step, config_xml='topsApp.xml')
+        topsapp.run_topsapp_burst(dostep=step, config_xml=config_path)
 
     return None
 
