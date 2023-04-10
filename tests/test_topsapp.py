@@ -31,10 +31,9 @@ def test_topsapp_burst_config(tmp_path):
         assert '[1]' in template
 
 
-def test_swap_burst_vrts():
-    assert False
-
-
+# TODO write a test for swap_burst_vrts
+# def test_swap_burst_vrts():
+#     assert False
 def test_run_topsapp_burst(tmp_path):
     with pytest.raises(IOError):
         run_topsapp_burst('topsApp.xml')
