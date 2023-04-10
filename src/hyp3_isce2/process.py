@@ -69,7 +69,7 @@ def topsapp_burst(
         secondary_safe=f'{sec_params.granule}.SAFE',
         orbit_directory=orbit_dir,
         aux_cal_directory=aux_cal_dir,
-        region_of_interest=insar_roi,
+        roi=insar_roi,
         dem_filename=str(dem_path),
         swath=swath_number,
         azimuth_looks=azimuth_looks,
