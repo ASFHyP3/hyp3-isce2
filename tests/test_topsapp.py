@@ -1,5 +1,3 @@
-import os
-
 import pytest
 
 from hyp3_isce2.topsapp import TopsappBurstConfig, run_topsapp_burst, swap_burst_vrts
