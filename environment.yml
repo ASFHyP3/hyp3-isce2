@@ -3,8 +3,15 @@ channels:
   - conda-forge
   - nodefaults
 dependencies:
-  - python>=3.8
+  # python and numpy pins: https://github.com/ASFHyP3/hyp3-isce2/issues/14
+  - python>=3.9,<3.10
+  - numpy<1.20
   - pip
+  - isce2
+  - dem_stitcher>=2.4.0
+  - rasterio
+  - shapely
+  - jinja2
   # For packaging, and testing
   - flake8
   - flake8-import-order
@@ -16,5 +23,6 @@ dependencies:
   - pytest
   - pytest-console-scripts
   - pytest-cov
+  - pytest-mock
   # For running
   - hyp3lib>=1.6,<2
