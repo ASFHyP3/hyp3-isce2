@@ -1,5 +1,6 @@
 import copy
 import re
+import shutil
 import time
 import xml.etree.ElementTree as ET
 from dataclasses import dataclass
@@ -193,7 +194,7 @@ def download_metadata(asf_session: requests.Session, burst_params: BurstParams, 
     return str(out_file)
 
 
-def download_burst(asf_session: requests.Session, burst_params: BurstParams, out_file: Union[Path, str]) -> str:
+def download_burst(asf_session: requests.Session, burst_params: BurstParams, out_file: Union[Path, str] = None) -> Path:
     """Download a burst geotiff.
 
     Args:
@@ -206,13 +207,18 @@ def download_burst(asf_session: requests.Session, burst_params: BurstParams, out
     """
     content = download_from_extractor(asf_session, burst_params, 'geotiff')
 
+    if not out_file:
+        out_file = (
+            f'{burst_params.granule}_{burst_params.swath}_{burst_params.polarization}_{burst_params.burst_number}.tiff'
+        ).lower()
+
     with open(out_file, 'wb') as f:
         f.write(content)
 
-    return str(out_file)
+    return Path(out_file)
 
 
-def spoof_safe(asf_session: requests.Session, burst: BurstMetadata, base_path: Path = Path('.')) -> Path:
+def spoof_safe(burst: BurstMetadata, burst_tiff_path: Path, base_path: Path = Path('.')) -> Path:
     """Spoof a Sentinel-1 SAFE file for a burst.
 
     The created SAFE file will be saved to the base_path directory. The SAFE will have the following structure:
@@ -227,8 +233,8 @@ def spoof_safe(asf_session: requests.Session, burst: BurstMetadata, base_path: P
             └── noise.xml
 
     Args:
-        asf_session: A requests session with an ASF URS cookie.
         burst: The burst metadata.
+        burst_tiff_path: The path to the burst geotiff.
         base_path: The path to save the SAFE file to.
 
     Returns:
@@ -249,8 +255,7 @@ def spoof_safe(asf_session: requests.Session, burst: BurstMetadata, base_path: P
     ET.ElementTree(burst.noise).write(calibration_path / burst.noise_name, **et_args)
     ET.ElementTree(burst.manifest).write(safe_path / 'manifest.safe', **et_args)
 
-    burst_params = BurstParams(burst.safe_name, burst.swath, burst.polarization, burst.burst_number)
-    download_burst(asf_session, burst_params, measurement_path / burst.measurement_name)
+    shutil.move(str(burst_tiff_path), str(measurement_path / burst.measurement_name))
 
     return safe_path
 
@@ -320,8 +325,9 @@ def download_bursts(param_list: Iterator[BurstParams]) -> List[BurstMetadata]:
         for i, params in enumerate(param_list):
             print(f'Creating SAFE {i+1}...')
             metadata_xml = download_metadata(asf_session, params)
+            burst_path = download_burst(asf_session, params)
             burst = BurstMetadata(metadata_xml, params)
-            spoof_safe(asf_session, burst)
+            spoof_safe(burst, burst_path)
             bursts.append(burst)
 
     print('SAFEs created!')
