@@ -17,7 +17,7 @@ jobs:
     with:
       local_package_name: hyp3_isce2
       python_versions: >-
-        ["3.9", "3.10"]
+        ["3.9"]
 
   call-version-info-workflow:
     # Docs: https://github.com/ASFHyP3/actions
