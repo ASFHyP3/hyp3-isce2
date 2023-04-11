@@ -1,9 +1,9 @@
-import xml.etree.ElementTree as ET
 from unittest.mock import patch
 
 import numpy as np
 import rasterio
 from affine import Affine
+from lxml import etree
 from rasterio import CRS
 
 from hyp3_isce2 import dem
@@ -55,7 +55,7 @@ def test_download_dem_for_isce2(tmp_path):
             dst_resolution=dem.DEM_RESOLUTION,
         )
 
-        root = ET.parse(str(dem_path) + '.xml').getroot()
+        root = etree.parse(str(dem_path) + '.xml').getroot()
         assert root.find("./property[@name='reference']/value").text == 'WGS84'
         assert root.find("./property[@name='reference']/doc").text == 'Geodetic datum'
 
