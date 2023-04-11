@@ -46,7 +46,7 @@ def test_swap_burst_vrts(tmp_path, monkeypatch):
         swap_burst_vrts()
 
 
-def test_run_topsapp_burst(tmp_path):
+def test_run_topsapp_burst(tmp_path, monkeypatch):
     with pytest.raises(IOError):
         run_topsapp_burst('topsApp.xml')
 
@@ -69,5 +69,5 @@ def test_run_topsapp_burst(tmp_path):
     with pytest.raises(ValueError, match=r'^If dostep is specified, start and stop cannot be used$'):
         run_topsapp_burst('preprocess', 'startup', config_xml=template_path)
 
-    os.chdir(tmp_path)
+    monkeypatch.chdir(tmp_path)
     run_topsapp_burst('preprocess', config_xml=template_path)
