@@ -24,4 +24,4 @@ with get_asf_session() as session:
 
 # Example 2
 # Download with SAFE spoofing
-download_bursts([ref_asc, sec_desc])
+download_bursts([ref_desc, sec_desc])
