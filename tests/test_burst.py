@@ -3,7 +3,6 @@ from pathlib import Path
 
 import numpy as np
 import pytest
-import requests
 from shapely import geometry
 
 from hyp3_isce2 import burst
