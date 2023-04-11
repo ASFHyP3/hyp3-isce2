@@ -172,7 +172,10 @@ def download_from_extractor(asf_session: requests.Session, burst_params: BurstPa
     return response.content
 
 
-def download_metadata(asf_session: requests.Session, burst_params: BurstParams, out_file: Union[Path, str] = None):
+def download_metadata(
+        asf_session: requests.Session,
+        burst_params: BurstParams,
+        out_file: Union[Path, str] = None) -> Union[etree._Element, str]:
     """Download burst metadata.
 
     Args:
@@ -181,10 +184,8 @@ def download_metadata(asf_session: requests.Session, burst_params: BurstParams, 
         out_file: The path to save the metadata to (if desired).
 
     Returns:
-        The metadata as an ElementTree object or the path to the saved metadata file.
+        The metadata as an lxml.etree._Element object or the path to the saved metadata file.
     """
-    # TODO confirm whether the return type is still an ElementTree after refactor to lxml
-
     content = download_from_extractor(asf_session, burst_params, 'metadata')
     metadata = etree.fromstring(content)
 
