@@ -54,12 +54,15 @@ def test_create_geometry():
         '*SAFE/annotation/*xml',
         '*SAFE/annotation/calibration/calibration*xml',
         '*SAFE/annotation/calibration/noise*xml',
+        '*SAFE/measurement/*tiff',
     ),
 )
 def test_spoof_safe(tmp_path, mocker, pattern):
+    mock_tiff = tmp_path / 'test.tiff'
+    mock_tiff.touch()
+
     ref_burst = burst.BurstMetadata(load_metadata('reference_descending.xml'), REF_DESC)
-    mocker.patch('hyp3_isce2.burst.download_burst', return_value='')
-    burst.spoof_safe(requests.Session(), ref_burst, tmp_path)
+    burst.spoof_safe(ref_burst, mock_tiff, tmp_path)
     assert len(list(tmp_path.glob(pattern))) == 1
 
 
