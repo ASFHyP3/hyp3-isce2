@@ -306,7 +306,7 @@ def get_asf_session() -> requests.Session:
 
 
 def download_bursts(param_list: Iterator[BurstParams]) -> List[BurstMetadata]:
-    """Download bursts in parallel and creates SAFE files.
+    """Download bursts in parallel and create SAFE files.
 
     For each burst:
         1. Download metadata
