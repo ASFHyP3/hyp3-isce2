@@ -30,7 +30,7 @@ if str(ISCE_APPLICATIONS) not in os.environ['PATH'].split(os.pathsep):
     os.environ['PATH'] = str(ISCE_APPLICATIONS) + os.pathsep + os.environ['PATH']
 
 
-def tops_insar_burst(
+def insar_tops_burst(
     reference_scene: str,
     secondary_scene: str,
     swath_number: int,
@@ -95,12 +95,12 @@ def tops_insar_burst(
     return Path('merged')
 
 
-def run_tops_insar_burst(args):
+def run_insar_tops_burst(args):
     level = logging.DEBUG if args.verbose else logging.INFO
     logging.basicConfig(stream=sys.stdout, format='%(asctime)s - %(levelname)s - %(message)s', level=level)
     log.debug(' '.join(sys.argv))
 
-    product_dir = tops_insar_burst(
+    product_dir = insar_tops_burst(
         reference_scene=args.reference_scene,
         secondary_scene=args.secondary_scene,
         swath_number=args.swath_number,
@@ -142,7 +142,7 @@ def hyp3():
     parser = _get_cli(interface='hyp3')
     args = parser.parse_args()
 
-    product_dir = run_tops_insar_burst(args)
+    product_dir = run_insar_tops_burst(args)
 
     if args.bucket:
         reference_name = (
@@ -165,4 +165,4 @@ def main():
     parser = _get_cli(interface='main')
     args = parser.parse_args()
 
-    run_tops_insar_burst(args)
+    run_insar_tops_burst(args)
