@@ -139,6 +139,10 @@ def _get_cli(interface: Literal['hyp3', 'main']) -> argparse.ArgumentParser:
 
 
 def hyp3():
+    """ HyP3 entrypoint for the burst workflow
+
+    Uses the HyP3 specific arguments and uploads the product to S3
+    """
     parser = _get_cli(interface='hyp3')
     args = parser.parse_args()
 
@@ -162,6 +166,7 @@ def hyp3():
 
 
 def main():
+    """Main entrypoint for the burst workflow"""
     parser = _get_cli(interface='main')
     args = parser.parse_args()
 

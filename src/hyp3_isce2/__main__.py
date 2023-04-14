@@ -7,6 +7,10 @@ from importlib.metadata import entry_points
 
 
 def main():
+    """Main entrypoint for HyP3 processing
+    
+    Calls the HyP3 entrypoint specified by the `++process` argument
+    """
     parser = argparse.ArgumentParser(prefix_chars='+', formatter_class=argparse.ArgumentDefaultsHelpFormatter)
     parser.add_argument(
         '++process',
