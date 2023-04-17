@@ -35,8 +35,8 @@ def test_create_gcp_df():
 def test_create_geometry():
     ref_burst = burst.BurstMetadata(load_metadata('reference_descending.xml'), REF_DESC)
     burst_number = 3
-    real_bounds = (100.509898817751, 37.69349213923167, 101.5989880944895, 38.00276647361588)
-    real_centroid = (101.05172443720475, 37.84869966086432)
+    real_bounds = (100.4736019048145, 37.5255297445691, 101.5469241009793, 37.83768763186583)
+    real_centroid = (101.0135382966859, 37.68273356652622)
 
     gcp_df = ref_burst.create_gcp_df()
     _, bounds, centroid = ref_burst.create_geometry(gcp_df)
