@@ -13,6 +13,10 @@ and uses [Semantic Versioning](https://semver.org/spec/v2.0.0.html).
 ### Changed
 * Burst workflow name to `insar_tops_burst`
 
+## [0.1.3]
+### Fixed
+* A zero-index bug in `burst.py` that led to incorrect geolocation of products
+
 ## [0.1.2]
 ### Added
 * Concurrent download functionality for burst extractor calls.
