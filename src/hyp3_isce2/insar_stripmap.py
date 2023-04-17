@@ -9,7 +9,6 @@ import site
 import sys
 from pathlib import Path
 from shutil import make_archive
-from typing import Literal
 
 from hyp3lib.aws import upload_file_to_s3
 from hyp3lib.image import create_thumbnail
@@ -80,7 +79,7 @@ def hyp3():
     parser.add_argument('--polarization', type=str, default='VV')
     parser.add_argument('--azimuth-looks', type=int, default=4)
     parser.add_argument('--range-looks', type=int, default=20)
-    parser.add_argument('--bucket', type=str, default='' ,help='AWS S3 bucket HyP3 for upload the final product(s)')
+    parser.add_argument('--bucket', type=str, default='', help='AWS S3 bucket HyP3 for upload the final product(s)')
     parser.add_argument('--bucket-prefix', type=str, default='', help='Add a bucket prefix to product(s)')
 
     args = parser.parse_args()
