@@ -13,6 +13,6 @@ def test_insar_stripmap(script_runner):
     assert ret.success
 
 
-def test_insar_tops_burst_main(script_runner):
-    ret = script_runner.run('insar_tops_burst', '-h')
+def test_hyp3_isce2_main(script_runner):
+    ret = script_runner.run('hyp3-isce2', '-h')
     assert ret.success
