@@ -67,16 +67,12 @@ def run_insar_stripmap(args):
     return product_dir
 
 
-def _get_cli(interface: Literal['hyp3', 'main']) -> argparse.ArgumentParser:
-    parser = argparse.ArgumentParser(description=__doc__, formatter_class=argparse.ArgumentDefaultsHelpFormatter)
+def hyp3():
+    """ Entrypoint for the stripmap workflow
 
-    if interface == 'hyp3':
-        parser.add_argument('--bucket', help='AWS S3 bucket HyP3 for upload the final product(s)')
-        parser.add_argument('--bucket-prefix', default='', help='Add a bucket prefix to product(s)')
-    elif interface == 'main':
-        pass
-    else:
-        raise NotImplementedError(f'Unknown interface: {interface}')
+    Includes optional HyP3 specific arguments for uploading the product to S3
+    """
+    parser = argparse.ArgumentParser(description=__doc__, formatter_class=argparse.ArgumentDefaultsHelpFormatter)
 
     parser.add_argument('--reference-scene', type=str, required=True)
     parser.add_argument('--secondary-scene', type=str, required=True)
@@ -84,16 +80,9 @@ def _get_cli(interface: Literal['hyp3', 'main']) -> argparse.ArgumentParser:
     parser.add_argument('--polarization', type=str, default='VV')
     parser.add_argument('--azimuth-looks', type=int, default=4)
     parser.add_argument('--range-looks', type=int, default=20)
+    parser.add_argument('--bucket', type=str, default='' ,help='AWS S3 bucket HyP3 for upload the final product(s)')
+    parser.add_argument('--bucket-prefix', type=str, default='', help='Add a bucket prefix to product(s)')
 
-    return parser
-
-
-def hyp3():
-    """ HyP3 entrypoint for the burst workflow
-
-    Uses the HyP3 specific arguments and uploads the product to S3
-    """
-    parser = _get_cli(interface='hyp3')
     args = parser.parse_args()
 
     product_dir = run_insar_stripmap(args)
@@ -113,11 +102,3 @@ def hyp3():
             thumbnail = create_thumbnail(browse)
             upload_file_to_s3(browse, args.bucket, args.bucket_prefix)
             upload_file_to_s3(thumbnail, args.bucket, args.bucket_prefix)
-
-
-def main():
-    """Main entrypoint for the burst workflow"""
-    parser = _get_cli(interface='main')
-    args = parser.parse_args()
-
-    run_insar_stripmap(args)
