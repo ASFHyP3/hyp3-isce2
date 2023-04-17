@@ -116,6 +116,13 @@ def run_insar_tops_burst(args):
 
 
 def _get_cli(interface: Literal['hyp3', 'main']) -> argparse.ArgumentParser:
+    """Get the command line interface for the application.
+    Specifying the HyP3 interface will add HyP3 specific arguments, such as
+    S3 bucket and prefix. If running locally, use the main interface.
+
+    Args:
+        interface: The interface to use
+    """
     parser = argparse.ArgumentParser(description=__doc__, formatter_class=argparse.ArgumentDefaultsHelpFormatter)
 
     if interface == 'hyp3':
