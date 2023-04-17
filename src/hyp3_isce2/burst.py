@@ -92,10 +92,9 @@ class BurstMetadata:
         Returns:
             A tuple containing the shapely polygon, bounding box, and centroid for the burst.
         """
-        burst_index = self.burst_number - 1
         lines = int(self.annotation.findtext('.//{*}linesPerBurst'))
-        first_line = gcp_df.loc[gcp_df['line'] == burst_index * lines, ['longitude', 'latitude']]
-        second_line = gcp_df.loc[gcp_df['line'] == (burst_index + 1) * lines, ['longitude', 'latitude']]
+        first_line = gcp_df.loc[gcp_df['line'] == self.burst_number * lines, ['longitude', 'latitude']]
+        second_line = gcp_df.loc[gcp_df['line'] == (self.burst_number + 1) * lines, ['longitude', 'latitude']]
         x1 = first_line['longitude'].tolist()
         y1 = first_line['latitude'].tolist()
         x2 = second_line['longitude'].tolist()
