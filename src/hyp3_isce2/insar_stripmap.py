@@ -12,13 +12,7 @@ from shutil import make_archive
 from typing import Literal
 
 from hyp3lib.aws import upload_file_to_s3
-from hyp3lib.get_orb import downloadSentinelOrbitFile
 from hyp3lib.image import create_thumbnail
-
-from hyp3_isce2 import topsapp
-from hyp3_isce2.burst import BurstParams, download_bursts, get_region_of_interest
-from hyp3_isce2.dem import download_dem_for_isce2
-from hyp3_isce2.s1_auxcal import download_aux_cal
 
 
 log = logging.getLogger(__name__)
