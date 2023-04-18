@@ -172,9 +172,8 @@ def download_from_extractor(asf_session: requests.Session, burst_params: BurstPa
 
 
 def download_metadata(
-        asf_session: requests.Session,
-        burst_params: BurstParams,
-        out_file: Union[Path, str] = None) -> Union[etree._Element, str]:
+    asf_session: requests.Session, burst_params: BurstParams, out_file: Union[Path, str] = None
+) -> Union[etree._Element, str]:
     """Download burst metadata.
 
     Args:
