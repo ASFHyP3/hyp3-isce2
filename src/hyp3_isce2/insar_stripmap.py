@@ -8,7 +8,6 @@ import os
 import site
 import sys
 from pathlib import Path
-from shutil import make_archive
 
 from hyp3lib.aws import upload_file_to_s3
 from hyp3lib.image import create_thumbnail
@@ -39,10 +38,11 @@ def insar_stripmap(
         Path to the output files
     """
 
-    raise NotImplementedError('This is a placeholder function. It will be replaced with your actual scientific workflow.')
+    raise NotImplementedError('This is a placeholder function. Replace it with your actual scientific workflow.')
 
     product_file = Path("product_file_name.zip")
     return product_file
+
 
 def main():
     """ Entrypoint for the stripmap workflow
