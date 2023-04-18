@@ -1,5 +1,5 @@
 """
-ISCE2 processing
+ISCE2 stripmap processing
 """
 
 import argparse
