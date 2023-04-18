@@ -66,7 +66,7 @@ def main():
 
     args = parser.parse_args()
 
-    logging.basicConfig(stream=sys.stdout, format='%(asctime)s - %(levelname)s - %(message)s', level=level)
+    logging.basicConfig(stream=sys.stdout, format='%(asctime)s - %(levelname)s - %(message)s', level=logging.INFO)
     log.debug(' '.join(sys.argv))
 
     product_dir = insar_stripmap(
