@@ -1,4 +1,4 @@
-# HyP3-ISCE2 Plugin
+# HyP3 ISCE2 Plugin
 
 The HyP3-ISCE2 plugin provides a set of workflows to process SAR satellite data using the [InSAR Scientific Computing Environment 2](https://github.com/isce-framework/isce2) (ISCE2) software package. This plugin is part of the [Alaska Satellite Facility's](https://asf.alaska.edu) larger HyP3 (Hybrid Plugin Processing Pipeline) system, which is a batch processing pipeline designed for on-demand processing of SAR data.
 
@@ -24,13 +24,13 @@ python -m hyp3_isce2 ++process insar_tops_burst \
 
 This command will create a Sentinel-1 interferogram that contains a deformation signal related to a 2020 Iranian earthquake.
 To learn about the arguments for each workflow, look at the help documentation (`python -m hyp3_isce2 ++process [WORKFLOW_NAME] --help`).
-Each workflow can also be accessed via an alternative CLI with the format (`[WORKFLOW_NAME] [WORKFLOW_ARGS]`)
 
 The ultimate goal of this project is to create a docker container that can run ISCE2 workflows within a HyP3 deployment. To run the current version of the project's container, use this command:
 ```
 docker run -it --rm ghcr.io/ASFHyP3/hyp3-isce2:latest python -m ++process [WORKFLOW_NAME] [WORKFLOW_ARGS]
 ```
 
+**NOTE** Each workflow can also be accessed via an alternative CLI with the format (`[WORKFLOW_NAME] [WORKFLOW_ARGS]`)
 ## Developer Setup
 1. Ensure that conda is installed on your system (we reccomend using [mambaforge](https://github.com/conda-forge/miniforge#mambaforge) to reduce setup times).
 2. Download a local version of the HyP3-ISCE2 repository (`git clone https://github.com/ASFHyP3/hyp3-isce2.git`)
