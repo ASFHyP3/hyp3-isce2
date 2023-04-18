@@ -8,10 +8,10 @@ and uses [Semantic Versioning](https://semver.org/spec/v2.0.0.html).
 
 ## [0.2.0]
 ### Added
-* Multi-entrypoint capabilities to plugin
+* It's now possible to register multiple HyP3 entry points (workflows) and run them through the main hyp3_isce2 entry point. 
 
 ### Changed
-* Burst workflow name to `insar_tops_burst`
+* Burst workflow renamed to `insar_tops_burst` from `topsapp_burst`
 
 ## [0.1.3]
 ### Fixed
