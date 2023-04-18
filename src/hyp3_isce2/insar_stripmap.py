@@ -45,8 +45,7 @@ def insar_stripmap(
 
 
 def main():
-    """ Entrypoint for the stripmap workflow
-    """
+    """ Entrypoint for the stripmap workflow"""
     parser = argparse.ArgumentParser(description=__doc__, formatter_class=argparse.ArgumentDefaultsHelpFormatter)
 
     parser.add_argument('--bucket', type=str, default='', help='AWS S3 bucket HyP3 for upload the final product(s)')
