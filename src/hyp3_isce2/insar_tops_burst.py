@@ -9,7 +9,6 @@ import site
 import sys
 from pathlib import Path
 from shutil import make_archive
-from typing import Literal
 
 from hyp3lib.aws import upload_file_to_s3
 from hyp3lib.get_orb import downloadSentinelOrbitFile
@@ -95,7 +94,23 @@ def insar_tops_burst(
     return Path('merged')
 
 
-def run_insar_tops_burst(args):
+def main():
+    """HyP3 entrypoint for the burst TOPS workflow"""
+    parser = argparse.ArgumentParser(description=__doc__, formatter_class=argparse.ArgumentDefaultsHelpFormatter)
+
+    parser.add_argument('--bucket', help='AWS S3 bucket HyP3 for upload the final product(s)')
+    parser.add_argument('--bucket-prefix', default='', help='Add a bucket prefix to product(s)')
+    parser.add_argument('--reference-scene', type=str, required=True)
+    parser.add_argument('--secondary-scene', type=str, required=True)
+    parser.add_argument('--swath-number', type=int, required=True)
+    parser.add_argument('--polarization', type=str, default='VV')
+    parser.add_argument('--reference-burst-number', type=int, required=True)
+    parser.add_argument('--secondary-burst-number', type=int, required=True)
+    parser.add_argument('--azimuth-looks', type=int, default=4)
+    parser.add_argument('--range-looks', type=int, default=20)
+
+    args = parser.parse_args()
+
     level = logging.DEBUG if args.verbose else logging.INFO
     logging.basicConfig(stream=sys.stdout, format='%(asctime)s - %(levelname)s - %(message)s', level=level)
     log.debug(' '.join(sys.argv))
@@ -112,48 +127,6 @@ def run_insar_tops_burst(args):
     )
 
     log.info('ISCE2 TopsApp run completed successfully')
-    return product_dir
-
-
-def _get_cli(interface: Literal['hyp3', 'main']) -> argparse.ArgumentParser:
-    """Get the command line interface for the application.
-    Specifying the HyP3 interface will add HyP3 specific arguments, such as
-    S3 bucket and prefix. If running locally, use the main interface.
-
-    Args:
-        interface: The interface to use
-    """
-    parser = argparse.ArgumentParser(description=__doc__, formatter_class=argparse.ArgumentDefaultsHelpFormatter)
-
-    if interface == 'hyp3':
-        parser.add_argument('--bucket', help='AWS S3 bucket HyP3 for upload the final product(s)')
-        parser.add_argument('--bucket-prefix', default='', help='Add a bucket prefix to product(s)')
-    elif interface == 'main':
-        pass
-    else:
-        raise NotImplementedError(f'Unknown interface: {interface}')
-
-    parser.add_argument('--reference-scene', type=str, required=True)
-    parser.add_argument('--secondary-scene', type=str, required=True)
-    parser.add_argument('--swath-number', type=int, required=True)
-    parser.add_argument('--polarization', type=str, default='VV')
-    parser.add_argument('--reference-burst-number', type=int, required=True)
-    parser.add_argument('--secondary-burst-number', type=int, required=True)
-    parser.add_argument('--azimuth-looks', type=int, default=4)
-    parser.add_argument('--range-looks', type=int, default=20)
-
-    return parser
-
-
-def hyp3():
-    """ HyP3 entrypoint for the burst workflow
-
-    Uses the HyP3 specific arguments and uploads the product to S3
-    """
-    parser = _get_cli(interface='hyp3')
-    args = parser.parse_args()
-
-    product_dir = run_insar_tops_burst(args)
 
     if args.bucket:
         reference_name = (
@@ -170,11 +143,3 @@ def hyp3():
             thumbnail = create_thumbnail(browse)
             upload_file_to_s3(browse, args.bucket, args.bucket_prefix)
             upload_file_to_s3(thumbnail, args.bucket, args.bucket_prefix)
-
-
-def main():
-    """Main entrypoint for the burst workflow"""
-    parser = _get_cli(interface='main')
-    args = parser.parse_args()
-
-    run_insar_tops_burst(args)
