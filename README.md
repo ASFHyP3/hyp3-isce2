@@ -5,8 +5,7 @@ The HyP3-ISCE2 plugin provides a set of workflows to process SAR satellite data 
 ## Usage
 The HyP3-ISCE2 plugin provides a set of workflows (accessable directly in Python or via a CLI) that can be used to process SAR data using ISCE2. The workflows currently included in this plugin are:
 
----
-- `**insar_tops_burst**`: A workflow for creating single-burst Sentinel-1 geocoded unwrapped interferogram using ISCE2's TOPS processing workflow 
+- `insar_tops_burst`: A workflow for creating single-burst Sentinel-1 geocoded unwrapped interferogram using ISCE2's TOPS processing workflow 
 ---
 
 To use one of these tools, simply run `python -m hyp3_isce2 ++process [WORKFLOW_NAME] [WORKFLOW_ARGS]`. For example, to run the `insar_tops_burst` workflow:
