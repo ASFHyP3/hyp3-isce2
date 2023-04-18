@@ -2,30 +2,6 @@
 
 The HyP3-ISCE2 plugin provides a set of workflows to process SAR satellite data using the [InSAR Scientific Computing Environment 2](https://github.com/isce-framework/isce2) (ISCE2) software package. This plugin is part of the [Alaska Satellite Facility's](https://asf.alaska.edu) larger HyP3 (Hybrid Plugin Processing Pipeline) system, which is a batch processing pipeline designed for on-demand processing of SAR data.
 
-## Background
-HyP3 is broken into two components: the cloud architecture/API that manage processing of HyP3 workflows, and Docker container plugins that contain scientific workflows which produce new science products from a variety of data sources (see figure below for the full HyP3 architecture).
-
-![Cloud Architecture](images/arch_here.jpg)
-
-The cloud infratstructure-as-code for HyP3 can be found in the main [HyP3 repository](https://github.com/asfhyp3/hyp3). This repository contains a plugin that can be used to process ISCE2-based processing of SAR data.
-
-This project was heavily influenced by the [DockerizedTopsApp](https://github.com/ACCESS-Cloud-Based-InSAR/DockerizedTopsApp) project, which contains a similar workflow that is designed to produce ARIA Sentinel-1 Geocoded Unwrapped Interferogram standard products via HyP3.
-
-## Developer Setup
-1. Ensure that conda is installed on your system (we reccomend using [mambaforge](https://github.com/conda-forge/miniforge#mambaforge) to reduce setup times).
-2. Download a local version of the HyP3-ISCE2 repository (`git clone https://github.com/ASFHyP3/hyp3-isce2.git`)
-3. In the base directory for this project call `mamba env create -f environment.yml` to create your Python environment, then activate it (`mamba activate hyp3-isce2`)
-4. Finally, install a development version of the package (`python -m pip install -e .`)
-
-To run all commands in sequence use:
-```bash
-git clone https://github.com/ASFHyP3/hyp3-isce2.git
-cd hyp3-isce2
-mamba env create -f environment.yml
-mamba activate hyp3-isce2
-python -m pip install -e .
-```
-
 ## Usage
 The HyP3-ISCE2 plugin provides a set of workflows (accessable directly in Python or via a CLI) that can be used to process SAR data using ISCE2. The workflows currently included in this plugin are:
 
@@ -55,6 +31,31 @@ The ultimate goal of this project is to create a docker container that can run I
 ```
 docker run -it --rm ghcr.io/ASFHyP3/hyp3-isce2:latest python -m ++process [WORKFLOW_NAME] [WORKFLOW_ARGS]
 ```
+
+## Developer Setup
+1. Ensure that conda is installed on your system (we reccomend using [mambaforge](https://github.com/conda-forge/miniforge#mambaforge) to reduce setup times).
+2. Download a local version of the HyP3-ISCE2 repository (`git clone https://github.com/ASFHyP3/hyp3-isce2.git`)
+3. In the base directory for this project call `mamba env create -f environment.yml` to create your Python environment, then activate it (`mamba activate hyp3-isce2`)
+4. Finally, install a development version of the package (`python -m pip install -e .`)
+
+To run all commands in sequence use:
+```bash
+git clone https://github.com/ASFHyP3/hyp3-isce2.git
+cd hyp3-isce2
+mamba env create -f environment.yml
+mamba activate hyp3-isce2
+python -m pip install -e .
+```
+
+## Background
+HyP3 is broken into two components: the cloud architecture/API that manage processing of HyP3 workflows, and Docker container plugins that contain scientific workflows which produce new science products from a variety of data sources (see figure below for the full HyP3 architecture).
+
+![Cloud Architecture](images/arch_here.jpg)
+
+The cloud infratstructure-as-code for HyP3 can be found in the main [HyP3 repository](https://github.com/asfhyp3/hyp3). This repository contains a plugin that can be used to process ISCE2-based processing of SAR data.
+
+This project was heavily influenced by the [DockerizedTopsApp](https://github.com/ACCESS-Cloud-Based-InSAR/DockerizedTopsApp) project, which contains a similar workflow that is designed to produce ARIA Sentinel-1 Geocoded Unwrapped Interferogram standard products via HyP3.
+
 ## License
 The HyP3-ISCE2 plugin is licensed under the Apache License, Version 2 license. See the LICENSE file for more details.
 
