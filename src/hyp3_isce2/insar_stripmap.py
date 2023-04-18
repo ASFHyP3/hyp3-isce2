@@ -26,69 +26,47 @@ if str(ISCE_APPLICATIONS) not in os.environ['PATH'].split(os.pathsep):
 def insar_stripmap(
     reference_scene: str,
     secondary_scene: str,
-    swath_number: int,
-    polarization: str = 'VV',
-    azimuth_looks: int = 4,
-    range_looks: int = 20,
 ) -> Path:
-    """Create a burst interferogram
+    """Create an interferogram
+
+    This is a placeholder function. It will be replaced with your actual scientific workflow.
 
     Args:
-        reference_scene: Reference SLC name
-        secondary_scene: Secondary SLC name
-        swath_number: Number of swath to grab bursts from (1, 2, or 3) for IW
-        polarization: Polarization to use
-        azimuth_looks: Number of azimuth looks
-        range_looks: Number of range looks
+        reference_scene: Reference scene name
+        secondary_scene: Secondary scene name
 
     Returns:
         Path to the output files
     """
 
-    return None
+    raise NotImplementedError('This is a placeholder function. It will be replaced with your actual scientific workflow.')
 
+    product_file = Path("product_file_name.zip")
+    return product_file
 
 def main():
     """ Entrypoint for the stripmap workflow
-
-    Includes optional HyP3 specific arguments for uploading the product to S3
     """
     parser = argparse.ArgumentParser(description=__doc__, formatter_class=argparse.ArgumentDefaultsHelpFormatter)
 
-    parser.add_argument('--reference-scene', type=str, required=True)
-    parser.add_argument('--secondary-scene', type=str, required=True)
-    parser.add_argument('--swath-number', type=int, required=True)
-    parser.add_argument('--polarization', type=str, default='VV')
-    parser.add_argument('--azimuth-looks', type=int, default=4)
-    parser.add_argument('--range-looks', type=int, default=20)
     parser.add_argument('--bucket', type=str, default='', help='AWS S3 bucket HyP3 for upload the final product(s)')
     parser.add_argument('--bucket-prefix', type=str, default='', help='Add a bucket prefix to product(s)')
+    parser.add_argument('--reference-scene', type=str, required=True)
+    parser.add_argument('--secondary-scene', type=str, required=True)
 
     args = parser.parse_args()
 
     logging.basicConfig(stream=sys.stdout, format='%(asctime)s - %(levelname)s - %(message)s', level=logging.INFO)
     log.debug(' '.join(sys.argv))
 
-    product_dir = insar_stripmap(
+    product_file = insar_stripmap(
         reference_scene=args.reference_scene,
         secondary_scene=args.secondary_scene,
-        swath_number=args.swath_number,
-        polarization=args.polarization,
-        azimuth_looks=args.azimuth_looks,
-        range_looks=args.range_looks,
     )
 
     log.info('InSAR Stripmap run completed successfully')
 
     if args.bucket:
-        reference_name = (
-            f'{args.reference_scene}_IW{args.swath_number}_{args.polarization}_{args.reference_burst_number}'
-        )
-        secondary_name = (
-            f'{args.secondary_scene}_IW{args.swath_number}_{args.polarization}_{args.secondary_burst_number}'
-        )
-        base_name = f'{reference_name}x{secondary_name}'
-        product_file = make_archive(base_name=base_name, format='zip', base_dir=product_dir)
         upload_file_to_s3(product_file, args.bucket, args.bucket_prefix)
         browse_images = product_file.with_suffix('.png')
         for browse in browse_images:
