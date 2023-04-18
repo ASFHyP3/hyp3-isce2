@@ -48,25 +48,7 @@ def insar_stripmap(
     return None
 
 
-def run_insar_stripmap(args):
-    level = logging.DEBUG if args.verbose else logging.INFO
-    logging.basicConfig(stream=sys.stdout, format='%(asctime)s - %(levelname)s - %(message)s', level=level)
-    log.debug(' '.join(sys.argv))
-
-    product_dir = insar_stripmap(
-        reference_scene=args.reference_scene,
-        secondary_scene=args.secondary_scene,
-        swath_number=args.swath_number,
-        polarization=args.polarization,
-        azimuth_looks=args.azimuth_looks,
-        range_looks=args.range_looks,
-    )
-
-    log.info('ISCE2 TopsApp run completed successfully')
-    return product_dir
-
-
-def hyp3():
+def main():
     """ Entrypoint for the stripmap workflow
 
     Includes optional HyP3 specific arguments for uploading the product to S3
@@ -84,7 +66,19 @@ def hyp3():
 
     args = parser.parse_args()
 
-    product_dir = run_insar_stripmap(args)
+    logging.basicConfig(stream=sys.stdout, format='%(asctime)s - %(levelname)s - %(message)s', level=level)
+    log.debug(' '.join(sys.argv))
+
+    product_dir = insar_stripmap(
+        reference_scene=args.reference_scene,
+        secondary_scene=args.secondary_scene,
+        swath_number=args.swath_number,
+        polarization=args.polarization,
+        azimuth_looks=args.azimuth_looks,
+        range_looks=args.range_looks,
+    )
+
+    log.info('InSAR Stripmap run completed successfully')
 
     if args.bucket:
         reference_name = (
