@@ -65,11 +65,10 @@ def insar_tops(
         downloadSentinelOrbitFile(granule, str(orbit_dir))
 
     config = topsapp.TopsappBurstConfig(
-        reference_safe=f'{reference_scene.granule}.SAFE',
-        secondary_safe=f'{secondary_scene.granule}.SAFE',
+        reference_safe=f'{reference_scene}.SAFE',
+        secondary_safe=f'{secondary_scene}.SAFE',
         orbit_directory=str(orbit_dir),
         aux_cal_directory=str(aux_cal_dir),
-        roi=roi,
         dem_filename=str(dem_path),
         swath=swaths,
         azimuth_looks=azimuth_looks,
