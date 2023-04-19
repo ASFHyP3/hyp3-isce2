@@ -10,14 +10,22 @@ from shapely import geometry
 from shapely.geometry.polygon import Polygon
 
 
-def get_granule(granule):
+def get_granule(granule: str) -> Path:
+    """Download and unzip a granule
+
+    Args:
+        granule: The granule name with no extension
+
+    Returns:
+        The path to the unzipped granule
+    """
     download_url = get_download_url(granule)
     zip_file = download_file(download_url, chunk_size=10485760)
     safe_dir = unzip_granule(zip_file, remove=True)
     return Path.cwd() / safe_dir
 
 
-def unzip_granule(zip_file, remove=False):
+def unzip_granule(zip_file: Path, remove: bool = False) -> Path:
     with ZipFile(zip_file) as z:
         z.extractall()
         safe_dir = next(item.filename for item in z.infolist() if item.is_dir() and item.filename.endswith('.SAFE/'))
@@ -33,7 +41,16 @@ def get_geometry_from_kml(kml_file: str) -> Polygon:
     return geometry.shape(geojson)
 
 
-def get_dem_bounds(reference_granule: Path, secondary_granule: Path):
+def get_dem_bounds(reference_granule: Path, secondary_granule: Path) -> tuple:
+    """Get the bounds of the DEM to use in processing from SAFE KML files
+
+    Args:
+        reference_granule: The path to the reference granule
+        secondary_granule: The path to the secondary granule
+
+    Returns:
+        The bounds of the DEM to use for ISCE2 processing
+    """
     bboxs = []
     for granule in (reference_granule, secondary_granule):
         footprint = get_geometry_from_kml(str(granule / 'preview' / 'map-overlay.kml'))
