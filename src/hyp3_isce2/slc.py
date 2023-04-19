@@ -1,14 +1,13 @@
 import json
 import os
-from subprocess import PIPE, run
 from pathlib import Path
+from subprocess import PIPE, run
 from zipfile import ZipFile
-
-from shapely import geometry
-from shapely.geometry.polygon import Polygon
 
 from hyp3lib.fetch import download_file
 from hyp3lib.scene import get_download_url
+from shapely import geometry
+from shapely.geometry.polygon import Polygon
 
 
 def get_granule(granule):
