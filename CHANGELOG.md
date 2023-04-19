@@ -9,21 +9,14 @@ and uses [Semantic Versioning](https://semver.org/spec/v2.0.0.html).
 ## [0.2.0]
 ### Added
 * It's now possible to register multiple HyP3 entry points (workflows) and run them through the main hyp3_isce2 entry point. 
-* Added a new entrypoint and skeleton process file for a stripmap process.
-
-### Changed
-* Burst workflow renamed to `insar_tops_burst` from `topsapp_burst`
-
-## [0.1.3]
-### Fixed
-* A zero-index bug in `burst.py` that led to incorrect geolocation of products
-
-## [0.1.2]
-### Added
+* A new entrypoint and skeleton process file for a stripmap process.
 * Concurrent download functionality for burst extractor calls.
 
-## [0.1.1]
+### Changed
+* Burst workflow renamed to `insar_tops_burst` from `topsapp_burst`.
+
 ### Fixed
+* A zero-index bug in `burst.py` that led to incorrect geolocation of products.
 * Typo in the `release-checklist-comment` workflow.
 
 ## [0.1.0]
