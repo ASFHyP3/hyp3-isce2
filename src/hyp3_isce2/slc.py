@@ -11,7 +11,7 @@ from shapely.geometry.polygon import Polygon
 
 
 def get_granule(granule: str) -> Path:
-    """Download and unzip a granule
+    """Download and unzip a Sentinel-1 SLC granule
 
     Args:
         granule: The granule name with no extension
