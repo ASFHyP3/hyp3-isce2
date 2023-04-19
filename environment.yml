@@ -3,7 +3,6 @@ channels:
   - conda-forge
   - nodefaults
 dependencies:
-  # python and numpy pins: https://github.com/ASFHyP3/hyp3-isce2/issues/14
   - python>=3.9
   - numpy
   - pip
