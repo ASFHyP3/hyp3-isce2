@@ -51,7 +51,7 @@ class TopsappBurstConfig:
         orbit_directory: str,
         aux_cal_directory: str,
         dem_filename: str,
-        roi: Iterable[float] = [],
+        roi: Iterable[float],
         swath: int or Iterable[int] = [1, 2, 3],
         azimuth_looks: int = 4,
         range_looks: int = 20,
@@ -63,16 +63,10 @@ class TopsappBurstConfig:
         self.aux_cal_directory = aux_cal_directory
         self.dem_filename = dem_filename
         self.geocode_dem_filename = dem_filename
+        self.roi = [roi[1], roi[3], roi[0], roi[2]]
         self.azimuth_looks = azimuth_looks
         self.range_looks = range_looks
         self.do_unwrap = do_unwrap
-    
-        if len(roi) == 0:
-            self.roi = ''
-        elif len(roi) == 4:
-            self.roi = [roi[1], roi[3], roi[0], roi[2]]
-        else:
-            raise ValueError('roi must either be a 4 element or empty list')
 
         if isinstance(swath, int):
             self.swath = [swath]
