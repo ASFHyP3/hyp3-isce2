@@ -42,7 +42,12 @@ Homepage = "https://github.com/ASFHyP3/hyp3-ISCE2"
 Documentation = "https://hyp3-docs.asf.alaska.edu"
 
 [project.scripts]
-topsapp_burst = "hyp3_isce2.process:main"
+insar_tops_burst = "hyp3_isce2.insar_tops_burst:main"
+insar_stripmap = "hyp3_isce2.insar_stripmap:main"
+
+[project.entry-points.hyp3]
+insar_tops_burst = "hyp3_isce2.insar_tops_burst:main"
+insar_stripmap = "hyp3_isce2.insar_stripmap:main"
 
 [tool.pytest.ini_options]
 testpaths = ["tests"]

@@ -1,6 +1,8 @@
 import copy
 import re
+import shutil
 import time
+from concurrent.futures import ThreadPoolExecutor
 from dataclasses import dataclass
 from pathlib import Path
 from typing import Iterator, List, Tuple, Union
@@ -90,10 +92,9 @@ class BurstMetadata:
         Returns:
             A tuple containing the shapely polygon, bounding box, and centroid for the burst.
         """
-        burst_index = self.burst_number - 1
         lines = int(self.annotation.findtext('.//{*}linesPerBurst'))
-        first_line = gcp_df.loc[gcp_df['line'] == burst_index * lines, ['longitude', 'latitude']]
-        second_line = gcp_df.loc[gcp_df['line'] == (burst_index + 1) * lines, ['longitude', 'latitude']]
+        first_line = gcp_df.loc[gcp_df['line'] == self.burst_number * lines, ['longitude', 'latitude']]
+        second_line = gcp_df.loc[gcp_df['line'] == (self.burst_number + 1) * lines, ['longitude', 'latitude']]
         x1 = first_line['longitude'].tolist()
         y1 = first_line['latitude'].tolist()
         x2 = second_line['longitude'].tolist()
@@ -171,9 +172,8 @@ def download_from_extractor(asf_session: requests.Session, burst_params: BurstPa
 
 
 def download_metadata(
-        asf_session: requests.Session,
-        burst_params: BurstParams,
-        out_file: Union[Path, str] = None) -> Union[etree._Element, str]:
+    asf_session: requests.Session, burst_params: BurstParams, out_file: Union[Path, str] = None
+) -> Union[etree._Element, str]:
     """Download burst metadata.
 
     Args:
@@ -196,7 +196,7 @@ def download_metadata(
     return str(out_file)
 
 
-def download_burst(asf_session: requests.Session, burst_params: BurstParams, out_file: Union[Path, str]) -> str:
+def download_burst(asf_session: requests.Session, burst_params: BurstParams, out_file: Union[Path, str] = None) -> Path:
     """Download a burst geotiff.
 
     Args:
@@ -209,13 +209,18 @@ def download_burst(asf_session: requests.Session, burst_params: BurstParams, out
     """
     content = download_from_extractor(asf_session, burst_params, 'geotiff')
 
+    if not out_file:
+        out_file = (
+            f'{burst_params.granule}_{burst_params.swath}_{burst_params.polarization}_{burst_params.burst_number}.tiff'
+        ).lower()
+
     with open(out_file, 'wb') as f:
         f.write(content)
 
-    return str(out_file)
+    return Path(out_file)
 
 
-def spoof_safe(asf_session: requests.Session, burst: BurstMetadata, base_path: Path = Path('.')) -> Path:
+def spoof_safe(burst: BurstMetadata, burst_tiff_path: Path, base_path: Path = Path('.')) -> Path:
     """Spoof a Sentinel-1 SAFE file for a burst.
 
     The created SAFE file will be saved to the base_path directory. The SAFE will have the following structure:
@@ -230,8 +235,8 @@ def spoof_safe(asf_session: requests.Session, burst: BurstMetadata, base_path: P
             └── noise.xml
 
     Args:
-        asf_session: A requests session with an ASF URS cookie.
         burst: The burst metadata.
+        burst_tiff_path: The path to the burst geotiff.
         base_path: The path to save the SAFE file to.
 
     Returns:
@@ -252,8 +257,7 @@ def spoof_safe(asf_session: requests.Session, burst: BurstMetadata, base_path: P
     etree.ElementTree(burst.noise).write(calibration_path / burst.noise_name, **et_args)
     etree.ElementTree(burst.manifest).write(safe_path / 'manifest.safe', **et_args)
 
-    burst_params = BurstParams(burst.safe_name, burst.swath, burst.polarization, burst.burst_number)
-    download_burst(asf_session, burst_params, measurement_path / burst.measurement_name)
+    shutil.move(str(burst_tiff_path), str(measurement_path / burst.measurement_name))
 
     return safe_path
 
@@ -303,14 +307,15 @@ def get_asf_session() -> requests.Session:
 
 
 def download_bursts(param_list: Iterator[BurstParams]) -> List[BurstMetadata]:
-    """Download bursts and create SAFE files.
+    """Download bursts in parallel and creates SAFE files.
 
     For each burst:
         1. Download metadata
-        2. Create BurstMetadata object
-        3. Create directory structure
-        4. Write metadata
-        5. Download and write geotiff
+        2. Download geotiff
+        3. Create BurstMetadata object
+        4. Create directory structure
+        5. Write metadata
+        6. Move geotiff to correct directory
 
     Args:
         param_list: An iterator of burst search parameters.
@@ -318,15 +323,18 @@ def download_bursts(param_list: Iterator[BurstParams]) -> List[BurstMetadata]:
     Returns:
         A list of BurstMetadata objects.
     """
-    bursts = []
     with get_asf_session() as asf_session:
-        for i, params in enumerate(param_list):
-            print(f'Creating SAFE {i+1}...')
-            metadata_xml = download_metadata(asf_session, params)
-            burst = BurstMetadata(metadata_xml, params)
-            spoof_safe(asf_session, burst)
-            bursts.append(burst)
+        with ThreadPoolExecutor(max_workers=10) as executor:
+            xml_futures = [executor.submit(download_metadata, asf_session, params) for params in param_list]
+            tiff_futures = [executor.submit(download_burst, asf_session, params) for params in param_list]
+            metadata_xmls = [future.result() for future in xml_futures]
+            burst_paths = [future.result() for future in tiff_futures]
 
+    bursts = []
+    for params, metadata_xml, burst_path in zip(param_list, metadata_xmls, burst_paths):
+        burst = BurstMetadata(metadata_xml, params)
+        spoof_safe(burst, burst_path)
+        bursts.append(burst)
     print('SAFEs created!')
 
     return bursts
