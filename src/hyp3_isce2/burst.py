@@ -215,10 +215,10 @@ def spoof_safe(burst: BurstMetadata, burst_tiff_path: Path, base_path: Path = Pa
     return safe_path
 
 
-def get_isce2_burst_bbox(params: BurstParams) -> geometry.Polygon:
+def get_isce2_burst_bbox(params: BurstParams, base_dir: Path = Path.cwd()) -> geometry.Polygon:
     s1_obj = Sentinel1()
     s1_obj.configure()
-    s1_obj.safe = [f'{params.granule}.SAFE']
+    s1_obj.safe = [str(base_dir / f'{params.granule}.SAFE')]
     s1_obj.swathNumber = int(params.swath[-1])
     s1_obj.parse()
     snwe = s1_obj.product.bursts[params.burst_number].getBbox()

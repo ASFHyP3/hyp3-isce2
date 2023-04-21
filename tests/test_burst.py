@@ -10,8 +10,8 @@ from hyp3_isce2 import burst
 URL_BASE = 'https://datapool.asf.alaska.edu/SLC'
 REF_DESC = burst.BurstParams('S1A_IW_SLC__1SDV_20200604T022251_20200604T022318_032861_03CE65_7C85', 'IW2', 'VV', 3)
 SEC_DESC = burst.BurstParams('S1A_IW_SLC__1SDV_20200616T022252_20200616T022319_033036_03D3A3_5D11', 'IW2', 'VV', 3)
-REF_ASC = burst.BurstParams('S1A_IW_SLC__1SDV_20211229T231926_20211229T231953_041230_04E66A_3DBE', 'IW1', 'VV', 4)
-SEC_ASC = burst.BurstParams('S1A_IW_SLC__1SDV_20220110T231926_20220110T231953_041405_04EC57_103E', 'IW1', 'VV', 4)
+REF_ASC = burst.BurstParams('S1A_IW_SLC__1SDV_20200608T142544_20200608T142610_032927_03D069_14F4', 'IW1', 'VV', 1)
+SEC_ASC = burst.BurstParams('S1A_IW_SLC__1SDV_20200620T142544_20200620T142611_033102_03D5B7_8F1B', 'IW1', 'VV', 1)
 
 
 def load_metadata(metadata):
@@ -39,27 +39,31 @@ def test_spoof_safe(tmp_path, mocker, pattern):
     assert len(list(tmp_path.glob(pattern))) == 1
 
 
-@pytest.mark.parametrize('orbit', ('ascending', 'descending'))
-def test_get_region_of_interest(orbit):
-    options = {'descending': REF_DESC, 'ascending': REF_ASC}
+@pytest.mark.parametrize('orbit', ('ascending', 'ascending'))
+def test_get_region_of_interest(tmp_path, orbit):
+    options = {'descending': [REF_DESC, SEC_DESC], 'ascending': [REF_ASC, SEC_ASC]}
 
     params = options[orbit]
-    ref_metadata = load_metadata(f'reference_{orbit}.xml')
-    ref_burst = burst.BurstMetadata(ref_metadata, params)
-    sec_burst = burst.BurstMetadata(load_metadata(f'secondary_{orbit}.xml'), params)
 
-    granule = params.granule
-    burst_number = params.burst_number
-    swath = params.swath
-    pol = params.polarization
+    for param, name in zip(params, ('reference', 'secondary')):
+        mock_tiff = tmp_path / 'test.tiff'
+        mock_tiff.touch()
+        burst_metadata = burst.BurstMetadata(load_metadata(f'{name}_{orbit}.xml'), param)
+        burst.spoof_safe(burst_metadata, mock_tiff, tmp_path)
 
-    burst_pre = burst.BurstMetadata(ref_metadata, burst.BurstParams(granule, swath, pol, burst_number - 1))
-    burst_on = burst.BurstMetadata(ref_metadata, burst.BurstParams(granule, swath, pol, burst_number))
-    burst_post = burst.BurstMetadata(ref_metadata, burst.BurstParams(granule, swath, pol, burst_number + 1))
+    sec_bbox = burst.get_isce2_burst_bbox(params[1], tmp_path)
 
-    asc = ref_burst.orbit_direction == 'ascending'
-    roi = geometry.box(*burst.get_region_of_interest(ref_burst.footprint, sec_burst.footprint, asc))
+    granule = params[0].granule
+    burst_number = params[0].burst_number
+    swath = params[0].swath
+    pol = params[0].polarization
+    ref_bbox_pre = burst.get_isce2_burst_bbox(burst.BurstParams(granule, swath, pol, burst_number - 1), tmp_path)
+    ref_bbox_on = burst.get_isce2_burst_bbox(burst.BurstParams(granule, swath, pol, burst_number), tmp_path)
+    ref_bbox_post = burst.get_isce2_burst_bbox(burst.BurstParams(granule, swath, pol, burst_number + 1), tmp_path)
 
-    assert not roi.intersects(geometry.box(*burst_pre.footprint.bounds))
-    assert roi.intersects(geometry.box(*burst_on.footprint.bounds))
-    assert not roi.intersects(geometry.box(*burst_post.footprint.bounds))
+    asc = orbit == 'ascending'
+    roi = geometry.box(*burst.get_region_of_interest(ref_bbox_on, sec_bbox, asc))
+
+    assert not roi.intersects(ref_bbox_pre)
+    assert roi.intersects(ref_bbox_on)
+    assert not roi.intersects(ref_bbox_post)
