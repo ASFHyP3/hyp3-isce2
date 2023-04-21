@@ -8,7 +8,6 @@ from pathlib import Path
 from typing import Iterator, List, Tuple, Union
 
 import isce  # noqa
-import pandas as pd
 import requests
 from isceobj.Sensor.TOPS.Sentinel1 import Sentinel1
 from lxml import etree
