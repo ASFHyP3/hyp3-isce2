@@ -6,6 +6,17 @@ The format is based on [Keep a Changelog](https://keepachangelog.com/en/1.0.0/),
 and this project adheres to [PEP 440](https://www.python.org/dev/peps/pep-0440/)
 and uses [Semantic Versioning](https://semver.org/spec/v2.0.0.html).
 
+
+## [0.2.1]
+### Added
+* The `get_isce2_burst_bbox` function to calculate burst bounding boxes using ISCE2 directly to fix inaccurate generation of burst bounding boxes.
+
+### Removed
+* The `reformat_gcp`, `create_gcp_df`, and `create_geometry` methods from the `BurstMetadata` class because they are superseded by `get_isce2_burst_bbox`
+
+### Fixed
+* `test_get_region_of_interest` so that it has an ascending and descending test case, not two descending. This required changing the `reference_ascending.xml` and `secondary_ascending.xml` files in `tests/data`.
+
 ## [0.2.0]
 ### Added
 * It's now possible to register multiple HyP3 entry points (workflows) and run them through the main hyp3_isce2 entry point. 
