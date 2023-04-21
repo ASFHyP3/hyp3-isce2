@@ -5,7 +5,7 @@ import time
 from concurrent.futures import ThreadPoolExecutor
 from dataclasses import dataclass
 from pathlib import Path
-from typing import Iterator, List, Tuple, Union
+from typing import Iterator, List, Optional, Tuple, Union
 
 import isce  # noqa: F401
 import requests
@@ -214,7 +214,7 @@ def spoof_safe(burst: BurstMetadata, burst_tiff_path: Path, base_path: Path = Pa
     return safe_path
 
 
-def get_isce2_burst_bbox(params: BurstParams, base_dir: Path = Path('.')) -> geometry.Polygon:
+def get_isce2_burst_bbox(params: BurstParams, base_dir: Optional[Path] = None) -> geometry.Polygon:
     """Get the bounding box of a Sentinel-1 burst using ISCE2.
     Using ISCE2 directly ensures that the bounding box is the same as the one used by ISCE2 for processing.
 
@@ -225,6 +225,9 @@ def get_isce2_burst_bbox(params: BurstParams, base_dir: Path = Path('.')) -> geo
     returns:
         The bounding box of the burst as a shapely.geometry.Polygon object.
     """
+    if base_dir is None:
+        base_dir = Path.cwd()
+
     s1_obj = Sentinel1()
     s1_obj.configure()
     s1_obj.safe = [str(base_dir / f'{params.granule}.SAFE')]
