@@ -41,6 +41,23 @@ def test_spoof_safe(tmp_path, mocker, pattern):
 
 @pytest.mark.parametrize('orbit', ('ascending', 'descending'))
 def test_get_region_of_interest(tmp_path, orbit):
+    """
+    Test that the region of interest is correctly calculated for a given burst pair.
+    Specifically, the region of interest we create should intersect the bursts used to create it,
+    but not the bursts before or after it. This is difficult due to to the high degree of overlap between bursts.
+
+    This diagram shows the burst layout for a descending orbit (the 0 indicates the region of interest):
+          +---------------+
+          |               |
+       +--+------------+  |
+       |  |            |  |
+    +--+--+---------+--+--+
+    |  |            |  |
+    |  +------------+--0
+    |               |
+    +---------------+
+    The diagram for an ascending orbit is the same, but rotated 180 degrees.
+    """
     options = {'descending': [REF_DESC, SEC_DESC], 'ascending': [REF_ASC, SEC_ASC]}
 
     params = options[orbit]

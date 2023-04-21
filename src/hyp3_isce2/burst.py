@@ -215,32 +215,45 @@ def spoof_safe(burst: BurstMetadata, burst_tiff_path: Path, base_path: Path = Pa
 
 
 def get_isce2_burst_bbox(params: BurstParams, base_dir: Path = Path.cwd()) -> geometry.Polygon:
+    """Get the bounding box of a Sentinel-1 burst using ISCE2.
+    Using ISCE2 directly ensures that the bounding box is the same as the one used by ISCE2 for processing.
+
+    args:
+        params: The burst parameters.
+        base_dir: The directory containing the SAFE file.
+
+    returns:
+        The bounding box of the burst as a shapely.geometry.Polygon object.
+    """
     s1_obj = Sentinel1()
     s1_obj.configure()
     s1_obj.safe = [str(base_dir / f'{params.granule}.SAFE')]
     s1_obj.swathNumber = int(params.swath[-1])
     s1_obj.parse()
     snwe = s1_obj.product.bursts[params.burst_number].getBbox()
+
     # convert from south, north, west, east -> minx, miny, maxx, maxy
     bbox = geometry.box(snwe[2], snwe[0], snwe[3], snwe[1])
     return bbox
 
 
-def get_region_of_interest(bbox1: geometry.Polygon, bbox2: geometry.Polygon, is_ascending: bool = True) -> Tuple[float]:
+def get_region_of_interest(
+    ref_bbox: geometry.Polygon, sec_bbox: geometry.Polygon, is_ascending: bool = True
+) -> Tuple[float]:
     """Get the region of interest for two bursts that will lead to single burst ISCE2 processing.
 
     For a descending orbit, the roi is in the lower left corner of the two bursts, and for an ascending orbit the roi is
     in the upper right corner.
 
     Args:
-        poly1: The first burst's footprint.
-        poly2: The second burst's footprint.
+        ref_bbox: The reference burst's bounding box.
+        sec_bbox: The secondary burst's bounding box.
         is_ascending: Whether the orbit is ascending or descending.
 
     Returns:
         The region of interest as a tuple of (minx, miny, maxx, maxy).
     """
-    intersection = bbox1.intersection(bbox2)
+    intersection = ref_bbox.intersection(sec_bbox)
     bounds = intersection.bounds
 
     x, y = (0, 1) if is_ascending else (2, 1)
