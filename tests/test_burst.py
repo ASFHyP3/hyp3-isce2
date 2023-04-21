@@ -1,6 +1,5 @@
 from pathlib import Path
 
-import numpy as np
 import pytest
 from lxml import etree
 from shapely import geometry
@@ -19,31 +18,6 @@ def load_metadata(metadata):
     metadata_path = Path(__file__).parent.absolute() / 'data' / metadata
     xml = etree.parse(metadata_path).getroot()
     return xml
-
-
-def test_create_gcp_df():
-    ref_burst = burst.BurstMetadata(load_metadata('reference_descending.xml'), REF_DESC)
-    n_bursts = int(ref_burst.annotation.findall('.//burstList')[0].attrib['count'])
-    lines_per_burst = int(ref_burst.annotation.findtext('.//{*}linesPerBurst'))
-
-    gcp_df = ref_burst.create_gcp_df()
-    assert np.all(gcp_df.columns == ['line', 'pixel', 'latitude', 'longitude', 'height'])
-    assert gcp_df.line.min() == 0
-    assert gcp_df.line.max() == (n_bursts * lines_per_burst) - 1
-
-
-def test_create_geometry():
-    ref_burst = burst.BurstMetadata(load_metadata('reference_descending.xml'), REF_DESC)
-    burst_number = 3
-    real_bounds = (100.4736019048145, 37.5255297445691, 101.5469241009793, 37.83768763186583)
-    real_centroid = (101.0135382966859, 37.68273356652622)
-
-    gcp_df = ref_burst.create_gcp_df()
-    _, bounds, centroid = ref_burst.create_geometry(gcp_df)
-
-    assert ref_burst.burst_number == burst_number
-    assert np.all([np.isclose(test, real) for test, real in zip(bounds, real_bounds)])
-    assert np.all([np.isclose(test, real) for test, real in zip(centroid, real_centroid)])
 
 
 @pytest.mark.parametrize(

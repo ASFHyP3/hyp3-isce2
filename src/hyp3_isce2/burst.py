@@ -58,56 +58,7 @@ class BurstMetadata:
         pattern = f'^./measurement/s1.*{self.swath.lower()}.*{self.polarization.lower()}.*.tiff$'
         self.measurement_name = [Path(path).name for path in file_paths if re.search(pattern, path)][0]
 
-        self.gcp_df = self.create_gcp_df()
-        self.footprint = self.create_geometry(self.gcp_df)[0]
         self.orbit_direction = self.manifest.findtext('.//{*}pass').lower()
-
-    @staticmethod
-    def reformat_gcp(point: etree.Element) -> dict:
-        """Reformat a burst geolocation grid point to a dictionary.
-
-        Args:
-            point: The geolocation grid point to reformat.
-
-        Returns:
-            A dictionary containing the geolocation grid point's line, pixel, latitude, longitude, and height.
-        """
-        attribs = ['line', 'pixel', 'latitude', 'longitude', 'height']
-        return {attrib: float(point.find(attrib).text) for attrib in attribs}
-
-    def create_gcp_df(self) -> pd.DataFrame:
-        """Create a dataframe of geolocation grid points.
-
-        Returns:
-            A dataframe containing the geolocation grid points for the burst.
-        """
-        points = self.annotation.findall('.//{*}geolocationGridPoint')
-        gcp_df = pd.DataFrame([self.reformat_gcp(point) for point in points])
-        return gcp_df.sort_values(['line', 'pixel']).reset_index(drop=True)
-
-    def create_geometry(self, gcp_df: pd.DataFrame) -> Tuple[geometry.Polygon, Tuple[float], Tuple[float]]:
-        """Create a shapely polygon and centroid for the burst.
-
-        Args:
-            gcp_df: A dataframe containing the geolocation grid points for the burst.
-
-        Returns:
-            A tuple containing the shapely polygon, bounding box, and centroid for the burst.
-        """
-        lines = int(self.annotation.findtext('.//{*}linesPerBurst'))
-        first_line = gcp_df.loc[gcp_df['line'] == self.burst_number * lines, ['longitude', 'latitude']]
-        second_line = gcp_df.loc[gcp_df['line'] == (self.burst_number + 1) * lines, ['longitude', 'latitude']]
-        x1 = first_line['longitude'].tolist()
-        y1 = first_line['latitude'].tolist()
-        x2 = second_line['longitude'].tolist()
-        y2 = second_line['latitude'].tolist()
-        x2.reverse()
-        y2.reverse()
-        x = x1 + x2
-        y = y1 + y2
-        footprint = geometry.Polygon(zip(x, y))
-        centroid = tuple([coord[0] for coord in footprint.centroid.xy])
-        return footprint, footprint.bounds, centroid
 
 
 def create_burst_request_url(params: BurstParams, content_type: str) -> str:
