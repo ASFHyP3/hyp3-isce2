@@ -214,7 +214,7 @@ def spoof_safe(burst: BurstMetadata, burst_tiff_path: Path, base_path: Path = Pa
     return safe_path
 
 
-def get_isce2_burst_bbox(params: BurstParams, base_dir: Path = Path.cwd()) -> geometry.Polygon:
+def get_isce2_burst_bbox(params: BurstParams, base_dir: Path = Path('.')) -> geometry.Polygon:
     """Get the bounding box of a Sentinel-1 burst using ISCE2.
     Using ISCE2 directly ensures that the bounding box is the same as the one used by ISCE2 for processing.
 
