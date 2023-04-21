@@ -39,7 +39,7 @@ def test_spoof_safe(tmp_path, mocker, pattern):
     assert len(list(tmp_path.glob(pattern))) == 1
 
 
-@pytest.mark.parametrize('orbit', ('ascending', 'ascending'))
+@pytest.mark.parametrize('orbit', ('ascending', 'descending'))
 def test_get_region_of_interest(tmp_path, orbit):
     options = {'descending': [REF_DESC, SEC_DESC], 'ascending': [REF_ASC, SEC_ASC]}
 
