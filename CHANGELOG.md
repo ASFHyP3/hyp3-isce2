@@ -10,6 +10,7 @@ and uses [Semantic Versioning](https://semver.org/spec/v2.0.0.html).
 ## [0.2.1]
 ### Fixed
 * Inaccurate generation of burst bounding boxes in a Qinghai China example pair
+* `test_get_region_of_interest` so that it has an ascending and descending test case, not two descending. This required changing the `reference_ascending.xml` and `secondary_ascending.xml` files in `tests/data`.
 
 ### Added
 * The `get_isce2_burst_bbox` function to calculate burst bounding boxes using ISCE2 directly
