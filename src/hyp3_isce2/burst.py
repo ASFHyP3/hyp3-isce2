@@ -7,8 +7,10 @@ from dataclasses import dataclass
 from pathlib import Path
 from typing import Iterator, List, Tuple, Union
 
+import isce  # noqa
 import pandas as pd
 import requests
+from isceobj.Sensor.TOPS.Sentinel1 import Sentinel1
 from lxml import etree
 from shapely import geometry
 
@@ -262,7 +264,19 @@ def spoof_safe(burst: BurstMetadata, burst_tiff_path: Path, base_path: Path = Pa
     return safe_path
 
 
-def get_region_of_interest(poly1: geometry.Polygon, poly2: geometry.Polygon, is_ascending: bool = True) -> Tuple[float]:
+def get_isce2_burst_bbox(params: BurstParams) -> geometry.Polygon:
+    s1_obj = Sentinel1()
+    s1_obj.configure()
+    s1_obj.safe = [f'{params.granule}.SAFE']
+    s1_obj.swathNumber = int(params.swath[-1])
+    s1_obj.parse()
+    snwe = s1_obj.product.bursts[params.burst_number].getBbox()
+    # convert from south, north, west, east -> minx, miny, maxx, maxy
+    bbox = geometry.box(snwe[2], snwe[0], snwe[3], snwe[1])
+    return bbox
+
+
+def get_region_of_interest(bbox1: geometry.Polygon, bbox2: geometry.Polygon, is_ascending: bool = True) -> Tuple[float]:
     """Get the region of interest for two bursts that will lead to single burst ISCE2 processing.
 
     For a descending orbit, the roi is in the lower left corner of the two bursts, and for an ascending orbit the roi is
@@ -276,8 +290,6 @@ def get_region_of_interest(poly1: geometry.Polygon, poly2: geometry.Polygon, is_
     Returns:
         The region of interest as a tuple of (minx, miny, maxx, maxy).
     """
-    bbox1 = geometry.box(*poly1.bounds)
-    bbox2 = geometry.box(*poly2.bounds)
     intersection = bbox1.intersection(bbox2)
     bounds = intersection.bounds
 
