@@ -221,6 +221,7 @@ def get_isce2_burst_bbox(params: BurstParams, base_dir: Optional[Path] = None) -
     args:
         params: The burst parameters.
         base_dir: The directory containing the SAFE file.
+            If base_dir is not set, it will default to the current working directory.
 
     returns:
         The bounding box of the burst as a shapely.geometry.Polygon object.
