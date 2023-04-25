@@ -62,12 +62,16 @@ class TopsappBurstConfig:
         self.orbit_directory = orbit_directory
         self.aux_cal_directory = aux_cal_directory
         self.roi = [roi[1], roi[3], roi[0], roi[2]]
-        self.swaths = list(swaths)
         self.dem_filename = dem_filename
         self.geocode_dem_filename = dem_filename
         self.azimuth_looks = azimuth_looks
         self.range_looks = range_looks
         self.do_unwrap = do_unwrap
+
+        if isinstance(swaths, int):
+            self.swaths = [swaths]
+        else:
+            self.swaths = list(swaths)
 
         # hardcoded params for topsapp burst processing
         self.estimate_ionosphere_delay = False
