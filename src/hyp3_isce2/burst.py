@@ -5,10 +5,11 @@ import time
 from concurrent.futures import ThreadPoolExecutor
 from dataclasses import dataclass
 from pathlib import Path
-from typing import Iterator, List, Tuple, Union
+from typing import Iterator, List, Optional, Tuple, Union
 
-import pandas as pd
+import isce  # noqa: F401
 import requests
+from isceobj.Sensor.TOPS.Sentinel1 import Sentinel1
 from lxml import etree
 from shapely import geometry
 
@@ -56,56 +57,7 @@ class BurstMetadata:
         pattern = f'^./measurement/s1.*{self.swath.lower()}.*{self.polarization.lower()}.*.tiff$'
         self.measurement_name = [Path(path).name for path in file_paths if re.search(pattern, path)][0]
 
-        self.gcp_df = self.create_gcp_df()
-        self.footprint = self.create_geometry(self.gcp_df)[0]
         self.orbit_direction = self.manifest.findtext('.//{*}pass').lower()
-
-    @staticmethod
-    def reformat_gcp(point: etree.Element) -> dict:
-        """Reformat a burst geolocation grid point to a dictionary.
-
-        Args:
-            point: The geolocation grid point to reformat.
-
-        Returns:
-            A dictionary containing the geolocation grid point's line, pixel, latitude, longitude, and height.
-        """
-        attribs = ['line', 'pixel', 'latitude', 'longitude', 'height']
-        return {attrib: float(point.find(attrib).text) for attrib in attribs}
-
-    def create_gcp_df(self) -> pd.DataFrame:
-        """Create a dataframe of geolocation grid points.
-
-        Returns:
-            A dataframe containing the geolocation grid points for the burst.
-        """
-        points = self.annotation.findall('.//{*}geolocationGridPoint')
-        gcp_df = pd.DataFrame([self.reformat_gcp(point) for point in points])
-        return gcp_df.sort_values(['line', 'pixel']).reset_index(drop=True)
-
-    def create_geometry(self, gcp_df: pd.DataFrame) -> Tuple[geometry.Polygon, Tuple[float], Tuple[float]]:
-        """Create a shapely polygon and centroid for the burst.
-
-        Args:
-            gcp_df: A dataframe containing the geolocation grid points for the burst.
-
-        Returns:
-            A tuple containing the shapely polygon, bounding box, and centroid for the burst.
-        """
-        lines = int(self.annotation.findtext('.//{*}linesPerBurst'))
-        first_line = gcp_df.loc[gcp_df['line'] == self.burst_number * lines, ['longitude', 'latitude']]
-        second_line = gcp_df.loc[gcp_df['line'] == (self.burst_number + 1) * lines, ['longitude', 'latitude']]
-        x1 = first_line['longitude'].tolist()
-        y1 = first_line['latitude'].tolist()
-        x2 = second_line['longitude'].tolist()
-        y2 = second_line['latitude'].tolist()
-        x2.reverse()
-        y2.reverse()
-        x = x1 + x2
-        y = y1 + y2
-        footprint = geometry.Polygon(zip(x, y))
-        centroid = tuple([coord[0] for coord in footprint.centroid.xy])
-        return footprint, footprint.bounds, centroid
 
 
 def create_burst_request_url(params: BurstParams, content_type: str) -> str:
@@ -262,23 +214,50 @@ def spoof_safe(burst: BurstMetadata, burst_tiff_path: Path, base_path: Path = Pa
     return safe_path
 
 
-def get_region_of_interest(poly1: geometry.Polygon, poly2: geometry.Polygon, is_ascending: bool = True) -> Tuple[float]:
+def get_isce2_burst_bbox(params: BurstParams, base_dir: Optional[Path] = None) -> geometry.Polygon:
+    """Get the bounding box of a Sentinel-1 burst using ISCE2.
+    Using ISCE2 directly ensures that the bounding box is the same as the one used by ISCE2 for processing.
+
+    args:
+        params: The burst parameters.
+        base_dir: The directory containing the SAFE file.
+            If base_dir is not set, it will default to the current working directory.
+
+    returns:
+        The bounding box of the burst as a shapely.geometry.Polygon object.
+    """
+    if base_dir is None:
+        base_dir = Path.cwd()
+
+    s1_obj = Sentinel1()
+    s1_obj.configure()
+    s1_obj.safe = [str(base_dir / f'{params.granule}.SAFE')]
+    s1_obj.swathNumber = int(params.swath[-1])
+    s1_obj.parse()
+    snwe = s1_obj.product.bursts[params.burst_number].getBbox()
+
+    # convert from south, north, west, east -> minx, miny, maxx, maxy
+    bbox = geometry.box(snwe[2], snwe[0], snwe[3], snwe[1])
+    return bbox
+
+
+def get_region_of_interest(
+    ref_bbox: geometry.Polygon, sec_bbox: geometry.Polygon, is_ascending: bool = True
+) -> Tuple[float]:
     """Get the region of interest for two bursts that will lead to single burst ISCE2 processing.
 
     For a descending orbit, the roi is in the lower left corner of the two bursts, and for an ascending orbit the roi is
     in the upper right corner.
 
     Args:
-        poly1: The first burst's footprint.
-        poly2: The second burst's footprint.
+        ref_bbox: The reference burst's bounding box.
+        sec_bbox: The secondary burst's bounding box.
         is_ascending: Whether the orbit is ascending or descending.
 
     Returns:
         The region of interest as a tuple of (minx, miny, maxx, maxy).
     """
-    bbox1 = geometry.box(*poly1.bounds)
-    bbox2 = geometry.box(*poly2.bounds)
-    intersection = bbox1.intersection(bbox2)
+    intersection = ref_bbox.intersection(sec_bbox)
     bounds = intersection.bounds
 
     x, y = (0, 1) if is_ascending else (2, 1)
