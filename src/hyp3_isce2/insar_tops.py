@@ -35,7 +35,7 @@ def insar_tops(
     azimuth_looks: int = 4,
     range_looks: int = 20,
 ) -> Path:
-    """Create a burst interferogram
+    """Create a full-SLC interferogram
 
     Args:
         reference_scene: Reference SLC name

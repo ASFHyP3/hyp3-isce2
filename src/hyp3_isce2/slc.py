@@ -59,13 +59,3 @@ def get_dem_bounds(reference_granule: Path, secondary_granule: Path) -> tuple:
 
     intersection = bboxs[0].intersection(bboxs[1])
     return intersection.bounds
-
-
-if __name__ == '__main__':
-    ref_granule = 'S1A_IW_SLC__1SDV_20200604T022251_20200604T022318_032861_03CE65_7C85'
-    sec_granule = 'S1A_IW_SLC__1SDV_20200616T022252_20200616T022319_033036_03D3A3_5D11'
-    ref_dir = get_granule(ref_granule)
-    sec_dir = get_granule(sec_granule)
-
-    bounds = get_dem_bounds(Path.cwd() / f'{ref_granule}.SAFE', Path.cwd() / f'{sec_granule}.SAFE')
-    print('done')
