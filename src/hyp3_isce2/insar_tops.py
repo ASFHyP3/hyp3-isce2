@@ -71,7 +71,7 @@ def insar_tops(
         aux_cal_directory=str(aux_cal_dir),
         dem_filename=str(dem_path),
         roi=roi,
-        swath=swaths,
+        swaths=swaths,
         azimuth_looks=azimuth_looks,
         range_looks=range_looks,
     )
