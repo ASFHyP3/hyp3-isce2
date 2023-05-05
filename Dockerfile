@@ -44,5 +44,5 @@ RUN mamba env create -f /hyp3-isce2/environment.yml && \
     sed -i 's/conda activate base/conda activate hyp3-isce2/g' /home/conda/.profile && \
     python -m pip install --no-cache-dir /hyp3-isce2
 
-ENTRYPOINT ["/hyp3-isce2/hyp3_isce2/src/etc/entrypoint.sh"]
+ENTRYPOINT ["/hyp3-isce2/src/hyp3_isce2/etc/entrypoint.sh"]
 CMD ["-h"]
