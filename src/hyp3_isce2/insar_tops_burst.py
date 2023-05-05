@@ -13,7 +13,7 @@ from hyp3lib.get_orb import downloadSentinelOrbitFile
 from hyp3lib.image import create_thumbnail
 
 from hyp3_isce2 import topsapp
-from hyp3_isce2.burst import BurstParams, download_bursts, get_region_of_interest
+from hyp3_isce2.burst import BurstParams, download_bursts, get_isce2_burst_bbox, get_region_of_interest
 from hyp3_isce2.dem import download_dem_for_isce2
 from hyp3_isce2.s1_auxcal import download_aux_cal
 
@@ -60,8 +60,11 @@ def insar_tops_burst(
     ref_metadata, sec_metadata = download_bursts([ref_params, sec_params])
 
     is_ascending = ref_metadata.orbit_direction == 'ascending'
-    insar_roi = get_region_of_interest(ref_metadata.footprint, sec_metadata.footprint, is_ascending=is_ascending)
-    dem_roi = ref_metadata.footprint.intersection(sec_metadata.footprint).bounds
+    ref_footprint = get_isce2_burst_bbox(ref_params)
+    sec_footprint = get_isce2_burst_bbox(sec_params)
+
+    insar_roi = get_region_of_interest(ref_footprint, sec_footprint, is_ascending=is_ascending)
+    dem_roi = ref_footprint.intersection(sec_footprint).bounds
     print(f'InSAR ROI: {insar_roi}')
     print(f'DEM ROI: {dem_roi}')
 
