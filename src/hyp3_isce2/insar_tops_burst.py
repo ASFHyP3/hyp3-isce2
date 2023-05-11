@@ -95,9 +95,18 @@ def insar_tops_burst(
     return Path('merged')
 
 
-def get_product_name() -> str:
-    # TODO
-    return 'foo'
+# TODO is this the format we want?
+# TODO unit test
+def get_product_name(
+        reference_scene: str,
+        secondary_scene: str,
+        reference_burst_number: int,
+        secondary_burst_number: int,
+        swath_number: int,
+        polarization: str) -> str:
+    reference_name = f'{reference_scene}_IW{swath_number}_{polarization}_{reference_burst_number}'
+    secondary_name = f'{secondary_scene}_IW{swath_number}_{polarization}_{secondary_burst_number}'
+    return f'{reference_name}x{secondary_name}'
 
 
 def make_parameter_file(out_path: str):
@@ -138,14 +147,21 @@ def main():
 
     log.info('ISCE2 TopsApp run completed successfully')
 
-    product_name = get_product_name()
+    product_name = get_product_name(
+        args.reference_scene,
+        args.secondary_scene,
+        args.reference_burst_number,
+        args.secondary_burst_number,
+        args.swath_number,
+        args.polarization
+    )
     os.mkdir(product_name)
     make_tiff(input='merged/filt_topophase.unw.geo', band=2, output=f'{product_name}/{product_name}_unw_phase.tif')
     make_tiff(input='merged/phsig.cor.geo', band=1, output=f'{product_name}/{product_name}_corr.tif')
     make_tiff(input='merged/filt_topophase.unw.conncomp.geo', band=1, output=f'{product_name}/{product_name}_conn_comp.tif')
     make_tiff(input='merged/filt_topophase.flat.geo', band=1, output=f'{product_name}/{product_name}_wrapped_phase.tif')
     make_parameter_file(f'{product_name}/{product_name}.txt')
-    product_file = make_archive(base_name=base_name, format='zip', base_dir=product_name)
+    product_file = make_archive(base_name=product_name, format='zip', base_dir=product_name)
 
     if args.bucket:
         upload_file_to_s3(Path(product_file), args.bucket, args.bucket_prefix)
