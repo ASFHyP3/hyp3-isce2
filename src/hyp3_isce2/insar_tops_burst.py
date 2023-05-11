@@ -128,15 +128,16 @@ def main():
 
     log.info('ISCE2 TopsApp run completed successfully')
 
+    product_name = get_product_name()
+    make_folder(product_name)
+    make_tiff(input='merged/filt_topophase.unw.geo', band=2, output=f'{product_name}/{product_name}_unw_phase.tif')
+    make_tiff(input='merged/phsig.cor.geo', band=1, output=f'{product_name}/{product_name}_corr.tif')
+    make_tiff(input='merged/filt_topophase.unw.conncomp.geo', band=1, output=f'{product_name}/{product_name}_conn_comp.tif')
+    make_tiff(input='merged/filt_topophase.flat.geo', band=1, output=f'{product_name}/{product_name}_wrapped_phase.tif')
+    make_parameter_file(f'{product_name}/{product_name}.txt)
+    product_file = make_archive(base_name=base_name, format='zip', base_dir=product_name)
+
     if args.bucket:
-        reference_name = (
-            f'{args.reference_scene}_IW{args.swath_number}_{args.polarization}_{args.reference_burst_number}'
-        )
-        secondary_name = (
-            f'{args.secondary_scene}_IW{args.swath_number}_{args.polarization}_{args.secondary_burst_number}'
-        )
-        base_name = f'{reference_name}x{secondary_name}'
-        product_file = make_archive(base_name=base_name, format='zip', base_dir=product_dir)
         upload_file_to_s3(product_file, args.bucket, args.bucket_prefix)
         browse_images = product_file.with_suffix('.png')
         for browse in browse_images:
