@@ -95,7 +95,7 @@ def insar_tops_burst(
     return Path('merged')
 
 
-def make_tiff(input, band=1, output):
+def make_tiff(input, output, band=1):
     in_ds = gdal.Open(input)
     gdal.Translate(output, in_ds, bandList=[band])
 
@@ -139,7 +139,7 @@ def main():
     make_tiff(input='merged/phsig.cor.geo', band=1, output=f'{product_name}/{product_name}_corr.tif')
     make_tiff(input='merged/filt_topophase.unw.conncomp.geo', band=1, output=f'{product_name}/{product_name}_conn_comp.tif')
     make_tiff(input='merged/filt_topophase.flat.geo', band=1, output=f'{product_name}/{product_name}_wrapped_phase.tif')
-    make_parameter_file(f'{product_name}/{product_name}.txt)
+    make_parameter_file(f'{product_name}/{product_name}.txt')
     product_file = make_archive(base_name=base_name, format='zip', base_dir=product_name)
 
     if args.bucket:
