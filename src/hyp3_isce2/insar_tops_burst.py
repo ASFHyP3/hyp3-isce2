@@ -156,6 +156,9 @@ def main():
         args.polarization
     )
     os.mkdir(product_name)
+    # TODO should these be format='COG' with overviews, or just format='GTiff' with COMPRESS=DEFLATE and TILED=YES?
+    # TODO need to set nodata values
+    # TODO what output projection do we want? currently EPSG:4326
     gdal.Translate(
         f'{product_name}/{product_name}_unw_phase.tif',
         str(product_dir / 'filt_topophase.unw.geo'),
@@ -169,6 +172,7 @@ def main():
         f'{product_name}/{product_name}_conn_comp.tif',
         str(product_dir / 'filt_topophase.unw.conncomp.geo'),
     )
+    # TODO gdal complains about complex data type, this might be the wrong file or the wrong band
     # gdal.Translate(f'{product_name}/{product_name}_wrapped_phase.tif', str(product_dir / 'filt_topophase.flat.geo'))
     make_parameter_file(f'{product_name}/{product_name}.txt')
     product_file = make_archive(base_name=product_name, format='zip', base_dir=product_name)
