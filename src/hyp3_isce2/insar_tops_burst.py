@@ -1,6 +1,7 @@
 """Create a single-burst Sentinel-1 geocoded unwrapped interferogram using ISCE2's TOPS processing workflow"""
 
 import argparse
+import json
 import logging
 import os
 import site
@@ -109,9 +110,19 @@ def get_product_name(
     return f'{reference_name}x{secondary_name}'
 
 
-def make_parameter_file(out_path: str):
-    # TODO
-    pass
+# TODO add more parameters
+# TODO does the format need to be the same as for our INSAR_GAMMA products?
+# TODO unit test
+def make_parameter_file(
+        out_path: Path,
+        reference_scene: str,
+        secondary_scene: str) -> None:
+    output = {
+        'reference_scene': reference_scene,
+        'secondary_scene': secondary_scene,
+    }
+    with out_path.open('w') as f:
+        json.dump(output, f)
 
 
 def main():
@@ -156,6 +167,7 @@ def main():
         args.polarization
     )
     os.mkdir(product_name)
+
     # TODO should these be format='COG' with overviews, or just format='GTiff' with COMPRESS=DEFLATE and TILED=YES?
     # TODO need to set nodata values
     # TODO what output projection do we want? currently EPSG:4326
@@ -174,7 +186,12 @@ def main():
     )
     # TODO gdal complains about complex data type, this might be the wrong file or the wrong band
     # gdal.Translate(f'{product_name}/{product_name}_wrapped_phase.tif', str(product_dir / 'filt_topophase.flat.geo'))
-    make_parameter_file(f'{product_name}/{product_name}.txt')
+
+    make_parameter_file(
+        Path(f'{product_name}/{product_name}.json'),
+        args.reference_scene,
+        args.secondary_scene,
+    )
     product_file = make_archive(base_name=product_name, format='zip', base_dir=product_name)
 
     if args.bucket:
