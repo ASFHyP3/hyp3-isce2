@@ -95,6 +95,11 @@ def insar_tops_burst(
     return Path('merged')
 
 
+def make_tiff(input, band=1, output):
+    in_ds = gdal.Open(input)
+    gdal.Translate(output, in_ds, bandList=[band])
+
+
 def main():
     """HyP3 entrypoint for the burst TOPS workflow"""
     parser = argparse.ArgumentParser(description=__doc__, formatter_class=argparse.ArgumentDefaultsHelpFormatter)
