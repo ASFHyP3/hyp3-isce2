@@ -7,6 +7,7 @@ import site
 import sys
 from pathlib import Path
 from shutil import make_archive
+from osgeo import gdal
 
 from hyp3lib.aws import upload_file_to_s3
 from hyp3lib.get_orb import downloadSentinelOrbitFile
@@ -95,9 +96,17 @@ def insar_tops_burst(
     return Path('merged')
 
 
-def make_tiff(input, output, band=1):
-    in_ds = gdal.Open(input)
-    gdal.Translate(output, in_ds, bandList=[band])
+def make_tiff(infile, outfile, band=1):
+    in_ds = gdal.Open(infile)
+    gdal.Translate(outfile, in_ds, bandList=[band])
+
+
+def get_product_name():
+    pass
+
+
+def make_folder(product_name):
+    pass
 
 
 def main():
