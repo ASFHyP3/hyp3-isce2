@@ -1,6 +1,7 @@
 """Create a single-burst Sentinel-1 geocoded unwrapped interferogram using ISCE2's TOPS processing workflow"""
 
 import argparse
+import json
 import logging
 import os
 import site
@@ -109,9 +110,19 @@ def get_product_name(
     return f'{reference_name}x{secondary_name}'
 
 
-def make_parameter_file(out_path: str):
-    # TODO
-    pass
+# TODO add more parameters
+# TODO does the format need to be the same as for our INSAR_GAMMA products?
+# TODO unit test
+def make_parameter_file(
+        out_path: Path,
+        reference_scene: str,
+        secondary_scene: str) -> None:
+    output = {
+        'reference_scene': reference_scene,
+        'secondary_scene': secondary_scene,
+    }
+    with out_path.open('w') as f:
+        json.dump(output, f)
 
 
 def main():
@@ -160,7 +171,11 @@ def main():
     make_tiff(input='merged/phsig.cor.geo', band=1, output=f'{product_name}/{product_name}_corr.tif')
     make_tiff(input='merged/filt_topophase.unw.conncomp.geo', band=1, output=f'{product_name}/{product_name}_conn_comp.tif')
     make_tiff(input='merged/filt_topophase.flat.geo', band=1, output=f'{product_name}/{product_name}_wrapped_phase.tif')
-    make_parameter_file(f'{product_name}/{product_name}.txt')
+    make_parameter_file(
+        Path(f'{product_name}/{product_name}.json'),
+        args.reference_scene,
+        args.secondary_scene,
+    )
     product_file = make_archive(base_name=product_name, format='zip', base_dir=product_name)
 
     if args.bucket:
