@@ -95,6 +95,16 @@ def insar_tops_burst(
     return Path('merged')
 
 
+def get_product_name() -> str:
+    # TODO
+    return 'foo'
+
+
+def make_parameter_file(out_path: str):
+    # TODO
+    pass
+
+
 def main():
     """HyP3 entrypoint for the burst TOPS workflow"""
     parser = argparse.ArgumentParser(description=__doc__, formatter_class=argparse.ArgumentDefaultsHelpFormatter)
@@ -129,12 +139,12 @@ def main():
     log.info('ISCE2 TopsApp run completed successfully')
 
     product_name = get_product_name()
-    make_folder(product_name)
+    os.mkdir(product_name)
     make_tiff(input='merged/filt_topophase.unw.geo', band=2, output=f'{product_name}/{product_name}_unw_phase.tif')
     make_tiff(input='merged/phsig.cor.geo', band=1, output=f'{product_name}/{product_name}_corr.tif')
     make_tiff(input='merged/filt_topophase.unw.conncomp.geo', band=1, output=f'{product_name}/{product_name}_conn_comp.tif')
     make_tiff(input='merged/filt_topophase.flat.geo', band=1, output=f'{product_name}/{product_name}_wrapped_phase.tif')
-    make_parameter_file(f'{product_name}/{product_name}.txt)
+    make_parameter_file(f'{product_name}/{product_name}.txt')
     product_file = make_archive(base_name=base_name, format='zip', base_dir=product_name)
 
     if args.bucket:
