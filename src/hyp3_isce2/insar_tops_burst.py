@@ -148,9 +148,4 @@ def main():
     product_file = make_archive(base_name=base_name, format='zip', base_dir=product_name)
 
     if args.bucket:
-        upload_file_to_s3(product_file, args.bucket, args.bucket_prefix)
-        browse_images = product_file.with_suffix('.png')
-        for browse in browse_images:
-            thumbnail = create_thumbnail(browse)
-            upload_file_to_s3(browse, args.bucket, args.bucket_prefix)
-            upload_file_to_s3(thumbnail, args.bucket, args.bucket_prefix)
+        upload_file_to_s3(Path(product_file), args.bucket, args.bucket_prefix)
