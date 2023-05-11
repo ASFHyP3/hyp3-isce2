@@ -10,7 +10,7 @@ from shutil import make_archive
 
 from hyp3lib.aws import upload_file_to_s3
 from hyp3lib.get_orb import downloadSentinelOrbitFile
-from hyp3lib.image import create_thumbnail
+from osgeo import gdal
 
 from hyp3_isce2 import topsapp
 from hyp3_isce2.burst import BurstParams, download_bursts, get_isce2_burst_bbox, get_region_of_interest
@@ -156,10 +156,20 @@ def main():
         args.polarization
     )
     os.mkdir(product_name)
-    make_tiff(input='merged/filt_topophase.unw.geo', band=2, output=f'{product_name}/{product_name}_unw_phase.tif')
-    make_tiff(input='merged/phsig.cor.geo', band=1, output=f'{product_name}/{product_name}_corr.tif')
-    make_tiff(input='merged/filt_topophase.unw.conncomp.geo', band=1, output=f'{product_name}/{product_name}_conn_comp.tif')
-    make_tiff(input='merged/filt_topophase.flat.geo', band=1, output=f'{product_name}/{product_name}_wrapped_phase.tif')
+    gdal.Translate(
+        f'{product_name}/{product_name}_unw_phase.tif',
+        str(product_dir / 'filt_topophase.unw.geo'),
+        bandList=[2]
+    )
+    gdal.Translate(
+        f'{product_name}/{product_name}_corr.tif',
+        str(product_dir / 'phsig.cor.geo'),
+    )
+    gdal.Translate(
+        f'{product_name}/{product_name}_conn_comp.tif',
+        str(product_dir / 'filt_topophase.unw.conncomp.geo'),
+    )
+    # gdal.Translate(f'{product_name}/{product_name}_wrapped_phase.tif', str(product_dir / 'filt_topophase.flat.geo'))
     make_parameter_file(f'{product_name}/{product_name}.txt')
     product_file = make_archive(base_name=product_name, format='zip', base_dir=product_name)
 
