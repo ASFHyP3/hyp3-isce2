@@ -97,8 +97,32 @@ def insar_tops_burst(
 
 
 def make_tiff(infile, outfile, band=1):
-    in_ds = gdal.Open(infile)
-    gdal.Translate(outfile, in_ds, bandList=[band])
+    ds = gdal.Open(infile)
+    band = ds.GetRasterBand(band)
+    data = band.ReadAsArray()
+
+    [cols, rows] = data.shape
+
+    datatype = band.DataType
+
+    projection = osr.SpatialReference()
+    projection.ImportFromWkt(ds.GetProjectionRef())
+
+    driver = gdal.GetDriverByName("GTiff")
+
+    des = driver.Create(outfile, rows, cols, 1, datatype)
+
+    des.SetGeoTransform(ds.GetGeoTransform())
+
+    des.SetProjection(projection.ExportToWkt())
+
+    outband = des.GetRasterBand(1)
+    outband.WriteArray(data)
+
+    if band.GetNoDataValue():
+        des.GetRasterBand(1).SetNoDataValue(band.GetNoDataValue())
+
+    des = None
 
 
 def get_product_name():
