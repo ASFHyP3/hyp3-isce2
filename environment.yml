@@ -12,6 +12,7 @@ dependencies:
   - shapely
   - jinja2
   - asf_search
+  - opencv
   # For packaging, and testing
   - flake8
   - flake8-import-order

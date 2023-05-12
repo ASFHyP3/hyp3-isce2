@@ -91,6 +91,8 @@ def insar_stripmap(user: str, password: str, reference_scene: str, secondary_sce
     config_path = config.write_template('stripmapApp.xml')
     
     stripmapapp.run_stripmapapp(start='startup', end='geocode', config_xml=config_path)
+    #stripmapapp.run_stripmapapp(start='rubber_sheet_range', end='geocode', config_xml=config_path)
+    #stripmapapp.run_stripmapapp(start='startup', end='geocode', config_xml=config_path)
     #raise NotImplementedError('This is a placeholder function. Replace it with your actual scientific workflow.')
 
     #product_file = Path("product_file_name.zip")
@@ -98,11 +100,13 @@ def insar_stripmap(user: str, password: str, reference_scene: str, secondary_sce
 
 
 def main():
+    
     """ Entrypoint for the stripmap workflow"""
+    
     parser = argparse.ArgumentParser(description=__doc__, formatter_class=argparse.ArgumentDefaultsHelpFormatter)
 
-    parser.add_argument('--bucket', type=str, default='', help='AWS S3 bucket HyP3 for upload the final product(s)')
-    parser.add_argument('--bucket-prefix', type=str, default='', help='Add a bucket prefix to product(s)')
+    parser.add_argument('--bucket', help='AWS S3 bucket HyP3 for upload the final product(s)')
+    parser.add_argument('--bucket-prefix', default='', help='Add a bucket prefix to product(s)')
     parser.add_argument('--username', type=str, required=True)
     parser.add_argument('--password', type=str, required=True)
     parser.add_argument('--reference-scene', type=str, required=True)
@@ -113,13 +117,14 @@ def main():
     logging.basicConfig(stream=sys.stdout, format='%(asctime)s - %(levelname)s - %(message)s', level=logging.INFO)
     log.debug(' '.join(sys.argv))
 
+    
     product_file = insar_stripmap(
         user=args.username,
         password=args.password,
         reference_scene=args.reference_scene,
         secondary_scene=args.secondary_scene,
     )
-
+    
     log.info('InSAR Stripmap run completed successfully')
 
     if args.bucket:
@@ -130,3 +135,4 @@ def main():
             thumbnail = create_thumbnail(browse)
             upload_file_to_s3(browse, args.bucket, args.bucket_prefix)
             upload_file_to_s3(thumbnail, args.bucket, args.bucket_prefix)
+    

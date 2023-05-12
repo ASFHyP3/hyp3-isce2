@@ -4,6 +4,9 @@ from typing import Iterable, Union
 from isce.applications.stripmapApp import Insar
 from jinja2 import Template
 from osgeo import gdal
+import os
+
+os.environ["PATH"] += os.pathsep+':'+os.environ['ISCE_HOME']+'/applications'
 
 TEMPLATE_DIR = Path(__file__).parent / 'templates'
 STRIPMAPAPP_STEPS = [
