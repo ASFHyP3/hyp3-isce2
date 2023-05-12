@@ -8,6 +8,7 @@ import sys
 from pathlib import Path
 from shutil import make_archive
 from osgeo import gdal
+from osgeo import osr
 
 from hyp3lib.aws import upload_file_to_s3
 from hyp3lib.get_orb import downloadSentinelOrbitFile
