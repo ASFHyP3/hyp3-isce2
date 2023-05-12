@@ -189,7 +189,6 @@ def main():
 
     log.info('ISCE2 TopsApp run completed successfully')
 
-
     product_name = get_product_name(
         args.reference_scene,
         args.secondary_scene,
