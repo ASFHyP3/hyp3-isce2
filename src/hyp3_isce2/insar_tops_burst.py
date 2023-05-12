@@ -1,6 +1,7 @@
 """Create a single-burst Sentinel-1 geocoded unwrapped interferogram using ISCE2's TOPS processing workflow"""
 
 import argparse
+import json
 import logging
 import os
 import site
@@ -12,7 +13,7 @@ from osgeo import osr
 
 from hyp3lib.aws import upload_file_to_s3
 from hyp3lib.get_orb import downloadSentinelOrbitFile
-from hyp3lib.image import create_thumbnail
+from osgeo import gdal
 
 from hyp3_isce2 import topsapp
 from hyp3_isce2.burst import BurstParams, download_bursts, get_isce2_burst_bbox, get_region_of_interest
@@ -126,12 +127,33 @@ def make_tiff(infile, outfile, band=1):
     des = None
 
 
-def get_product_name():
-    pass
+# TODO is this the format we want?
+# TODO unit test
+def get_product_name(
+        reference_scene: str,
+        secondary_scene: str,
+        reference_burst_number: int,
+        secondary_burst_number: int,
+        swath_number: int,
+        polarization: str) -> str:
+    reference_name = f'{reference_scene}_IW{swath_number}_{polarization}_{reference_burst_number}'
+    secondary_name = f'{secondary_scene}_IW{swath_number}_{polarization}_{secondary_burst_number}'
+    return f'{reference_name}x{secondary_name}'
 
 
-def make_folder(product_name):
-    pass
+# TODO add more parameters
+# TODO does the format need to be the same as for our INSAR_GAMMA products?
+# TODO unit test
+def make_parameter_file(
+        out_path: Path,
+        reference_scene: str,
+        secondary_scene: str) -> None:
+    output = {
+        'reference_scene': reference_scene,
+        'secondary_scene': secondary_scene,
+    }
+    with out_path.open('w') as f:
+        json.dump(output, f)
 
 
 def main():
@@ -167,19 +189,42 @@ def main():
 
     log.info('ISCE2 TopsApp run completed successfully')
 
-    product_name = get_product_name()
-    make_folder(product_name)
-    make_tiff(input='merged/filt_topophase.unw.geo', band=2, output=f'{product_name}/{product_name}_unw_phase.tif')
-    make_tiff(input='merged/phsig.cor.geo', band=1, output=f'{product_name}/{product_name}_corr.tif')
-    make_tiff(input='merged/filt_topophase.unw.conncomp.geo', band=1, output=f'{product_name}/{product_name}_conn_comp.tif')
-    make_tiff(input='merged/filt_topophase.flat.geo', band=1, output=f'{product_name}/{product_name}_wrapped_phase.tif')
-    make_parameter_file(f'{product_name}/{product_name}.txt')
-    product_file = make_archive(base_name=base_name, format='zip', base_dir=product_name)
+
+    product_name = get_product_name(
+        args.reference_scene,
+        args.secondary_scene,
+        args.reference_burst_number,
+        args.secondary_burst_number,
+        args.swath_number,
+        args.polarization
+    )
+    os.mkdir(product_name)
+
+    # TODO should these be format='COG' with overviews, or just format='GTiff' with COMPRESS=DEFLATE and TILED=YES?
+    # TODO need to set nodata values
+    # TODO what output projection do we want? currently EPSG:4326
+    gdal.Translate(
+        f'{product_name}/{product_name}_unw_phase.tif',
+        str(product_dir / 'filt_topophase.unw.geo'),
+        bandList=[2]
+    )
+    gdal.Translate(
+        f'{product_name}/{product_name}_corr.tif',
+        str(product_dir / 'phsig.cor.geo'),
+    )
+    gdal.Translate(
+        f'{product_name}/{product_name}_conn_comp.tif',
+        str(product_dir / 'filt_topophase.unw.conncomp.geo'),
+    )
+    # TODO gdal complains about complex data type, this might be the wrong file or the wrong band
+    # gdal.Translate(f'{product_name}/{product_name}_wrapped_phase.tif', str(product_dir / 'filt_topophase.flat.geo'))
+
+    make_parameter_file(
+        Path(f'{product_name}/{product_name}.json'),
+        args.reference_scene,
+        args.secondary_scene,
+    )
+    product_file = make_archive(base_name=product_name, format='zip', base_dir=product_name)
 
     if args.bucket:
-        upload_file_to_s3(product_file, args.bucket, args.bucket_prefix)
-        browse_images = product_file.with_suffix('.png')
-        for browse in browse_images:
-            thumbnail = create_thumbnail(browse)
-            upload_file_to_s3(browse, args.bucket, args.bucket_prefix)
-            upload_file_to_s3(thumbnail, args.bucket, args.bucket_prefix)
+        upload_file_to_s3(Path(product_file), args.bucket, args.bucket_prefix)
