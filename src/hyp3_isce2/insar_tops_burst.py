@@ -5,6 +5,7 @@ import logging
 import os
 import site
 import sys
+import xml.etree.ElementTree as ET
 from pathlib import Path
 from shutil import make_archive
 
@@ -94,6 +95,76 @@ def insar_tops_burst(
 
     return Path('merged')
 
+
+def write_parameters_file(
+    reference_scene,
+    secondary_scene,
+    swath_number,
+    polarization,
+    ref_burst_number,
+    sec_burst_number,
+    azimuth_looks,
+    range_looks
+):
+
+    try:
+        ref_xml_tree  = ET.parse(f'{reference_scene}.SAFE/manifest.SAFE')
+        sec_xml_tree  = ET.parse(f'{secondary_scene}.SAFE/manifest.SAFE')
+        proc_xml_tree = ET.parse(f'topsProc.xml')
+        app_xml_tree  = ET.parse(f'topsApp.xml')
+    
+        ref_root  = ref_xml_tree.getroot()    
+        sec_root  = sec_xml_tree.getroot()
+        proc_root = proc_xml_tree.getroot()
+        app_root  = app_xml_tree.getroot()
+    except Exception as e:
+        pass
+
+    output_strings = [
+        f'Reference Scene: {reference_scene}\n',
+        f'Secondary Scene: {secondary_scene}\n',
+        f'Reference Pass Direction: \n',
+        f'Reference Orbit Number: \n',
+        f'Secondary Pass Direction: \n',
+        f'Secondary Orbit Number: \n',
+        f'Reference Burst Number: {ref_burst_number}\n',
+        f'Secondary Burst Number: {sec_burst_number}\n',
+        f'Swath Number: {swath_number}\n',
+        f'Baseline: \n',
+        f'UTC time: \n',
+        f'Heading: \n',
+        f'Spacecraft height: \n',
+        f'Earth radius at nadir: \n',
+        f'Slant range near: \n',
+        f'Slant range center: \n',
+        f'Slant range far: \n',
+        f'Range looks: {range_looks}\n',
+        f'Azimuth looks: {azimuth_looks}\n',
+        f'INSAR phase filter: \n',
+        f'Phase filter parameter: \n',
+        f'Resolution of output (m): \n',
+        f'Range bandpass filter: \n',
+        f'Azimuth bandpass filter: \n',
+        f'DEM source: \n',
+        f'DEM resolution (m): \n',
+        f'Unwrapping type: \n',
+        f'Phase at reference point: \n',
+        f'Azimuth line of the reference point in SAR space: \n',
+        f'Range pixel of the reference point in SAR space: \n',
+        f'Y coordinate of the reference point in the map projection: \n',
+        f'X coordinate of the reference point in the map projection: \n',
+        f'Latitude of the reference point (WGS84): \n',
+        f'Longitude of the reference point (WGS84): \n',
+        f'Unwrapping threshold: \n',
+        f'Speckle filter: \n'
+    ]
+
+    output_string = "".join(output_strings)
+
+    with open('parameters.txt', 'w') as outfile:
+        outfile.write(output_string)
+
+    return None
 
 def main():
     """HyP3 entrypoint for the burst TOPS workflow"""
