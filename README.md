@@ -27,7 +27,12 @@ To learn about the arguments for each workflow, look at the help documentation (
 
 The ultimate goal of this project is to create a docker container that can run ISCE2 workflows within a HyP3 deployment. To run the current version of the project's container, use this command:
 ```
-docker run -it --rm ghcr.io/asfhyp3/hyp3-isce2:latest ++process [WORKFLOW_NAME] [WORKFLOW_ARGS]
+docker run -it --rm \
+    -e EARTHDATA_USERNAME=[YOUR_USERNAME_HERE] \
+    -e EARTHDATA_PASSWORD=[YOUR_PASSWORD_HERE] \
+    ghcr.io/asfhyp3/hyp3-isce2:latest \
+    ++process [WORKFLOW_NAME] \
+    [WORKFLOW_ARGS]
 ```
 
 **NOTE** Each workflow can also be accessed via an alternative CLI with the format (`[WORKFLOW_NAME] [WORKFLOW_ARGS]`)
