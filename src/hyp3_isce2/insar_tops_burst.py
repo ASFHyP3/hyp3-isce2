@@ -108,8 +108,8 @@ def write_parameters_file(
 ):
 
     try:
-        ref_xml_tree  = ET.parse(f'{reference_scene}.SAFE/manifest.SAFE')
-        sec_xml_tree  = ET.parse(f'{secondary_scene}.SAFE/manifest.SAFE')
+        ref_xml_tree  = ET.parse(f'{reference_scene}.SAFE/manifest.safe')
+        sec_xml_tree  = ET.parse(f'{secondary_scene}.SAFE/manifest.safe')
         proc_xml_tree = ET.parse(f'topsProc.xml')
         app_xml_tree  = ET.parse(f'topsApp.xml')
     
@@ -202,31 +202,42 @@ def main():
     logging.basicConfig(stream=sys.stdout, format='%(asctime)s - %(levelname)s - %(message)s', level=logging.INFO)
     log.debug(' '.join(sys.argv))
 
-    product_dir = insar_tops_burst(
-        reference_scene=args.reference_scene,
-        secondary_scene=args.secondary_scene,
-        swath_number=args.swath_number,
-        polarization=args.polarization,
-        reference_burst_number=args.reference_burst_number,
-        secondary_burst_number=args.secondary_burst_number,
-        azimuth_looks=args.azimuth_looks,
-        range_looks=args.range_looks,
-    )
+    # product_dir = insar_tops_burst(
+    #     reference_scene=args.reference_scene,
+    #     secondary_scene=args.secondary_scene,
+    #     swath_number=args.swath_number,
+    #     polarization=args.polarization,
+    #     reference_burst_number=args.reference_burst_number,
+    #     secondary_burst_number=args.secondary_burst_number,
+    #     azimuth_looks=args.azimuth_looks,
+    #     range_looks=args.range_looks,
+    # )
 
     log.info('ISCE2 TopsApp run completed successfully')
 
-    if args.bucket:
-        reference_name = (
-            f'{args.reference_scene}_IW{args.swath_number}_{args.polarization}_{args.reference_burst_number}'
-        )
-        secondary_name = (
-            f'{args.secondary_scene}_IW{args.swath_number}_{args.polarization}_{args.secondary_burst_number}'
-        )
-        base_name = f'{reference_name}x{secondary_name}'
-        product_file = make_archive(base_name=base_name, format='zip', base_dir=product_dir)
-        upload_file_to_s3(product_file, args.bucket, args.bucket_prefix)
-        browse_images = product_file.with_suffix('.png')
-        for browse in browse_images:
-            thumbnail = create_thumbnail(browse)
-            upload_file_to_s3(browse, args.bucket, args.bucket_prefix)
-            upload_file_to_s3(thumbnail, args.bucket, args.bucket_prefix)
+    write_parameters_file(
+        args.reference_scene,
+        args.secondary_scene,
+        args.swath_number,
+        args.polarization,
+        args.reference_burst_number,
+        args.secondary_burst_number,
+        args.azimuth_looks,
+        args.range_looks
+    )
+
+    # if args.bucket:
+    #     reference_name = (
+    #         f'{args.reference_scene}_IW{args.swath_number}_{args.polarization}_{args.reference_burst_number}'
+    #     )
+    #     secondary_name = (
+    #         f'{args.secondary_scene}_IW{args.swath_number}_{args.polarization}_{args.secondary_burst_number}'
+    #     )
+    #     base_name = f'{reference_name}x{secondary_name}'
+    #     product_file = make_archive(base_name=base_name, format='zip', base_dir=product_dir)
+    #     upload_file_to_s3(product_file, args.bucket, args.bucket_prefix)
+    #     browse_images = product_file.with_suffix('.png')
+    #     for browse in browse_images:
+    #         thumbnail = create_thumbnail(browse)
+    #         upload_file_to_s3(browse, args.bucket, args.bucket_prefix)
+    #         upload_file_to_s3(thumbnail, args.bucket, args.bucket_prefix)
