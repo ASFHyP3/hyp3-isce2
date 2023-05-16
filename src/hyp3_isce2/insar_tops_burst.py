@@ -100,8 +100,8 @@ def write_parameters_file(
     reference_scene: str,
     secondary_scene: str,
     swath_number: int,
-    ref_burst_number: int,
-    sec_burst_number: int,
+    reference_burst_number: int,
+    secondary_burst_number: int,
     polarization: str = "VV",
     azimuth_looks: int = 4,
     range_looks: int = 20,
@@ -124,13 +124,10 @@ def write_parameters_file(
 
     ref_orbit_number    = ref_xml_tree.find(orbit_number_query).text
     ref_orbit_direction = ref_xml_tree.find(orbit_direction_query).text
-
     sec_orbit_number    = sec_xml_tree.find(orbit_number_query).text
     sec_orbit_direction = sec_xml_tree.find(orbit_direction_query).text
-
     baseline_par  = proc_xml_tree.find('.//IW-2_Bpar_at_midrange_for_first_common_burst').text
     baseline_perp = proc_xml_tree.find('.//IW-2_Bperp_at_midrange_for_first_common_burst').text
-
     unwrapper_type = app_xml_tree.find('.//property[@name="unwrapper name"]').text
     phase_filter_strength = app_xml_tree.find('.//property[@name="filter strength"]').text
 
@@ -141,8 +138,8 @@ def write_parameters_file(
         f'Reference Orbit Number: {ref_orbit_number}\n',
         f'Secondary Pass Direction: {sec_orbit_direction}\n',
         f'Secondary Orbit Number: {sec_orbit_number}\n',
-        f'Reference Burst Number: {ref_burst_number}\n',
-        f'Secondary Burst Number: {sec_burst_number}\n',
+        f'Reference Burst Number: {reference_burst_number}\n',
+        f'Secondary Burst Number: {secondary_burst_number}\n',
         f'Swath Number: {swath_number}\n',
         f'Polarization: {polarization}\n',
         f'Parallel Baseline: {baseline_par}\n',
@@ -182,6 +179,7 @@ def write_parameters_file(
 
     return filepath
 
+
 def main():
     """HyP3 entrypoint for the burst TOPS workflow"""
     parser = argparse.ArgumentParser(description=__doc__, formatter_class=argparse.ArgumentDefaultsHelpFormatter)
@@ -199,7 +197,7 @@ def main():
 
     args = parser.parse_args()
 
-    logging.basicConfig(stream=sys.stdout, format='%(asctime)s - %(levelname)s - %(message)s', level=logging.INFO)
+    logging.basicConfig(stream=sys.stdout, format='%(asctime)s - %(levelname)s - %(message)s', level=logging.DEBUG)
     log.debug(' '.join(sys.argv))
 
     product_dir = insar_tops_burst(
@@ -216,14 +214,14 @@ def main():
     log.info('ISCE2 TopsApp run completed successfully')
 
     write_parameters_file(
-        args.reference_scene,
-        args.secondary_scene,
-        args.swath_number,
-        args.polarization,
-        args.reference_burst_number,
-        args.secondary_burst_number,
-        args.azimuth_looks,
-        args.range_looks
+        reference_scene=args.reference_scene,
+        secondary_scene=args.secondary_scene,
+        swath_number=args.swath_number,
+        polarization=args.polarization,
+        reference_burst_number=args.reference_burst_number,
+        secondary_burst_number=args.secondary_burst_number,
+        azimuth_looks=args.azimuth_looks,
+        range_look=args.range_looks
     )
 
     if args.bucket:
