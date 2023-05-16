@@ -18,6 +18,7 @@ from hyp3_isce2 import topsapp
 from hyp3_isce2.burst import BurstParams, download_bursts, get_isce2_burst_bbox, get_region_of_interest
 from hyp3_isce2.dem import download_dem_for_isce2
 from hyp3_isce2.s1_auxcal import download_aux_cal
+from hyp3_isce2.utils import get_utm_proj
 
 
 log = logging.getLogger(__name__)
@@ -100,12 +101,13 @@ def insar_tops_burst(
 # TODO is this the format we want?
 # TODO unit test
 def get_product_name(
-        reference_scene: str,
-        secondary_scene: str,
-        reference_burst_number: int,
-        secondary_burst_number: int,
-        swath_number: int,
-        polarization: str) -> str:
+    reference_scene: str,
+    secondary_scene: str,
+    reference_burst_number: int,
+    secondary_burst_number: int,
+    swath_number: int,
+    polarization: str,
+) -> str:
     reference_name = f'{reference_scene}_IW{swath_number}_{polarization}_{reference_burst_number}'
     secondary_name = f'{secondary_scene}_IW{swath_number}_{polarization}_{secondary_burst_number}'
     return f'{reference_name}x{secondary_name}'
@@ -114,16 +116,58 @@ def get_product_name(
 # TODO add more parameters
 # TODO does the format need to be the same as for our INSAR_GAMMA products?
 # TODO unit test
-def make_parameter_file(
-        out_path: Path,
-        reference_scene: str,
-        secondary_scene: str) -> None:
+def make_parameter_file(out_path: Path, reference_scene: str, secondary_scene: str) -> None:
     output = {
         'reference_scene': reference_scene,
         'secondary_scene': secondary_scene,
     }
     with out_path.open('w') as f:
         json.dump(output, f)
+
+
+def translate_outputs(product_dir: Path, product_name: str):
+    # TODO need to set nodata values
+    # TODO what output projection do we want? currently EPSG:4326
+    utm_crs = get_utm_proj(product_dir / 'filt_topophase.unw.geo')
+
+    gdal.Translate(
+        destName=f'{product_name}/{product_name}_unw_phase.tif',
+        srcDS=str(product_dir / 'filt_topophase.unw.geo'),
+        bandList=[2],
+        outputSRS=utm_crs,
+        creationOptions=['TILED=YES', 'COMPRESS=LZW', 'NUM_THREADS=ALL_CPUS'],
+    )
+    gdal.Translate(
+        destName=f'{product_name}/{product_name}_corr.tif',
+        srcDS=str(product_dir / 'phsig.cor.geo'),
+        outputSRS=utm_crs,
+        creationOptions=['TILED=YES', 'COMPRESS=LZW', 'NUM_THREADS=ALL_CPUS'],
+    )
+    gdal.Translate(
+        destName=f'{product_name}/{product_name}_conn_comp.tif',
+        srcDS=str(product_dir / 'filt_topophase.unw.conncomp.geo'),
+        outputSRS=utm_crs,
+        creationOptions=['TILED=YES', 'COMPRESS=LZW', 'NUM_THREADS=ALL_CPUS'],
+    )
+    subprocess.call(
+        [
+            'gdal_calc.py',
+            '--outfile',
+            f'{product_name}/{product_name}_wrapped_phase.tif',
+            '-A',
+            str(product_dir / 'filt_topophase.flat.geo'),
+            '--calc',
+            'angle(A)',
+            '--type',
+            'Float32',
+            '--creation-option',
+            'TILED=YES',
+            '--creation-option',
+            'COMPRESS=LZW',
+            '--creation-option',
+            'NUM_THREADS=ALL_CPUS',
+        ]
+    )
 
 
 def main():
@@ -165,39 +209,10 @@ def main():
         args.reference_burst_number,
         args.secondary_burst_number,
         args.swath_number,
-        args.polarization
+        args.polarization,
     )
     os.mkdir(product_name)
-
-    # TODO need to set nodata values
-    # TODO what output projection do we want? currently EPSG:4326
-    gdal.Translate(
-        destName=f'{product_name}/{product_name}_unw_phase.tif',
-        srcDS=str(product_dir / 'filt_topophase.unw.geo'),
-        bandList=[2],
-        creationOptions=['TILED=YES', 'COMPRESS=LZW', 'NUM_THREADS=ALL_CPUS'],
-    )
-    gdal.Translate(
-        destName=f'{product_name}/{product_name}_corr.tif',
-        srcDS=str(product_dir / 'phsig.cor.geo'),
-        creationOptions=['TILED=YES', 'COMPRESS=LZW', 'NUM_THREADS=ALL_CPUS'],
-    )
-    gdal.Translate(
-        destName=f'{product_name}/{product_name}_conn_comp.tif',
-        srcDS=str(product_dir / 'filt_topophase.unw.conncomp.geo'),
-        creationOptions=['TILED=YES', 'COMPRESS=LZW', 'NUM_THREADS=ALL_CPUS'],
-    )
-    subprocess.call([
-        'gdal_calc.py',
-        '--outfile', f'{product_name}/{product_name}_wrapped_phase.tif',
-        '-A', str(product_dir / 'filt_topophase.flat.geo'),
-        '--calc', 'angle(A)',
-        '--type', 'Float32',
-        '--creation-option', 'TILED=YES',
-        '--creation-option', 'COMPRESS=LZW',
-        '--creation-option', 'NUM_THREADS=ALL_CPUS',
-    ])
-
+    translate_outputs(product_dir, product_name)
     make_parameter_file(
         Path(f'{product_name}/{product_name}.json'),
         args.reference_scene,
