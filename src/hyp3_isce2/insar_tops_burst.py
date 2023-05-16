@@ -5,6 +5,7 @@ import json
 import logging
 import os
 import site
+import subprocess
 import sys
 from pathlib import Path
 from shutil import make_archive
@@ -168,24 +169,34 @@ def main():
     )
     os.mkdir(product_name)
 
-    # TODO should these be format='COG' with overviews, or just format='GTiff' with COMPRESS=DEFLATE and TILED=YES?
     # TODO need to set nodata values
     # TODO what output projection do we want? currently EPSG:4326
     gdal.Translate(
-        f'{product_name}/{product_name}_unw_phase.tif',
-        str(product_dir / 'filt_topophase.unw.geo'),
-        bandList=[2]
+        destName=f'{product_name}/{product_name}_unw_phase.tif',
+        srcDS=str(product_dir / 'filt_topophase.unw.geo'),
+        bandList=[2],
+        creationOptions=['TILED=YES', 'COMPRESS=LZW', 'NUM_THREADS=ALL_CPUS'],
     )
     gdal.Translate(
-        f'{product_name}/{product_name}_corr.tif',
-        str(product_dir / 'phsig.cor.geo'),
+        destName=f'{product_name}/{product_name}_corr.tif',
+        srcDS=str(product_dir / 'phsig.cor.geo'),
+        creationOptions=['TILED=YES', 'COMPRESS=LZW', 'NUM_THREADS=ALL_CPUS'],
     )
     gdal.Translate(
-        f'{product_name}/{product_name}_conn_comp.tif',
-        str(product_dir / 'filt_topophase.unw.conncomp.geo'),
+        destName=f'{product_name}/{product_name}_conn_comp.tif',
+        srcDS=str(product_dir / 'filt_topophase.unw.conncomp.geo'),
+        creationOptions=['TILED=YES', 'COMPRESS=LZW', 'NUM_THREADS=ALL_CPUS'],
     )
-    # TODO gdal complains about complex data type, this might be the wrong file or the wrong band
-    # gdal.Translate(f'{product_name}/{product_name}_wrapped_phase.tif', str(product_dir / 'filt_topophase.flat.geo'))
+    subprocess.call([
+        'gdal_calc.py',
+        '--outfile', f'{product_name}/{product_name}_wrapped_phase.tif',
+        '-A', str(product_dir / 'filt_topophase.flat.geo'),
+        '--calc', 'angle(A)',
+        '--type', 'Float32',
+        '--creation-option', 'TILED=YES',
+        '--creation-option', 'COMPRESS=LZW',
+        '--creation-option', 'NUM_THREADS=ALL_CPUS',
+    ])
 
     make_parameter_file(
         Path(f'{product_name}/{product_name}.json'),
