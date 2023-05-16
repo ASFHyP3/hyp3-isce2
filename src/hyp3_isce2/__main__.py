@@ -16,6 +16,7 @@ def main():
         '++process',
         choices=[
             'insar_tops_burst',
+            'insar_tops',
             'insar_stripmap'
         ],
         default='insar_tops_burst',
