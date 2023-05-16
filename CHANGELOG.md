@@ -10,7 +10,7 @@ and uses [Semantic Versioning](https://semver.org/spec/v2.0.0.html).
 ## [0.3.0]
 ### Added
 * `insar_tops` workflow for processing of full Sentinel-1 SLCs.
-* Ability to pass EarthData username and password as environment variables to workflows. This allows the credentials to be passed to the docker container via a `-e` command.
+* Ability to pass EarthData username and password as environment variables to workflows. This allows the credentials to be passed to the Docker container via the `-e` option.
 
 ## [0.2.1]
 ### Added

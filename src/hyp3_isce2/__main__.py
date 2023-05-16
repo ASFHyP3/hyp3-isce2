@@ -28,7 +28,6 @@ def main():
 
     args, unknowns = parser.parse_known_args()
 
-    # NOTE: Earthdata username and password should be provided as environment variables, or be present in your .netrc
     username = os.getenv('EARTHDATA_USERNAME')
     password = os.getenv('EARTHDATA_PASSWORD')
     if username and password:
