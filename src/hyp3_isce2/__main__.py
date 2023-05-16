@@ -4,6 +4,7 @@ ISCE2 processing for HyP3
 import argparse
 import os
 import sys
+from pathlib import Path
 from importlib.metadata import entry_points
 
 from hyp3lib.fetch import write_credentials_to_netrc_file
@@ -32,6 +33,10 @@ def main():
     password = os.getenv('EARTHDATA_PASSWORD')
     if username and password:
         write_credentials_to_netrc_file(username, password, append=False)
+
+    if not (Path.home() / '.netrc').exists():
+        raise ValueError('EarthData login credentials must be present as environment variables, or in your netrc')
+
 
     # NOTE: Cast to set because of: https://github.com/pypa/setuptools/issues/3649
     # NOTE: Will need to update to `entry_points(group='hyp3', name=args.process)` when updating to python 3.10
