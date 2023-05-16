@@ -113,24 +113,33 @@ def write_parameters_file(
         proc_xml_tree = ET.parse(f'topsProc.xml')
         app_xml_tree  = ET.parse(f'topsApp.xml')
     
-        ref_root  = ref_xml_tree.getroot()    
-        sec_root  = sec_xml_tree.getroot()
-        proc_root = proc_xml_tree.getroot()
-        app_root  = app_xml_tree.getroot()
+        safe = '{http://www.esa.int/safe/sentinel-1.0}'
+        s1   = '{http://www.esa.int/safe/sentinel-1.0/sentinel-1}'
+        metadata_path = './/metadataObject[@ID="measurementOrbitReference"]//xmlData//'
+        orbit_number_query = metadata_path + safe + 'orbitNumber'
+        orbit_direction_query = metadata_path + safe + 'extension//' + s1 + 'pass'
+
+        ref_orbit_number    = ref_xml_tree.find(orbit_number_query).text
+        ref_orbit_direction = ref_xml_tree.find(orbit_direction_query).text
+
+        sec_orbit_number    = sec_xml_tree.find(orbit_number_query).text
+        sec_orbit_direction = sec_xml_tree.find(orbit_direction_query).text
+
     except Exception as e:
         pass
 
     output_strings = [
         f'Reference Scene: {reference_scene}\n',
         f'Secondary Scene: {secondary_scene}\n',
-        f'Reference Pass Direction: \n',
-        f'Reference Orbit Number: \n',
-        f'Secondary Pass Direction: \n',
-        f'Secondary Orbit Number: \n',
+        f'Reference Pass Direction: {ref_orbit_direction}\n',
+        f'Reference Orbit Number: {ref_orbit_number}\n',
+        f'Secondary Pass Direction: {sec_orbit_direction}\n',
+        f'Secondary Orbit Number: {sec_orbit_number}\n',
         f'Reference Burst Number: {ref_burst_number}\n',
         f'Secondary Burst Number: {sec_burst_number}\n',
         f'Swath Number: {swath_number}\n',
-        f'Baseline: \n',
+        f'Parallel Baseline: \n',
+        f'Perpindicular Baseline: \n',
         f'UTC time: \n',
         f'Heading: \n',
         f'Spacecraft height: \n',
