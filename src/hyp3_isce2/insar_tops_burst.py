@@ -187,7 +187,7 @@ def main():
     gdal.Translate(
         destName=f'{product_name}/{product_name}_conn_comp.tif',
         srcDS=str(product_dir / 'filt_topophase.unw.conncomp.geo'),
-        noData=-1,
+        noData=0,
         creationOptions=['TILED=YES', 'COMPRESS=LZW', 'NUM_THREADS=ALL_CPUS'],
     )
     subprocess.call([
