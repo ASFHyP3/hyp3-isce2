@@ -4,8 +4,8 @@ ISCE2 processing for HyP3
 import argparse
 import os
 import sys
-from pathlib import Path
 from importlib.metadata import entry_points
+from pathlib import Path
 
 from hyp3lib.fetch import write_credentials_to_netrc_file
 
@@ -18,11 +18,7 @@ def main():
     parser = argparse.ArgumentParser(prefix_chars='+', formatter_class=argparse.ArgumentDefaultsHelpFormatter)
     parser.add_argument(
         '++process',
-        choices=[
-            'insar_tops_burst',
-            'insar_tops',
-            'insar_stripmap'
-        ],
+        choices=['insar_tops_burst', 'insar_tops', 'insar_stripmap'],
         default='insar_tops_burst',
         help='Select the HyP3 entrypoint to use',  # HyP3 entrypoints are specified in `pyproject.toml`
     )
@@ -36,7 +32,6 @@ def main():
 
     if not (Path.home() / '.netrc').exists():
         raise ValueError('EarthData login credentials must be present as environment variables, or in your netrc')
-
 
     # NOTE: Cast to set because of: https://github.com/pypa/setuptools/issues/3649
     # NOTE: Will need to update to `entry_points(group='hyp3', name=args.process)` when updating to python 3.10
