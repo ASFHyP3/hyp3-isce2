@@ -175,16 +175,19 @@ def main():
         destName=f'{product_name}/{product_name}_unw_phase.tif',
         srcDS=str(product_dir / 'filt_topophase.unw.geo'),
         bandList=[2],
+        noData=0,
         creationOptions=['TILED=YES', 'COMPRESS=LZW', 'NUM_THREADS=ALL_CPUS'],
     )
     gdal.Translate(
         destName=f'{product_name}/{product_name}_corr.tif',
         srcDS=str(product_dir / 'phsig.cor.geo'),
+        noData=0,
         creationOptions=['TILED=YES', 'COMPRESS=LZW', 'NUM_THREADS=ALL_CPUS'],
     )
     gdal.Translate(
         destName=f'{product_name}/{product_name}_conn_comp.tif',
         srcDS=str(product_dir / 'filt_topophase.unw.conncomp.geo'),
+        noData=-1,
         creationOptions=['TILED=YES', 'COMPRESS=LZW', 'NUM_THREADS=ALL_CPUS'],
     )
     subprocess.call([
@@ -192,6 +195,7 @@ def main():
         '--outfile', f'{product_name}/{product_name}_wrapped_phase.tif',
         '-A', str(product_dir / 'filt_topophase.flat.geo'),
         '--calc', 'angle(A)',
+        '--NoDataValue=0',
         '--type', 'Float32',
         '--creation-option', 'TILED=YES',
         '--creation-option', 'COMPRESS=LZW',
