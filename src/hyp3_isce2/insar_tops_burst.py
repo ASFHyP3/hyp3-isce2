@@ -97,42 +97,42 @@ def insar_tops_burst(
 
 
 def write_parameters_file(
-    reference_scene,
-    secondary_scene,
-    swath_number,
-    polarization,
-    ref_burst_number,
-    sec_burst_number,
-    azimuth_looks,
-    range_looks
+    reference_scene: str,
+    secondary_scene: str,
+    swath_number: int,
+    ref_burst_number: int,
+    sec_burst_number: int,
+    polarization: str = "VV",
+    azimuth_looks: int = 4,
+    range_looks: int = 20,
+    dem_name: str = "GLO_30",
+    dem_resolution: int = 30
 ):
 
-    try:
-        ref_xml_tree  = ET.parse(f'{reference_scene}.SAFE/manifest.safe')
-        sec_xml_tree  = ET.parse(f'{secondary_scene}.SAFE/manifest.safe')
-        proc_xml_tree = ET.parse(f'topsProc.xml')
-        app_xml_tree  = ET.parse(f'topsApp.xml')
-    
-        safe = '{http://www.esa.int/safe/sentinel-1.0}'
-        s1   = '{http://www.esa.int/safe/sentinel-1.0/sentinel-1}'
-        metadata_path = './/metadataObject[@ID="measurementOrbitReference"]//xmlData//'
-        orbit_number_query = metadata_path + safe + 'orbitNumber'
-        orbit_direction_query = metadata_path + safe + 'extension//' + s1 + 'pass'
+    filepath = Path("parameters.txt")
 
-        ref_orbit_number    = ref_xml_tree.find(orbit_number_query).text
-        ref_orbit_direction = ref_xml_tree.find(orbit_direction_query).text
+    ref_xml_tree  = ET.parse(f'{reference_scene}.SAFE/manifest.safe')
+    sec_xml_tree  = ET.parse(f'{secondary_scene}.SAFE/manifest.safe')
+    proc_xml_tree = ET.parse(f'topsProc.xml')
+    app_xml_tree  = ET.parse(f'topsApp.xml')
 
-        sec_orbit_number    = sec_xml_tree.find(orbit_number_query).text
-        sec_orbit_direction = sec_xml_tree.find(orbit_direction_query).text
+    safe = '{http://www.esa.int/safe/sentinel-1.0}'
+    s1   = '{http://www.esa.int/safe/sentinel-1.0/sentinel-1}'
+    metadata_path = './/metadataObject[@ID="measurementOrbitReference"]//xmlData//'
+    orbit_number_query = metadata_path + safe + 'orbitNumber'
+    orbit_direction_query = metadata_path + safe + 'extension//' + s1 + 'pass'
 
-        baseline_par  = proc_xml_tree.find('.//IW-2_Bpar_at_midrange_for_first_common_burst').text
-        baseline_perp = proc_xml_tree.find('.//IW-2_Bperp_at_midrange_for_first_common_burst').text
+    ref_orbit_number    = ref_xml_tree.find(orbit_number_query).text
+    ref_orbit_direction = ref_xml_tree.find(orbit_direction_query).text
 
-        unwrapper_type = app_xml_tree.find('.//property[@name="unwrapper name"]').text
-        phase_filter_strength = app_xml_tree.find('.//property[@name="filter strength"]').text
+    sec_orbit_number    = sec_xml_tree.find(orbit_number_query).text
+    sec_orbit_direction = sec_xml_tree.find(orbit_direction_query).text
 
-    except Exception as e:
-        pass
+    baseline_par  = proc_xml_tree.find('.//IW-2_Bpar_at_midrange_for_first_common_burst').text
+    baseline_perp = proc_xml_tree.find('.//IW-2_Bperp_at_midrange_for_first_common_burst').text
+
+    unwrapper_type = app_xml_tree.find('.//property[@name="unwrapper name"]').text
+    phase_filter_strength = app_xml_tree.find('.//property[@name="filter strength"]').text
 
     output_strings = [
         f'Reference Scene: {reference_scene}\n',
@@ -161,8 +161,8 @@ def write_parameters_file(
         f'Resolution of output (m): \n',
         f'Range bandpass filter: \n',
         f'Azimuth bandpass filter: \n',
-        f'DEM source: \n',
-        f'DEM resolution (m): \n',
+        f'DEM source: {dem_name}\n',
+        f'DEM resolution (m): {dem_resolution}\n',
         f'Unwrapping type: {unwrapper_type}\n',
         f'Phase at reference point: \n',
         f'Azimuth line of the reference point in SAR space: \n',
@@ -177,10 +177,10 @@ def write_parameters_file(
 
     output_string = "".join(output_strings)
 
-    with open('parameters.txt', 'w') as outfile:
+    with open(filepath.__str__(), 'w') as outfile:
         outfile.write(output_string)
 
-    return None
+    return filepath
 
 def main():
     """HyP3 entrypoint for the burst TOPS workflow"""
@@ -202,16 +202,16 @@ def main():
     logging.basicConfig(stream=sys.stdout, format='%(asctime)s - %(levelname)s - %(message)s', level=logging.INFO)
     log.debug(' '.join(sys.argv))
 
-    # product_dir = insar_tops_burst(
-    #     reference_scene=args.reference_scene,
-    #     secondary_scene=args.secondary_scene,
-    #     swath_number=args.swath_number,
-    #     polarization=args.polarization,
-    #     reference_burst_number=args.reference_burst_number,
-    #     secondary_burst_number=args.secondary_burst_number,
-    #     azimuth_looks=args.azimuth_looks,
-    #     range_looks=args.range_looks,
-    # )
+    product_dir = insar_tops_burst(
+        reference_scene=args.reference_scene,
+        secondary_scene=args.secondary_scene,
+        swath_number=args.swath_number,
+        polarization=args.polarization,
+        reference_burst_number=args.reference_burst_number,
+        secondary_burst_number=args.secondary_burst_number,
+        azimuth_looks=args.azimuth_looks,
+        range_looks=args.range_looks,
+    )
 
     log.info('ISCE2 TopsApp run completed successfully')
 
@@ -226,18 +226,18 @@ def main():
         args.range_looks
     )
 
-    # if args.bucket:
-    #     reference_name = (
-    #         f'{args.reference_scene}_IW{args.swath_number}_{args.polarization}_{args.reference_burst_number}'
-    #     )
-    #     secondary_name = (
-    #         f'{args.secondary_scene}_IW{args.swath_number}_{args.polarization}_{args.secondary_burst_number}'
-    #     )
-    #     base_name = f'{reference_name}x{secondary_name}'
-    #     product_file = make_archive(base_name=base_name, format='zip', base_dir=product_dir)
-    #     upload_file_to_s3(product_file, args.bucket, args.bucket_prefix)
-    #     browse_images = product_file.with_suffix('.png')
-    #     for browse in browse_images:
-    #         thumbnail = create_thumbnail(browse)
-    #         upload_file_to_s3(browse, args.bucket, args.bucket_prefix)
-    #         upload_file_to_s3(thumbnail, args.bucket, args.bucket_prefix)
+    if args.bucket:
+        reference_name = (
+            f'{args.reference_scene}_IW{args.swath_number}_{args.polarization}_{args.reference_burst_number}'
+        )
+        secondary_name = (
+            f'{args.secondary_scene}_IW{args.swath_number}_{args.polarization}_{args.secondary_burst_number}'
+        )
+        base_name = f'{reference_name}x{secondary_name}'
+        product_file = make_archive(base_name=base_name, format='zip', base_dir=product_dir)
+        upload_file_to_s3(product_file, args.bucket, args.bucket_prefix)
+        browse_images = product_file.with_suffix('.png')
+        for browse in browse_images:
+            thumbnail = create_thumbnail(browse)
+            upload_file_to_s3(browse, args.bucket, args.bucket_prefix)
+            upload_file_to_s3(thumbnail, args.bucket, args.bucket_prefix)
