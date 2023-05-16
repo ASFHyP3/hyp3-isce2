@@ -26,7 +26,7 @@ python -m hyp3_isce2 ++process insar_tops_burst \
 This command will create a Sentinel-1 interferogram that contains a deformation signal related to a 2020 Iranian earthquake.
 To learn about the arguments for each workflow, look at the help documentation (`python -m hyp3_isce2 ++process [WORKFLOW_NAME] --help`).
 
-For all workflows the user will need to provide their EarthData login credentials to download input data. If you do not already have an account, you can sign up [here](https://urs.earthdata.nasa.gov/home). Your credentials can either be passed to the workflows via environment variables (`EARTHDATA_USERNAME` and `EARTHDATA_PASSWORD`), or via your `.netrc` file. If you haven't set up a `.netrc` file before, check out this [guide](https://harmony.earthdata.nasa.gov/docs#getting-started) to get started.
+For all workflows the user will need to provide their Earthdata login credentials to download input data. If you do not already have an account, you can sign up [here](https://urs.earthdata.nasa.gov/home). Your credentials can either be passed to the workflows via environment variables (`EARTHDATA_USERNAME` and `EARTHDATA_PASSWORD`), or via your `.netrc` file. If you haven't set up a `.netrc` file before, check out this [guide](https://harmony.earthdata.nasa.gov/docs#getting-started) to get started.
 
 The ultimate goal of this project is to create a docker container that can run ISCE2 workflows within a HyP3 deployment. To run the current version of the project's container, use this command:
 ```
