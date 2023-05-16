@@ -125,6 +125,12 @@ def write_parameters_file(
         sec_orbit_number    = sec_xml_tree.find(orbit_number_query).text
         sec_orbit_direction = sec_xml_tree.find(orbit_direction_query).text
 
+        baseline_par  = proc_xml_tree.find('.//IW-2_Bpar_at_midrange_for_first_common_burst').text
+        baseline_perp = proc_xml_tree.find('.//IW-2_Bperp_at_midrange_for_first_common_burst').text
+
+        unwrapper_type = app_xml_tree.find('.//property[@name="unwrapper name"]').text
+        phase_filter_strength = app_xml_tree.find('.//property[@name="filter strength"]').text
+
     except Exception as e:
         pass
 
@@ -138,8 +144,9 @@ def write_parameters_file(
         f'Reference Burst Number: {ref_burst_number}\n',
         f'Secondary Burst Number: {sec_burst_number}\n',
         f'Swath Number: {swath_number}\n',
-        f'Parallel Baseline: \n',
-        f'Perpindicular Baseline: \n',
+        f'Polarization: {polarization}\n',
+        f'Parallel Baseline: {baseline_par}\n',
+        f'Perpindicular Baseline: {baseline_perp}\n',
         f'UTC time: \n',
         f'Heading: \n',
         f'Spacecraft height: \n',
@@ -150,13 +157,13 @@ def write_parameters_file(
         f'Range looks: {range_looks}\n',
         f'Azimuth looks: {azimuth_looks}\n',
         f'INSAR phase filter: \n',
-        f'Phase filter parameter: \n',
+        f'Phase filter parameter: {phase_filter_strength}\n',
         f'Resolution of output (m): \n',
         f'Range bandpass filter: \n',
         f'Azimuth bandpass filter: \n',
         f'DEM source: \n',
         f'DEM resolution (m): \n',
-        f'Unwrapping type: \n',
+        f'Unwrapping type: {unwrapper_type}\n',
         f'Phase at reference point: \n',
         f'Azimuth line of the reference point in SAR space: \n',
         f'Range pixel of the reference point in SAR space: \n',
