@@ -126,6 +126,12 @@ def make_parameter_file(out_path: Path, reference_scene: str, secondary_scene: s
 
 
 def translate_outputs(product_dir: Path, product_name: str):
+    """Translate ISCE outputs to a standard GTiff format with a UTMS projection
+
+    Args:
+        product_dir: Path to the ISCE merge directory
+        product_name: Name of the product
+    """
     gdal.Translate(
         destName=f'{product_name}/{product_name}_unw_phase.tif',
         srcDS=str(product_dir / 'filt_topophase.unw.geo'),
