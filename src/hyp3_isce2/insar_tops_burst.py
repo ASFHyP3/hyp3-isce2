@@ -24,8 +24,7 @@ from hyp3_isce2.burst import (
 )
 from hyp3_isce2.dem import download_dem_for_isce2
 from hyp3_isce2.s1_auxcal import download_aux_cal
-from hyp3_isce2.utils import get_utm_proj
-
+from hyp3_isce2.utils import get_extent_and_resolution, get_utm_proj
 
 log = logging.getLogger(__name__)
 
@@ -177,6 +176,19 @@ def translate_outputs(product_dir: Path, product_name: str):
             dstSRS=f'epsg:{utm_crs.to_epsg()}',
             creationOptions=['TILED=YES', 'COMPRESS=LZW', 'NUM_THREADS=ALL_CPUS'],
         )
+    # FIXME: this produces a DEM very similar to other outputs, but not identical
+    extent, resolution = get_extent_and_resolution(Path(product_name) / f'{product_name}_unw_phase.tif')
+    gdal.Warp(
+        destNameOrDestDS=f'{product_name}/{product_name}_dem.tif',
+        srcDSOrSrcDSTab=str(product_dir.parent / 'dem' / 'full_res.dem.wgs84'),
+        outputBounds=extent,
+        outputBoundsSRS=f'epsg:{utm_crs.to_epsg()}',
+        xRes=resolution[0],
+        yRes=resolution[1],
+        format='GTiff',
+        dstSRS=f'epsg:{utm_crs.to_epsg()}',
+        creationOptions=['TILED=YES', 'COMPRESS=LZW', 'NUM_THREADS=ALL_CPUS'],
+    )
 
 
 def main():
@@ -211,7 +223,6 @@ def main():
     )
 
     log.info('ISCE2 TopsApp run completed successfully')
-    product_dir = Path.home() / 'data' / 'example_job'
     product_name = get_product_name(
         args.reference_scene,
         args.secondary_scene,
@@ -220,7 +231,7 @@ def main():
         args.swath_number,
         args.polarization,
     )
-    Path(product_name).mkdir(exist_ok=True)
+
     translate_outputs(product_dir / 'merged', product_name)
     make_parameter_file(
         Path(f'{product_name}/{product_name}.json'),
