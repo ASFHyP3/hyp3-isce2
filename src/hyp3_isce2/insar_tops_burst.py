@@ -15,7 +15,13 @@ from hyp3lib.get_orb import downloadSentinelOrbitFile
 from osgeo import gdal
 
 from hyp3_isce2 import topsapp
-from hyp3_isce2.burst import BurstParams, download_bursts, get_isce2_burst_bbox, get_region_of_interest
+from hyp3_isce2.burst import (
+    BurstParams,
+    download_bursts,
+    get_isce2_burst_bbox,
+    get_region_of_interest,
+    get_product_name,
+)
 from hyp3_isce2.dem import download_dem_for_isce2
 from hyp3_isce2.s1_auxcal import download_aux_cal
 from hyp3_isce2.utils import get_utm_proj
@@ -96,21 +102,6 @@ def insar_tops_burst(
     topsapp.run_topsapp_burst(start='computeBaselines', end='geocode', config_xml=config_path)
 
     return Path('merged')
-
-
-# TODO is this the format we want?
-# TODO unit test
-def get_product_name(
-    reference_scene: str,
-    secondary_scene: str,
-    reference_burst_number: int,
-    secondary_burst_number: int,
-    swath_number: int,
-    polarization: str,
-) -> str:
-    reference_name = f'{reference_scene}_IW{swath_number}_{polarization}_{reference_burst_number}'
-    secondary_name = f'{secondary_scene}_IW{swath_number}_{polarization}_{secondary_burst_number}'
-    return f'{reference_name}x{secondary_name}'
 
 
 # TODO add more parameters
