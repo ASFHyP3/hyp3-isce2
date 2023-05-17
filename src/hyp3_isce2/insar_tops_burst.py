@@ -19,8 +19,8 @@ from hyp3_isce2.burst import (
     BurstParams,
     download_bursts,
     get_isce2_burst_bbox,
-    get_region_of_interest,
     get_product_name,
+    get_region_of_interest,
 )
 from hyp3_isce2.dem import download_dem_for_isce2
 from hyp3_isce2.s1_auxcal import download_aux_cal
