@@ -4,9 +4,9 @@ ISCE2 processing for HyP3
 import argparse
 import os
 import sys
+import warnings
 from importlib.metadata import entry_points
 from pathlib import Path
-import warnings
 
 from hyp3lib.fetch import write_credentials_to_netrc_file
 
