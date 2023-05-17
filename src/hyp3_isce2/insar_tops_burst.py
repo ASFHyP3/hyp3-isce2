@@ -126,24 +126,26 @@ def make_parameter_file(out_path: Path, reference_scene: str, secondary_scene: s
 
 
 def translate_outputs(product_dir: Path, product_name: str):
-    # TODO need to set nodata values
-    # TODO what output projection do we want? currently EPSG:4326
-    utm_crs = get_utm_proj(product_dir / 'filt_topophase.unw.geo')
-
     gdal.Translate(
         destName=f'{product_name}/{product_name}_unw_phase.tif',
         srcDS=str(product_dir / 'filt_topophase.unw.geo'),
         bandList=[2],
+        format='GTiff',
+        noData=0,
         creationOptions=['TILED=YES', 'COMPRESS=LZW', 'NUM_THREADS=ALL_CPUS'],
     )
     gdal.Translate(
         destName=f'{product_name}/{product_name}_corr.tif',
         srcDS=str(product_dir / 'phsig.cor.geo'),
+        format='GTiff',
+        noData=0,
         creationOptions=['TILED=YES', 'COMPRESS=LZW', 'NUM_THREADS=ALL_CPUS'],
     )
     gdal.Translate(
         destName=f'{product_name}/{product_name}_conn_comp.tif',
         srcDS=str(product_dir / 'filt_topophase.unw.conncomp.geo'),
+        format='GTiff',
+        noData=0,
         creationOptions=['TILED=YES', 'COMPRESS=LZW', 'NUM_THREADS=ALL_CPUS'],
     )
     subprocess.call(
@@ -165,11 +167,19 @@ def translate_outputs(product_dir: Path, product_name: str):
             'COMPRESS=LZW',
             '--creation-option',
             'NUM_THREADS=ALL_CPUS',
+            '--NoDataValue=0',
         ]
     )
 
-    for file in [str(x) for x in Path(product_dir).glob('*.tif')]:
-        gdal.Warp(file, file, dstSRS=utm_crs)
+    utm_crs = get_utm_proj(product_dir / 'filt_topophase.unw.geo')
+    files = [str(x) for x in Path(product_name).glob('*.tif')]
+    for file in files:
+        gdal.Warp(
+            file,
+            file,
+            dstSRS=f'epsg:{utm_crs.to_epsg()}',
+            creationOptions=['TILED=YES', 'COMPRESS=LZW', 'NUM_THREADS=ALL_CPUS'],
+        )
 
 
 def main():
@@ -204,7 +214,7 @@ def main():
     )
 
     log.info('ISCE2 TopsApp run completed successfully')
-
+    product_dir = Path.home() / 'data' / 'example_job'
     product_name = get_product_name(
         args.reference_scene,
         args.secondary_scene,
@@ -213,8 +223,8 @@ def main():
         args.swath_number,
         args.polarization,
     )
-    os.mkdir(product_name)
-    translate_outputs(product_dir, product_name)
+    Path(product_name).mkdir(exist_ok=True)
+    translate_outputs(product_dir / 'merged', product_name)
     make_parameter_file(
         Path(f'{product_name}/{product_name}.json'),
         args.reference_scene,
