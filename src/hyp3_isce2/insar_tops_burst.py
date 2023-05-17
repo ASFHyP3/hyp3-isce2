@@ -134,19 +134,16 @@ def translate_outputs(product_dir: Path, product_name: str):
         destName=f'{product_name}/{product_name}_unw_phase.tif',
         srcDS=str(product_dir / 'filt_topophase.unw.geo'),
         bandList=[2],
-        outputSRS=utm_crs,
         creationOptions=['TILED=YES', 'COMPRESS=LZW', 'NUM_THREADS=ALL_CPUS'],
     )
     gdal.Translate(
         destName=f'{product_name}/{product_name}_corr.tif',
         srcDS=str(product_dir / 'phsig.cor.geo'),
-        outputSRS=utm_crs,
         creationOptions=['TILED=YES', 'COMPRESS=LZW', 'NUM_THREADS=ALL_CPUS'],
     )
     gdal.Translate(
         destName=f'{product_name}/{product_name}_conn_comp.tif',
         srcDS=str(product_dir / 'filt_topophase.unw.conncomp.geo'),
-        outputSRS=utm_crs,
         creationOptions=['TILED=YES', 'COMPRESS=LZW', 'NUM_THREADS=ALL_CPUS'],
     )
     subprocess.call(
@@ -160,6 +157,8 @@ def translate_outputs(product_dir: Path, product_name: str):
             'angle(A)',
             '--type',
             'Float32',
+            '--format',
+            'GTiff',
             '--creation-option',
             'TILED=YES',
             '--creation-option',
@@ -168,6 +167,9 @@ def translate_outputs(product_dir: Path, product_name: str):
             'NUM_THREADS=ALL_CPUS',
         ]
     )
+
+    for file in [str(x) for x in Path(product_dir).glob('*.tif')]:
+        gdal.Warp(file, file, dstSRS=utm_crs)
 
 
 def main():
