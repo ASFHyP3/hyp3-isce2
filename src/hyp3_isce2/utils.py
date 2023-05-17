@@ -1,7 +1,8 @@
-import utm
-from pyproj import CRS
 from pathlib import Path
+
+import utm
 from osgeo import gdal
+from pyproj import CRS
 
 
 def get_utm_proj(dataset_path: Path):
