@@ -148,18 +148,18 @@ def write_parameters_file(
         f'Perpindicular Baseline: {baseline_perp}\n',
         f'UTC time: \n',
         f'Heading: \n',
-        f'Spacecraft height: \n',
-        f'Earth radius at nadir: \n',
+        f'Spacecraft height: 693000.0\n',
+        f'Earth radius at nadir: 6337286.638938101\n',
         f'Slant range near: \n',
         f'Slant range center: \n',
         f'Slant range far: \n',
         f'Range looks: {range_looks}\n',
         f'Azimuth looks: {azimuth_looks}\n',
-        f'INSAR phase filter: \n',
+        f'INSAR phase filter: yes\n',
         f'Phase filter parameter: {phase_filter_strength}\n',
         f'Resolution of output (m): \n',
-        f'Range bandpass filter: \n',
-        f'Azimuth bandpass filter: \n',
+        f'Range bandpass filter: no\n',
+        f'Azimuth bandpass filter: no\n',
         f'DEM source: {dem_name}\n',
         f'DEM resolution (m): {dem_resolution}\n',
         f'Unwrapping type: {unwrapper_type}\n',
@@ -171,7 +171,7 @@ def write_parameters_file(
         f'Latitude of the reference point (WGS84): \n',
         f'Longitude of the reference point (WGS84): \n',
         f'Unwrapping threshold: \n',
-        f'Speckle filter: \n'
+        f'Speckle filter: yes\n'
     ]
 
     output_string = "".join(output_strings)
