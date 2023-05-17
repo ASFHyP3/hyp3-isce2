@@ -24,7 +24,7 @@ from hyp3_isce2.burst import (
 )
 from hyp3_isce2.dem import download_dem_for_isce2
 from hyp3_isce2.s1_auxcal import download_aux_cal
-from hyp3_isce2.utils import get_extent_and_resolution, get_utm_proj
+from hyp3_isce2.utils import extent_from_geotransform, utm_from_lon_lat
 
 log = logging.getLogger(__name__)
 
@@ -167,26 +167,32 @@ def translate_outputs(product_dir: Path, product_name: str):
         ]
     )
 
-    utm_crs = get_utm_proj(product_dir / 'filt_topophase.unw.geo')
+    ds = gdal.Open(str(product_dir / 'filt_topophase.unw.geo'))
+    geotransform = ds.GetGeoTransform()
+    x_size, y_size = ds.RasterXSize, ds.RasterYSize
+    ds = None
+
+    epsg = utm_from_lon_lat(geotransform[0], geotransform[3])
+    extent = extent_from_geotransform(geotransform, x_size, y_size)
     files = [str(x) for x in Path(product_name).glob('*.tif')]
     for file in files:
         gdal.Warp(
             file,
             file,
-            dstSRS=f'epsg:{utm_crs.to_epsg()}',
+            dstSRS=f'epsg:{epsg}',
             creationOptions=['TILED=YES', 'COMPRESS=LZW', 'NUM_THREADS=ALL_CPUS'],
         )
+
     # FIXME: this produces a DEM very similar to other outputs, but not identical
-    extent, resolution = get_extent_and_resolution(Path(product_name) / f'{product_name}_unw_phase.tif')
     gdal.Warp(
         destNameOrDestDS=f'{product_name}/{product_name}_dem.tif',
         srcDSOrSrcDSTab=str(product_dir.parent / 'dem' / 'full_res.dem.wgs84'),
         outputBounds=extent,
-        outputBoundsSRS=f'epsg:{utm_crs.to_epsg()}',
-        xRes=resolution[0],
-        yRes=resolution[1],
+        outputBoundsSRS=f'epsg:{epsg}',
+        xRes=geotransform[1],
+        yRes=geotransform[5],
         format='GTiff',
-        dstSRS=f'epsg:{utm_crs.to_epsg()}',
+        dstSRS=f'epsg:{epsg}',
         creationOptions=['TILED=YES', 'COMPRESS=LZW', 'NUM_THREADS=ALL_CPUS'],
     )
 
@@ -232,7 +238,8 @@ def main():
         args.polarization,
     )
 
-    translate_outputs(product_dir / 'merged', product_name)
+    Path(product_name).mkdir(parents=True, exist_ok=True)
+    translate_outputs(product_dir, product_name)
     make_parameter_file(
         Path(f'{product_name}/{product_name}.json'),
         args.reference_scene,
