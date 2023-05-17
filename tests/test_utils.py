@@ -1,5 +1,6 @@
-from osgeo import gdal
 import pytest
+from osgeo import gdal
+
 from hyp3_isce2.utils import get_utm_proj
 
 
