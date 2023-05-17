@@ -148,7 +148,7 @@ def write_parameters_file(
         f'Perpindicular Baseline: {baseline_perp}\n',
         f'UTC time: \n',
         f'Heading: \n',
-        f'Spacecraft height: 693000.0\n',
+        f'Spacecraft height: 693000.0\n',   
         f'Earth radius at nadir: 6337286.638938101\n',
         f'Slant range near: \n',
         f'Slant range center: \n',
@@ -202,16 +202,16 @@ def main():
     logging.basicConfig(stream=sys.stdout, format='%(asctime)s - %(levelname)s - %(message)s', level=logging.INFO)
     log.debug(' '.join(sys.argv))
 
-    # product_dir = insar_tops_burst(
-    #     reference_scene=args.reference_scene,
-    #     secondary_scene=args.secondary_scene,
-    #     swath_number=args.swath_number,
-    #     polarization=args.polarization,
-    #     reference_burst_number=args.reference_burst_number,
-    #     secondary_burst_number=args.secondary_burst_number,
-    #     azimuth_looks=args.azimuth_looks,
-    #     range_looks=args.range_looks,
-    # )
+    product_dir = insar_tops_burst(
+        reference_scene=args.reference_scene,
+        secondary_scene=args.secondary_scene,
+        swath_number=args.swath_number,
+        polarization=args.polarization,
+        reference_burst_number=args.reference_burst_number,
+        secondary_burst_number=args.secondary_burst_number,
+        azimuth_looks=args.azimuth_looks,
+        range_looks=args.range_looks,
+    )
 
     log.info('ISCE2 TopsApp run completed successfully')
 
