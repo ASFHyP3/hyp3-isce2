@@ -9,12 +9,12 @@ import subprocess
 import sys
 from pathlib import Path
 from shutil import make_archive
-from osgeo import osr
 import numpy as np
 
 from hyp3lib.aws import upload_file_to_s3
 from hyp3lib.get_orb import downloadSentinelOrbitFile
 from osgeo import gdal
+from osgeo import osr
 
 from hyp3_isce2 import topsapp
 from hyp3_isce2.burst import BurstParams, download_bursts, get_isce2_burst_bbox, get_region_of_interest
