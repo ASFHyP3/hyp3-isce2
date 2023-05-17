@@ -9,6 +9,8 @@ import subprocess
 import sys
 from pathlib import Path
 from shutil import make_archive
+from osgeo import osr
+import numpy as np
 
 from hyp3lib.aws import upload_file_to_s3
 from hyp3lib.get_orb import downloadSentinelOrbitFile
@@ -126,6 +128,48 @@ def make_parameter_file(
         json.dump(output, f)
 
 
+def make_tiff(infile, outfile, reffile, bn=1, nodata=-1):
+    ds = gdal.Open(infile)
+
+    band = ds.GetRasterBand(bn)
+
+    data = band.ReadAsArray()
+
+    [cols, rows] = data.shape
+
+    projection = osr.SpatialReference()
+
+    projection.ImportFromWkt(ds.GetProjectionRef())
+
+    # read ref_file
+
+    ds_ref = gdal.Open(reffile, gdal.GA_ReadOnly)
+
+    data_ref = ds_ref.GetRasterBand(1).ReadAsArray()
+
+    # change the datatype and apply the mask with nodata
+
+    data = data.astype(dtype=np.float32)
+
+    data[data_ref == 0] = nodata
+
+    driver = gdal.GetDriverByName("GTiff")
+
+    des = driver.Create(outfile, rows, cols, 1, gdal.GDT_Float32)
+
+    des.SetGeoTransform(ds.GetGeoTransform())
+
+    des.SetProjection(projection.ExportToWkt())
+
+    outband = des.GetRasterBand(1)
+
+    outband.WriteArray(data)
+
+    des.GetRasterBand(1).SetNoDataValue(nodata)
+
+    des = None
+
+
 def main():
     """HyP3 entrypoint for the burst TOPS workflow"""
     parser = argparse.ArgumentParser(description=__doc__, formatter_class=argparse.ArgumentDefaultsHelpFormatter)
@@ -184,12 +228,12 @@ def main():
         noData=0,
         creationOptions=['TILED=YES', 'COMPRESS=LZW', 'NUM_THREADS=ALL_CPUS'],
     )
-    gdal.Translate(
-        destName=f'{product_name}/{product_name}_conn_comp.tif',
-        srcDS=str(product_dir / 'filt_topophase.unw.conncomp.geo'),
-        noData=0,
-        creationOptions=['TILED=YES', 'COMPRESS=LZW', 'NUM_THREADS=ALL_CPUS'],
-    )
+
+    make_tiff(str(product_dir / 'filt_topophase.unw.conncomp.geo'),
+              f'{product_name}/{product_name}_conn_comp.tif',
+              str(product_dir / 'filt_topophase.unw.geo')
+              )
+
     subprocess.call([
         'gdal_calc.py',
         '--outfile', f'{product_name}/{product_name}_wrapped_phase.tif',
