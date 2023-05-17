@@ -6,6 +6,7 @@ import os
 import sys
 from importlib.metadata import entry_points
 from pathlib import Path
+import warnings
 
 from hyp3lib.fetch import write_credentials_to_netrc_file
 
@@ -31,7 +32,9 @@ def main():
         write_credentials_to_netrc_file(username, password, append=False)
 
     if not (Path.home() / '.netrc').exists():
-        raise ValueError('EarthData login credentials must be present as environment variables, or in your netrc')
+        warnings.warn(
+            'EarthData login credentials must be present as environment variables, or in your netrc.', UserWarning
+        )
 
     # NOTE: Cast to set because of: https://github.com/pypa/setuptools/issues/3649
     # NOTE: Will need to update to `entry_points(group='hyp3', name=args.process)` when updating to python 3.10
