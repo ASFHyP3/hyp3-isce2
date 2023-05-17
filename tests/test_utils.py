@@ -1,4 +1,4 @@
-from hyp3_isce2.utils import utm_from_lon_lat, extent_from_geotransform
+from hyp3_isce2.utils import extent_from_geotransform, utm_from_lon_lat
 
 
 def test_utm_from_lon_lat():
