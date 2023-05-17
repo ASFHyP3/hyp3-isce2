@@ -5,7 +5,7 @@ import logging
 import os
 import site
 import sys
-import xml.etree.ElementTree as ET
+from lxml import etree
 from pathlib import Path
 from shutil import make_archive
 
@@ -111,10 +111,12 @@ def write_parameters_file(
 
     filepath = Path("parameters.txt")
 
-    ref_xml_tree  = ET.parse(f'{reference_scene}.SAFE/manifest.safe')
-    sec_xml_tree  = ET.parse(f'{secondary_scene}.SAFE/manifest.safe')
-    proc_xml_tree = ET.parse(f'topsProc.xml')
-    app_xml_tree  = ET.parse(f'topsApp.xml')
+    parser = etree.XMLParser(encoding='utf-8', recover=True)
+
+    ref_xml_tree  = etree.parse(f'{reference_scene}.SAFE/manifest.safe', parser)
+    sec_xml_tree  = etree.parse(f'{secondary_scene}.SAFE/manifest.safe', parser)
+    proc_xml_tree = etree.parse(f'topsProc.xml', parser)
+    app_xml_tree  = etree.parse(f'topsApp.xml', parser)
 
     safe = '{http://www.esa.int/safe/sentinel-1.0}'
     s1   = '{http://www.esa.int/safe/sentinel-1.0/sentinel-1}'
@@ -197,19 +199,19 @@ def main():
 
     args = parser.parse_args()
 
-    logging.basicConfig(stream=sys.stdout, format='%(asctime)s - %(levelname)s - %(message)s', level=logging.DEBUG)
+    logging.basicConfig(stream=sys.stdout, format='%(asctime)s - %(levelname)s - %(message)s', level=logging.INFO)
     log.debug(' '.join(sys.argv))
 
-    product_dir = insar_tops_burst(
-        reference_scene=args.reference_scene,
-        secondary_scene=args.secondary_scene,
-        swath_number=args.swath_number,
-        polarization=args.polarization,
-        reference_burst_number=args.reference_burst_number,
-        secondary_burst_number=args.secondary_burst_number,
-        azimuth_looks=args.azimuth_looks,
-        range_looks=args.range_looks,
-    )
+    # product_dir = insar_tops_burst(
+    #     reference_scene=args.reference_scene,
+    #     secondary_scene=args.secondary_scene,
+    #     swath_number=args.swath_number,
+    #     polarization=args.polarization,
+    #     reference_burst_number=args.reference_burst_number,
+    #     secondary_burst_number=args.secondary_burst_number,
+    #     azimuth_looks=args.azimuth_looks,
+    #     range_looks=args.range_looks,
+    # )
 
     log.info('ISCE2 TopsApp run completed successfully')
 
@@ -221,7 +223,7 @@ def main():
         reference_burst_number=args.reference_burst_number,
         secondary_burst_number=args.secondary_burst_number,
         azimuth_looks=args.azimuth_looks,
-        range_look=args.range_looks
+        range_looks=args.range_looks
     )
 
     if args.bucket:
