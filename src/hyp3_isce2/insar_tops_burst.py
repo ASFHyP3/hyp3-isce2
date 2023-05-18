@@ -7,18 +7,25 @@ import os
 import site
 import subprocess
 import sys
+from collections import namedtuple
 from pathlib import Path
-from shutil import make_archive
+from shutil import copyfile, make_archive
 
 from hyp3lib.aws import upload_file_to_s3
 from hyp3lib.get_orb import downloadSentinelOrbitFile
 from osgeo import gdal
 
 from hyp3_isce2 import topsapp
-from hyp3_isce2.burst import BurstParams, download_bursts, get_isce2_burst_bbox, get_region_of_interest
+from hyp3_isce2.burst import (
+    BurstParams,
+    download_bursts,
+    get_isce2_burst_bbox,
+    get_product_name,
+    get_region_of_interest,
+)
 from hyp3_isce2.dem import download_dem_for_isce2
 from hyp3_isce2.s1_auxcal import download_aux_cal
-
+from hyp3_isce2.utils import make_browse_image, utm_from_lon_lat
 
 log = logging.getLogger(__name__)
 
@@ -92,38 +99,78 @@ def insar_tops_burst(
 
     topsapp.run_topsapp_burst(start='startup', end='preprocess', config_xml=config_path)
     topsapp.swap_burst_vrts()
-    topsapp.run_topsapp_burst(start='computeBaselines', end='geocode', config_xml=config_path)
+    topsapp.run_topsapp_burst(start='computeBaselines', end='unwrap2stage', config_xml=config_path)
+    copyfile('merged/z.rdr.full.xml', 'merged/z.rdr.full.vrt.xml')
+    topsapp.run_topsapp_burst(start='geocode', end='geocode', config_xml=config_path)
 
     return Path('merged')
-
-
-# TODO is this the format we want?
-# TODO unit test
-def get_product_name(
-        reference_scene: str,
-        secondary_scene: str,
-        reference_burst_number: int,
-        secondary_burst_number: int,
-        swath_number: int,
-        polarization: str) -> str:
-    reference_name = f'{reference_scene}_IW{swath_number}_{polarization}_{reference_burst_number}'
-    secondary_name = f'{secondary_scene}_IW{swath_number}_{polarization}_{secondary_burst_number}'
-    return f'{reference_name}x{secondary_name}'
 
 
 # TODO add more parameters
 # TODO does the format need to be the same as for our INSAR_GAMMA products?
 # TODO unit test
-def make_parameter_file(
-        out_path: Path,
-        reference_scene: str,
-        secondary_scene: str) -> None:
+def make_parameter_file(out_path: Path, reference_scene: str, secondary_scene: str) -> None:
     output = {
         'reference_scene': reference_scene,
         'secondary_scene': secondary_scene,
     }
     with out_path.open('w') as f:
         json.dump(output, f)
+
+
+def translate_outputs(product_dir: Path, product_name: str):
+    """Translate ISCE outputs to a standard GTiff format with a UTM projection
+
+    Args:
+        product_dir: Path to the ISCE merge directory
+        product_name: Name of the product
+    """
+    ISCE2Dataset = namedtuple('ISCE2Dataset', ['name', 'suffix', 'band'])
+    datasets = [
+        ISCE2Dataset('filt_topophase.unw.geo', 'unw_phase', 2),
+        ISCE2Dataset('phsig.cor.geo', 'corr', 1),
+        ISCE2Dataset('z.rdr.full.geo', 'dem', 1),
+        ISCE2Dataset('filt_topophase.unw.conncomp.geo', 'conncomp', 1),
+    ]
+
+    for dataset in datasets:
+        out_file = str(Path(product_name) / f'{product_name}_{dataset.suffix}.tif')
+        in_file = str(product_dir / dataset.name)
+
+        gdal.Translate(
+            destName=out_file,
+            srcDS=in_file,
+            bandList=[dataset.band],
+            format='GTiff',
+            noData=0,
+            creationOptions=['TILED=YES', 'COMPRESS=LZW', 'NUM_THREADS=ALL_CPUS'],
+        )
+
+    wrapped_phase = ISCE2Dataset('filt_topophase.flat.geo', 'wrapped_phase', 1)
+    cmd = (
+        'gdal_calc.py'
+        f'--outfile {product_name}/{product_name}_{wrapped_phase.suffix}.tif '
+        f'-A {product_dir / wrapped_phase.name} '
+        '--calc angle(A) --type Float32 --format GTiff --NoDataValue=0 '
+        '--creation-option TILED=YES --creation-option COMPRESS=LZW --creation-option NUM_THREADS=ALL_CPUS'
+    )
+    subprocess.check_call(cmd.split(' '))
+
+    ds = gdal.Open(str(product_dir / 'filt_topophase.unw.geo'))
+    geotransform = ds.GetGeoTransform()
+    del ds
+
+    epsg = utm_from_lon_lat(geotransform[0], geotransform[3])
+    files = [str(path) for path in Path(product_name).glob('*.tif')]
+    for file in files:
+        gdal.Warp(
+            file,
+            file,
+            dstSRS=f'epsg:{epsg}',
+            creationOptions=['TILED=YES', 'COMPRESS=LZW', 'NUM_THREADS=ALL_CPUS'],
+        )
+
+    make_browse_image(f'{product_name}/{product_name}_unw_phase.tif', f'{product_name}/{product_name}_unw_phase.png')
 
 
 def main():
@@ -165,39 +212,11 @@ def main():
         args.reference_burst_number,
         args.secondary_burst_number,
         args.swath_number,
-        args.polarization
+        args.polarization,
     )
-    os.mkdir(product_name)
 
-    # TODO need to set nodata values
-    # TODO what output projection do we want? currently EPSG:4326
-    gdal.Translate(
-        destName=f'{product_name}/{product_name}_unw_phase.tif',
-        srcDS=str(product_dir / 'filt_topophase.unw.geo'),
-        bandList=[2],
-        creationOptions=['TILED=YES', 'COMPRESS=LZW', 'NUM_THREADS=ALL_CPUS'],
-    )
-    gdal.Translate(
-        destName=f'{product_name}/{product_name}_corr.tif',
-        srcDS=str(product_dir / 'phsig.cor.geo'),
-        creationOptions=['TILED=YES', 'COMPRESS=LZW', 'NUM_THREADS=ALL_CPUS'],
-    )
-    gdal.Translate(
-        destName=f'{product_name}/{product_name}_conn_comp.tif',
-        srcDS=str(product_dir / 'filt_topophase.unw.conncomp.geo'),
-        creationOptions=['TILED=YES', 'COMPRESS=LZW', 'NUM_THREADS=ALL_CPUS'],
-    )
-    subprocess.call([
-        'gdal_calc.py',
-        '--outfile', f'{product_name}/{product_name}_wrapped_phase.tif',
-        '-A', str(product_dir / 'filt_topophase.flat.geo'),
-        '--calc', 'angle(A)',
-        '--type', 'Float32',
-        '--creation-option', 'TILED=YES',
-        '--creation-option', 'COMPRESS=LZW',
-        '--creation-option', 'NUM_THREADS=ALL_CPUS',
-    ])
-
+    Path(product_name).mkdir(parents=True, exist_ok=True)
+    translate_outputs(product_dir, product_name)
     make_parameter_file(
         Path(f'{product_name}/{product_name}.json'),
         args.reference_scene,
