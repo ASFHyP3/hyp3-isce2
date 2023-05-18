@@ -148,7 +148,7 @@ def translate_outputs(product_dir: Path, product_name: str):
 
     wrapped_phase = ISCE2Dataset('filt_topophase.flat.geo', 'wrapped_phase', 1)
     cmd = (
-        'gdal_calc.py'
+        'gdal_calc.py '
         f'--outfile {product_name}/{product_name}_{wrapped_phase.suffix}.tif '
         f'-A {product_dir / wrapped_phase.name} '
         '--calc angle(A) --type Float32 --format GTiff --NoDataValue=0 '
