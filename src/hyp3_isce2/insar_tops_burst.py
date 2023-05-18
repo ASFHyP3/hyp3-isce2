@@ -117,7 +117,6 @@ def make_parameter_file(out_path: Path, reference_scene: str, secondary_scene: s
 
 def make_browse_image(input_tif: str, output_png: str) -> None:
     stats = gdal.Info(input_tif, format='json', stats=True)['stac']['raster:bands'][0]['stats']
-    breakpoint()
     gdal.Translate(
         destName=output_png,
         srcDS=input_tif,
