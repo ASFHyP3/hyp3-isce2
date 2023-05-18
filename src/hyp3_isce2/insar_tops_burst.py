@@ -24,7 +24,7 @@ from hyp3_isce2.burst import (
 )
 from hyp3_isce2.dem import download_dem_for_isce2
 from hyp3_isce2.s1_auxcal import download_aux_cal
-from hyp3_isce2.utils import extent_from_geotransform, utm_from_lon_lat
+from hyp3_isce2.utils import extent_from_geotransform, utm_from_lon_lat, make_browse_image
 
 log = logging.getLogger(__name__)
 
@@ -115,19 +115,6 @@ def make_parameter_file(out_path: Path, reference_scene: str, secondary_scene: s
         json.dump(output, f)
 
 
-def make_browse_image(input_tif: str, output_png: str) -> None:
-    stats = gdal.Info(input_tif, format='json', stats=True)['stac']['raster:bands'][0]['stats']
-    gdal.Translate(
-        destName=output_png,
-        srcDS=input_tif,
-        format='png',
-        outputType=gdal.GDT_Byte,
-        width=2048,
-        strict=True,
-        scaleParams=[[stats['minimum'], stats['maximum']]],
-    )
-
-
 def translate_outputs(product_dir: Path, product_name: str):
     """Translate ISCE outputs to a standard GTiff format with a UTMS projection
 
@@ -142,10 +129,6 @@ def translate_outputs(product_dir: Path, product_name: str):
         format='GTiff',
         noData=0,
         creationOptions=['TILED=YES', 'COMPRESS=LZW', 'NUM_THREADS=ALL_CPUS'],
-    )
-    make_browse_image(
-        f'{product_name}/{product_name}_unw_phase.tif',
-        f'{product_name}/{product_name}_unw_phase.png'
     )
     gdal.Translate(
         destName=f'{product_name}/{product_name}_corr.tif',
@@ -211,6 +194,11 @@ def translate_outputs(product_dir: Path, product_name: str):
         format='GTiff',
         dstSRS=f'epsg:{epsg}',
         creationOptions=['TILED=YES', 'COMPRESS=LZW', 'NUM_THREADS=ALL_CPUS'],
+    )
+
+    make_browse_image(
+        f'{product_name}/{product_name}_unw_phase.tif',
+        f'{product_name}/{product_name}_unw_phase.png'
     )
 
 
