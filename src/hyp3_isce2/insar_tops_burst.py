@@ -13,6 +13,7 @@ from shutil import copyfile, make_archive
 
 from hyp3lib.aws import upload_file_to_s3
 from hyp3lib.get_orb import downloadSentinelOrbitFile
+from hyp3lib.image import create_thumbnail
 from osgeo import gdal
 
 from hyp3_isce2 import topsapp
@@ -118,11 +119,11 @@ def make_parameter_file(out_path: Path, reference_scene: str, secondary_scene: s
         json.dump(output, f)
 
 
-def translate_outputs(product_dir: Path, product_name: str):
+def translate_outputs(isce_output_dir: Path, product_name: str):
     """Translate ISCE outputs to a standard GTiff format with a UTM projection
 
     Args:
-        product_dir: Path to the ISCE merge directory
+        isce_output_dir: Path to the ISCE output directory
         product_name: Name of the product
     """
     ISCE2Dataset = namedtuple('ISCE2Dataset', ['name', 'suffix', 'band'])
@@ -135,7 +136,7 @@ def translate_outputs(product_dir: Path, product_name: str):
 
     for dataset in datasets:
         out_file = str(Path(product_name) / f'{product_name}_{dataset.suffix}.tif')
-        in_file = str(product_dir / dataset.name)
+        in_file = str(isce_output_dir / dataset.name)
 
         gdal.Translate(
             destName=out_file,
@@ -150,13 +151,13 @@ def translate_outputs(product_dir: Path, product_name: str):
     cmd = (
         'gdal_calc.py '
         f'--outfile {product_name}/{product_name}_{wrapped_phase.suffix}.tif '
-        f'-A {product_dir / wrapped_phase.name} '
+        f'-A {isce_output_dir / wrapped_phase.name} '
         '--calc angle(A) --type Float32 --format GTiff --NoDataValue=0 '
         '--creation-option TILED=YES --creation-option COMPRESS=LZW --creation-option NUM_THREADS=ALL_CPUS'
     )
     subprocess.check_call(cmd.split(' '))
 
-    ds = gdal.Open(str(product_dir / 'filt_topophase.unw.geo'))
+    ds = gdal.Open(str(isce_output_dir / 'filt_topophase.unw.geo'))
     geotransform = ds.GetGeoTransform()
     del ds
 
@@ -193,7 +194,7 @@ def main():
     logging.basicConfig(stream=sys.stdout, format='%(asctime)s - %(levelname)s - %(message)s', level=logging.INFO)
     log.debug(' '.join(sys.argv))
 
-    product_dir = insar_tops_burst(
+    isce_output_dir = insar_tops_burst(
         reference_scene=args.reference_scene,
         secondary_scene=args.secondary_scene,
         swath_number=args.swath_number,
@@ -215,14 +216,22 @@ def main():
         args.polarization,
     )
 
-    Path(product_name).mkdir(parents=True, exist_ok=True)
-    translate_outputs(product_dir, product_name)
+    product_dir = Path(product_name)
+    product_dir.mkdir(parents=True, exist_ok=True)
+
+    translate_outputs(isce_output_dir, product_name)
     make_parameter_file(
         Path(f'{product_name}/{product_name}.json'),
         args.reference_scene,
         args.secondary_scene,
     )
-    product_file = make_archive(base_name=product_name, format='zip', base_dir=product_name)
+    output_zip = make_archive(base_name=product_name, format='zip', base_dir=product_name)
 
     if args.bucket:
-        upload_file_to_s3(Path(product_file), args.bucket, args.bucket_prefix)
+        for browse in product_dir.glob('*.png'):
+            create_thumbnail(browse, output_dir=product_dir)
+
+        upload_file_to_s3(Path(output_zip), args.bucket, args.bucket_prefix)
+
+        for product_file in product_dir.iterdir():
+            upload_file_to_s3(product_file, args.bucket, args.bucket_prefix)
