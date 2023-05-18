@@ -3,6 +3,8 @@ from osgeo import gdal
 
 def utm_from_lon_lat(lon: float, lat: float) -> int:
     """Get the UTM zone EPSG code from a longitude and latitude.
+    See https://en.wikipedia.org/wiki/Universal_Transverse_Mercator_coordinate_system
+    for more details on UTM coordinate systems.
 
     Args:
         lon: Longitude
