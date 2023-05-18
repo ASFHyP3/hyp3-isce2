@@ -125,13 +125,13 @@ def translate_outputs(product_dir: Path, product_name: str):
         product_dir: Path to the ISCE merge directory
         product_name: Name of the product
     """
-    ISCE2_DATASET = namedtuple('ISCE2_DATASET', ['name', 'suffix', 'band'])
+    ISCE2Dataset = namedtuple('ISCE2Dataset', ['name', 'suffix', 'band'])
     datasets = [
-        ISCE2_DATASET('filt_topophase.unw.geo', 'unw_phase', 2),
-        ISCE2_DATASET('phsig.cor.geo', 'corr', 1),
-        ISCE2_DATASET('z.rdr.full.geo', 'dem', 1),
-        ISCE2_DATASET('filt_topophase.unw.conncomp.geo', 'conncomp', 1),
-        ISCE2_DATASET('filt_topophase.flat.geo', 'wrapped_phase', 1),
+        ISCE2Dataset('filt_topophase.unw.geo', 'unw_phase', 2),
+        ISCE2Dataset('phsig.cor.geo', 'corr', 1),
+        ISCE2Dataset('z.rdr.full.geo', 'dem', 1),
+        ISCE2Dataset('filt_topophase.unw.conncomp.geo', 'conncomp', 1),
+        ISCE2Dataset('filt_topophase.flat.geo', 'wrapped_phase', 1),
     ]
 
     for dataset in datasets:
@@ -145,7 +145,7 @@ def translate_outputs(product_dir: Path, product_name: str):
                 '--creation-option TILED=YES --creation-option COMPRESS=LZW --creation-option NUM_THREADS=ALL_CPUS'
             )
 
-            subprocess.call(cmd.split(' '))
+            subprocess.check_call(cmd.split(' '))
         else:
             gdal.Translate(
                 destName=out_file,
@@ -158,10 +158,10 @@ def translate_outputs(product_dir: Path, product_name: str):
 
     ds = gdal.Open(str(product_dir / 'filt_topophase.unw.geo'))
     geotransform = ds.GetGeoTransform()
-    ds = None
+    del ds
 
     epsg = utm_from_lon_lat(geotransform[0], geotransform[3])
-    files = [str(x) for x in Path(product_name).glob('*.tif')]
+    files = [str(path) for path in Path(product_name).glob('*.tif')]
     for file in files:
         gdal.Warp(
             file,

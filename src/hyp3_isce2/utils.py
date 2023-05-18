@@ -2,14 +2,14 @@ from osgeo import gdal
 
 
 def utm_from_lon_lat(lon: float, lat: float) -> int:
-    """Get the UTM zone epsg from a longitude and latitude.
+    """Get the UTM zone EPSG code from a longitude and latitude.
 
     Args:
         lon: Longitude
         lat: Latitude
 
     Returns:
-        UTM zone epsg
+        UTM zone EPSG code
     """
     hemisphere = 32600 if lat >= 0 else 32700
     zone = int(lon // 6 + 30) % 60 + 1
