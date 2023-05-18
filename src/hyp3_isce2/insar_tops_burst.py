@@ -131,30 +131,30 @@ def translate_outputs(product_dir: Path, product_name: str):
         ISCE2Dataset('phsig.cor.geo', 'corr', 1),
         ISCE2Dataset('z.rdr.full.geo', 'dem', 1),
         ISCE2Dataset('filt_topophase.unw.conncomp.geo', 'conncomp', 1),
-        ISCE2Dataset('filt_topophase.flat.geo', 'wrapped_phase', 1),
     ]
 
     for dataset in datasets:
         out_file = str(Path(product_name) / f'{product_name}_{dataset.suffix}.tif')
         in_file = str(product_dir / dataset.name)
 
-        if dataset.suffix == 'wrapped_phase':
-            cmd = (
-                f'gdal_calc.py --outfile {out_file} -A {in_file} '
-                '--calc angle(A) --type Float32 --format GTiff --NoDataValue=0 '
-                '--creation-option TILED=YES --creation-option COMPRESS=LZW --creation-option NUM_THREADS=ALL_CPUS'
-            )
+        gdal.Translate(
+            destName=out_file,
+            srcDS=in_file,
+            bandList=[dataset.band],
+            format='GTiff',
+            noData=0,
+            creationOptions=['TILED=YES', 'COMPRESS=LZW', 'NUM_THREADS=ALL_CPUS'],
+        )
 
-            subprocess.check_call(cmd.split(' '))
-        else:
-            gdal.Translate(
-                destName=out_file,
-                srcDS=in_file,
-                bandList=[dataset.band],
-                format='GTiff',
-                noData=0,
-                creationOptions=['TILED=YES', 'COMPRESS=LZW', 'NUM_THREADS=ALL_CPUS'],
-            )
+    wrapped_phase = ISCE2Dataset('filt_topophase.flat.geo', 'wrapped_phase', 1)
+    cmd = (
+        'gdal_calc.py'
+        f'--outfile {product_name}/{product_name}_{wrapped_phase.suffix}.tif '
+        f'-A {product_dir / wrapped_phase.name} '
+        '--calc angle(A) --type Float32 --format GTiff --NoDataValue=0 '
+        '--creation-option TILED=YES --creation-option COMPRESS=LZW --creation-option NUM_THREADS=ALL_CPUS'
+    )
+    subprocess.check_call(cmd.split(' '))
 
     ds = gdal.Open(str(product_dir / 'filt_topophase.unw.geo'))
     geotransform = ds.GetGeoTransform()
@@ -170,10 +170,7 @@ def translate_outputs(product_dir: Path, product_name: str):
             creationOptions=['TILED=YES', 'COMPRESS=LZW', 'NUM_THREADS=ALL_CPUS'],
         )
 
-    make_browse_image(
-        f'{product_name}/{product_name}_unw_phase.tif',
-        f'{product_name}/{product_name}_unw_phase.png'
-    )
+    make_browse_image(f'{product_name}/{product_name}_unw_phase.tif', f'{product_name}/{product_name}_unw_phase.png')
 
 
 def main():
