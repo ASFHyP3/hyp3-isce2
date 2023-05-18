@@ -29,6 +29,7 @@ from hyp3_isce2.s1_auxcal import download_aux_cal
 from hyp3_isce2.utils import make_browse_image, utm_from_lon_lat
 
 log = logging.getLogger(__name__)
+gdal.UseExceptions()
 
 # ISCE needs its applications to be on the system path.
 # See https://github.com/isce-framework/isce2#setup-your-environment
