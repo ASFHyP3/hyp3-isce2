@@ -8,7 +8,7 @@ import site
 import subprocess
 import sys
 from pathlib import Path
-from shutil import make_archive
+from shutil import make_archive, copyfile
 
 from hyp3lib.aws import upload_file_to_s3
 from hyp3lib.get_orb import downloadSentinelOrbitFile
@@ -24,7 +24,7 @@ from hyp3_isce2.burst import (
 )
 from hyp3_isce2.dem import download_dem_for_isce2
 from hyp3_isce2.s1_auxcal import download_aux_cal
-from hyp3_isce2.utils import extent_from_geotransform, utm_from_lon_lat
+from hyp3_isce2.utils import utm_from_lon_lat
 
 log = logging.getLogger(__name__)
 
@@ -98,7 +98,9 @@ def insar_tops_burst(
 
     topsapp.run_topsapp_burst(start='startup', end='preprocess', config_xml=config_path)
     topsapp.swap_burst_vrts()
-    topsapp.run_topsapp_burst(start='computeBaselines', end='geocode', config_xml=config_path)
+    topsapp.run_topsapp_burst(start='computeBaselines', end='unwrap2stage', config_xml=config_path)
+    copyfile('merged/z.rdr.full.xml', 'merged/z.rdr.full.vrt.xml')
+    topsapp.run_topsapp_burst(start='geocode', end='geocode', config_xml=config_path)
 
     return Path('merged')
 
@@ -116,7 +118,7 @@ def make_parameter_file(out_path: Path, reference_scene: str, secondary_scene: s
 
 
 def translate_outputs(product_dir: Path, product_name: str):
-    """Translate ISCE outputs to a standard GTiff format with a UTMS projection
+    """Translate ISCE outputs to a standard GTiff format with a UTM projection
 
     Args:
         product_dir: Path to the ISCE merge directory
@@ -133,6 +135,13 @@ def translate_outputs(product_dir: Path, product_name: str):
     gdal.Translate(
         destName=f'{product_name}/{product_name}_corr.tif',
         srcDS=str(product_dir / 'phsig.cor.geo'),
+        format='GTiff',
+        noData=0,
+        creationOptions=['TILED=YES', 'COMPRESS=LZW', 'NUM_THREADS=ALL_CPUS'],
+    )
+    gdal.Translate(
+        destName=f'{product_name}/{product_name}_dem.tif',
+        srcDS=str(product_dir / 'z.rdr.full.geo'),
         format='GTiff',
         noData=0,
         creationOptions=['TILED=YES', 'COMPRESS=LZW', 'NUM_THREADS=ALL_CPUS'],
@@ -169,11 +178,9 @@ def translate_outputs(product_dir: Path, product_name: str):
 
     ds = gdal.Open(str(product_dir / 'filt_topophase.unw.geo'))
     geotransform = ds.GetGeoTransform()
-    x_size, y_size = ds.RasterXSize, ds.RasterYSize
     ds = None
 
     epsg = utm_from_lon_lat(geotransform[0], geotransform[3])
-    extent = extent_from_geotransform(geotransform, x_size, y_size)
     files = [str(x) for x in Path(product_name).glob('*.tif')]
     for file in files:
         gdal.Warp(
@@ -182,19 +189,6 @@ def translate_outputs(product_dir: Path, product_name: str):
             dstSRS=f'epsg:{epsg}',
             creationOptions=['TILED=YES', 'COMPRESS=LZW', 'NUM_THREADS=ALL_CPUS'],
         )
-
-    # FIXME: this produces a DEM very similar to other outputs, but not identical
-    gdal.Warp(
-        destNameOrDestDS=f'{product_name}/{product_name}_dem.tif',
-        srcDSOrSrcDSTab=str(product_dir.parent / 'dem' / 'full_res.dem.wgs84'),
-        outputBounds=extent,
-        outputBoundsSRS=f'epsg:{epsg}',
-        xRes=geotransform[1],
-        yRes=geotransform[5],
-        format='GTiff',
-        dstSRS=f'epsg:{epsg}',
-        creationOptions=['TILED=YES', 'COMPRESS=LZW', 'NUM_THREADS=ALL_CPUS'],
-    )
 
 
 def main():
