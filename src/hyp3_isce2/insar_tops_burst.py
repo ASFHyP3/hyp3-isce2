@@ -91,7 +91,7 @@ def insar_tops_burst(
         aux_cal_directory=str(aux_cal_dir),
         roi=insar_roi,
         dem_filename=str(dem_path),
-        swath=swath_number,
+        swaths=swath_number,
         azimuth_looks=azimuth_looks,
         range_looks=range_looks,
     )
