@@ -27,7 +27,6 @@ from hyp3_isce2.dem import download_dem_for_isce2
 from hyp3_isce2.s1_auxcal import download_aux_cal
 from hyp3_isce2.utils import extent_from_geotransform, utm_from_lon_lat, make_browse_image
 
-
 log = logging.getLogger(__name__)
 
 # ISCE needs its applications to be on the system path.
