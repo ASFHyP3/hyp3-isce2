@@ -10,6 +10,9 @@ and uses [Semantic Versioning](https://semver.org/spec/v2.0.0.html).
 ## [0.3.0]
 ### Added
 * `insar_tops` workflow for processing of full Sentinel-1 SLCs.
+* Generation of output geotiff products with sensible names in subfolder that is also added as a zip archive.
+* Generation of a product browse image based on the unwrapped phase geotiff.
+* The `++omp-num-threads` parameter for control of the number of threads used when ISCE2 calls OpenMP functionality.
 
 ## [0.2.1]
 ### Added
