@@ -113,10 +113,14 @@ def write_parameters_file(
 
     parser = etree.XMLParser(encoding='utf-8', recover=True)
 
-    ref_xml_tree  = etree.parse(f'{reference_scene}.SAFE/manifest.safe', parser)
-    sec_xml_tree  = etree.parse(f'{secondary_scene}.SAFE/manifest.safe', parser)
-    proc_xml_tree = etree.parse(f'topsProc.xml', parser)
-    app_xml_tree  = etree.parse(f'topsApp.xml', parser)
+    ref_annotation_path = f'{reference_scene}.SAFE/annotation/'
+    ref_annotation = [file for file in os.listdir(ref_annotation_path) if os.path.isfile(ref_annotation_path + file)][0]
+
+    ref_manifest_xml  = etree.parse(f'{reference_scene}.SAFE/manifest.safe', parser)
+    sec_manifest_xml  = etree.parse(f'{secondary_scene}.SAFE/manifest.safe', parser)
+    ref_annotation_xml = etree.parse(f'{ref_annotation_path}{ref_annotation}', parser)
+    topsProc_xml = etree.parse(f'topsProc.xml', parser)
+    topsApp_xml  = etree.parse(f'topsApp.xml', parser)
 
     safe = '{http://www.esa.int/safe/sentinel-1.0}'
     s1   = '{http://www.esa.int/safe/sentinel-1.0/sentinel-1}'
@@ -124,14 +128,16 @@ def write_parameters_file(
     orbit_number_query = metadata_path + safe + 'orbitNumber'
     orbit_direction_query = metadata_path + safe + 'extension//' + s1 + 'pass'
 
-    ref_orbit_number    = ref_xml_tree.find(orbit_number_query).text
-    ref_orbit_direction = ref_xml_tree.find(orbit_direction_query).text
-    sec_orbit_number    = sec_xml_tree.find(orbit_number_query).text
-    sec_orbit_direction = sec_xml_tree.find(orbit_direction_query).text
-    baseline_par  = proc_xml_tree.find('.//IW-2_Bpar_at_midrange_for_first_common_burst').text
-    baseline_perp = proc_xml_tree.find('.//IW-2_Bperp_at_midrange_for_first_common_burst').text
-    unwrapper_type = app_xml_tree.find('.//property[@name="unwrapper name"]').text
-    phase_filter_strength = app_xml_tree.find('.//property[@name="filter strength"]').text
+    ref_orbit_number    = ref_manifest_xml.find(orbit_number_query).text
+    ref_orbit_direction = ref_manifest_xml.find(orbit_direction_query).text
+    sec_orbit_number    = sec_manifest_xml.find(orbit_number_query).text
+    sec_orbit_direction = sec_manifest_xml.find(orbit_direction_query).text
+    ref_heading = ref_annotation_xml.find('.//platformHeading').text
+    ref_time = ref_annotation_xml.find('.//productFirstLineUtcTime').text
+    baseline_par  = topsProc_xml.find('.//IW-2_Bpar_at_midrange_for_first_common_burst').text
+    baseline_perp = topsProc_xml.find('.//IW-2_Bperp_at_midrange_for_first_common_burst').text
+    unwrapper_type = topsApp_xml.find('.//property[@name="unwrapper name"]').text
+    phase_filter_strength = topsApp_xml.find('.//property[@name="filter strength"]').text
 
     output_strings = [
         f'Reference Scene: {reference_scene}\n',
@@ -146,8 +152,8 @@ def write_parameters_file(
         f'Polarization: {polarization}\n',
         f'Parallel Baseline: {baseline_par}\n',
         f'Perpindicular Baseline: {baseline_perp}\n',
-        f'UTC time: \n',
-        f'Heading: \n',
+        f'UTC time: {ref_time}\n',
+        f'Heading: {ref_heading}\n',
         f'Spacecraft height: 693000.0\n',   
         f'Earth radius at nadir: 6337286.638938101\n',
         f'Slant range near: \n',
