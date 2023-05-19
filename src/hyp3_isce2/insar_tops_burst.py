@@ -10,6 +10,10 @@ from collections import namedtuple
 from pathlib import Path
 from shutil import copyfile, make_archive
 
+from hyp3lib.aws import upload_file_to_s3
+from hyp3lib.get_orb import downloadSentinelOrbitFile
+from hyp3lib.image import create_thumbnail
+
 from hyp3_isce2 import topsapp
 from hyp3_isce2.burst import (
     BurstParams,
@@ -21,9 +25,7 @@ from hyp3_isce2.burst import (
 from hyp3_isce2.dem import download_dem_for_isce2
 from hyp3_isce2.s1_auxcal import download_aux_cal
 from hyp3_isce2.utils import make_browse_image, utm_from_lon_lat
-from hyp3lib.aws import upload_file_to_s3
-from hyp3lib.get_orb import downloadSentinelOrbitFile
-from hyp3lib.image import create_thumbnail
+
 from lxml import etree
 from osgeo import gdal
 
