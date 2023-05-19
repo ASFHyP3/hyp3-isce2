@@ -119,7 +119,7 @@ def make_parameter_file(
     polarization: str = "VV",
     azimuth_looks: int = 4,
     range_looks: int = 20,
-    dem_name: str = "GLO_30",
+    dem_name: str = 'GLO_30',
     dem_resolution: int = 30
 ) -> None:
     """Create a parameter file for the output product"""
