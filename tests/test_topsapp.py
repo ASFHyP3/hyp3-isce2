@@ -11,7 +11,7 @@ def test_topsapp_burst_config(tmp_path):
         aux_cal_directory='aux_cal',
         roi=[-118.0, 37.0, -117.0, 38.0],
         dem_filename='dem.tif',
-        swath=1,
+        swaths=1,
     )
 
     template_path = tmp_path / 'topsapp.xml'
@@ -55,7 +55,7 @@ def test_run_topsapp_burst(tmp_path, monkeypatch):
         aux_cal_directory='',
         roi=[0, 1, 2, 3],
         dem_filename='',
-        swath=1,
+        swaths=1,
         azimuth_looks=1,
         range_looks=1,
     )

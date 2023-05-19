@@ -1,25 +1,36 @@
 """Create a single-burst Sentinel-1 geocoded unwrapped interferogram using ISCE2's TOPS processing workflow"""
 
 import argparse
+import json
 import logging
 import os
 import site
+import subprocess
 import sys
+from collections import namedtuple
 from lxml import etree
 from pathlib import Path
-from shutil import make_archive
+from shutil import copyfile, make_archive
 
 from hyp3lib.aws import upload_file_to_s3
 from hyp3lib.get_orb import downloadSentinelOrbitFile
 from hyp3lib.image import create_thumbnail
+from osgeo import gdal
 
 from hyp3_isce2 import topsapp
-from hyp3_isce2.burst import BurstParams, download_bursts, get_isce2_burst_bbox, get_region_of_interest
+from hyp3_isce2.burst import (
+    BurstParams,
+    download_bursts,
+    get_isce2_burst_bbox,
+    get_product_name,
+    get_region_of_interest,
+)
 from hyp3_isce2.dem import download_dem_for_isce2
 from hyp3_isce2.s1_auxcal import download_aux_cal
-
+from hyp3_isce2.utils import make_browse_image, utm_from_lon_lat
 
 log = logging.getLogger(__name__)
+gdal.UseExceptions()
 
 # ISCE needs its applications to be on the system path.
 # See https://github.com/isce-framework/isce2#setup-your-environment
@@ -83,7 +94,7 @@ def insar_tops_burst(
         aux_cal_directory=str(aux_cal_dir),
         roi=insar_roi,
         dem_filename=str(dem_path),
-        swath=swath_number,
+        swaths=swath_number,
         azimuth_looks=azimuth_looks,
         range_looks=range_looks,
     )
@@ -91,7 +102,9 @@ def insar_tops_burst(
 
     topsapp.run_topsapp_burst(start='startup', end='preprocess', config_xml=config_path)
     topsapp.swap_burst_vrts()
-    topsapp.run_topsapp_burst(start='computeBaselines', end='geocode', config_xml=config_path)
+    topsapp.run_topsapp_burst(start='computeBaselines', end='unwrap2stage', config_xml=config_path)
+    copyfile('merged/z.rdr.full.xml', 'merged/z.rdr.full.vrt.xml')
+    topsapp.run_topsapp_burst(start='geocode', end='geocode', config_xml=config_path)
 
     return Path('merged')
 
@@ -108,9 +121,8 @@ def make_parameter_file(
     range_looks: int = 20,
     dem_name: str = "GLO_30",
     dem_resolution: int = 30
-):
-
-    filepath = Path("parameters.txt")
+) -> None:
+    """Create a parameter file for the output product"""
 
     parser = etree.XMLParser(encoding='utf-8', recover=True)
 
@@ -166,7 +178,7 @@ def make_parameter_file(
         f'Perpindicular Baseline: {baseline_perp}\n',
         f'UTC time: {utc_time}\n',
         f'Heading: {ref_heading}\n',
-        f'Spacecraft height: 693000.0\n',   
+        f'Spacecraft height: 693000.0\n',
         f'Earth radius at nadir: 6337286.638938101\n',
         f'Slant range near: {slant_range_near}\n',
         f'Slant range center: {slant_range_center}\n',
@@ -175,8 +187,8 @@ def make_parameter_file(
         f'Azimuth looks: {azimuth_looks}\n',
         f'INSAR phase filter: yes\n',
         f'Phase filter parameter: {phase_filter_strength}\n',
-        f'Range bandpass filter: no\n',
-        f'Azimuth bandpass filter: no\n',
+        f'Range bandpass filter: yes\n',
+        f'Azimuth bandpass filter: yes\n',
         f'DEM source: {dem_name}\n',
         f'DEM resolution (m): {dem_resolution}\n',
         f'Unwrapping type: {unwrapper_type}\n',
@@ -185,10 +197,63 @@ def make_parameter_file(
 
     output_string = "".join(output_strings)
 
-    with open(filepath.__str__(), 'w') as outfile:
+    with open(out_path.__str__(), 'w') as outfile:
         outfile.write(output_string)
 
-    return filepath
+
+def translate_outputs(isce_output_dir: Path, product_name: str):
+    """Translate ISCE outputs to a standard GTiff format with a UTM projection
+
+    Args:
+        isce_output_dir: Path to the ISCE output directory
+        product_name: Name of the product
+    """
+    ISCE2Dataset = namedtuple('ISCE2Dataset', ['name', 'suffix', 'band'])
+    datasets = [
+        ISCE2Dataset('filt_topophase.unw.geo', 'unw_phase', 2),
+        ISCE2Dataset('phsig.cor.geo', 'corr', 1),
+        ISCE2Dataset('z.rdr.full.geo', 'dem', 1),
+        ISCE2Dataset('filt_topophase.unw.conncomp.geo', 'conncomp', 1),
+    ]
+
+    for dataset in datasets:
+        out_file = str(Path(product_name) / f'{product_name}_{dataset.suffix}.tif')
+        in_file = str(isce_output_dir / dataset.name)
+
+        gdal.Translate(
+            destName=out_file,
+            srcDS=in_file,
+            bandList=[dataset.band],
+            format='GTiff',
+            noData=0,
+            creationOptions=['TILED=YES', 'COMPRESS=LZW', 'NUM_THREADS=ALL_CPUS'],
+        )
+
+    wrapped_phase = ISCE2Dataset('filt_topophase.flat.geo', 'wrapped_phase', 1)
+    cmd = (
+        'gdal_calc.py '
+        f'--outfile {product_name}/{product_name}_{wrapped_phase.suffix}.tif '
+        f'-A {isce_output_dir / wrapped_phase.name} '
+        '--calc angle(A) --type Float32 --format GTiff --NoDataValue=0 '
+        '--creation-option TILED=YES --creation-option COMPRESS=LZW --creation-option NUM_THREADS=ALL_CPUS'
+    )
+    subprocess.check_call(cmd.split(' '))
+
+    ds = gdal.Open(str(isce_output_dir / 'filt_topophase.unw.geo'))
+    geotransform = ds.GetGeoTransform()
+    del ds
+
+    epsg = utm_from_lon_lat(geotransform[0], geotransform[3])
+    files = [str(path) for path in Path(product_name).glob('*.tif')]
+    for file in files:
+        gdal.Warp(
+            file,
+            file,
+            dstSRS=f'epsg:{epsg}',
+            creationOptions=['TILED=YES', 'COMPRESS=LZW', 'NUM_THREADS=ALL_CPUS'],
+        )
+
+    make_browse_image(f'{product_name}/{product_name}_unw_phase.tif', f'{product_name}/{product_name}_unw_phase.png')
 
 
 def main():
@@ -211,7 +276,7 @@ def main():
     logging.basicConfig(stream=sys.stdout, format='%(asctime)s - %(levelname)s - %(message)s', level=logging.INFO)
     log.debug(' '.join(sys.argv))
 
-    product_dir = insar_tops_burst(
+    isce_output_dir = insar_tops_burst(
         reference_scene=args.reference_scene,
         secondary_scene=args.secondary_scene,
         swath_number=args.swath_number,
@@ -224,8 +289,21 @@ def main():
 
     log.info('ISCE2 TopsApp run completed successfully')
 
+    product_name = get_product_name(
+        args.reference_scene,
+        args.secondary_scene,
+        args.reference_burst_number,
+        args.secondary_burst_number,
+        args.swath_number,
+        args.polarization,
+    )
+
+    product_dir = Path(product_name)
+    product_dir.mkdir(parents=True, exist_ok=True)
+
+    translate_outputs(isce_output_dir, product_name)
     make_parameter_file(
-        Path(f'parameters.txt'),
+        Path(f'{product_name}/{product_name}.txt'),
         reference_scene=args.reference_scene,
         secondary_scene=args.secondary_scene,
         swath_number=args.swath_number,
@@ -235,19 +313,13 @@ def main():
         azimuth_looks=args.azimuth_looks,
         range_looks=args.range_looks
     )
+    output_zip = make_archive(base_name=product_name, format='zip', base_dir=product_name)
 
     if args.bucket:
-        reference_name = (
-            f'{args.reference_scene}_IW{args.swath_number}_{args.polarization}_{args.reference_burst_number}'
-        )
-        secondary_name = (
-            f'{args.secondary_scene}_IW{args.swath_number}_{args.polarization}_{args.secondary_burst_number}'
-        )
-        base_name = f'{reference_name}x{secondary_name}'
-        product_file = make_archive(base_name=base_name, format='zip', base_dir=product_dir)
-        upload_file_to_s3(product_file, args.bucket, args.bucket_prefix)
-        browse_images = product_file.with_suffix('.png')
-        for browse in browse_images:
-            thumbnail = create_thumbnail(browse)
-            upload_file_to_s3(browse, args.bucket, args.bucket_prefix)
-            upload_file_to_s3(thumbnail, args.bucket, args.bucket_prefix)
+        for browse in product_dir.glob('*.png'):
+            create_thumbnail(browse, output_dir=product_dir)
+
+        upload_file_to_s3(Path(output_zip), args.bucket, args.bucket_prefix)
+
+        for product_file in product_dir.iterdir():
+            upload_file_to_s3(product_file, args.bucket, args.bucket_prefix)

@@ -33,9 +33,8 @@ TOPSAPP_GEOCODE_LIST = [
     'merged/phsig.cor',
     'merged/filt_topophase.unw',
     'merged/los.rdr',
-    'merged/topophase.flat',
+    'merged/z.rdr.full.vrt',
     'merged/filt_topophase.flat',
-    'merged/filt_topophase_2stage.unw',
     'merged/topophase.cor',
     'merged/filt_topophase.unw.conncomp',
 ]
@@ -50,9 +49,9 @@ class TopsappBurstConfig:
         secondary_safe: str,
         orbit_directory: str,
         aux_cal_directory: str,
-        roi: Iterable[float],
         dem_filename: str,
-        swath: int,
+        roi: Iterable[float],
+        swaths: int or Iterable[int] = [1, 2, 3],
         azimuth_looks: int = 4,
         range_looks: int = 20,
         do_unwrap: bool = True,
@@ -64,11 +63,14 @@ class TopsappBurstConfig:
         self.roi = [roi[1], roi[3], roi[0], roi[2]]
         self.dem_filename = dem_filename
         self.geocode_dem_filename = dem_filename
-        self.swath = swath
-        self.swaths = [self.swath]
         self.azimuth_looks = azimuth_looks
         self.range_looks = range_looks
         self.do_unwrap = do_unwrap
+
+        if isinstance(swaths, int):
+            self.swaths = [swaths]
+        else:
+            self.swaths = list(swaths)
 
         # hardcoded params for topsapp burst processing
         self.estimate_ionosphere_delay = False
