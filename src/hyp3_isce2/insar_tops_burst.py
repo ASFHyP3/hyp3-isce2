@@ -116,7 +116,7 @@ def make_parameter_file(
     swath_number: int,
     reference_burst_number: int,
     secondary_burst_number: int,
-    polarization: str = "VV",
+    polarization: str = 'VV',
     azimuth_looks: int = 4,
     range_looks: int = 20,
     dem_name: str = 'GLO_30',
