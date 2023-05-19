@@ -168,7 +168,7 @@ def translate_outputs(isce_output_dir: Path, product_name: str):
         'gdal_calc.py '
         f'--outfile {product_name}/{product_name}_{incidence_angle.suffix}.tif '
         f'-A {isce_output_dir / incidence_angle.name} --A_band={incidence_angle.band} '
-        '--calc ((-A/180)*pi)+(pi/2) --type Float32 --format GTiff --NoDataValue=0 '
+        '--calc (90-A)*pi/180 --type Float32 --format GTiff --NoDataValue=0 '
         '--creation-option TILED=YES --creation-option COMPRESS=LZW --creation-option NUM_THREADS=ALL_CPUS'
     )
     subprocess.check_call(cmd.split(' '))
@@ -178,7 +178,7 @@ def translate_outputs(isce_output_dir: Path, product_name: str):
         'gdal_calc.py '
         f'--outfile {product_name}/{product_name}_{azimuth_angle.suffix}.tif '
         f'-A {isce_output_dir / azimuth_angle.name} --A_band={azimuth_angle.band} '
-        '--calc ((A/180)*pi)+(pi/2) --type Float32 --format GTiff --NoDataValue=0 '
+        '--calc (90+A)*pi/180 --type Float32 --format GTiff --NoDataValue=0 '
         '--creation-option TILED=YES --creation-option COMPRESS=LZW --creation-option NUM_THREADS=ALL_CPUS'
     )
     subprocess.check_call(cmd.split(' '))
