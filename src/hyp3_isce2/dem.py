@@ -12,7 +12,7 @@
 # WITHOUT WARRANTIES OR CONDITIONS OF ANY KIND, either express or implied.
 # See the License for the specific language governing permissions and
 # limitations under the License.
-
+import logging
 import site
 import subprocess
 from pathlib import Path
@@ -22,6 +22,8 @@ import numpy as np
 import rasterio
 from lxml import etree
 from shapely.geometry import box
+
+rasterio.log.setLevel(logging.WARN)
 
 DEM_RESOLUTION = 0.0002777777777777777775
 
