@@ -122,7 +122,24 @@ def make_parameter_file(
     dem_name: str = 'GLO_30',
     dem_resolution: int = 30
 ) -> None:
-    """Create a parameter file for the output product"""
+    """Create a parameter file for the output product
+
+    Args:
+        out_path: path to output the parameter file
+        reference_scene: Reference SLC name
+        secondary_scene: Secondary SLC name
+        swath_number: Number of swath to grab bursts from (1, 2, or 3) for IW
+        reference_burst_number: Number of burst to download for reference (0-indexed from first collect)
+        secondary_burst_number: Number of burst to download for secondary (0-indexed from first collect)
+        polarization: Polarization to use
+        azimuth_looks: Number of azimuth looks
+        range_looks: Number of range looks
+        dem_name: Name of the DEM that is use
+        dem_resolution: Resolution of the DEM
+
+    returns:
+        None
+    """
 
     SPEED_OF_LIGHT = 299792458.0
     SPACECRAFT_HEIGHT = 693000.0
