@@ -2,7 +2,6 @@
 
 import argparse
 import json
-import logging
 import os
 import site
 import subprocess
@@ -25,12 +24,11 @@ from hyp3_isce2.burst import (
     get_region_of_interest,
 )
 from hyp3_isce2.dem import download_dem_for_isce2
+from hyp3_isce2.logging import log
 from hyp3_isce2.s1_auxcal import download_aux_cal
 from hyp3_isce2.utils import make_browse_image, utm_from_lon_lat
 
 gdal.UseExceptions()
-
-log = logging.getLogger(__name__)
 
 # ISCE needs its applications to be on the system path.
 # See https://github.com/isce-framework/isce2#setup-your-environment
@@ -192,8 +190,6 @@ def main():
     parser.add_argument('--range-looks', type=int, default=20)
 
     args = parser.parse_args()
-
-    logging.basicConfig(stream=sys.stdout, format='%(asctime)s - %(levelname)s - %(message)s', level=logging.INFO)
     log.debug(' '.join(sys.argv))
 
     isce_output_dir = insar_tops_burst(

@@ -1,7 +1,6 @@
 """Create a full SLC Sentinel-1 geocoded unwrapped interferogram using ISCE2's TOPS processing workflow"""
 
 import argparse
-import logging
 import os
 import site
 import sys
@@ -15,10 +14,8 @@ from hyp3lib.image import create_thumbnail
 from hyp3_isce2 import slc
 from hyp3_isce2 import topsapp
 from hyp3_isce2.dem import download_dem_for_isce2
+from hyp3_isce2.logging import log
 from hyp3_isce2.s1_auxcal import download_aux_cal
-
-
-log = logging.getLogger(__name__)
 
 # ISCE needs its applications to be on the system path.
 # See https://github.com/isce-framework/isce2#setup-your-environment
@@ -95,8 +92,6 @@ def main():
     parser.add_argument('--range-looks', type=int, default=20)
 
     args = parser.parse_args()
-
-    logging.basicConfig(stream=sys.stdout, format='%(asctime)s - %(levelname)s - %(message)s', level=logging.INFO)
     log.debug(' '.join(sys.argv))
 
     product_dir = insar_tops(

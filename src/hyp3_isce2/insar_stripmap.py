@@ -3,7 +3,6 @@ ISCE2 stripmap processing
 """
 
 import argparse
-import logging
 import os
 import site
 import sys
@@ -12,8 +11,7 @@ from pathlib import Path
 from hyp3lib.aws import upload_file_to_s3
 from hyp3lib.image import create_thumbnail
 
-
-log = logging.getLogger(__name__)
+from hyp3_isce2.logging import log
 
 # ISCE needs its applications to be on the system path.
 # See https://github.com/isce-framework/isce2#setup-your-environment
@@ -51,8 +49,6 @@ def main():
     parser.add_argument('--secondary-scene', type=str, required=True)
 
     args = parser.parse_args()
-
-    logging.basicConfig(stream=sys.stdout, format='%(asctime)s - %(levelname)s - %(message)s', level=logging.INFO)
     log.debug(' '.join(sys.argv))
 
     product_file = insar_stripmap(
