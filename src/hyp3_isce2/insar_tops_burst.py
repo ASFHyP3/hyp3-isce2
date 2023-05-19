@@ -154,8 +154,8 @@ def make_parameter_file(
     slant_range_time = float(ref_annotation_xml.find('.//slantRangeTime').text)
     range_sampling_rate = float(ref_annotation_xml.find('.//rangeSamplingRate').text)
     number_samples = int(ref_annotation_xml.find('.//swathTiming/samplesPerBurst').text)
-    baseline_par = topsProc_xml.find('.//IW-2_Bpar_at_midrange_for_first_common_burst').text
-    baseline_perp = topsProc_xml.find('.//IW-2_Bperp_at_midrange_for_first_common_burst').text
+    baseline_par = topsProc_xml.find(f'.//IW-{swath_number}_Bpar_at_midrange_for_first_common_burst').text
+    baseline_perp = topsProc_xml.find(f'.//IW-{swath_number}_Bperp_at_midrange_for_first_common_burst').text
     unwrapper_type = topsApp_xml.find('.//property[@name="unwrapper name"]').text
     phase_filter_strength = topsApp_xml.find('.//property[@name="filter strength"]').text
 
