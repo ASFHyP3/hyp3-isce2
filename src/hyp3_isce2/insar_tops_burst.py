@@ -152,29 +152,32 @@ def translate_outputs(isce_output_dir: Path, product_name: str):
     cmd = (
         'gdal_calc.py '
         f'--outfile {product_name}/{product_name}_{wrapped_phase.suffix}.tif '
-        f'-A {isce_output_dir / wrapped_phase.name} '
+        f'-A {isce_output_dir / wrapped_phase.name} --A_band={wrapped_phase.band} '
         '--calc angle(A) --type Float32 --format GTiff --NoDataValue=0 '
         '--creation-option TILED=YES --creation-option COMPRESS=LZW --creation-option NUM_THREADS=ALL_CPUS'
     )
     subprocess.check_call(cmd.split(' '))
 
-    # LOS Band 1 is the incidence angle, e.g., lv_theta
-    wrapped_phase = ISCE2Dataset('los.rdr.geo', 'lv_theta', 1)
+    ds = gdal.Open(str(isce_output_dir / 'los.rdr.geo'), gdal.GA_Update)
+    ds.GetRasterBand(1).SetNoDataValue(0)
+    ds.GetRasterBand(2).SetNoDataValue(0)
+    del ds
+
+    incidence_angle = ISCE2Dataset('los.rdr.geo', 'lv_theta', 1)
     cmd = (
         'gdal_calc.py '
-        f'--outfile {product_name}/{product_name}_{wrapped_phase.suffix}.tif '
-        f'-A {isce_output_dir / wrapped_phase.name} '
+        f'--outfile {product_name}/{product_name}_{incidence_angle.suffix}.tif '
+        f'-A {isce_output_dir / incidence_angle.name} --A_band={incidence_angle.band} '
         '--calc ((-A/180)*pi)+(pi/2) --type Float32 --format GTiff --NoDataValue=0 '
         '--creation-option TILED=YES --creation-option COMPRESS=LZW --creation-option NUM_THREADS=ALL_CPUS'
     )
     subprocess.check_call(cmd.split(' '))
 
-    # LOS Band 2 is the azimuth angle, e.g., lv_phi
-    wrapped_phase = ISCE2Dataset('los.rdr.geo', 'lv_phi', 2)
+    azimuth_angle = ISCE2Dataset('los.rdr.geo', 'lv_phi', 2)
     cmd = (
         'gdal_calc.py '
-        f'--outfile {product_name}/{product_name}_{wrapped_phase.suffix}.tif '
-        f'-A {isce_output_dir / wrapped_phase.name} '
+        f'--outfile {product_name}/{product_name}_{azimuth_angle.suffix}.tif '
+        f'-A {isce_output_dir / azimuth_angle.name} --A_band={azimuth_angle.band} '
         '--calc ((A/180)*pi)+(pi/2) --type Float32 --format GTiff --NoDataValue=0 '
         '--creation-option TILED=YES --creation-option COMPRESS=LZW --creation-option NUM_THREADS=ALL_CPUS'
     )
