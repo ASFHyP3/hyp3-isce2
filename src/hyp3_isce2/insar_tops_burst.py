@@ -96,7 +96,8 @@ def insar_tops_burst(
     return Path('merged')
 
 
-def write_parameters_file(
+def make_parameter_file(
+    out_path: Path,
     reference_scene: str,
     secondary_scene: str,
     swath_number: int,
@@ -132,12 +133,23 @@ def write_parameters_file(
     ref_orbit_direction = ref_manifest_xml.find(orbit_direction_query).text
     sec_orbit_number    = sec_manifest_xml.find(orbit_number_query).text
     sec_orbit_direction = sec_manifest_xml.find(orbit_direction_query).text
-    ref_heading = ref_annotation_xml.find('.//platformHeading').text
+    ref_heading = float(ref_annotation_xml.find('.//platformHeading').text)
     ref_time = ref_annotation_xml.find('.//productFirstLineUtcTime').text
+    slant_range_time = float(ref_annotation_xml.find('.//slantRangeTime').text)
+    range_sampling_rate = float(ref_annotation_xml.find('.//rangeSamplingRate').text)
+    number_samples = int(ref_annotation_xml.find('.//swathTiming/samplesPerBurst').text)
     baseline_par  = topsProc_xml.find('.//IW-2_Bpar_at_midrange_for_first_common_burst').text
     baseline_perp = topsProc_xml.find('.//IW-2_Bperp_at_midrange_for_first_common_burst').text
     unwrapper_type = topsApp_xml.find('.//property[@name="unwrapper name"]').text
     phase_filter_strength = topsApp_xml.find('.//property[@name="filter strength"]').text
+
+    slant_range_near = float(slant_range_time) * 299792458.0 / 2
+    range_pixel_spacing = 299792458.0 / (2 * range_sampling_rate)
+    slant_range_far = slant_range_near + (number_samples - 1) * range_pixel_spacing
+    slant_range_center = (slant_range_near + slant_range_far) / 2
+
+    s = ref_time.split('T')[1].split(':')
+    utc_time = (int(s[0]) * 60 + int(s[1]) * 60) + float(s[2])
 
     output_strings = [
         f'Reference Scene: {reference_scene}\n',
@@ -152,31 +164,22 @@ def write_parameters_file(
         f'Polarization: {polarization}\n',
         f'Parallel Baseline: {baseline_par}\n',
         f'Perpindicular Baseline: {baseline_perp}\n',
-        f'UTC time: {ref_time}\n',
+        f'UTC time: {utc_time}\n',
         f'Heading: {ref_heading}\n',
         f'Spacecraft height: 693000.0\n',   
         f'Earth radius at nadir: 6337286.638938101\n',
-        f'Slant range near: \n',
-        f'Slant range center: \n',
-        f'Slant range far: \n',
+        f'Slant range near: {slant_range_near}\n',
+        f'Slant range center: {slant_range_center}\n',
+        f'Slant range far: {slant_range_far}\n',
         f'Range looks: {range_looks}\n',
         f'Azimuth looks: {azimuth_looks}\n',
         f'INSAR phase filter: yes\n',
         f'Phase filter parameter: {phase_filter_strength}\n',
-        f'Resolution of output (m): \n',
         f'Range bandpass filter: no\n',
         f'Azimuth bandpass filter: no\n',
         f'DEM source: {dem_name}\n',
         f'DEM resolution (m): {dem_resolution}\n',
         f'Unwrapping type: {unwrapper_type}\n',
-        f'Phase at reference point: \n',
-        f'Azimuth line of the reference point in SAR space: \n',
-        f'Range pixel of the reference point in SAR space: \n',
-        f'Y coordinate of the reference point in the map projection: \n',
-        f'X coordinate of the reference point in the map projection: \n',
-        f'Latitude of the reference point (WGS84): \n',
-        f'Longitude of the reference point (WGS84): \n',
-        f'Unwrapping threshold: \n',
         f'Speckle filter: yes\n'
     ]
 
@@ -221,7 +224,8 @@ def main():
 
     log.info('ISCE2 TopsApp run completed successfully')
 
-    write_parameters_file(
+    make_parameter_file(
+        Path(f'parameters.txt'),
         reference_scene=args.reference_scene,
         secondary_scene=args.secondary_scene,
         swath_number=args.swath_number,
