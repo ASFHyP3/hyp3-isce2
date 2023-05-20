@@ -56,7 +56,7 @@ def insar_tops(
     ref_dir = slc.get_granule(reference_scene)
     sec_dir = slc.get_granule(secondary_scene)
     roi = slc.get_dem_bounds(ref_dir, sec_dir)
-    print(f'DEM ROI: {roi}')
+    log.info(f'DEM ROI: {roi}')
 
     dem_path = download_dem_for_isce2(roi, dem_name='glo_30', dem_dir=dem_dir, buffer=0)
     download_aux_cal(aux_cal_dir)

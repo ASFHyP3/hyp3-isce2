@@ -78,8 +78,8 @@ def insar_tops_burst(
 
     insar_roi = get_region_of_interest(ref_footprint, sec_footprint, is_ascending=is_ascending)
     dem_roi = ref_footprint.intersection(sec_footprint).bounds
-    print(f'InSAR ROI: {insar_roi}')
-    print(f'DEM ROI: {dem_roi}')
+    log.info(f'InSAR ROI: {insar_roi}')
+    log.info(f'DEM ROI: {dem_roi}')
 
     dem_path = download_dem_for_isce2(dem_roi, dem_name='glo_30', dem_dir=dem_dir, buffer=0)
     download_aux_cal(aux_cal_dir)
