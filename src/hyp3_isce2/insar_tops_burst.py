@@ -25,6 +25,7 @@ from hyp3_isce2.burst import (
     get_region_of_interest,
 )
 from hyp3_isce2.dem import download_dem_for_isce2
+from hyp3_isce2.logging import configure_root_logger
 from hyp3_isce2.s1_auxcal import download_aux_cal
 from hyp3_isce2.utils import make_browse_image, utm_from_lon_lat
 
@@ -193,8 +194,10 @@ def main():
 
     args = parser.parse_args()
 
-    logging.basicConfig(stream=sys.stdout, format='%(asctime)s - %(levelname)s - %(message)s', level=logging.INFO)
+    configure_root_logger()
     log.debug(' '.join(sys.argv))
+
+    log.info('Begin ISCE2 TopsApp run')
 
     isce_output_dir = insar_tops_burst(
         reference_scene=args.reference_scene,

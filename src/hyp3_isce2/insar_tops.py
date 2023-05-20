@@ -15,6 +15,7 @@ from hyp3lib.image import create_thumbnail
 from hyp3_isce2 import slc
 from hyp3_isce2 import topsapp
 from hyp3_isce2.dem import download_dem_for_isce2
+from hyp3_isce2.logging import configure_root_logger
 from hyp3_isce2.s1_auxcal import download_aux_cal
 
 
@@ -96,8 +97,10 @@ def main():
 
     args = parser.parse_args()
 
-    logging.basicConfig(stream=sys.stdout, format='%(asctime)s - %(levelname)s - %(message)s', level=logging.INFO)
+    configure_root_logger()
     log.debug(' '.join(sys.argv))
+
+    log.info('Begin ISCE2 TopsApp run')
 
     product_dir = insar_tops(
         reference_scene=args.reference_scene,
