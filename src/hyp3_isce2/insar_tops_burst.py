@@ -25,12 +25,13 @@ from hyp3_isce2.burst import (
     get_region_of_interest,
 )
 from hyp3_isce2.dem import download_dem_for_isce2
+from hyp3_isce2.logging import configure_root_logger
 from hyp3_isce2.s1_auxcal import download_aux_cal
 from hyp3_isce2.utils import make_browse_image, utm_from_lon_lat
 
+gdal.UseExceptions()
 
 log = logging.getLogger(__name__)
-gdal.UseExceptions()
 
 # ISCE needs its applications to be on the system path.
 # See https://github.com/isce-framework/isce2#setup-your-environment
@@ -77,8 +78,8 @@ def insar_tops_burst(
 
     insar_roi = get_region_of_interest(ref_footprint, sec_footprint, is_ascending=is_ascending)
     dem_roi = ref_footprint.intersection(sec_footprint).bounds
-    print(f'InSAR ROI: {insar_roi}')
-    print(f'DEM ROI: {dem_roi}')
+    log.info(f'InSAR ROI: {insar_roi}')
+    log.info(f'DEM ROI: {dem_roi}')
 
     dem_path = download_dem_for_isce2(dem_roi, dem_name='glo_30', dem_dir=dem_dir, buffer=0)
     download_aux_cal(aux_cal_dir)
@@ -294,8 +295,10 @@ def main():
 
     args = parser.parse_args()
 
-    logging.basicConfig(stream=sys.stdout, format='%(asctime)s - %(levelname)s - %(message)s', level=logging.INFO)
+    configure_root_logger()
     log.debug(' '.join(sys.argv))
+
+    log.info('Begin ISCE2 TopsApp run')
 
     isce_output_dir = insar_tops_burst(
         reference_scene=args.reference_scene,

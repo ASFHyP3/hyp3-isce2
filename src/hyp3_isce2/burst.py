@@ -1,4 +1,5 @@
 import copy
+import logging
 import re
 import shutil
 import time
@@ -12,6 +13,9 @@ import requests
 from isceobj.Sensor.TOPS.Sentinel1 import Sentinel1
 from lxml import etree
 from shapely import geometry
+
+
+log = logging.getLogger(__name__)
 
 
 URL = 'https://sentinel1-burst.asf.alaska.edu'
@@ -111,7 +115,7 @@ def download_from_extractor(asf_session: requests.Session, burst_params: BurstPa
     }
 
     for i in range(1, 11):
-        print(f'Download attempt #{i} for {burst_request["url"]}')
+        log.info(f'Download attempt #{i} for {burst_request["url"]}')
         response = asf_session.get(**burst_request)
         downloaded = wait_for_extractor(response)
         if downloaded:
@@ -314,7 +318,7 @@ def download_bursts(param_list: Iterator[BurstParams]) -> List[BurstMetadata]:
         burst = BurstMetadata(metadata_xml, params)
         spoof_safe(burst, burst_path)
         bursts.append(burst)
-    print('SAFEs created!')
+    log.info('SAFEs created!')
 
     return bursts
 
