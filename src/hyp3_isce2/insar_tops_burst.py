@@ -281,7 +281,7 @@ def translate_outputs(isce_output_dir: Path, product_name: str):
     )
     subprocess.check_call(cmd.split(' '))
 
-    # Performs the inverse of the operation performed here:
+    # Performs the inverse of the operation performed by MintPy:
     # https://github.com/insarlab/MintPy/blob/df96e0b73f13cc7e2b6bfa57d380963f140e3159/src/mintpy/objects/stackDict.py#L739-L745
     # First add ninety degrees to the azimuth angle to go from angle-from-east to angle-from-north,
     # then convert to radians
