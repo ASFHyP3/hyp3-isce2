@@ -251,12 +251,46 @@ def translate_outputs(isce_output_dir: Path, product_name: str):
             creationOptions=['TILED=YES', 'COMPRESS=LZW', 'NUM_THREADS=ALL_CPUS'],
         )
 
+    # Use numpy.angle to extract the phase component of the complex wrapped interferogram
     wrapped_phase = ISCE2Dataset('filt_topophase.flat.geo', 'wrapped_phase', 1)
     cmd = (
         'gdal_calc.py '
         f'--outfile {product_name}/{product_name}_{wrapped_phase.suffix}.tif '
-        f'-A {isce_output_dir / wrapped_phase.name} '
+        f'-A {isce_output_dir / wrapped_phase.name} --A_band={wrapped_phase.band} '
         '--calc angle(A) --type Float32 --format GTiff --NoDataValue=0 '
+        '--creation-option TILED=YES --creation-option COMPRESS=LZW --creation-option NUM_THREADS=ALL_CPUS'
+    )
+    subprocess.check_call(cmd.split(' '))
+
+    ds = gdal.Open(str(isce_output_dir / 'los.rdr.geo'), gdal.GA_Update)
+    ds.GetRasterBand(1).SetNoDataValue(0)
+    ds.GetRasterBand(2).SetNoDataValue(0)
+    del ds
+
+    # Performs the inverse of the operation performed by MintPy:
+    # https://github.com/insarlab/MintPy/blob/df96e0b73f13cc7e2b6bfa57d380963f140e3159/src/mintpy/objects/stackDict.py#L732-L737
+    # First subtract the incidence angle from ninety degrees to go from sensor-to-ground to ground-to-sensor,
+    # then convert to radians
+    incidence_angle = ISCE2Dataset('los.rdr.geo', 'lv_theta', 1)
+    cmd = (
+        'gdal_calc.py '
+        f'--outfile {product_name}/{product_name}_{incidence_angle.suffix}.tif '
+        f'-A {isce_output_dir / incidence_angle.name} --A_band={incidence_angle.band} '
+        '--calc (90-A)*pi/180 --type Float32 --format GTiff --NoDataValue=0 '
+        '--creation-option TILED=YES --creation-option COMPRESS=LZW --creation-option NUM_THREADS=ALL_CPUS'
+    )
+    subprocess.check_call(cmd.split(' '))
+
+    # Performs the inverse of the operation performed by MintPy:
+    # https://github.com/insarlab/MintPy/blob/df96e0b73f13cc7e2b6bfa57d380963f140e3159/src/mintpy/objects/stackDict.py#L739-L745
+    # First add ninety degrees to the azimuth angle to go from angle-from-east to angle-from-north,
+    # then convert to radians
+    azimuth_angle = ISCE2Dataset('los.rdr.geo', 'lv_phi', 2)
+    cmd = (
+        'gdal_calc.py '
+        f'--outfile {product_name}/{product_name}_{azimuth_angle.suffix}.tif '
+        f'-A {isce_output_dir / azimuth_angle.name} --A_band={azimuth_angle.band} '
+        '--calc (90+A)*pi/180 --type Float32 --format GTiff --NoDataValue=0 '
         '--creation-option TILED=YES --creation-option COMPRESS=LZW --creation-option NUM_THREADS=ALL_CPUS'
     )
     subprocess.check_call(cmd.split(' '))
