@@ -269,7 +269,7 @@ def translate_outputs(isce_output_dir: Path, product_name: str):
 
     # Performs the inverse of the operation performed by MintPy:
     # https://github.com/insarlab/MintPy/blob/df96e0b73f13cc7e2b6bfa57d380963f140e3159/src/mintpy/objects/stackDict.py#L732-L737
-    # First substract ninety degrees from the incidence angle to go from sensor-to-ground to ground-to-sensor,
+    # First subtract ninety degrees from the incidence angle to go from sensor-to-ground to ground-to-sensor,
     # then convert to radians
     incidence_angle = ISCE2Dataset('los.rdr.geo', 'lv_theta', 1)
     cmd = (
