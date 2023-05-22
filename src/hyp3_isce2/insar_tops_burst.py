@@ -148,6 +148,7 @@ def translate_outputs(isce_output_dir: Path, product_name: str):
             creationOptions=['TILED=YES', 'COMPRESS=LZW', 'NUM_THREADS=ALL_CPUS'],
         )
 
+    # Use numpy.angle to extract the phase component of the complex wrapped interferogram
     wrapped_phase = ISCE2Dataset('filt_topophase.flat.geo', 'wrapped_phase', 1)
     cmd = (
         'gdal_calc.py '
@@ -163,9 +164,11 @@ def translate_outputs(isce_output_dir: Path, product_name: str):
     ds.GetRasterBand(2).SetNoDataValue(0)
     del ds
 
-    incidence_angle = ISCE2Dataset('los.rdr.geo', 'lv_theta', 1)
     # Performs the inverse of the operation performed by MintPy:
     # https://github.com/insarlab/MintPy/blob/df96e0b73f13cc7e2b6bfa57d380963f140e3159/src/mintpy/objects/stackDict.py#L732-L737
+    # First substract ninety degrees from the incidence angle to go from sensor-to-ground to ground-to-sensor,
+    # then convert to radians
+    incidence_angle = ISCE2Dataset('los.rdr.geo', 'lv_theta', 1)
     cmd = (
         'gdal_calc.py '
         f'--outfile {product_name}/{product_name}_{incidence_angle.suffix}.tif '
@@ -175,9 +178,11 @@ def translate_outputs(isce_output_dir: Path, product_name: str):
     )
     subprocess.check_call(cmd.split(' '))
 
-    azimuth_angle = ISCE2Dataset('los.rdr.geo', 'lv_phi', 2)
     # Performs the inverse of the operation performed here:
     # https://github.com/insarlab/MintPy/blob/df96e0b73f13cc7e2b6bfa57d380963f140e3159/src/mintpy/objects/stackDict.py#L739-L745
+    # First add ninety degrees to the azimuth angle to go from angle-from-east to angle-from-north,
+    # then convert to radians
+    azimuth_angle = ISCE2Dataset('los.rdr.geo', 'lv_phi', 2)
     cmd = (
         'gdal_calc.py '
         f'--outfile {product_name}/{product_name}_{azimuth_angle.suffix}.tif '
