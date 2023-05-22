@@ -1,7 +1,6 @@
 """Create a single-burst Sentinel-1 geocoded unwrapped interferogram using ISCE2's TOPS processing workflow"""
 
 import argparse
-import json
 import logging
 import os
 import site
@@ -14,6 +13,7 @@ from shutil import copyfile, make_archive
 from hyp3lib.aws import upload_file_to_s3
 from hyp3lib.get_orb import downloadSentinelOrbitFile
 from hyp3lib.image import create_thumbnail
+from lxml import etree
 from osgeo import gdal
 
 from hyp3_isce2 import topsapp
@@ -27,6 +27,7 @@ from hyp3_isce2.burst import (
 from hyp3_isce2.dem import download_dem_for_isce2
 from hyp3_isce2.s1_auxcal import download_aux_cal
 from hyp3_isce2.utils import make_browse_image, utm_from_lon_lat
+
 
 log = logging.getLogger(__name__)
 gdal.UseExceptions()
@@ -108,16 +109,117 @@ def insar_tops_burst(
     return Path('merged')
 
 
-# TODO add more parameters
-# TODO does the format need to be the same as for our INSAR_GAMMA products?
-# TODO unit test
-def make_parameter_file(out_path: Path, reference_scene: str, secondary_scene: str) -> None:
-    output = {
-        'reference_scene': reference_scene,
-        'secondary_scene': secondary_scene,
-    }
-    with out_path.open('w') as f:
-        json.dump(output, f)
+def make_parameter_file(
+    out_path: Path,
+    reference_scene: str,
+    secondary_scene: str,
+    swath_number: int,
+    reference_burst_number: int,
+    secondary_burst_number: int,
+    polarization: str = 'VV',
+    azimuth_looks: int = 4,
+    range_looks: int = 20,
+    dem_name: str = 'GLO_30',
+    dem_resolution: int = 30
+) -> None:
+    """Create a parameter file for the output product
+
+    Args:
+        out_path: path to output the parameter file
+        reference_scene: Reference SLC name
+        secondary_scene: Secondary SLC name
+        swath_number: Number of swath to grab bursts from (1, 2, or 3) for IW
+        reference_burst_number: Number of burst to download for reference (0-indexed from first collect)
+        secondary_burst_number: Number of burst to download for secondary (0-indexed from first collect)
+        polarization: Polarization to use
+        azimuth_looks: Number of azimuth looks
+        range_looks: Number of range looks
+        dem_name: Name of the DEM that is use
+        dem_resolution: Resolution of the DEM
+
+    returns:
+        None
+    """
+
+    SPEED_OF_LIGHT = 299792458.0
+    SPACECRAFT_HEIGHT = 693000.0
+    EARTH_RADIUS = 6337286.638938101
+
+    parser = etree.XMLParser(encoding='utf-8', recover=True)
+
+    ref_annotation_path = f'{reference_scene}.SAFE/annotation/'
+    ref_annotation = [file for file in os.listdir(ref_annotation_path) if os.path.isfile(ref_annotation_path + file)][0]
+
+    ref_manifest_xml = etree.parse(f'{reference_scene}.SAFE/manifest.safe', parser)
+    sec_manifest_xml = etree.parse(f'{secondary_scene}.SAFE/manifest.safe', parser)
+    ref_annotation_xml = etree.parse(f'{ref_annotation_path}{ref_annotation}', parser)
+    topsProc_xml = etree.parse('topsProc.xml', parser)
+    topsApp_xml = etree.parse('topsApp.xml', parser)
+
+    safe = '{http://www.esa.int/safe/sentinel-1.0}'
+    s1 = '{http://www.esa.int/safe/sentinel-1.0/sentinel-1}'
+    metadata_path = './/metadataObject[@ID="measurementOrbitReference"]//xmlData//'
+    orbit_number_query = metadata_path + safe + 'orbitNumber'
+    orbit_direction_query = metadata_path + safe + 'extension//' + s1 + 'pass'
+
+    ref_orbit_number = ref_manifest_xml.find(orbit_number_query).text
+    ref_orbit_direction = ref_manifest_xml.find(orbit_direction_query).text
+    sec_orbit_number = sec_manifest_xml.find(orbit_number_query).text
+    sec_orbit_direction = sec_manifest_xml.find(orbit_direction_query).text
+    ref_heading = float(ref_annotation_xml.find('.//platformHeading').text)
+    ref_time = ref_annotation_xml.find('.//productFirstLineUtcTime').text
+    slant_range_time = float(ref_annotation_xml.find('.//slantRangeTime').text)
+    range_sampling_rate = float(ref_annotation_xml.find('.//rangeSamplingRate').text)
+    number_samples = int(ref_annotation_xml.find('.//swathTiming/samplesPerBurst').text)
+    baseline_par = topsProc_xml.find(f'.//IW-{swath_number}_Bpar_at_midrange_for_first_common_burst').text
+    baseline_perp = topsProc_xml.find(f'.//IW-{swath_number}_Bperp_at_midrange_for_first_common_burst').text
+    unwrapper_type = topsApp_xml.find('.//property[@name="unwrapper name"]').text
+    phase_filter_strength = topsApp_xml.find('.//property[@name="filter strength"]').text
+
+    slant_range_near = float(slant_range_time) * SPEED_OF_LIGHT / 2
+    range_pixel_spacing = SPEED_OF_LIGHT / (2 * range_sampling_rate)
+    slant_range_far = slant_range_near + (number_samples - 1) * range_pixel_spacing
+    slant_range_center = (slant_range_near + slant_range_far) / 2
+
+    s = ref_time.split('T')[1].split(':')
+    utc_time = (int(s[0]) * 60 + int(s[1]) * 60) + float(s[2])
+
+    output_strings = [
+        f'Reference Scene: {reference_scene}\n',
+        f'Secondary Scene: {secondary_scene}\n',
+        f'Reference Pass Direction: {ref_orbit_direction}\n',
+        f'Reference Orbit Number: {ref_orbit_number}\n',
+        f'Secondary Pass Direction: {sec_orbit_direction}\n',
+        f'Secondary Orbit Number: {sec_orbit_number}\n',
+        f'Reference Burst Number: {reference_burst_number}\n',
+        f'Secondary Burst Number: {secondary_burst_number}\n',
+        f'Swath Number: {swath_number}\n',
+        f'Polarization: {polarization}\n',
+        f'Parallel Baseline: {baseline_par}\n',
+        f'Perpindicular Baseline: {baseline_perp}\n',
+        f'UTC time: {utc_time}\n',
+        f'Heading: {ref_heading}\n',
+        f'Spacecraft height: {SPACECRAFT_HEIGHT}\n',
+        f'Earth radius at nadir: {EARTH_RADIUS}\n',
+        f'Slant range near: {slant_range_near}\n',
+        f'Slant range center: {slant_range_center}\n',
+        f'Slant range far: {slant_range_far}\n',
+        f'Range looks: {range_looks}\n',
+        f'Azimuth looks: {azimuth_looks}\n',
+        'INSAR phase filter: yes\n',
+        f'Phase filter parameter: {phase_filter_strength}\n',
+        'Range bandpass filter: no\n',
+        'Azimuth bandpass filter: no\n',
+        f'DEM source: {dem_name}\n',
+        f'DEM resolution (m): {dem_resolution}\n',
+        f'Unwrapping type: {unwrapper_type}\n',
+        'Speckle filter: yes\n'
+    ]
+
+    output_string = "".join(output_strings)
+
+    with open(out_path.__str__(), 'w') as outfile:
+        outfile.write(output_string)
 
 
 def translate_outputs(isce_output_dir: Path, product_name: str):
@@ -222,9 +324,15 @@ def main():
 
     translate_outputs(isce_output_dir, product_name)
     make_parameter_file(
-        Path(f'{product_name}/{product_name}.json'),
-        args.reference_scene,
-        args.secondary_scene,
+        Path(f'{product_name}/{product_name}.txt'),
+        reference_scene=args.reference_scene,
+        secondary_scene=args.secondary_scene,
+        swath_number=args.swath_number,
+        polarization=args.polarization,
+        reference_burst_number=args.reference_burst_number,
+        secondary_burst_number=args.secondary_burst_number,
+        azimuth_looks=args.azimuth_looks,
+        range_looks=args.range_looks
     )
     output_zip = make_archive(base_name=product_name, format='zip', base_dir=product_name)
 
