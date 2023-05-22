@@ -15,6 +15,7 @@ and uses [Semantic Versioning](https://semver.org/spec/v2.0.0.html).
 * Generation of a product browse image based on the unwrapped phase geotiff.
 * Generation of a parameter file for the burst products
 * The `++omp-num-threads` parameter for control of the number of threads used when ISCE2 calls OpenMP functionality.
+* Generation of output satellite geometry products (azimuth angle and lookup angle) to enable further time series processing.
 
 ## [0.2.1]
 ### Added
