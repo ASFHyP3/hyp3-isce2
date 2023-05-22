@@ -2,6 +2,8 @@ from osgeo import gdal
 
 from hyp3_isce2.utils import GDALConfigManager, extent_from_geotransform, utm_from_lon_lat
 
+gdal.UseExceptions()
+
 
 def test_utm_from_lon_lat():
     assert utm_from_lon_lat(0, 0) == 32631

@@ -15,6 +15,7 @@ from hyp3lib.image import create_thumbnail
 from hyp3_isce2 import slc
 from hyp3_isce2 import topsapp
 from hyp3_isce2.dem import download_dem_for_isce2
+from hyp3_isce2.logging import configure_root_logger
 from hyp3_isce2.s1_auxcal import download_aux_cal
 
 
@@ -55,7 +56,7 @@ def insar_tops(
     ref_dir = slc.get_granule(reference_scene)
     sec_dir = slc.get_granule(secondary_scene)
     roi = slc.get_dem_bounds(ref_dir, sec_dir)
-    print(f'DEM ROI: {roi}')
+    log.info(f'DEM ROI: {roi}')
 
     dem_path = download_dem_for_isce2(roi, dem_name='glo_30', dem_dir=dem_dir, buffer=0)
     download_aux_cal(aux_cal_dir)
@@ -96,8 +97,10 @@ def main():
 
     args = parser.parse_args()
 
-    logging.basicConfig(stream=sys.stdout, format='%(asctime)s - %(levelname)s - %(message)s', level=logging.INFO)
+    configure_root_logger()
     log.debug(' '.join(sys.argv))
+
+    log.info('Begin ISCE2 TopsApp run')
 
     product_dir = insar_tops(
         reference_scene=args.reference_scene,

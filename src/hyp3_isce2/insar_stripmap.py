@@ -12,6 +12,8 @@ from pathlib import Path
 from hyp3lib.aws import upload_file_to_s3
 from hyp3lib.image import create_thumbnail
 
+from hyp3_isce2.logging import configure_root_logger
+
 
 log = logging.getLogger(__name__)
 
@@ -52,8 +54,10 @@ def main():
 
     args = parser.parse_args()
 
-    logging.basicConfig(stream=sys.stdout, format='%(asctime)s - %(levelname)s - %(message)s', level=logging.INFO)
+    configure_root_logger()
     log.debug(' '.join(sys.argv))
+
+    log.info('Begin InSAR Stripmap run')
 
     product_file = insar_stripmap(
         reference_scene=args.reference_scene,
