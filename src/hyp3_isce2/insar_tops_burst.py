@@ -172,7 +172,6 @@ def make_parameter_file(
     slant_range_time = float(ref_annotation_xml.find('.//slantRangeTime').text)
     range_sampling_rate = float(ref_annotation_xml.find('.//rangeSamplingRate').text)
     number_samples = int(ref_annotation_xml.find('.//swathTiming/samplesPerBurst').text)
-    baseline_par = topsProc_xml.find(f'.//IW-{swath_number}_Bpar_at_midrange_for_first_common_burst').text
     baseline_perp = topsProc_xml.find(f'.//IW-{swath_number}_Bperp_at_midrange_for_first_common_burst').text
     unwrapper_type = topsApp_xml.find('.//property[@name="unwrapper name"]').text
     phase_filter_strength = topsApp_xml.find('.//property[@name="filter strength"]').text
@@ -186,8 +185,8 @@ def make_parameter_file(
     utc_time = (int(s[0]) * 60 + int(s[1]) * 60) + float(s[2])
 
     output_strings = [
-        f'Reference Scene: {reference_scene}\n',
-        f'Secondary Scene: {secondary_scene}\n',
+        f'Reference Granule: {reference_scene}\n',
+        f'Secondary Granule: {secondary_scene}\n',
         f'Reference Pass Direction: {ref_orbit_direction}\n',
         f'Reference Orbit Number: {ref_orbit_number}\n',
         f'Secondary Pass Direction: {sec_orbit_direction}\n',
@@ -196,8 +195,7 @@ def make_parameter_file(
         f'Secondary Burst Number: {secondary_burst_number}\n',
         f'Swath Number: {swath_number}\n',
         f'Polarization: {polarization}\n',
-        f'Parallel Baseline: {baseline_par}\n',
-        f'Perpindicular Baseline: {baseline_perp}\n',
+        f'Baseline: {baseline_perp}\n',
         f'UTC time: {utc_time}\n',
         f'Heading: {ref_heading}\n',
         f'Spacecraft height: {SPACECRAFT_HEIGHT}\n',
