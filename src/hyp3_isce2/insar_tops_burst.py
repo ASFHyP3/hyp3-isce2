@@ -186,8 +186,8 @@ def make_parameter_file(
     utc_time = (int(s[0]) * 60 + int(s[1]) * 60) + float(s[2])
 
     output_strings = [
-        f'Reference Scene: {reference_scene}\n',
-        f'Secondary Scene: {secondary_scene}\n',
+        f'Reference Granule: {reference_scene}\n',
+        f'Secondary Granule: {secondary_scene}\n',
         f'Reference Pass Direction: {ref_orbit_direction}\n',
         f'Reference Orbit Number: {ref_orbit_number}\n',
         f'Secondary Pass Direction: {sec_orbit_direction}\n',
