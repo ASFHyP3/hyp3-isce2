@@ -102,7 +102,7 @@ def main():
 
     log.info('Begin ISCE2 TopsApp run')
 
-    product_dir = insar_tops(
+    isce_output_dir = insar_tops(
         reference_scene=args.reference_scene,
         secondary_scene=args.secondary_scene,
         polarization=args.polarization,
@@ -112,12 +112,8 @@ def main():
 
     log.info('ISCE2 TopsApp run completed successfully')
 
+    product_name = f'{args.reference_scene}x{args.secondary_scene}'
+    output_zip = make_archive(base_name=product_name, format='zip', base_dir=isce_output_dir)
+
     if args.bucket:
-        base_name = f'{args.reference_scene}x{args.secondary_scene}'
-        product_file = make_archive(base_name=base_name, format='zip', base_dir=product_dir)
-        upload_file_to_s3(product_file, args.bucket, args.bucket_prefix)
-        browse_images = product_file.with_suffix('.png')
-        for browse in browse_images:
-            thumbnail = create_thumbnail(browse)
-            upload_file_to_s3(browse, args.bucket, args.bucket_prefix)
-            upload_file_to_s3(thumbnail, args.bucket, args.bucket_prefix)
+        upload_file_to_s3(Path(output_zip), args.bucket, args.bucket_prefix)
