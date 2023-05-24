@@ -10,7 +10,7 @@ and uses [Semantic Versioning](https://semver.org/spec/v2.0.0.html).
 ## [0.3.0]
 ### Added
 * `insar_tops` workflow for processing of full Sentinel-1 SLCs.
-* Ability to pass EarthData username and password as environment variables to workflows. This allows the credentials to be passed to the Docker container via the `-e` option.
+* Ability to pass Earthdata username and password as environment variables to workflows. This allows the credentials to be passed to the Docker container via the `-e` option.
 * The `++omp-num-threads` parameter for control of the number of threads used when ISCE2 calls OpenMP functionality.
 * Added to the `insar_tops_burst` workflow:
   * Generation of output geotiff products with sensible names in subfolder that is also added as a zip archive.
