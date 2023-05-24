@@ -23,8 +23,6 @@ import rasterio
 from lxml import etree
 from shapely.geometry import box
 
-rasterio.logging.getLogger().setLevel(rasterio.logging.WARN)
-
 DEM_RESOLUTION = 0.0002777777777777777775
 
 

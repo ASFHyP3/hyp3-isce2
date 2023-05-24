@@ -84,3 +84,8 @@ def test_get_region_of_interest(tmp_path, orbit):
     assert not roi.intersects(ref_bbox_pre)
     assert roi.intersects(ref_bbox_on)
     assert not roi.intersects(ref_bbox_post)
+
+
+def test_get_product_name():
+    name = burst.get_product_name('A', 'B', 1, 2, 3, 'VV')
+    assert name == 'A_IW3_VV_1xB_IW3_VV_2'

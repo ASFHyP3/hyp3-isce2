@@ -3,8 +3,9 @@
 The HyP3-ISCE2 plugin provides a set of workflows to process SAR satellite data using the [InSAR Scientific Computing Environment 2](https://github.com/isce-framework/isce2) (ISCE2) software package. This plugin is part of the [Alaska Satellite Facility's](https://asf.alaska.edu) larger HyP3 (Hybrid Plugin Processing Pipeline) system, which is a batch processing pipeline designed for on-demand processing of SAR data.
 
 ## Usage
-The HyP3-ISCE2 plugin provides a set of workflows (accessable directly in Python or via a CLI) that can be used to process SAR data using ISCE2. The workflows currently included in this plugin are:
+The HyP3-ISCE2 plugin provides a set of workflows (accessible directly in Python or via a CLI) that can be used to process SAR data using ISCE2. The workflows currently included in this plugin are:
 
+- `insar_tops`: A workflow for creating full-SLC Sentinel-1 geocoded unwrapped interferogram using ISCE2's TOPS processing workflow 
 - `insar_tops_burst`: A workflow for creating single-burst Sentinel-1 geocoded unwrapped interferogram using ISCE2's TOPS processing workflow 
 ---
 
@@ -25,9 +26,16 @@ python -m hyp3_isce2 ++process insar_tops_burst \
 This command will create a Sentinel-1 interferogram that contains a deformation signal related to a 2020 Iranian earthquake.
 To learn about the arguments for each workflow, look at the help documentation (`python -m hyp3_isce2 ++process [WORKFLOW_NAME] --help`).
 
+For all workflows the user will need to provide their Earthdata login credentials to download input data. If you do not already have an account, you can sign up [here](https://urs.earthdata.nasa.gov/home). Your credentials can either be passed to the workflows via environment variables (`EARTHDATA_USERNAME` and `EARTHDATA_PASSWORD`), or via your `.netrc` file. If you haven't set up a `.netrc` file before, check out this [guide](https://harmony.earthdata.nasa.gov/docs#getting-started) to get started.
+
 The ultimate goal of this project is to create a docker container that can run ISCE2 workflows within a HyP3 deployment. To run the current version of the project's container, use this command:
 ```
-docker run -it --rm ghcr.io/ASFHyP3/hyp3-isce2:latest python -m ++process [WORKFLOW_NAME] [WORKFLOW_ARGS]
+docker run -it --rm \
+    -e EARTHDATA_USERNAME=[YOUR_USERNAME_HERE] \
+    -e EARTHDATA_PASSWORD=[YOUR_PASSWORD_HERE] \
+    ghcr.io/asfhyp3/hyp3-isce2:latest \
+    ++process [WORKFLOW_NAME] \
+    [WORKFLOW_ARGS]
 ```
 
 **NOTE** Each workflow can also be accessed via an alternative CLI with the format (`[WORKFLOW_NAME] [WORKFLOW_ARGS]`)
