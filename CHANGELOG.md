@@ -11,11 +11,12 @@ and uses [Semantic Versioning](https://semver.org/spec/v2.0.0.html).
 ### Added
 * `insar_tops` workflow for processing of full Sentinel-1 SLCs.
 * Ability to pass EarthData username and password as environment variables to workflows. This allows the credentials to be passed to the Docker container via the `-e` option.
-* Generation of output geotiff products with sensible names in subfolder that is also added as a zip archive.
-* Generation of a product browse image based on the unwrapped phase geotiff.
-* Generation of a parameter file for the burst products
 * The `++omp-num-threads` parameter for control of the number of threads used when ISCE2 calls OpenMP functionality.
-* Generation of output satellite geometry products (azimuth angle and lookup angle) to enable further time series processing.
+* Added to the `insar_tops_burst` workflow:
+  * Generation of output geotiff products with sensible names in subfolder that is also added as a zip archive.
+  * Generation of a product browse image based on the unwrapped phase geotiff.
+  * Generation of a parameter file for the burst products
+  * Generation of output satellite geometry products (azimuth angle and lookup angle) to enable further time series processing.
 
 ## [0.2.1]
 ### Added
