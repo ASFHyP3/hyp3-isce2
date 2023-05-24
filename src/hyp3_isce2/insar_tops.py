@@ -6,7 +6,7 @@ import os
 import site
 import sys
 from pathlib import Path
-from shutil import make_archive
+from shutil import copyfile, make_archive
 
 from hyp3lib.aws import upload_file_to_s3
 from hyp3lib.get_orb import downloadSentinelOrbitFile
@@ -77,7 +77,9 @@ def insar_tops(
     )
     config_path = config.write_template('topsApp.xml')
 
-    topsapp.run_topsapp_burst(start='startup', end='geocode', config_xml=config_path)
+    topsapp.run_topsapp_burst(start='startup', end='unwrap2stage', config_xml=config_path)
+    copyfile('merged/z.rdr.full.xml', 'merged/z.rdr.full.vrt.xml')
+    topsapp.run_topsapp_burst(start='geocode', end='geocode', config_xml=config_path)
 
     return Path('merged')
 
