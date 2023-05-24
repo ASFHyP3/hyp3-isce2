@@ -10,7 +10,6 @@ from shutil import make_archive
 
 from hyp3lib.aws import upload_file_to_s3
 from hyp3lib.get_orb import downloadSentinelOrbitFile
-from hyp3lib.image import create_thumbnail
 
 from hyp3_isce2 import slc
 from hyp3_isce2 import topsapp
