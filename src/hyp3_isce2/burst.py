@@ -8,7 +8,6 @@ from dataclasses import dataclass
 from pathlib import Path
 from typing import Iterator, List, Optional, Tuple, Union
 
-import asf_search
 import isce  # noqa: F401
 import requests
 from isceobj.Sensor.TOPS.Sentinel1 import Sentinel1
