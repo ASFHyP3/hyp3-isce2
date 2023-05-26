@@ -75,7 +75,7 @@ of deformation or movement.
 These burst-based products are generated from pairs of individual bursts acquired by Sentinel-1. ESA packages
 collections of bursts into SLC products for distribution. These SLCs cover large areas, resulting in large file sizes.
 In cases where only a small area of the SLC is of interest, extracting individual bursts from the SLC allows InSAR
-processing to be performed much more quickly and efficiently than processing an entire SLC.
+processing to be performed much more quickly and efficiently than processing an entire SLC pair.
 
 In addition to the efficiencies provided by the smaller file size, Sentinel-1 bursts are consistent in their footprint.
 The framing of SLCs is not always consistent along a path, so bursts may be included at the top of one SLC for one
