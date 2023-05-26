@@ -13,12 +13,8 @@ To run a workflow, simply run `python -m hyp3_isce2 ++process [WORKFLOW_NAME] [W
 
 ```
 python -m hyp3_isce2 ++process insar_tops_burst \
-  --reference-scene S1A_IW_SLC__1SDV_20200604T022251_20200604T022318_032861_03CE65_7C85 \
-  --secondary-scene S1A_IW_SLC__1SDV_20200616T022252_20200616T022319_033036_03D3A3_5D11 \
-  --swath-number 2 \
-  --polarization VV \
-  --reference-burst-number 7 \
-  --secondary-burst-number 7 \
+  S1_249434_IW1_20230523T170733_VV_8850-BURST \
+  S1_249434_IW1_20230511T170732_VV_07DE-BURST \
   --azimuth-looks 4 \
   --range-looks 20
 ```
