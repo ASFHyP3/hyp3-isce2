@@ -70,13 +70,13 @@ def insar_tops_burst(
 
     ref_params = BurstParams(
         results[0].umm['InputGranules'][0].split('-')[0],
-        results[0].properties['burst']['swath'],
+        results[0].properties['burst']['subswath'],
         results[0].properties['polarization'],
         results[0].properties['burst']['burstIndex'],
     )
     sec_params = BurstParams(
         results[1].umm['InputGranules'][0].split('-')[0],
-        results[1].properties['burst']['swath'],
+        results[1].properties['burst']['subswath'],
         results[1].properties['polarization'],
         results[1].properties['burst']['burstIndex'],
     )
