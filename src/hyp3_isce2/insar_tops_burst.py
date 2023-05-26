@@ -152,11 +152,16 @@ def make_parameter_file(
 
     parser = etree.XMLParser(encoding='utf-8', recover=True)
 
-    ref_annotation_path = f'{reference_scene}.SAFE/annotation/'
+    ref_tag = reference_scene[-10:-6]
+    sec_tag = secondary_scene[-10:-6]
+    reference_safe = [file for file in os.listdir('.') if file.endswith(f'{ref_tag}.SAFE')][0]
+    secondary_safe = [file for file in os.listdir('.') if file.endswith(f'{sec_tag}.SAFE')][0]
+
+    ref_annotation_path = f'{reference_safe}/annotation/'
     ref_annotation = [file for file in os.listdir(ref_annotation_path) if os.path.isfile(ref_annotation_path + file)][0]
 
-    ref_manifest_xml = etree.parse(f'{reference_scene}.SAFE/manifest.safe', parser)
-    sec_manifest_xml = etree.parse(f'{secondary_scene}.SAFE/manifest.safe', parser)
+    ref_manifest_xml = etree.parse(f'{reference_safe}/manifest.safe', parser)
+    sec_manifest_xml = etree.parse(f'{secondary_safe}/manifest.safe', parser)
     ref_annotation_xml = etree.parse(f'{ref_annotation_path}{ref_annotation}', parser)
     topsProc_xml = etree.parse('topsProc.xml', parser)
     topsApp_xml = etree.parse('topsApp.xml', parser)
