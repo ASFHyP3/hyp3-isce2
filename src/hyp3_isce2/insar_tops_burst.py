@@ -10,6 +10,7 @@ from collections import namedtuple
 from pathlib import Path
 from shutil import copyfile, make_archive
 
+import asf_search
 from hyp3lib.aws import upload_file_to_s3
 from hyp3lib.get_orb import downloadSentinelOrbitFile
 from hyp3lib.image import create_thumbnail
@@ -43,22 +44,14 @@ if str(ISCE_APPLICATIONS) not in os.environ['PATH'].split(os.pathsep):
 def insar_tops_burst(
     reference_scene: str,
     secondary_scene: str,
-    swath_number: int,
-    reference_burst_number: int,
-    secondary_burst_number: int,
-    polarization: str = 'VV',
     azimuth_looks: int = 4,
     range_looks: int = 20,
 ) -> Path:
     """Create a burst interferogram
 
     Args:
-        reference_scene: Reference SLC name
-        secondary_scene: Secondary SLC name
-        swath_number: Number of swath to grab bursts from (1, 2, or 3) for IW
-        reference_burst_number: Number of burst to download for reference (0-indexed from first collect)
-        secondary_burst_number: Number of burst to download for secondary (0-indexed from first collect)
-        polarization: Polarization to use
+        reference_scene: Reference SLC burst name
+        secondary_scene: Secondary SLC burst name
         azimuth_looks: Number of azimuth looks
         range_looks: Number of range looks
 
@@ -68,8 +61,25 @@ def insar_tops_burst(
     orbit_dir = Path('orbits')
     aux_cal_dir = Path('aux_cal')
     dem_dir = Path('dem')
-    ref_params = BurstParams(reference_scene, f'IW{swath_number}', polarization.upper(), reference_burst_number)
-    sec_params = BurstParams(secondary_scene, f'IW{swath_number}', polarization.upper(), secondary_burst_number)
+
+    opts = asf_search.ASFSearchOptions(
+        host='cmr.uat.earthdata.nasa.gov',
+        granule_list=[reference_scene, secondary_scene],
+    )
+    results = asf_search.search(opts=opts)
+
+    ref_params = BurstParams(
+        results[0].umm['InputGranules'][0].split('-')[0],
+        results[0].properties['burst']['swath'],
+        results[0].properties['polarization'],
+        results[0].properties['burst']['burstIndex'],
+    )
+    sec_params = BurstParams(
+        results[1].umm['InputGranules'][0].split('-')[0],
+        results[1].properties['burst']['swath'],
+        results[1].properties['polarization'],
+        results[1].properties['burst']['burstIndex'],
+    )
     ref_metadata, sec_metadata = download_bursts([ref_params, sec_params])
 
     is_ascending = ref_metadata.orbit_direction == 'ascending'
@@ -87,6 +97,8 @@ def insar_tops_burst(
     orbit_dir.mkdir(exist_ok=True, parents=True)
     for granule in (ref_params.granule, sec_params.granule):
         downloadSentinelOrbitFile(granule, str(orbit_dir))
+
+    swath_number = int(reference_scene[12])
 
     config = topsapp.TopsappBurstConfig(
         reference_safe=f'{ref_params.granule}.SAFE',
@@ -114,10 +126,6 @@ def make_parameter_file(
     out_path: Path,
     reference_scene: str,
     secondary_scene: str,
-    swath_number: int,
-    reference_burst_number: int,
-    secondary_burst_number: int,
-    polarization: str = 'VV',
     azimuth_looks: int = 4,
     range_looks: int = 20,
     dem_name: str = 'GLO_30',
@@ -127,12 +135,8 @@ def make_parameter_file(
 
     Args:
         out_path: path to output the parameter file
-        reference_scene: Reference SLC name
-        secondary_scene: Secondary SLC name
-        swath_number: Number of swath to grab bursts from (1, 2, or 3) for IW
-        reference_burst_number: Number of burst to download for reference (0-indexed from first collect)
-        secondary_burst_number: Number of burst to download for secondary (0-indexed from first collect)
-        polarization: Polarization to use
+        reference_scene: Reference SLC burst name
+        secondary_scene: Secondary SLC burst name
         azimuth_looks: Number of azimuth looks
         range_looks: Number of range looks
         dem_name: Name of the DEM that is use
@@ -172,7 +176,7 @@ def make_parameter_file(
     slant_range_time = float(ref_annotation_xml.find('.//slantRangeTime').text)
     range_sampling_rate = float(ref_annotation_xml.find('.//rangeSamplingRate').text)
     number_samples = int(ref_annotation_xml.find('.//swathTiming/samplesPerBurst').text)
-    baseline_perp = topsProc_xml.find(f'.//IW-{swath_number}_Bperp_at_midrange_for_first_common_burst').text
+    baseline_perp = topsProc_xml.find(f'.//IW-{reference_scene[12]}_Bperp_at_midrange_for_first_common_burst').text
     unwrapper_type = topsApp_xml.find('.//property[@name="unwrapper name"]').text
     phase_filter_strength = topsApp_xml.find('.//property[@name="filter strength"]').text
 
@@ -191,10 +195,6 @@ def make_parameter_file(
         f'Reference Orbit Number: {ref_orbit_number}\n',
         f'Secondary Pass Direction: {sec_orbit_direction}\n',
         f'Secondary Orbit Number: {sec_orbit_number}\n',
-        f'Reference Burst Number: {reference_burst_number}\n',
-        f'Secondary Burst Number: {secondary_burst_number}\n',
-        f'Swath Number: {swath_number}\n',
-        f'Polarization: {polarization}\n',
         f'Baseline: {baseline_perp}\n',
         f'UTC time: {utc_time}\n',
         f'Heading: {ref_heading}\n',
@@ -316,16 +316,15 @@ def main():
 
     parser.add_argument('--bucket', help='AWS S3 bucket HyP3 for upload the final product(s)')
     parser.add_argument('--bucket-prefix', default='', help='Add a bucket prefix to product(s)')
-    parser.add_argument('--reference-scene', type=str, required=True)
-    parser.add_argument('--secondary-scene', type=str, required=True)
-    parser.add_argument('--swath-number', type=int, required=True)
-    parser.add_argument('--polarization', type=str, default='VV')
-    parser.add_argument('--reference-burst-number', type=int, required=True)
-    parser.add_argument('--secondary-burst-number', type=int, required=True)
     parser.add_argument('--azimuth-looks', type=int, default=4)
     parser.add_argument('--range-looks', type=int, default=20)
+    parser.add_argument('granules', type=str.split, nargs='+')
 
     args = parser.parse_args()
+
+    args.granules = [item for sublist in args.granules for item in sublist]
+    if len(args.granules) != 2:
+        parser.error('Must provide exactly two granules')
 
     configure_root_logger()
     log.debug(' '.join(sys.argv))
@@ -333,26 +332,15 @@ def main():
     log.info('Begin ISCE2 TopsApp run')
 
     isce_output_dir = insar_tops_burst(
-        reference_scene=args.reference_scene,
-        secondary_scene=args.secondary_scene,
-        swath_number=args.swath_number,
-        polarization=args.polarization,
-        reference_burst_number=args.reference_burst_number,
-        secondary_burst_number=args.secondary_burst_number,
+        reference_scene=args.granules[0],
+        secondary_scene=args.granules[1],
         azimuth_looks=args.azimuth_looks,
         range_looks=args.range_looks,
     )
 
     log.info('ISCE2 TopsApp run completed successfully')
 
-    product_name = get_product_name(
-        args.reference_scene,
-        args.secondary_scene,
-        args.reference_burst_number,
-        args.secondary_burst_number,
-        args.swath_number,
-        args.polarization,
-    )
+    product_name = get_product_name(args.granules[0], args.granules[1])
 
     product_dir = Path(product_name)
     product_dir.mkdir(parents=True, exist_ok=True)
@@ -360,12 +348,8 @@ def main():
     translate_outputs(isce_output_dir, product_name)
     make_parameter_file(
         Path(f'{product_name}/{product_name}.txt'),
-        reference_scene=args.reference_scene,
-        secondary_scene=args.secondary_scene,
-        swath_number=args.swath_number,
-        polarization=args.polarization,
-        reference_burst_number=args.reference_burst_number,
-        secondary_burst_number=args.secondary_burst_number,
+        reference_scene=args.granules[0],
+        secondary_scene=args.granules[1],
         azimuth_looks=args.azimuth_looks,
         range_looks=args.range_looks
     )
