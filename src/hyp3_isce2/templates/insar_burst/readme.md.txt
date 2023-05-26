@@ -5,6 +5,9 @@ This folder contains burst-based SAR Interferometry (InSAR) products and their a
 these products are Sentinel-1 bursts, extracted from Single Look Complex (SLC) products processed by ESA,
 and they were processed using InSAR Scientific Computing Environment version 2 (ISCE2) software.
 
+Refer to https://sentinels.copernicus.eu/web/sentinel/user-guides/sentinel-1-sar/acquisition-modes/interferometric-wide-swath
+for more information on Sentinel-1 bursts.
+
 This data was processed by ASF DAAC HyP3 {{ processing_date.year }} using the {{ plugin_name }} plugin version {{ plugin_version }} running {{ processor_name }} release {{ processor_version }}.
 Files are projected to {{ projection }}, and the pixel spacing is {{ pixel_spacing|int }} m.
 
