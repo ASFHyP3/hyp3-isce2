@@ -6,11 +6,13 @@ import os
 import site
 import subprocess
 import sys
+import json
 from collections import namedtuple
 from pathlib import Path
 from shutil import copyfile, make_archive
 
 import asf_search
+from asf_search.exceptions import ASFSearchError
 from hyp3lib.aws import upload_file_to_s3
 from hyp3lib.get_orb import downloadSentinelOrbitFile
 from hyp3lib.image import create_thumbnail
@@ -68,14 +70,14 @@ def insar_tops_burst(
     )
     results = asf_search.search(opts=opts)
 
-    ref_not_found = reference_scene not in results.__str__()
-    sec_not_found = secondary_scene not in results.__str__()
+    ref_not_found = reference_scene not in str(results)
+    sec_not_found = secondary_scene not in str(results)
     if ref_not_found and sec_not_found:
-        raise RuntimeError(f'ASF Search failed to find both {reference_scene} and {secondary_scene}.')
+        raise ASFSearchError(f'ASF Search failed to find both {reference_scene} and {secondary_scene}.')
     elif ref_not_found:
-        raise RuntimeError(f'ASF Search failed to find {reference_scene}.')
+        raise ASFSearchError(f'ASF Search failed to find {reference_scene}.')
     elif sec_not_found:
-        raise RuntimeError(f'ASF Search failed to find {secondary_scene}.')
+        raise ASFSearchError(f'ASF Search failed to find {secondary_scene}.')
 
     ref_params = BurstParams(
         results[0].umm['InputGranules'][0].split('-')[0],
