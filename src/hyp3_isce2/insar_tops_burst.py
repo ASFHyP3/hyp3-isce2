@@ -70,8 +70,10 @@ def insar_tops_burst(
     )
     results = asf_search.search(opts=opts)
 
-    ref_not_found = reference_scene not in str(results)
-    sec_not_found = secondary_scene not in str(results)
+    fileIDs = [feature['properties']['fileID'] for feature in results.geojson()['features']]
+
+    ref_not_found = reference_scene not in fileIDs
+    sec_not_found = secondary_scene not in fileIDs
     if ref_not_found and sec_not_found:
         raise ASFSearchError(f'ASF Search failed to find both {reference_scene} and {secondary_scene}.')
     elif ref_not_found:
