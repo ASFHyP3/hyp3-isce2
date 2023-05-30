@@ -6,7 +6,6 @@ import os
 import site
 import subprocess
 import sys
-import json
 from collections import namedtuple
 from pathlib import Path
 from shutil import copyfile, make_archive
