@@ -44,6 +44,7 @@ if str(ISCE_APPLICATIONS) not in os.environ['PATH'].split(os.pathsep):
 def insar_tops_burst(
     reference_scene: str,
     secondary_scene: str,
+    swath_number: int,
     azimuth_looks: int = 4,
     range_looks: int = 20,
 ) -> Path:
@@ -109,8 +110,6 @@ def insar_tops_burst(
     for granule in (ref_params.granule, sec_params.granule):
         downloadSentinelOrbitFile(granule, str(orbit_dir))
 
-    swath_number = int(reference_scene[12])
-
     config = topsapp.TopsappBurstConfig(
         reference_safe=f'{ref_params.granule}.SAFE',
         secondary_safe=f'{sec_params.granule}.SAFE',
@@ -137,6 +136,7 @@ def make_parameter_file(
     out_path: Path,
     reference_scene: str,
     secondary_scene: str,
+    swath_number: int,
     azimuth_looks: int = 4,
     range_looks: int = 20,
     dem_name: str = 'GLO_30',
@@ -192,7 +192,7 @@ def make_parameter_file(
     slant_range_time = float(ref_annotation_xml.find('.//slantRangeTime').text)
     range_sampling_rate = float(ref_annotation_xml.find('.//rangeSamplingRate').text)
     number_samples = int(ref_annotation_xml.find('.//swathTiming/samplesPerBurst').text)
-    baseline_perp = topsProc_xml.find(f'.//IW-{reference_scene[12]}_Bperp_at_midrange_for_first_common_burst').text
+    baseline_perp = topsProc_xml.find(f'.//IW-{swath_number}_Bperp_at_midrange_for_first_common_burst').text
     unwrapper_type = topsApp_xml.find('.//property[@name="unwrapper name"]').text
     phase_filter_strength = topsApp_xml.find('.//property[@name="filter strength"]').text
 
@@ -347,11 +347,14 @@ def main():
 
     log.info('Begin ISCE2 TopsApp run')
 
+    swath_number = int(args.granules[0][12])
+
     isce_output_dir = insar_tops_burst(
         reference_scene=args.granules[0],
         secondary_scene=args.granules[1],
         azimuth_looks=args.azimuth_looks,
         range_looks=args.range_looks,
+        swath_number=swath_number
     )
 
     log.info('ISCE2 TopsApp run completed successfully')
@@ -367,7 +370,8 @@ def main():
         reference_scene=args.granules[0],
         secondary_scene=args.granules[1],
         azimuth_looks=args.azimuth_looks,
-        range_looks=args.range_looks
+        range_looks=args.range_looks,
+        swath_number=swath_number
     )
     output_zip = make_archive(base_name=product_name, format='zip', base_dir=product_name)
 
