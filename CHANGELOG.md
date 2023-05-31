@@ -9,7 +9,7 @@ and uses [Semantic Versioning](https://semver.org/spec/v2.0.0.html).
 
 ## [0.4.0]
 ### Changed
-* `insar_tops_burst` workflow now takes the burst product names rather than the slc product names
+* `insar_tops_burst` workflow now takes the burst product names rather than the SLC product names.
 
 ## [0.3.0]
 ### Added
