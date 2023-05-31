@@ -53,6 +53,7 @@ def insar_tops_burst(
     Args:
         reference_scene: Reference burst name
         secondary_scene: Secondary burst name
+        swath_number: Number of swath to grab bursts from (1, 2, or 3) for IW
         azimuth_looks: Number of azimuth looks
         range_looks: Number of range looks
 
