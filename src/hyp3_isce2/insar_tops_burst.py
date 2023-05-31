@@ -6,6 +6,7 @@ import os
 import site
 import subprocess
 import sys
+from datetime import datetime, timezone
 from collections import namedtuple
 from pathlib import Path
 from shutil import copyfile, make_archive
@@ -24,10 +25,12 @@ from hyp3_isce2.burst import (
     get_product_name,
     get_region_of_interest,
 )
+import hyp3_isce2
 from hyp3_isce2.dem import download_dem_for_isce2
 from hyp3_isce2.logging import configure_root_logger
 from hyp3_isce2.s1_auxcal import download_aux_cal
 from hyp3_isce2.utils import make_browse_image, utm_from_lon_lat
+from hyp3_isce2.metadata import util
 
 gdal.UseExceptions()
 
@@ -109,6 +112,9 @@ def insar_tops_burst(
 
     return Path('merged')
 
+
+def isce2_version():
+    pass
 
 def make_parameter_file(
     out_path: Path,
@@ -358,6 +364,37 @@ def main():
     product_dir.mkdir(parents=True, exist_ok=True)
 
     translate_outputs(isce_output_dir, product_name)
+
+    payload = {}
+    payload['product_dir'] = Path(product_name)
+    payload['reference_granule_name'] = args.reference_scene
+    payload['secondary_granule_name'] = args.secondary_scene
+    payload['swath_number'] = args.swath_number
+    payload['polarization'] = args.polarization
+    payload['reference_burst_number'] = args.reference_burst_number
+    payload['secondary_burst_number'] = args.secondary_burst_number
+    payload['processing_date'] = datetime.now(timezone.utc)
+    payload['range_looks'] = args.range_looks
+    payload['azimuth_looks'] = args.azimuth_looks
+    payload['dem_name'] = 'GLO-30'
+    payload['plugin_name'] = hyp3_isce2.__name__
+    payload['plugin_version'] = hyp3_isce2.__version__
+    payload['processor_name'] = 'ISCE2'
+    payload['processor_version'] = 'Version 2'
+
+    reference_file = product_dir / f'{product_name}_wrapped_phase.tif'
+
+    info = gdal.Info(str(reference_file), format='json')
+    payload['reference_file'] = reference_file.name
+    payload['pixel_spacing'] = info['geoTransform'][1]
+    payload['projection'] = util.get_projection(info['coordinateSystem']['wkt'])
+
+    content = util.render_template('insar_burst/readme.md.txt.j2', payload)
+
+    output_file = product_dir / f'{product_dir}_README.md.txt'
+    with open(output_file, 'w') as f:
+        f.write(content)
+
     make_parameter_file(
         Path(f'{product_name}/{product_name}.txt'),
         reference_scene=args.reference_scene,
