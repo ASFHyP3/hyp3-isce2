@@ -6,8 +6,8 @@ import os
 import site
 import subprocess
 import sys
-from datetime import datetime, timezone
 from collections import namedtuple
+from datetime import datetime, timezone
 from pathlib import Path
 from shutil import copyfile, make_archive
 
@@ -17,6 +17,7 @@ from hyp3lib.image import create_thumbnail
 from lxml import etree
 from osgeo import gdal
 
+import hyp3_isce2
 from hyp3_isce2 import topsapp
 from hyp3_isce2.burst import (
     BurstParams,
@@ -25,7 +26,7 @@ from hyp3_isce2.burst import (
     get_product_name,
     get_region_of_interest,
 )
-import hyp3_isce2
+
 from hyp3_isce2.dem import download_dem_for_isce2
 from hyp3_isce2.logging import configure_root_logger
 from hyp3_isce2.s1_auxcal import download_aux_cal
