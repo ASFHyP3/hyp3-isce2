@@ -326,25 +326,14 @@ def download_bursts(param_list: Iterator[BurstParams]) -> List[BurstMetadata]:
 def get_product_name(
     reference_scene: str,
     secondary_scene: str,
-    reference_burst_number: int,
-    secondary_burst_number: int,
-    swath_number: int,
-    polarization: str,
 ) -> str:
     """Get the name of the interferogram product.
-    NOTE: Will need to be updated when the interface changes.
 
     Args:
-        reference_scene: The reference scene name.
-        secondary_scene: The secondary scene name.
-        reference_burst_number: The reference burst number.
-        secondary_burst_number: The secondary burst number.
-        swath_number: The swath number.
-        polarization: The polarization.
+        reference_scene: The reference burst name.
+        secondary_scene: The secondary burst name.
 
     Returns:
         The name of the interferogram product.
     """
-    reference_name = f'{reference_scene}_IW{swath_number}_{polarization}_{reference_burst_number}'
-    secondary_name = f'{secondary_scene}_IW{swath_number}_{polarization}_{secondary_burst_number}'
-    return f'{reference_name}x{secondary_name}'
+    return f'{reference_scene}x{secondary_scene}'
