@@ -7,6 +7,10 @@ and this project adheres to [PEP 440](https://www.python.org/dev/peps/pep-0440/)
 and uses [Semantic Versioning](https://semver.org/spec/v2.0.0.html).
 
 
+## [0.4.0]
+### Changed
+* `insar_tops_burst` workflow now takes the burst product names rather than the slc product names
+
 ## [0.3.0]
 ### Added
 * `insar_tops` workflow for processing of full Sentinel-1 SLCs.
@@ -17,7 +21,6 @@ and uses [Semantic Versioning](https://semver.org/spec/v2.0.0.html).
   * Generation of a product browse image based on the unwrapped phase geotiff.
   * Generation of a parameter file for the burst products
   * Generation of output satellite geometry products (azimuth angle and lookup angle) to enable further time series processing.
-* `insar_tops_burst` workflow now takes the burst product names rather than the slc product names
 
 ## [0.2.1]
 ### Added
