@@ -331,8 +331,8 @@ def get_product_name(
     NOTE: Will need to be updated when the interface changes.
 
     Args:
-        reference_scene: The reference burst scene name.
-        secondary_scene: The secondary burst scene name.
+        reference_scene: The reference burst name.
+        secondary_scene: The secondary burst name.
 
     Returns:
         The name of the interferogram product.

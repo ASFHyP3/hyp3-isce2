@@ -146,8 +146,8 @@ def make_parameter_file(
 
     Args:
         out_path: path to output the parameter file
-        reference_scene: Reference SLC burst name
-        secondary_scene: Secondary SLC burst name
+        reference_scene: The reference burst name
+        secondary_scene: The secondary burst name
         azimuth_looks: Number of azimuth looks
         range_looks: Number of range looks
         dem_name: Name of the DEM that is use
