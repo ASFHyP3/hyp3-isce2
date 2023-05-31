@@ -113,9 +113,6 @@ def insar_tops_burst(
     return Path('merged')
 
 
-def isce2_version():
-    pass
-
 def make_parameter_file(
     out_path: Path,
     reference_scene: str,
