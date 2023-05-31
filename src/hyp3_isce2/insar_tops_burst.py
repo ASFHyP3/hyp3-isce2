@@ -334,13 +334,9 @@ def main():
     parser.add_argument('--bucket-prefix', default='', help='Add a bucket prefix to product(s)')
     parser.add_argument('--azimuth-looks', type=int, default=4)
     parser.add_argument('--range-looks', type=int, default=20)
-    parser.add_argument('granules', type=str.split, nargs='+')
+    parser.add_argument('granules', type=str, nargs=2)
 
     args = parser.parse_args()
-
-    args.granules = [item for sublist in args.granules for item in sublist]
-    if len(args.granules) != 2:
-        parser.error('Must provide exactly two granules')
 
     configure_root_logger()
     log.debug(' '.join(sys.argv))
