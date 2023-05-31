@@ -340,9 +340,16 @@ def main():
         default='20x4',
         help='Number of looks to take in range and azimuth'
     )
-    parser.add_argument('granules', type=str, nargs=2)
+    # Allows granules to be given as a space-delimited list of strings (e.g. foo bar) or as a single
+    # quoted string that contains spaces (e.g. "foo bar"). AWS Batch uses the latter format when
+    # invoking the container command.
+    parser.add_argument('granules', type=str.split, nargs='+')
 
     args = parser.parse_args()
+
+    args.granules = [item for sublist in args.granules for item in sublist]
+    if len(args.granules) != 2:
+        parser.error('Must provide exactly two granules')
 
     configure_root_logger()
     log.debug(' '.join(sys.argv))
