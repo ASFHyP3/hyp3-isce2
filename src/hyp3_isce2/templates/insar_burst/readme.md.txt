@@ -24,13 +24,14 @@ TODO
 ### Pixel Spacing ###
 
 When ordering Sentinel-1 Burst InSAR On Demand products, users can choose the number of looks to use in processing,
-which drives the resolution and pixel spacing of the output products. The available options are TODO.
+which drives the resolution and pixel spacing of the output products. The available options are 20x4, 10x2, or 5x1.
 The first number indicates the number of looks in range, the second is the number of looks in azimuth.
 
 The output product pixel spacing depends on the number of looks in azimuth:
 pixel spacing = 20 * azimuth looks
 
-Products with TODO looks have a pixel spacing of TODO m.
+Products with 20x4 looks have a pixel spacing of 80 m, those with 10x2 looks have a pixel spacing of 40 m, and
+those with 5x1 looks have a pixel spacing of 20 m.
 
 ----------------
 ### Using this data ###
