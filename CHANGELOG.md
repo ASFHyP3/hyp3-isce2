@@ -7,6 +7,10 @@ and this project adheres to [PEP 440](https://www.python.org/dev/peps/pep-0440/)
 and uses [Semantic Versioning](https://semver.org/spec/v2.0.0.html).
 
 
+## [0.4.0]
+### Changed
+* `insar_tops_burst` workflow now takes the burst product names rather than the slc product names
+
 ## [0.3.0]
 ### Added
 * `insar_tops` workflow for processing of full Sentinel-1 SLCs.
