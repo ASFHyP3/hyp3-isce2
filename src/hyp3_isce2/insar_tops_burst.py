@@ -149,6 +149,7 @@ def make_parameter_file(
         out_path: path to output the parameter file
         reference_scene: Reference burst name
         secondary_scene: Secondary burst name
+        swath_number: Number of swath to grab bursts from (1, 2, or 3) for IW
         azimuth_looks: Number of azimuth looks
         range_looks: Number of range looks
         dem_name: Name of the DEM that is use
