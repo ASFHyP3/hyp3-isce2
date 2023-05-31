@@ -51,8 +51,8 @@ def insar_tops_burst(
     """Create a burst interferogram
 
     Args:
-        reference_scene: Reference SLC burst name
-        secondary_scene: Secondary SLC burst name
+        reference_scene: Reference burst name
+        secondary_scene: Secondary burst name
         azimuth_looks: Number of azimuth looks
         range_looks: Number of range looks
 
@@ -146,8 +146,8 @@ def make_parameter_file(
 
     Args:
         out_path: path to output the parameter file
-        reference_scene: The reference burst name
-        secondary_scene: The secondary burst name
+        reference_scene: Reference burst name
+        secondary_scene: Secondary burst name
         azimuth_looks: Number of azimuth looks
         range_looks: Number of range looks
         dem_name: Name of the DEM that is use
