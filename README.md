@@ -15,8 +15,7 @@ To run a workflow, simply run `python -m hyp3_isce2 ++process [WORKFLOW_NAME] [W
 python -m hyp3_isce2 ++process insar_tops_burst \
   S1_249434_IW1_20230523T170733_VV_8850-BURST \
   S1_249434_IW1_20230511T170732_VV_07DE-BURST \
-  --azimuth-looks 4 \
-  --range-looks 20
+  --looks 20x4
 ```
 
 This command will create a Sentinel-1 interferogram that contains a deformation signal related to a 2020 Iranian earthquake.

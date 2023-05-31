@@ -138,8 +138,8 @@ def make_parameter_file(
     reference_scene: str,
     secondary_scene: str,
     swath_number: int,
-    azimuth_looks: int = 4,
-    range_looks: int = 20,
+    azimuth_looks: int,
+    range_looks: int,
     dem_name: str = 'GLO_30',
     dem_resolution: int = 30
 ) -> None:
@@ -334,8 +334,12 @@ def main():
 
     parser.add_argument('--bucket', help='AWS S3 bucket HyP3 for upload the final product(s)')
     parser.add_argument('--bucket-prefix', default='', help='Add a bucket prefix to product(s)')
-    parser.add_argument('--azimuth-looks', type=int, default=4)
-    parser.add_argument('--range-looks', type=int, default=20)
+    parser.add_argument(
+        '--looks',
+        choices=['20x4', '10x2', '5x1'],
+        default='20x4',
+        help='Number of looks to take in range and azimuth'
+    )
     parser.add_argument('granules', type=str, nargs=2)
 
     args = parser.parse_args()
@@ -346,12 +350,13 @@ def main():
     log.info('Begin ISCE2 TopsApp run')
 
     swath_number = int(args.granules[0][12])
+    range_looks, azimuth_looks = [int(looks) for looks in args.looks.split('x')]
 
     isce_output_dir = insar_tops_burst(
         reference_scene=args.granules[0],
         secondary_scene=args.granules[1],
-        azimuth_looks=args.azimuth_looks,
-        range_looks=args.range_looks,
+        azimuth_looks=azimuth_looks,
+        range_looks=range_looks,
         swath_number=swath_number
     )
 
@@ -367,8 +372,8 @@ def main():
         Path(f'{product_name}/{product_name}.txt'),
         reference_scene=args.granules[0],
         secondary_scene=args.granules[1],
-        azimuth_looks=args.azimuth_looks,
-        range_looks=args.range_looks,
+        azimuth_looks=azimuth_looks,
+        range_looks=range_looks,
         swath_number=swath_number
     )
     output_zip = make_archive(base_name=product_name, format='zip', base_dir=product_name)
