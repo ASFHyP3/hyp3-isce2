@@ -87,5 +87,4 @@ def test_get_region_of_interest(tmp_path, orbit):
 
 
 def test_get_product_name():
-    name = burst.get_product_name('A', 'B', 1, 2, 3, 'VV')
-    assert name == 'A_IW3_VV_1xB_IW3_VV_2'
+    assert burst.get_product_name('A', 'B') == 'AxB'
