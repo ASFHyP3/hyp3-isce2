@@ -380,6 +380,7 @@ def main():
     payload['range_looks'] = args.range_looks
     payload['azimuth_looks'] = args.azimuth_looks
     payload['dem_name'] = 'GLO-30'
+    payload['dem_pixel_spacing'] = '30 m'
     payload['plugin_name'] = hyp3_isce2.__name__
     payload['plugin_version'] = hyp3_isce2.__version__
     payload['processor_name'] = 'ISCE2'
