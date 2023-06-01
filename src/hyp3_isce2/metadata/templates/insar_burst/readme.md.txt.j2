@@ -212,96 +212,53 @@ The basic steps in Sentinel-1 Burst InSAR processing are as follows:
 1. Download the Sentinel SLC burst data
 2. Calculate the intersection area
 3. Download the dem covering the intersection area
-4. Download the aux calibration parameter files and orbit parameter files
-5. Configure the Configure file for the InSAR process
+4. Download the aux calibration
+5. Download the orbit parameter files
+6. Set the Configure file for the InSAR process
+
 *InSAR Processing*
-
-ISCE2 InSAR processing includes the list of steps:
-['startup', 'preprocess', 'computeBaselines', 'verifyDEM', 'topo']
-['subsetoverlaps', 'coarseoffsets', 'coarseresamp', 'overlapifg', 'prepesd']
-['esd', 'rangecoreg', 'fineoffsets', 'fineresamp', 'ion']
-['burstifg', 'mergebursts', 'filter', 'unwrap', 'unwrap2stage']
-['geocode', 'denseoffsets', 'filteroffsets', 'geocodeoffsets']
-
-
-6. Run topsApp step preprocess
-7. Run topApp steps from 'computeBaselines' to 'unwrap2stage'
-8. Run step 'geocode'
+7. Run topsApp step 'preprocess'
+8. Run topApp steps from 'computeBaselines' to 'unwrap2stage'
+9. Run step 'geocode'
 
 *Post-Processing*
-9. translate output files to hyp3-gamma format
-10. write the README and metadata txt files
-11. zip the output files and upload the s3
+10. translate output files to hyp3-gamma format
+11. write the README text file
+12. write themetadata txt files
+13. zip the output files
+14. upload the files to s3
 
 ----------------
 The detailed process, including the calls to ISCE2 software, is as follows: TODO: Populate the list of calls
 
-## Ingest ##
+The prepare-processing and InSAR processing are combined in the insar_tps_burst function.
 
- - par_s1_slc    # Read in SLC information
- - S1_OPOD_vec   # Update state vectors with precision state vectors
+## Pre-processing ##
+ - download_bursts   # Download the bursts according to reference and secondary parameters
+ - get_region_of_interest # Calculate the intersection area
+ - download_dem_for_isce2 # Download the DEM file
+ - download_aux_cal # download the aux cal file
+ - downloadSentinelOrbitFile # Download the orbit file
+ - topsapp.TopsappBurstConfig # set the configure file
 
-## Interferogram creation/matching/refinement ##
+## InSAR processing ##
+ISCE2 InSAR processing includes the list of steps:
+['startup', 'preprocess', 'computeBaselines', 'verifyDEM', 'topo', 'subsetoverlaps', 'coarseoffsets', 'coarseresamp',
+ 'overlapifg', 'prepesd', 'esd', 'rangecoreg', 'fineoffsets', 'fineresamp', 'ion', 'burstifg', 'mergebursts', 'filter',
+ 'unwrap', 'unwrap2stage', 'geocode', 'denseoffsets', 'filteroffsets', 'geocodeoffsets']
 
-### Initial Step
+This workflow includes following processes:
+- topsapp.run_topsapp_burst # run ISCE2 from step 'start' to step 'preprocess'
+- topsapp.swap_burst_vrts # switch the reference and secondary bursts
+- topsapp.run_topsapp_burst # run ISCE2 steps from 'computeBaselines' to 'unwrap2stage'
+- topsapp.run_topsapp_burst # run ISCE2 step 'geocode'
 
- - create_offset   # Create and update ISP offset and interferogram parameter files
- - rdc_trans       # Derive lookup table for SLC/MLI co-registration (considering terrain heights)
- - phase_sim_orb   # Simulate unwrapped interferometric phase using DEM height and deformation rate using orbit state vectors
-
-### Create Interferogram
-
- - SLC_interp_lt_S1_TOPS # Resample TOPS (IW mode) SLC using a lookup table and SLC offset polynomials for refinement
- - create_offset   # Create and update ISP offset and interferogram parameter files
- - offset_pwr      # Offset estimation between SLC images using intensity cross-correlation
- - offset_fit      # Range and azimuth offset polynomial estimation
- - SLC_diff_intf   # Differential interferogram generation from co-registered SLCs and a simulated interferogram
-
-### Iterate Offset Calculations
-
- *Repeat three times:*
-
- - SLC_interp_lt_S1_TOPS # Resample TOPS (IW mode) SLC using a lookup table and SLC offset polynomials for refinement
- - create_offset   # Create and update ISP offset and interferogram parameter files
- - offset_pwr      # Offset estimation between SLC images using intensity cross-correlation
- - offset_fit      # Range and azimuth offset polynomial estimation
- - SLC_diff_intf   # Differential interferogram generation from co-registered SLCs and a simulated interferogram
- - offset_add      # Add range and azimuth offset polynomial coefficients
-
-### Check for Convergence
-
- Azimuth offset cannot exceed 0.02 pixels
-
-### Perform Enhanced Spectral Diversity Refinement
-
- - S1_coreg_overlap   # Determine co-registration offset based on the burst overlap
-
-### Perform Final Matching
-
- - SLC_interp_lt_S1_TOPS # Resample TOPS (IW mode) SLC using a lookup table and SLC offset polynomials for refinement
- - create_offset   # Create and update ISP offset and interferogram parameter files
- - offset_pwr      # Offset estimation between SLC images using intensity cross-correlation
- - offset_fit      # Range and azimuth offset polynomial estimation
- - SLC_diff_intf   # Differential interferogram generation from co-registered SLCs and a simulated interferogram
-
-## Unwrapping and Geocoding ##
-
-### Unwrapping
-
- - cc_wave      # Estimate interferometric coherence
- - adf          # Adaptive spectral filtering for complex interferograms
- - rasmph_pwr   # Generate 8-bit raster graphics image of the phase of complex data combined with intensity data
- - rascc        # Generate 8-bit raster graphics image of correlation coefficient
- - rascc_mask   # Generate phase unwrapping validity mask using correlation and intensity (and water mask if selected)
- - mcf          # Phase unwrapping using Minimum Cost Flow (MCF) and triangulation
- - rasrmg       # Generate 8-bit raster graphics image from unwrapped phase and intensity data
- - dispmap      # Conversion of unwrapped differential phase to displacement map (m) - Line-Of-Sight
- - dispmap      # Conversion of unwrapped differential phase to displacement map (m) - Vertical
-
-### Post-Processing
-
- - geocode_back   # Geocoding of image data using lookup table values
- - data2geotiff   # Convert geocoded data with DEM parameter file to GeoTIFF format
+## Post-Processing ##
+ - translate_outputs # Covert the isce2 ouputs to hyp3-gamma formatted geotiff files
+ - make_readme_file  # produce the readme.md.txt file in the product
+ - make_parameter_file # produce metadata text file in the product
+ - make_archive #zip the output files
+ - upload_file_to_s3 # Upload the files in the product directory to the s3
 
 *************
 # The Sentinel-1 mission #
