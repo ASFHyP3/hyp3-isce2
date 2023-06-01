@@ -384,7 +384,7 @@ def main():
     payload['plugin_name'] = hyp3_isce2.__name__
     payload['plugin_version'] = hyp3_isce2.__version__
     payload['processor_name'] = 'ISCE2'
-    payload['processor_version'] = 'Version 2'
+    payload['processor_version'] = 'TODO'
 
     reference_file = product_dir / f'{product_name}_wrapped_phase.tif'
 
