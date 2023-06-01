@@ -78,5 +78,5 @@ def make_browse_image(input_tif: str, output_png: str) -> None:
 
 def earlier_granule_first(g1, g2):
     if g1[14:29] <= g2[14:29]:
-        return g1, g2
-    return g2, g1
+        return g2, g1
+    return g1, g2
