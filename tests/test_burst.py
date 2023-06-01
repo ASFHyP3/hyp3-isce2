@@ -88,3 +88,19 @@ def test_get_region_of_interest(tmp_path, orbit):
 
 def test_get_product_name():
     assert burst.get_product_name('A', 'B') == 'AxB'
+
+
+def test_get_burst_params():
+    assert burst.get_burst_params('S1_346041_IW3_20230526T190843_VV_08F8-BURST') == burst.BurstParams(
+        'S1A_IW_SLC__1SDV_20230526T190821_20230526T190847_048709_05DBA8_08F8', 'IW3', 'VV', 8,
+    )
+
+    assert burst.get_burst_params('S1_308695_EW5_20230526T143259_HH_1B3B-BURST') == burst.BurstParams(
+        'S1A_EW_SLC__1SDH_20230526T143200_20230526T143303_048706_05DB92_1B3B', 'EW5', 'HH', 19,
+    )
+
+    with pytest.raises(ValueError):
+        burst.get_burst_params('this burst does not exist')
+
+    with pytest.raises(ValueError):
+        burst.get_burst_params('there are multiple copies of this burst')
