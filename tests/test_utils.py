@@ -45,7 +45,7 @@ def test_gdal_config_manager():
 
 
 def test_oldest_granule_first():
-    latest = "S1_249434_IW1_20230511T170732_VV_07DE-BURST"
-    oldest = "S1_249434_IW1_20230523T170733_VV_8850-BURST"
+    oldest = "S1_249434_IW1_20230511T170732_VV_07DE-BURST"
+    latest = "S1_249434_IW1_20230523T170733_VV_8850-BURST"
     assert oldest_granule_first(oldest, latest) == (oldest, latest)
     assert oldest_granule_first(latest, oldest) == (oldest, latest)
