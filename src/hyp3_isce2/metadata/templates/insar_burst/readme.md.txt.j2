@@ -212,21 +212,22 @@ The basic steps in Sentinel-1 Burst InSAR processing are as follows:
 1. Download the Sentinel SLC burst data
 2. Calculate the intersection area
 3. Download the dem covering the intersection area
-4. Download the aux calibration
+4. Download the aux calibration file
 5. Download the orbit parameter files
 6. Set the Configure file for the InSAR process
 
 *InSAR Processing*
-7. Run topsApp step 'preprocess'
-8. Run topApp steps from 'computeBaselines' to 'unwrap2stage'
-9. Run step 'geocode'
+7. Run topsApp steps 'start' and 'preprocess'
+8. Switch the reference and secondary bursts as necessary
+9. Run topApp steps from 'computeBaselines' to 'unwrap2stage'
+10. Run step 'geocode'
 
 *Post-Processing*
-10. translate output files to hyp3-gamma format
-11. write the README text file
-12. write themetadata txt files
-13. zip the output files
-14. upload the files to s3
+11. translate output files to hyp3-gamma format
+12. write the README text file
+13. write the metadata txt file
+14. zip the output files
+15. upload the files to s3
 
 ----------------
 The detailed process, including the calls to ISCE2 software, is as follows: TODO: Populate the list of calls
@@ -237,9 +238,9 @@ The prepare-processing and InSAR processing are combined in the insar_tps_burst 
  - download_bursts   # Download the bursts according to reference and secondary parameters
  - get_region_of_interest # Calculate the intersection area
  - download_dem_for_isce2 # Download the DEM file
- - download_aux_cal # download the aux cal file
+ - download_aux_cal # Download the aux cal file
  - downloadSentinelOrbitFile # Download the orbit file
- - topsapp.TopsappBurstConfig # set the configure file
+ - topsapp.TopsappBurstConfig # Set the configure file
 
 ## InSAR processing ##
 ISCE2 InSAR processing includes the list of steps:
@@ -248,16 +249,16 @@ ISCE2 InSAR processing includes the list of steps:
  'unwrap', 'unwrap2stage', 'geocode', 'denseoffsets', 'filteroffsets', 'geocodeoffsets']
 
 This workflow includes following processes:
-- topsapp.run_topsapp_burst # run ISCE2 from step 'start' to step 'preprocess'
-- topsapp.swap_burst_vrts # switch the reference and secondary bursts
-- topsapp.run_topsapp_burst # run ISCE2 steps from 'computeBaselines' to 'unwrap2stage'
-- topsapp.run_topsapp_burst # run ISCE2 step 'geocode'
+- topsapp.run_topsapp_burst # Run ISCE2 from step 'start' to step 'preprocess'
+- topsapp.swap_burst_vrts # Switch the reference and secondary bursts
+- topsapp.run_topsapp_burst # Run ISCE2 steps from 'computeBaselines' to 'unwrap2stage'
+- topsapp.run_topsapp_burst # Run ISCE2 step 'geocode'
 
 ## Post-Processing ##
  - translate_outputs # Covert the isce2 ouputs to hyp3-gamma formatted geotiff files
- - make_readme_file  # produce the readme.md.txt file in the product
- - make_parameter_file # produce metadata text file in the product
- - make_archive #zip the output files
+ - make_readme_file  # Produce the readme.md.txt file in the product
+ - make_parameter_file # Produce metadata text file in the product
+ - make_archive # Zip the output files
  - upload_file_to_s3 # Upload the files in the product directory to the s3
 
 *************
