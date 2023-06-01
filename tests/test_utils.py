@@ -48,4 +48,4 @@ def test_earlier_granule_first():
     latest = "S1_249434_IW1_20230511T170732_VV_07DE-BURST"
     oldest = "S1_249434_IW1_20230523T170733_VV_8850-BURST"
     assert earlier_granule_first(oldest, latest) == (oldest, latest)
-    assert earlier_granule_first(latest, oldest) == (latest, oldest)
+    assert earlier_granule_first(latest, oldest) == (oldest, latest)
