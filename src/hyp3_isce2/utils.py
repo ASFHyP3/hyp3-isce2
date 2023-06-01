@@ -74,3 +74,9 @@ def make_browse_image(input_tif: str, output_png: str) -> None:
             strict=True,
             scaleParams=[[stats['minimum'], stats['maximum']]],
         )
+
+
+def earlier_granule_first(g1, g2):
+    if g1[17:32] <= g2[17:32]:
+        return g1, g2
+    return g2, g1

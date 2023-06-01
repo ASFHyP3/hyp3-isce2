@@ -28,7 +28,7 @@ from hyp3_isce2.burst import (
 from hyp3_isce2.dem import download_dem_for_isce2
 from hyp3_isce2.logging import configure_root_logger
 from hyp3_isce2.s1_auxcal import download_aux_cal
-from hyp3_isce2.utils import make_browse_image, utm_from_lon_lat
+from hyp3_isce2.utils import earlier_granule_first, make_browse_image, utm_from_lon_lat
 
 gdal.UseExceptions()
 
@@ -356,12 +356,13 @@ def main():
 
     log.info('Begin ISCE2 TopsApp run')
 
+    reference_scene, secondary_scene = earlier_granule_first(args.granules[0], args.granules[1])
     swath_number = int(args.granules[0][12])
     range_looks, azimuth_looks = [int(looks) for looks in args.looks.split('x')]
 
     isce_output_dir = insar_tops_burst(
-        reference_scene=args.granules[0],
-        secondary_scene=args.granules[1],
+        reference_scene=reference_scene,
+        secondary_scene=secondary_scene,
         azimuth_looks=azimuth_looks,
         range_looks=range_looks,
         swath_number=swath_number
