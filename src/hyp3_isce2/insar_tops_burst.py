@@ -357,7 +357,7 @@ def main():
     log.info('Begin ISCE2 TopsApp run')
 
     reference_scene, secondary_scene = earlier_granule_first(args.granules[0], args.granules[1])
-    swath_number = int(args.granules[0][12])
+    swath_number = int(reference_scene[12])
     range_looks, azimuth_looks = [int(looks) for looks in args.looks.split('x')]
 
     isce_output_dir = insar_tops_burst(
@@ -370,7 +370,7 @@ def main():
 
     log.info('ISCE2 TopsApp run completed successfully')
 
-    product_name = get_product_name(args.granules[0], args.granules[1])
+    product_name = get_product_name(reference_scene, secondary_scene)
 
     product_dir = Path(product_name)
     product_dir.mkdir(parents=True, exist_ok=True)
@@ -378,8 +378,8 @@ def main():
     translate_outputs(isce_output_dir, product_name)
     make_parameter_file(
         Path(f'{product_name}/{product_name}.txt'),
-        reference_scene=args.granules[0],
-        secondary_scene=args.granules[1],
+        reference_scene=reference_scene,
+        secondary_scene=secondary_scene,
         azimuth_looks=azimuth_looks,
         range_looks=range_looks,
         swath_number=swath_number
