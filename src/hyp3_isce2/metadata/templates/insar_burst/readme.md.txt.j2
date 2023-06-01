@@ -8,7 +8,8 @@ and they were processed using InSAR Scientific Computing Environment version 2 (
 Refer to https://sentinels.copernicus.eu/web/sentinel/user-guides/sentinel-1-sar/acquisition-modes/interferometric-wide-swath
 for more information on Sentinel-1 bursts.
 
-This data was processed by ASF DAAC HyP3 {{ processing_date.year }} using the {{ plugin_name }} plugin version {{ plugin_version }} running {{ processor_name }} release {{ processor_version }}.
+This data was processed by ASF DAAC HyP3 {{ processing_date.year }} using the {{ plugin_name }} plugin version
+{{ plugin_version }} running {{ processor_name }} release #TODO FIX VARIABLE {{ processor_version }}.
 Files are projected to {{ projection }}, and the pixel spacing is {{ pixel_spacing|int }} m.
 
 The source bursts for this InSAR product are:
@@ -57,7 +58,7 @@ When using this data as an image in a publication such as journal papers, articl
 and websites, please include the following credit with the image (portions in square brackets are optional):
 
     [Sentinel-1 Burst InSAR product processed by ]ASF DAAC HyP3 {{ processing_date.year }}[ using {{processor_name}}
-     software]. Contains modified Copernicus Sentinel data {{ TODO: extract the year from the secondary burst name }}
+     software]. Contains modified Copernicus Sentinel data #TODO extract the year from the secondary burst name {{ secondary_granule.year }}
      , processed by ESA.
 
 When using this data in a manuscript and/or crediting datasets used for analysis, an acknowledgement including the
@@ -65,7 +66,7 @@ software versions may be appropriate:
 
     ASF DAAC HyP3 {{ processing_date.year }} using the {{ plugin_name }} plugin version {{ plugin_version }} running
     {{ processor_name }} release {{ processor_version }}. Contains modified Copernicus Sentinel data
-    {{ TODO: extract the year from the secondary burst name }}
+    #TODO extract the year from the secondary burst name {{ secondary_granule.year }}
     , processed by ESA.
 
 To reference HyP3 in manuscripts, cite our documentation available at https://github.com/ASFHyP3/hyp3-docs:
@@ -153,7 +154,8 @@ In regions of large-magnitude deformations or extremely steep topography, the fr
 
 It is important to be aware that phase unwrapping errors can and do occur.
 
-One potential source of error is the presence of extensive surface water (coastal areas or large inland waterbodies). In some cases, signal returns over surface water meet the coherence threshold criteria, even though measurements over water should not be coherent. When this happens, phase unwrapping can occur over expanses of water, leading to unexpected/invalid phase unwrapping results over land. Consider selecting the "Apply Water Mask" option when processing InSAR in areas with significant surface water. This option edits the phase unwrapping validity mask so that pixels over water are given a value of 0 (not valid for phase unwrapping). The water mask used for this process is always included in the product package, even if it is not applied to the process, and is described below (item 11). This product {{ "had" if water_mask_applied else "did not have" }} a water mask applied during the phase unwrapping process.
+One potential source of error is the presence of extensive surface water (coastal areas or large inland waterbodies). In some cases, signal returns over surface water meet the coherence threshold criteria, even though measurements over water should not be coherent. When this happens, phase unwrapping can occur over expanses of water, leading to unexpected/invalid phase unwrapping results over land. Consider selecting the "Apply Water Mask" option when processing InSAR in areas with significant surface water. This option edits the phase unwrapping validity mask so that pixels over water are given a value of 0 (not valid for phase unwrapping). The water mask used for this process is always included in the product package, even if it is not applied to the process, and is described below (item 11). This product #TODO: add watermasking variable {{ "had" if water_mask_applied else "did not have" }}
+a water mask applied during the phase unwrapping process.
 
 No atmospheric correction has been applied to this interferogram. While SAR signals can penetrate clouds, atmospheric conditions can delay the transmission of the signal, resulting in phase differences between acquisition that can look like surface deformation signals. Use caution when interpreting single interferograms. In some cases, atmospheric models can be used to remove these impacts. Time series analysis may also be helpful for identifying and correcting both unwrapping errors and atmospheric impacts.
 
