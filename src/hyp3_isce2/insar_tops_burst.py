@@ -369,13 +369,13 @@ def main():
     swath_number = int(reference_scene[12])
     range_looks, azimuth_looks = [int(looks) for looks in args.looks.split('x')]
 
-    # insar_tops_burst(
-    #     reference_scene=reference_scene,
-    #     secondary_scene=secondary_scene,
-    #     azimuth_looks=azimuth_looks,
-    #     range_looks=range_looks,
-    #     swath_number=swath_number
-    # )
+    insar_tops_burst(
+        reference_scene=reference_scene,
+        secondary_scene=secondary_scene,
+        azimuth_looks=azimuth_looks,
+        range_looks=range_looks,
+        swath_number=swath_number
+    )
 
     log.info('ISCE2 TopsApp run completed successfully')
     product_name = get_product_name(reference_scene, secondary_scene)
