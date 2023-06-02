@@ -130,6 +130,8 @@ def insar_tops_burst(
     copyfile('merged/z.rdr.full.xml', 'merged/z.rdr.full.vrt.xml')
     topsapp.run_topsapp_burst(start='geocode', end='geocode', config_xml=config_path)
 
+    return Path('merged')
+
 
 def make_parameter_file(
     out_path: Path,
@@ -369,7 +371,7 @@ def main():
     swath_number = int(reference_scene[12])
     range_looks, azimuth_looks = [int(looks) for looks in args.looks.split('x')]
 
-    insar_tops_burst(
+    isce_output_dir = insar_tops_burst(
         reference_scene=reference_scene,
         secondary_scene=secondary_scene,
         azimuth_looks=azimuth_looks,
@@ -380,7 +382,6 @@ def main():
     log.info('ISCE2 TopsApp run completed successfully')
     product_name = get_product_name(reference_scene, secondary_scene)
 
-    isce_output_dir = Path('merged')
     product_dir = Path(product_name)
     product_dir.mkdir(parents=True, exist_ok=True)
 
