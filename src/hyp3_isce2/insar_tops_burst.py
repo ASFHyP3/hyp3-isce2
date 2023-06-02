@@ -10,7 +10,6 @@ from collections import namedtuple
 from pathlib import Path
 from shutil import copyfile, make_archive
 
-import asf_search
 from hyp3lib.aws import upload_file_to_s3
 from hyp3lib.get_orb import downloadSentinelOrbitFile
 from hyp3lib.image import create_thumbnail
@@ -19,8 +18,8 @@ from osgeo import gdal
 
 from hyp3_isce2 import topsapp
 from hyp3_isce2.burst import (
-    BurstParams,
     download_bursts,
+    get_burst_params,
     get_isce2_burst_bbox,
     get_product_name,
     get_region_of_interest,
@@ -64,35 +63,9 @@ def insar_tops_burst(
     aux_cal_dir = Path('aux_cal')
     dem_dir = Path('dem')
 
-    opts = asf_search.ASFSearchOptions(
-        host='cmr.uat.earthdata.nasa.gov',
-        granule_list=[reference_scene, secondary_scene],
-    )
-    results = asf_search.search(opts=opts)
+    ref_params = get_burst_params(reference_scene)
+    sec_params = get_burst_params(secondary_scene)
 
-    fileIDs = [feature['properties']['fileID'] for feature in results.geojson()['features']]
-
-    ref_not_found = reference_scene not in fileIDs
-    sec_not_found = secondary_scene not in fileIDs
-    if ref_not_found and sec_not_found:
-        raise ValueError(f'ASF Search failed to find both {reference_scene} and {secondary_scene}.')
-    elif ref_not_found:
-        raise ValueError(f'ASF Search failed to find {reference_scene}.')
-    elif sec_not_found:
-        raise ValueError(f'ASF Search failed to find {secondary_scene}.')
-
-    ref_params = BurstParams(
-        results[0].umm['InputGranules'][0].split('-')[0],
-        results[0].properties['burst']['subswath'],
-        results[0].properties['polarization'],
-        results[0].properties['burst']['burstIndex'],
-    )
-    sec_params = BurstParams(
-        results[1].umm['InputGranules'][0].split('-')[0],
-        results[1].properties['burst']['subswath'],
-        results[1].properties['polarization'],
-        results[1].properties['burst']['burstIndex'],
-    )
     ref_metadata, sec_metadata = download_bursts([ref_params, sec_params])
 
     is_ascending = ref_metadata.orbit_direction == 'ascending'
