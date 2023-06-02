@@ -369,7 +369,6 @@ def main():
     translate_outputs(isce_output_dir, product_name)
 
     payload = {}
-    
     payload['product_dir'] = Path(product_name)
     payload['reference_granule_burst_name'] = args.granules[0]
     payload['secondary_granule_burst_name'] = args.granules[1]
