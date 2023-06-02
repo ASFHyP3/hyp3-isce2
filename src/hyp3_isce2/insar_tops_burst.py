@@ -219,11 +219,22 @@ def translate_outputs(isce_output_dir: Path, product_name: str):
         isce_output_dir: Path to the ISCE output directory
         product_name: Name of the product
     """
+
+    src_ds = gdal.Open(str(isce_output_dir / 'filt_topophase.unw.geo'))
+    src_geotransform = src_ds.GetGeoTransform()
+    src_projection = src_ds.GetProjection()
+
+    target_ds = gdal.Open(str(isce_output_dir / 'dem.crop'), gdal.GA_Update)
+    target_ds.SetGeoTransform(src_geotransform)
+    target_ds.SetProjection(src_projection)
+
+    del src_ds, target_ds
+
     ISCE2Dataset = namedtuple('ISCE2Dataset', ['name', 'suffix', 'band'])
     datasets = [
         ISCE2Dataset('filt_topophase.unw.geo', 'unw_phase', 2),
         ISCE2Dataset('phsig.cor.geo', 'corr', 1),
-        ISCE2Dataset('z.rdr.full.geo', 'dem', 1),
+        ISCE2Dataset('dem.crop', 'dem', 1),
         ISCE2Dataset('filt_topophase.unw.conncomp.geo', 'conncomp', 1),
     ]
 
@@ -342,7 +353,6 @@ def main():
     )
 
     log.info('ISCE2 TopsApp run completed successfully')
-
     product_name = get_product_name(reference_scene, secondary_scene)
 
     product_dir = Path(product_name)
