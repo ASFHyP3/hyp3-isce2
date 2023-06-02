@@ -130,8 +130,6 @@ def insar_tops_burst(
     copyfile('merged/z.rdr.full.xml', 'merged/z.rdr.full.vrt.xml')
     topsapp.run_topsapp_burst(start='geocode', end='geocode', config_xml=config_path)
 
-    return Path('merged')
-
 
 def make_parameter_file(
     out_path: Path,
@@ -246,11 +244,22 @@ def translate_outputs(isce_output_dir: Path, product_name: str):
         isce_output_dir: Path to the ISCE output directory
         product_name: Name of the product
     """
+
+    src_ds = gdal.Open(str(isce_output_dir / 'filt_topophase.unw.geo'))
+    src_geotransform = src_ds.GetGeoTransform()
+    src_projection = src_ds.GetProjection()
+
+    target_ds = gdal.Open(str(isce_output_dir / 'dem.crop'), gdal.GA_Update)
+    target_ds.SetGeoTransform(src_geotransform)
+    target_ds.SetProjection(src_projection)
+
+    del src_ds, target_ds
+
     ISCE2Dataset = namedtuple('ISCE2Dataset', ['name', 'suffix', 'band'])
     datasets = [
         ISCE2Dataset('filt_topophase.unw.geo', 'unw_phase', 2),
         ISCE2Dataset('phsig.cor.geo', 'corr', 1),
-        ISCE2Dataset('z.rdr.full.geo', 'dem', 1),
+        ISCE2Dataset('dem.crop', 'dem', 1),
         ISCE2Dataset('filt_topophase.unw.conncomp.geo', 'conncomp', 1),
     ]
 
@@ -360,18 +369,18 @@ def main():
     swath_number = int(reference_scene[12])
     range_looks, azimuth_looks = [int(looks) for looks in args.looks.split('x')]
 
-    isce_output_dir = insar_tops_burst(
-        reference_scene=reference_scene,
-        secondary_scene=secondary_scene,
-        azimuth_looks=azimuth_looks,
-        range_looks=range_looks,
-        swath_number=swath_number
-    )
+    # insar_tops_burst(
+    #     reference_scene=reference_scene,
+    #     secondary_scene=secondary_scene,
+    #     azimuth_looks=azimuth_looks,
+    #     range_looks=range_looks,
+    #     swath_number=swath_number
+    # )
 
     log.info('ISCE2 TopsApp run completed successfully')
-
     product_name = get_product_name(reference_scene, secondary_scene)
 
+    isce_output_dir = Path('merged')
     product_dir = Path(product_name)
     product_dir.mkdir(parents=True, exist_ok=True)
 
