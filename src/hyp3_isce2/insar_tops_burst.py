@@ -18,6 +18,7 @@ from hyp3lib.image import create_thumbnail
 from lxml import etree
 from osgeo import gdal
 
+import isce
 import hyp3_isce2
 from hyp3_isce2 import topsapp
 from hyp3_isce2.burst import (
@@ -379,13 +380,13 @@ def main():
     payload['dem_pixel_spacing'] = '30 m'
     payload['plugin_name'] = hyp3_isce2.__name__
     payload['plugin_version'] = hyp3_isce2.__version__
-    payload['processor_name'] = 'ISCE2'
-    payload['processor_version'] = 'TODO'
+    payload['processor_name'] = isce.__name__.upper()
+    payload['processor_version'] = isce.__version__
 
     secondary_granule_datetime_str = args.granules[1].split("_")[3]
     payload['secondary_granule'] = datetime.strptime(secondary_granule_datetime_str, '%Y%m%dT%H%M%S')
 
-    payload['water_mask_applied'] = True
+    payload['water_mask_applied'] = False
 
     reference_file = product_dir / f'{product_name}_wrapped_phase.tif'
     info = gdal.Info(str(reference_file), format='json')
