@@ -1,5 +1,7 @@
 from pathlib import Path
+from unittest.mock import patch
 
+import asf_search
 import pytest
 from lxml import etree
 from shapely import geometry
@@ -90,17 +92,61 @@ def test_get_product_name():
     assert burst.get_product_name('A', 'B') == 'AxB'
 
 
+def mock_asf_search_results(
+        subswath: str,
+        burst_index: int,
+        polarization: str,
+        slc_name: str) -> asf_search.ASFSearchResults:
+    product = asf_search.ASFProduct()
+    product.properties.update({
+        'burst': {'subswath': subswath, 'burstIndex': burst_index},
+        'polarization': polarization,
+    })
+    product.umm = {'InputGranules': [slc_name]}
+    results = asf_search.ASFSearchResults([product])
+    results.searchComplete = True
+    return results
+
+
 def test_get_burst_params():
-    assert burst.get_burst_params('S1_346041_IW3_20230526T190843_VV_08F8-BURST') == burst.BurstParams(
-        'S1A_IW_SLC__1SDV_20230526T190821_20230526T190847_048709_05DBA8_08F8', 'IW3', 'VV', 8,
-    )
+    with patch('asf_search.search') as mock_asf_search:
+        mock_asf_search.return_value = mock_asf_search_results(
+            subswath='IW3',
+            burst_index=8,
+            polarization='VV',
+            slc_name='S1A_IW_SLC__1SDV_20230526T190821_20230526T190847_048709_05DBA8_08F8-SLC'
+        )
+        assert burst.get_burst_params('S1_346041_IW3_20230526T190843_VV_08F8-BURST') == burst.BurstParams(
+            'S1A_IW_SLC__1SDV_20230526T190821_20230526T190847_048709_05DBA8_08F8', 'IW3', 'VV', 8,
+        )
+        mock_asf_search.assert_called_once_with(
+            opts=asf_search.ASFSearchOptions(
+                host='cmr.uat.earthdata.nasa.gov',
+                product_list=['S1_346041_IW3_20230526T190843_VV_08F8-BURST']
+            )
+        )
 
-    assert burst.get_burst_params('S1_308695_EW5_20230526T143259_HH_1B3B-BURST') == burst.BurstParams(
-        'S1A_EW_SLC__1SDH_20230526T143200_20230526T143303_048706_05DB92_1B3B', 'EW5', 'HH', 19,
-    )
+    with patch('asf_search.search') as mock_asf_search:
+        mock_asf_search.return_value = mock_asf_search_results(
+            subswath='EW5',
+            burst_index=19,
+            polarization='HH',
+            slc_name='S1A_EW_SLC__1SDH_20230526T143200_20230526T143303_048706_05DB92_1B3B-SLC',
+        )
+        assert burst.get_burst_params('S1_308695_EW5_20230526T143259_HH_1B3B-BURST') == burst.BurstParams(
+            'S1A_EW_SLC__1SDH_20230526T143200_20230526T143303_048706_05DB92_1B3B', 'EW5', 'HH', 19,
+        )
+        mock_asf_search.assert_called_with(
+            opts=asf_search.ASFSearchOptions(
+                host='cmr.uat.earthdata.nasa.gov',
+                product_list=['S1_308695_EW5_20230526T143259_HH_1B3B-BURST']
+            )
+        )
 
-    with pytest.raises(ValueError):
-        burst.get_burst_params('this burst does not exist')
-
-    with pytest.raises(ValueError):
-        burst.get_burst_params('there are multiple copies of this burst')
+    # TODO mock
+    # with pytest.raises(ValueError, match=r'.*failed to find.*'):
+    #     burst.get_burst_params('this burst does not exist')
+    #
+    # # TODO mock
+    # with pytest.raises(ValueError, match=r'.*found multiple results.*'):
+    #     burst.get_burst_params('there are multiple copies of this burst')
