@@ -340,12 +340,13 @@ def get_product_name(
     return f'{reference_scene}x{secondary_scene}'
 
 
+def search_cmr_uat(scene_name: str) -> asf_search.ASFSearchResults:
+    opts = asf_search.ASFSearchOptions(host='cmr.uat.earthdata.nasa.gov')
+    return asf_search.search(product_list=[scene_name], opts=opts)
+
+
 def get_burst_params(scene_name: str) -> BurstParams:
-    opts = asf_search.ASFSearchOptions(
-        host='cmr.uat.earthdata.nasa.gov',
-        product_list=[scene_name],
-    )
-    results = asf_search.search(opts=opts)
+    results = search_cmr_uat(scene_name)
 
     if len(results) == 0:
         raise ValueError(f'ASF Search failed to find {scene_name}.')
