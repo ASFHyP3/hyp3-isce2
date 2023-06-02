@@ -13,27 +13,34 @@ This data was processed by ASF DAAC HyP3 {{ processing_date.year }} using the {{
 Files are projected to {{ projection }}, and the pixel spacing is {{ pixel_spacing|int }} m.
 
 The source bursts for this InSAR product are:
- - Reference: {{ reference_granule_name }}
- - Secondary: {{ secondary_granule_name }}
+ - Reference: {{ reference_granule_burst_name }}
+ - Secondary: {{ secondary_granule_burst_name }}
 
 Processing Date/Time: {{ processing_date.isoformat(timespec='seconds') }}
 
-The product folder is named using the following convention:
-reference_granule_BBn_pp_bxsecondary_granule_BBn_pp_b:
-BBn:    BB is the beam mode (IW), n identifies the swath number
-pp:     Polarization Type: Vertical (VV) or Horizontal (HH)
-b:      Burst number
-The reference_granule and secondary_granule name conventions:
-S1x_BB_TTT__LFPP_YYYYMMDDTHHMMSS_YYYYMMDDTHHMMSS_oooooo_dddddd_ssss
-x:      Sentinel-1 Mission (A or B) of reference granule
-BB:     The Mode/Beam (BB) identifies the S1-S6 beams for SM products and IW, EW and WV for products from the respective modes
-TTT:    Product Type (RAW, SLC, GRD or OCN)
-LFPP:   L indicates process level(1), F identifies the product class (S, A), and PP is polarisation. It can be one of
-        SH (single HH polarisation), SV (single VV polarisation), DH (dual HH+HV polarisation), and DV (dual VV+VH polarisation)
-HHHHMMDDTHHMMSS: Start or end time of Acquisition, the first occurrence is start time and the secondary is end time
-oooooo: absolute orbit number at product start time
-dddddd: The mission data-take identifier
-ssss:       Product ID
+The product folder is named reference_granule_burst_namexsecondary_granule_burst_name.
+
+This product has product folder: {{ reference_granule_burst_name }}x{{ secondary_granule_burst_name }}.
+
+The reference_granule_burst_name and secondary_granule_burst_name follow the name conventions:
+
+S1_<RelativeBurstId>_<Subswath>_<AcquisitionTime>_<Polarization>_<Hashval>-BURST.<FileType>
+
+RelativeBurstId = Burst ID values assigned by ESA, each value identifies a burst cycle, within each sub-swath the burst ID values are unique.
+
+Subswath = Three character combination that represents the acquisition mode and subswath number. The first two characters represent the acquisition mode and the last character identifies the subswath number. (IW)[1..3] or (EW)[1..5] IW - Interferometric Wideswath. Contains three subswaths over a 250 km swath at 5 m by 20 m spatial resolution. EW - Extra-Wide Swath. Contains five subswaths over a 400 km swath at 20 m by 40 m spatial resolution.
+
+AcquisitionTime = ISO date of acquisition time.
+
+Polarization = Two character combination that represents the mode of radar orientation for both signal transmission and reception. The first position represents the transmit orientation mode and the second position represents the receive orientation mode.
+
+HH = Horizontal Transmit - Horizontal Receive
+HV = Horizontal Transmit - Vertical Receive
+VH = Vertical Transmit - Horizontal Receive
+VV = Vertical Transmit - Vertical Receive
+Hashval = 4-character "Product Unique Identifier" from the SLC filename.
+
+FileType = Will be either xml for metadata or tiff for GeoTIFF bursts.
 
 ----------------
 ### Pixel Spacing ###
@@ -48,6 +55,7 @@ pixel spacing = 20 * azimuth looks
 Products with 20x4 looks have a pixel spacing of 80 m, those with 10x2 looks have a pixel spacing of 40 m, and
 those with 5x1 looks have a pixel spacing of 20 m.
 
+This product uses range_looks {{ range_looks }} and azimuth_looks {{ azimuth_looks }}, its pixel spacing is 20 * {{ azimuth_looks }} m.
 ----------------
 ### Using this data ###
 
@@ -58,15 +66,13 @@ When using this data as an image in a publication such as journal papers, articl
 and websites, please include the following credit with the image (portions in square brackets are optional):
 
     [Sentinel-1 Burst InSAR product processed by ]ASF DAAC HyP3 {{ processing_date.year }}[ using {{processor_name}}
-     software]. Contains modified Copernicus Sentinel data #TODO extract the year from the secondary burst name {{ secondary_granule.year }}
-     , processed by ESA.
+     software]. Contains modified Copernicus Sentinel data {{ secondary_granule.year }}, processed by ESA.
 
 When using this data in a manuscript and/or crediting datasets used for analysis, an acknowledgement including the
 software versions may be appropriate:
 
     ASF DAAC HyP3 {{ processing_date.year }} using the {{ plugin_name }} plugin version {{ plugin_version }} running
-    {{ processor_name }} release {{ processor_version }}. Contains modified Copernicus Sentinel data
-    #TODO extract the year from the secondary burst name {{ secondary_granule.year }}
+    {{ processor_name }} release {{ processor_version }}. Contains modified Copernicus Sentinel data {{ secondary_granule.year }}
     , processed by ESA.
 
 To reference HyP3 in manuscripts, cite our documentation available at https://github.com/ASFHyP3/hyp3-docs:
