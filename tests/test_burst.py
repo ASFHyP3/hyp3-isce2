@@ -93,16 +93,16 @@ def test_get_product_name():
 
 
 def mock_asf_search_results(
+        slc_name: str,
         subswath: str,
-        burst_index: int,
         polarization: str,
-        slc_name: str) -> asf_search.ASFSearchResults:
+        burst_index: int) -> asf_search.ASFSearchResults:
     product = asf_search.ASFProduct()
+    product.umm = {'InputGranules': [slc_name]}
     product.properties.update({
         'burst': {'subswath': subswath, 'burstIndex': burst_index},
         'polarization': polarization,
     })
-    product.umm = {'InputGranules': [slc_name]}
     results = asf_search.ASFSearchResults([product])
     results.searchComplete = True
     return results
