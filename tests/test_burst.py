@@ -111,13 +111,16 @@ def mock_asf_search_results(
 def test_get_burst_params_08F8():
     with patch.object(burst, 'search_cmr_uat') as mock_search_cmr_uat:
         mock_search_cmr_uat.return_value = mock_asf_search_results(
+            slc_name='S1A_IW_SLC__1SDV_20230526T190821_20230526T190847_048709_05DBA8_08F8-SLC',
             subswath='IW3',
-            burst_index=8,
             polarization='VV',
-            slc_name='S1A_IW_SLC__1SDV_20230526T190821_20230526T190847_048709_05DBA8_08F8-SLC'
+            burst_index=8,
         )
         assert burst.get_burst_params('S1_346041_IW3_20230526T190843_VV_08F8-BURST') == burst.BurstParams(
-            'S1A_IW_SLC__1SDV_20230526T190821_20230526T190847_048709_05DBA8_08F8', 'IW3', 'VV', 8,
+            granule='S1A_IW_SLC__1SDV_20230526T190821_20230526T190847_048709_05DBA8_08F8',
+            swath='IW3',
+            polarization='VV',
+            burst_number=8,
         )
         mock_search_cmr_uat.assert_called_once_with('S1_346041_IW3_20230526T190843_VV_08F8-BURST')
 
@@ -125,13 +128,16 @@ def test_get_burst_params_08F8():
 def test_get_burst_params_1B3B():
     with patch.object(burst, 'search_cmr_uat') as mock_search_cmr_uat:
         mock_search_cmr_uat.return_value = mock_asf_search_results(
-            subswath='EW5',
-            burst_index=19,
-            polarization='HH',
             slc_name='S1A_EW_SLC__1SDH_20230526T143200_20230526T143303_048706_05DB92_1B3B-SLC',
+            subswath='EW5',
+            polarization='HH',
+            burst_index=19,
         )
         assert burst.get_burst_params('S1_308695_EW5_20230526T143259_HH_1B3B-BURST') == burst.BurstParams(
-            'S1A_EW_SLC__1SDH_20230526T143200_20230526T143303_048706_05DB92_1B3B', 'EW5', 'HH', 19,
+            granule='S1A_EW_SLC__1SDH_20230526T143200_20230526T143303_048706_05DB92_1B3B',
+            swath='EW5',
+            polarization='HH',
+            burst_number=19,
         )
         mock_search_cmr_uat.assert_called_with('S1_308695_EW5_20230526T143259_HH_1B3B-BURST')
 

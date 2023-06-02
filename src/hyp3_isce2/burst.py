@@ -354,8 +354,8 @@ def get_burst_params(scene_name: str) -> BurstParams:
         raise ValueError(f'ASF Search found multiple results for {scene_name}.')
 
     return BurstParams(
-        results[0].umm['InputGranules'][0].split('-')[0],
-        results[0].properties['burst']['subswath'],
-        results[0].properties['polarization'],
-        results[0].properties['burst']['burstIndex'],
+        granule=results[0].umm['InputGranules'][0].split('-')[0],
+        swath=results[0].properties['burst']['subswath'],
+        polarization=results[0].properties['polarization'],
+        burst_number=results[0].properties['burst']['burstIndex'],
     )
