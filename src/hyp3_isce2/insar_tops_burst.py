@@ -15,8 +15,8 @@ import asf_search
 from hyp3lib.aws import upload_file_to_s3
 from hyp3lib.get_orb import downloadSentinelOrbitFile
 from hyp3lib.image import create_thumbnail
-from lxml import etree
 import isce
+from lxml import etree
 from osgeo import gdal
 
 import hyp3_isce2
