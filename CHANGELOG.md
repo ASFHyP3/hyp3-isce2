@@ -13,7 +13,7 @@ and uses [Semantic Versioning](https://semver.org/spec/v2.0.0.html).
 * Replace `--range-looks` and `--azimuth-looks` options with a single `--looks` option for `insar_tops` and `insar_tops_burst` workflows
 * `insar_tops_burst` workflow now always uses the oldest granule as the reference.
 
-### Fixes
+### Fixed
 * Incomplete DEM generation issue by switching to using `merged/dem.crop` as the source
 
 ## [0.3.0]
