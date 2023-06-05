@@ -18,11 +18,11 @@ The source bursts for this InSAR product are:
 
 Processing Date/Time: {{ processing_date.isoformat(timespec='seconds') }}
 
-The product folder is named reference_granule_burst_namexsecondary_granule_burst_name.
+The product directory is named <reference_burst_name>x<secondary_burst_name>
 
-This product has product folder: {{ reference_granule_burst_name }}x{{ secondary_granule_burst_name }}.
+The directory name for this product is: {{ reference_granule_burst_name }}x{{ secondary_granule_burst_name }}.
 
-The reference_granule_burst_name and secondary_granule_burst_name follow the name conventions:
+The reference_burst_name and secondary_burst_name follow the name conventions:
 
 S1_bbbbbb_xxn_yyyymmddThhmmss_pp_cccc-BURST
 
@@ -89,7 +89,7 @@ To reference HyP3 in manuscripts, cite our documentation available at https://gi
 
 DOIs are also provided for citation when discussing the HyP3 software or plugins:
 * HyP3 processing environment, DOI: [10.5281/zenodo.3962581](https://doi.org/10.5281/zenodo.3962581)
-* HyP3 ISCE2 plugin, DOI: [TODO](TODO)
+* HyP3 ISCE2 plugin, DOI: [10.5281/zenodo.8007397](https://doi.org/10.5281/zenodo.8007397)
 
 Refer to https://github.com/isce-framework/isce2#readme for more information about ISCE2 software.
 
@@ -135,7 +135,7 @@ The files generated in this process include:
 3. Coherence Map (GeoTIFF)
 4. Connected Components (GeoTIFF)
 5. Parameter Documentation (Text File)
-6. Look Vector maps (GeoTIFFs)
+6. Look Vector Maps (GeoTIFFs)
 7. DEM used to process the data (GeoTIFF)
 8. README.md.txt (Text File)
 
