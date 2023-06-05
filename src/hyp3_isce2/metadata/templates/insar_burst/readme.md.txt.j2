@@ -24,23 +24,28 @@ This product has product folder: {{ reference_granule_burst_name }}x{{ secondary
 
 The reference_granule_burst_name and secondary_granule_burst_name follow the name conventions:
 
-S1_<RelativeBurstId>_<Subswath>_<AcquisitionTime>_<Polarization>_<Hashval>-BURST.<FileType>
+S1_bbbbbb_xxn_yyyymmddThhmmss_pp_cccc-BURST
 
-RelativeBurstId = Burst ID values assigned by ESA, each value identifies a burst cycle, within each sub-swath the burst ID values are unique.
+bbbbbb: Burst ID values assigned by ESA, each value identifies a burst cycle, within each sub-swath the burst ID values are unique.
 
-Subswath = Three character combination that represents the acquisition mode and subswath number. The first two characters represent the acquisition mode and the last character identifies the subswath number. (IW)[1..3] or (EW)[1..5] IW - Interferometric Wideswath. Contains three subswaths over a 250 km swath at 5 m by 20 m spatial resolution. EW - Extra-Wide Swath. Contains five subswaths over a 400 km swath at 20 m by 40 m spatial resolution.
+xxn = Three character combination that represents the acquisition mode and subswath number. The first two characters xx represent the acquisition mode and the last character identifies the subswath number. (IW)[1..3] or (EW)[1..5] IW - Interferometric Wideswath. Contains three subswaths over a 250 km swath at 5 m by 20 m spatial resolution. EW - Extra-Wide Swath. Contains five subswaths over a 400 km swath at 20 m by 40 m spatial resolution.
 
-AcquisitionTime = ISO date of acquisition time.
+yyyymmddThhmmss = ISO date of acquisition time.
 
-Polarization = Two character combination that represents the mode of radar orientation for both signal transmission and reception. The first position represents the transmit orientation mode and the second position represents the receive orientation mode.
+pp = Two character combination that represents the mode of radar orientation for both signal transmission and reception. The first position represents the transmit orientation mode and the second position represents the receive orientation mode.
 
 HH = Horizontal Transmit - Horizontal Receive
 HV = Horizontal Transmit - Vertical Receive
 VH = Vertical Transmit - Horizontal Receive
 VV = Vertical Transmit - Vertical Receive
-Hashval = 4-character "Product Unique Identifier" from the SLC filename.
 
-FileType = Will be either xml for metadata or tiff for GeoTIFF bursts.
+cccc = 4-character "Product Unique Identifier" from the SLC filename.
+
+Files in the product folder are named as product_folder_filename.filetype
+
+filename: conncomp, corr, dem, lv_phi, lv_theta, wrapped_phase, unw_phase, or README.md
+
+filetype: txt for metadata and README.md and tif or png for burst outputs.
 
 ----------------
 ### Pixel Spacing ###
