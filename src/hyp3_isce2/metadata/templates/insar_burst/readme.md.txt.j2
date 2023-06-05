@@ -208,8 +208,6 @@ This is a copy of the Digital Elevation Model (DEM) layer used for processing. T
 
 The source DEM has a geoid correction applied before it is used for processing, so height values in this file will differ from the source DEM. The DEM is down-sampled to twice the pixel spacing of the desired InSAR output pixel spacing to smooth it before processing. As such, an 80-m InSAR product requires the DEM to be down-sampled to a pixel spacing of 160 m. It is provided in the same pixel spacing/alignment and projected to the same UTM Zone as the interferogram files.
 
-*This file is optional. Select the "Include DEM" option in the On Demand HyP3 Processing Options to include it in the product package.*
-
 The DEM used for this product is {{ dem_name }}, which has a native pixel spacing of {{ dem_pixel_spacing }}.
 The Copernicus DEM GLO-30 is a global Digital Surface Model (DSM) derived from the WorldDEM. The WorldDEM is based on
 radar satellite data acquired by the TanDEM-X mission, which was funded by the German Aerospace Center (DLR) and Airbus
