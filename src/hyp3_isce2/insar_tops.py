@@ -93,8 +93,12 @@ def main():
     parser.add_argument('--reference-scene', type=str, required=True)
     parser.add_argument('--secondary-scene', type=str, required=True)
     parser.add_argument('--polarization', type=str, default='VV')
-    parser.add_argument('--azimuth-looks', type=int, default=4)
-    parser.add_argument('--range-looks', type=int, default=20)
+    parser.add_argument(
+        '--looks',
+        choices=['20x4', '10x2', '5x1'],
+        default='20x4',
+        help='Number of looks to take in range and azimuth'
+    )
 
     args = parser.parse_args()
 
@@ -103,12 +107,13 @@ def main():
 
     log.info('Begin ISCE2 TopsApp run')
 
+    range_looks, azimuth_looks = [int(looks) for looks in args.looks.split('x')]
     isce_output_dir = insar_tops(
         reference_scene=args.reference_scene,
         secondary_scene=args.secondary_scene,
         polarization=args.polarization,
-        azimuth_looks=args.azimuth_looks,
-        range_looks=args.range_looks,
+        azimuth_looks=azimuth_looks,
+        range_looks=range_looks,
     )
 
     log.info('ISCE2 TopsApp run completed successfully')

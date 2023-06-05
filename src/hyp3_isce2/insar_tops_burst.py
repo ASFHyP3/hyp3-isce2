@@ -18,8 +18,8 @@ from osgeo import gdal
 
 from hyp3_isce2 import topsapp
 from hyp3_isce2.burst import (
-    BurstParams,
     download_bursts,
+    get_burst_params,
     get_isce2_burst_bbox,
     get_product_name,
     get_region_of_interest,
@@ -27,7 +27,7 @@ from hyp3_isce2.burst import (
 from hyp3_isce2.dem import download_dem_for_isce2
 from hyp3_isce2.logging import configure_root_logger
 from hyp3_isce2.s1_auxcal import download_aux_cal
-from hyp3_isce2.utils import make_browse_image, utm_from_lon_lat
+from hyp3_isce2.utils import make_browse_image, oldest_granule_first, utm_from_lon_lat
 
 gdal.UseExceptions()
 
@@ -44,21 +44,15 @@ def insar_tops_burst(
     reference_scene: str,
     secondary_scene: str,
     swath_number: int,
-    reference_burst_number: int,
-    secondary_burst_number: int,
-    polarization: str = 'VV',
     azimuth_looks: int = 4,
     range_looks: int = 20,
 ) -> Path:
     """Create a burst interferogram
 
     Args:
-        reference_scene: Reference SLC name
-        secondary_scene: Secondary SLC name
+        reference_scene: Reference burst name
+        secondary_scene: Secondary burst name
         swath_number: Number of swath to grab bursts from (1, 2, or 3) for IW
-        reference_burst_number: Number of burst to download for reference (0-indexed from first collect)
-        secondary_burst_number: Number of burst to download for secondary (0-indexed from first collect)
-        polarization: Polarization to use
         azimuth_looks: Number of azimuth looks
         range_looks: Number of range looks
 
@@ -68,8 +62,10 @@ def insar_tops_burst(
     orbit_dir = Path('orbits')
     aux_cal_dir = Path('aux_cal')
     dem_dir = Path('dem')
-    ref_params = BurstParams(reference_scene, f'IW{swath_number}', polarization.upper(), reference_burst_number)
-    sec_params = BurstParams(secondary_scene, f'IW{swath_number}', polarization.upper(), secondary_burst_number)
+
+    ref_params = get_burst_params(reference_scene)
+    sec_params = get_burst_params(secondary_scene)
+
     ref_metadata, sec_metadata = download_bursts([ref_params, sec_params])
 
     is_ascending = ref_metadata.orbit_direction == 'ascending'
@@ -115,11 +111,8 @@ def make_parameter_file(
     reference_scene: str,
     secondary_scene: str,
     swath_number: int,
-    reference_burst_number: int,
-    secondary_burst_number: int,
-    polarization: str = 'VV',
-    azimuth_looks: int = 4,
-    range_looks: int = 20,
+    azimuth_looks: int,
+    range_looks: int,
     dem_name: str = 'GLO_30',
     dem_resolution: int = 30
 ) -> None:
@@ -127,12 +120,9 @@ def make_parameter_file(
 
     Args:
         out_path: path to output the parameter file
-        reference_scene: Reference SLC name
-        secondary_scene: Secondary SLC name
+        reference_scene: Reference burst name
+        secondary_scene: Secondary burst name
         swath_number: Number of swath to grab bursts from (1, 2, or 3) for IW
-        reference_burst_number: Number of burst to download for reference (0-indexed from first collect)
-        secondary_burst_number: Number of burst to download for secondary (0-indexed from first collect)
-        polarization: Polarization to use
         azimuth_looks: Number of azimuth looks
         range_looks: Number of range looks
         dem_name: Name of the DEM that is use
@@ -148,11 +138,16 @@ def make_parameter_file(
 
     parser = etree.XMLParser(encoding='utf-8', recover=True)
 
-    ref_annotation_path = f'{reference_scene}.SAFE/annotation/'
+    ref_tag = reference_scene[-10:-6]
+    sec_tag = secondary_scene[-10:-6]
+    reference_safe = [file for file in os.listdir('.') if file.endswith(f'{ref_tag}.SAFE')][0]
+    secondary_safe = [file for file in os.listdir('.') if file.endswith(f'{sec_tag}.SAFE')][0]
+
+    ref_annotation_path = f'{reference_safe}/annotation/'
     ref_annotation = [file for file in os.listdir(ref_annotation_path) if os.path.isfile(ref_annotation_path + file)][0]
 
-    ref_manifest_xml = etree.parse(f'{reference_scene}.SAFE/manifest.safe', parser)
-    sec_manifest_xml = etree.parse(f'{secondary_scene}.SAFE/manifest.safe', parser)
+    ref_manifest_xml = etree.parse(f'{reference_safe}/manifest.safe', parser)
+    sec_manifest_xml = etree.parse(f'{secondary_safe}/manifest.safe', parser)
     ref_annotation_xml = etree.parse(f'{ref_annotation_path}{ref_annotation}', parser)
     topsProc_xml = etree.parse('topsProc.xml', parser)
     topsApp_xml = etree.parse('topsApp.xml', parser)
@@ -191,10 +186,6 @@ def make_parameter_file(
         f'Reference Orbit Number: {ref_orbit_number}\n',
         f'Secondary Pass Direction: {sec_orbit_direction}\n',
         f'Secondary Orbit Number: {sec_orbit_number}\n',
-        f'Reference Burst Number: {reference_burst_number}\n',
-        f'Secondary Burst Number: {secondary_burst_number}\n',
-        f'Swath Number: {swath_number}\n',
-        f'Polarization: {polarization}\n',
         f'Baseline: {baseline_perp}\n',
         f'UTC time: {utc_time}\n',
         f'Heading: {ref_heading}\n',
@@ -228,11 +219,22 @@ def translate_outputs(isce_output_dir: Path, product_name: str):
         isce_output_dir: Path to the ISCE output directory
         product_name: Name of the product
     """
+
+    src_ds = gdal.Open(str(isce_output_dir / 'filt_topophase.unw.geo'))
+    src_geotransform = src_ds.GetGeoTransform()
+    src_projection = src_ds.GetProjection()
+
+    target_ds = gdal.Open(str(isce_output_dir / 'dem.crop'), gdal.GA_Update)
+    target_ds.SetGeoTransform(src_geotransform)
+    target_ds.SetProjection(src_projection)
+
+    del src_ds, target_ds
+
     ISCE2Dataset = namedtuple('ISCE2Dataset', ['name', 'suffix', 'band'])
     datasets = [
         ISCE2Dataset('filt_topophase.unw.geo', 'unw_phase', 2),
         ISCE2Dataset('phsig.cor.geo', 'corr', 1),
-        ISCE2Dataset('z.rdr.full.geo', 'dem', 1),
+        ISCE2Dataset('dem.crop', 'dem', 1),
         ISCE2Dataset('filt_topophase.unw.conncomp.geo', 'conncomp', 1),
     ]
 
@@ -316,43 +318,42 @@ def main():
 
     parser.add_argument('--bucket', help='AWS S3 bucket HyP3 for upload the final product(s)')
     parser.add_argument('--bucket-prefix', default='', help='Add a bucket prefix to product(s)')
-    parser.add_argument('--reference-scene', type=str, required=True)
-    parser.add_argument('--secondary-scene', type=str, required=True)
-    parser.add_argument('--swath-number', type=int, required=True)
-    parser.add_argument('--polarization', type=str, default='VV')
-    parser.add_argument('--reference-burst-number', type=int, required=True)
-    parser.add_argument('--secondary-burst-number', type=int, required=True)
-    parser.add_argument('--azimuth-looks', type=int, default=4)
-    parser.add_argument('--range-looks', type=int, default=20)
+    parser.add_argument(
+        '--looks',
+        choices=['20x4', '10x2', '5x1'],
+        default='20x4',
+        help='Number of looks to take in range and azimuth'
+    )
+    # Allows granules to be given as a space-delimited list of strings (e.g. foo bar) or as a single
+    # quoted string that contains spaces (e.g. "foo bar"). AWS Batch uses the latter format when
+    # invoking the container command.
+    parser.add_argument('granules', type=str.split, nargs='+')
 
     args = parser.parse_args()
+
+    args.granules = [item for sublist in args.granules for item in sublist]
+    if len(args.granules) != 2:
+        parser.error('Must provide exactly two granules')
 
     configure_root_logger()
     log.debug(' '.join(sys.argv))
 
     log.info('Begin ISCE2 TopsApp run')
 
+    reference_scene, secondary_scene = oldest_granule_first(args.granules[0], args.granules[1])
+    swath_number = int(reference_scene[12])
+    range_looks, azimuth_looks = [int(looks) for looks in args.looks.split('x')]
+
     isce_output_dir = insar_tops_burst(
-        reference_scene=args.reference_scene,
-        secondary_scene=args.secondary_scene,
-        swath_number=args.swath_number,
-        polarization=args.polarization,
-        reference_burst_number=args.reference_burst_number,
-        secondary_burst_number=args.secondary_burst_number,
-        azimuth_looks=args.azimuth_looks,
-        range_looks=args.range_looks,
+        reference_scene=reference_scene,
+        secondary_scene=secondary_scene,
+        azimuth_looks=azimuth_looks,
+        range_looks=range_looks,
+        swath_number=swath_number
     )
 
     log.info('ISCE2 TopsApp run completed successfully')
-
-    product_name = get_product_name(
-        args.reference_scene,
-        args.secondary_scene,
-        args.reference_burst_number,
-        args.secondary_burst_number,
-        args.swath_number,
-        args.polarization,
-    )
+    product_name = get_product_name(reference_scene, secondary_scene)
 
     product_dir = Path(product_name)
     product_dir.mkdir(parents=True, exist_ok=True)
@@ -360,14 +361,11 @@ def main():
     translate_outputs(isce_output_dir, product_name)
     make_parameter_file(
         Path(f'{product_name}/{product_name}.txt'),
-        reference_scene=args.reference_scene,
-        secondary_scene=args.secondary_scene,
-        swath_number=args.swath_number,
-        polarization=args.polarization,
-        reference_burst_number=args.reference_burst_number,
-        secondary_burst_number=args.secondary_burst_number,
-        azimuth_looks=args.azimuth_looks,
-        range_looks=args.range_looks
+        reference_scene=reference_scene,
+        secondary_scene=secondary_scene,
+        azimuth_looks=azimuth_looks,
+        range_looks=range_looks,
+        swath_number=swath_number
     )
     output_zip = make_archive(base_name=product_name, format='zip', base_dir=product_name)
 
