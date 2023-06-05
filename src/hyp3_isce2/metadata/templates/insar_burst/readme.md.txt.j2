@@ -55,7 +55,8 @@ pixel spacing = 20 * azimuth looks
 Products with 20x4 looks have a pixel spacing of 80 m, those with 10x2 looks have a pixel spacing of 40 m, and
 those with 5x1 looks have a pixel spacing of 20 m.
 
-This product uses range_looks {{ range_looks }} and azimuth_looks {{ azimuth_looks }}, its pixel spacing is 20 * {{ azimuth_looks }} m.
+This product uses {{ range_looks }} range looks and {{ azimuth_looks }} azimuth looks, resulting in a pixel spacing
+of {{ pixel_spacing|int }} m.
 ----------------
 ### Using this data ###
 
