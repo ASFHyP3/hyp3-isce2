@@ -265,9 +265,11 @@ ISCE2 InSAR processing includes the list of steps:
  'unwrap', 'unwrap2stage', 'geocode', 'denseoffsets', 'filteroffsets', 'geocodeoffsets']
 
 This workflow includes following processes:
-- topsapp.run_topsapp_burst # Run ISCE2 from step 'start' to step 'preprocess'
-- topsapp.swap_burst_vrts # Switch the reference and secondary bursts
-- topsapp.run_topsapp_burst # Run ISCE2 steps from 'computeBaselines' to 'unwrap2stage'
+- extrate the orbits, IPF(Instrument Processing Facility), burst data, and antenna pattern if it is necessary.
+
+- Switch the reference and secondary bursts
+
+
 - topsapp.run_topsapp_burst # Run ISCE2 step 'geocode'
 
 ## Post-Processing ##
