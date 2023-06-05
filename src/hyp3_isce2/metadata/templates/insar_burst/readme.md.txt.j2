@@ -9,31 +9,43 @@ Refer to https://sentinels.copernicus.eu/web/sentinel/user-guides/sentinel-1-sar
 for more information on Sentinel-1 bursts.
 
 This data was processed by ASF DAAC HyP3 {{ processing_date.year }} using the {{ plugin_name }} plugin version
-{{ plugin_version }} running {{ processor_name }} release #TODO FIX VARIABLE {{ processor_version }}.
+{{ plugin_version }} running {{ processor_name }} release {{ processor_version }}.
 Files are projected to {{ projection }}, and the pixel spacing is {{ pixel_spacing|int }} m.
 
 The source bursts for this InSAR product are:
- - Reference: {{ reference_granule_name }}
- - Secondary: {{ secondary_granule_name }}
+ - Reference: {{ reference_granule_burst_name }}
+ - Secondary: {{ secondary_granule_burst_name }}
 
 Processing Date/Time: {{ processing_date.isoformat(timespec='seconds') }}
 
-The product folder is named using the following convention:
-reference_granule_BBn_pp_bxsecondary_granule_BBn_pp_b:
-BBn:    BB is the beam mode (IW), n identifies the swath number
-pp:     Polarization Type: Vertical (VV) or Horizontal (HH)
-b:      Burst number
-The reference_granule and secondary_granule name conventions:
-S1x_BB_TTT__LFPP_YYYYMMDDTHHMMSS_YYYYMMDDTHHMMSS_oooooo_dddddd_ssss
-x:      Sentinel-1 Mission (A or B) of reference granule
-BB:     The Mode/Beam (BB) identifies the S1-S6 beams for SM products and IW, EW and WV for products from the respective modes
-TTT:    Product Type (RAW, SLC, GRD or OCN)
-LFPP:   L indicates process level(1), F identifies the product class (S, A), and PP is polarisation. It can be one of
-        SH (single HH polarisation), SV (single VV polarisation), DH (dual HH+HV polarisation), and DV (dual VV+VH polarisation)
-HHHHMMDDTHHMMSS: Start or end time of Acquisition, the first occurrence is start time and the secondary is end time
-oooooo: absolute orbit number at product start time
-dddddd: The mission data-take identifier
-ssss:       Product ID
+The product directory is named <reference_burst_name>x<secondary_burst_name>
+
+The directory name for this product is: {{ reference_granule_burst_name }}x{{ secondary_granule_burst_name }}.
+
+The reference_burst_name and secondary_burst_name follow the name conventions:
+
+S1_bbbbbb_xxn_yyyymmddThhmmss_pp_cccc-BURST
+
+bbbbbb: Burst ID values assigned by ESA, each value identifies a burst cycle, within each sub-swath the burst ID values are unique.
+
+xxn = Three character combination that represents the acquisition mode and subswath number. The first two characters xx represent the acquisition mode and the last character identifies the subswath number. (IW)[1..3] or (EW)[1..5] IW - Interferometric Wideswath. Contains three subswaths over a 250 km swath at 5 m by 20 m spatial resolution. EW - Extra-Wide Swath. Contains five subswaths over a 400 km swath at 20 m by 40 m spatial resolution.
+
+yyyymmddThhmmss = ISO date of acquisition time.
+
+pp = Two character combination that represents the mode of radar orientation for both signal transmission and reception. The first position represents the transmit orientation mode and the second position represents the receive orientation mode.
+
+HH = Horizontal Transmit - Horizontal Receive
+HV = Horizontal Transmit - Vertical Receive
+VH = Vertical Transmit - Horizontal Receive
+VV = Vertical Transmit - Vertical Receive
+
+cccc = 4-character "Product Unique Identifier" from the SLC filename.
+
+Files in the product folder are named as product_folder_filename.filetype
+
+filename: conncomp, corr, dem, lv_phi, lv_theta, wrapped_phase, unw_phase, or README.md
+
+filetype: txt for metadata and README.md and tif or png for burst outputs.
 
 ----------------
 ### Pixel Spacing ###
@@ -48,6 +60,8 @@ pixel spacing = 20 * azimuth looks
 Products with 20x4 looks have a pixel spacing of 80 m, those with 10x2 looks have a pixel spacing of 40 m, and
 those with 5x1 looks have a pixel spacing of 20 m.
 
+This product uses {{ range_looks }} range looks and {{ azimuth_looks }} azimuth looks, resulting in a pixel spacing
+of {{ pixel_spacing|int }} m.
 ----------------
 ### Using this data ###
 
@@ -58,15 +72,13 @@ When using this data as an image in a publication such as journal papers, articl
 and websites, please include the following credit with the image (portions in square brackets are optional):
 
     [Sentinel-1 Burst InSAR product processed by ]ASF DAAC HyP3 {{ processing_date.year }}[ using {{processor_name}}
-     software]. Contains modified Copernicus Sentinel data #TODO extract the year from the secondary burst name {{ secondary_granule.year }}
-     , processed by ESA.
+     software]. Contains modified Copernicus Sentinel data {{ secondary_granule.year }}, processed by ESA.
 
 When using this data in a manuscript and/or crediting datasets used for analysis, an acknowledgement including the
 software versions may be appropriate:
 
     ASF DAAC HyP3 {{ processing_date.year }} using the {{ plugin_name }} plugin version {{ plugin_version }} running
-    {{ processor_name }} release {{ processor_version }}. Contains modified Copernicus Sentinel data
-    #TODO extract the year from the secondary burst name {{ secondary_granule.year }}
+    {{ processor_name }} release {{ processor_version }}. Contains modified Copernicus Sentinel data {{ secondary_granule.year }}
     , processed by ESA.
 
 To reference HyP3 in manuscripts, cite our documentation available at https://github.com/ASFHyP3/hyp3-docs:
@@ -125,6 +137,8 @@ The files generated in this process include:
 5. Parameter Documentation (Text File)
 6. Look Vector Maps (GeoTIFFs)
 7. DEM used to process the data (GeoTIFF)
+8. README.md.txt (Text File)
+
 
 
 *See below for detailed descriptions of each of the product files.*
@@ -154,8 +168,7 @@ In regions of large-magnitude deformations or extremely steep topography, the fr
 
 It is important to be aware that phase unwrapping errors can and do occur.
 
-One potential source of error is the presence of extensive surface water (coastal areas or large inland waterbodies). In some cases, signal returns over surface water meet the coherence threshold criteria, even though measurements over water should not be coherent. When this happens, phase unwrapping can occur over expanses of water, leading to unexpected/invalid phase unwrapping results over land. Consider selecting the "Apply Water Mask" option when processing InSAR in areas with significant surface water. This option edits the phase unwrapping validity mask so that pixels over water are given a value of 0 (not valid for phase unwrapping). The water mask used for this process is always included in the product package, even if it is not applied to the process, and is described below (item 11). This product #TODO: add watermasking variable {{ "had" if water_mask_applied else "did not have" }}
-a water mask applied during the phase unwrapping process.
+One potential source of error is the presence of extensive surface water (coastal areas or large inland waterbodies). In some cases, signal returns over surface water meet the coherence threshold criteria, even though measurements over water should not be coherent. When this happens, phase unwrapping can occur over expanses of water, leading to unexpected/invalid phase unwrapping results over land. Consider selecting the "Apply Water Mask" option when processing InSAR in areas with significant surface water. This option edits the phase unwrapping validity mask so that pixels over water are given a value of 0 (not valid for phase unwrapping). The water mask used for this process is always included in the product package, even if it is not applied to the process, and is described below (item 11). This product {{ "had" if water_mask_applied else "did not have" }} a water mask applied during the phase unwrapping process.
 
 No atmospheric correction has been applied to this interferogram. While SAR signals can penetrate clouds, atmospheric conditions can delay the transmission of the signal, resulting in phase differences between acquisition that can look like surface deformation signals. Use caution when interpreting single interferograms. In some cases, atmospheric models can be used to remove these impacts. Time series analysis may also be helpful for identifying and correcting both unwrapping errors and atmospheric impacts.
 

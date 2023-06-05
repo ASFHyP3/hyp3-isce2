@@ -12,6 +12,7 @@ from pathlib import Path
 from shutil import copyfile, make_archive
 
 import asf_search
+import isce
 from hyp3lib.aws import upload_file_to_s3
 from hyp3lib.get_orb import downloadSentinelOrbitFile
 from hyp3lib.image import create_thumbnail
@@ -370,12 +371,8 @@ def main():
 
     payload = {}
     payload['product_dir'] = Path(product_name)
-    payload['reference_granule_name'] = args.reference_scene
-    payload['secondary_granule_name'] = args.secondary_scene
-    payload['swath_number'] = args.swath_number
-    payload['polarization'] = args.polarization
-    payload['reference_burst_number'] = args.reference_burst_number
-    payload['secondary_burst_number'] = args.secondary_burst_number
+    payload['reference_granule_burst_name'] = args.granules[0]
+    payload['secondary_granule_burst_name'] = args.granules[1]
     payload['processing_date'] = datetime.now(timezone.utc)
     payload['range_looks'] = args.range_looks
     payload['azimuth_looks'] = args.azimuth_looks
@@ -383,11 +380,15 @@ def main():
     payload['dem_pixel_spacing'] = '30 m'
     payload['plugin_name'] = hyp3_isce2.__name__
     payload['plugin_version'] = hyp3_isce2.__version__
-    payload['processor_name'] = 'ISCE2'
-    payload['processor_version'] = 'TODO'
+    payload['processor_name'] = isce.__name__.upper()
+    payload['processor_version'] = isce.__version__
+
+    secondary_granule_datetime_str = args.granules[1].split("_")[3]
+    payload['secondary_granule'] = datetime.strptime(secondary_granule_datetime_str, '%Y%m%dT%H%M%S')
+
+    payload['water_mask_applied'] = False
 
     reference_file = product_dir / f'{product_name}_wrapped_phase.tif'
-
     info = gdal.Info(str(reference_file), format='json')
     payload['reference_file'] = reference_file.name
     payload['pixel_spacing'] = info['geoTransform'][1]
