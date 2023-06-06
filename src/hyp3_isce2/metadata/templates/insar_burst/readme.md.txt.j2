@@ -22,30 +22,26 @@ The product directory is named <reference_burst_name>x<secondary_burst_name>
 
 The directory name for this product is: {{ reference_burst_name }}x{{ secondary_burst_name }}.
 
-The reference_burst_name and secondary_burst_name follow the name conventions:
+The reference_burst_name and secondary_burst_name use the following naming conventions:
 
 S1_bbbbbb_xxn_yyyymmddThhmmss_pp_cccc-BURST
 
-bbbbbb: Burst ID values assigned by ESA, each value identifies a burst cycle, within each sub-swath the burst ID values are unique.
+bbbbbb: Relative burst ID values assigned by ESA. Each value identifies a consistent burst footprint; relative burst ID values differ from one subswath to the next.
 
-xxn = Three character combination that represents the acquisition mode and subswath number. The first two characters xx represent the acquisition mode and the last character identifies the subswath number. (IW)[1..3] or (EW)[1..5] IW - Interferometric Wideswath. Contains three subswaths over a 250 km swath at 5 m by 20 m spatial resolution. EW - Extra-Wide Swath. Contains five subswaths over a 400 km swath at 20 m by 40 m spatial resolution.
+xxn: Three character combination that represents the acquisition mode and subswath number. The first two characters xx represent the acquisition mode (IW or EW) and the last character identifies the subswath number (1-3 for IW, 1-5 for EW). IW mode indicates Interferometric Wideswath, which acquires a 250 km swath composed of three subswaths. EW mode indicates Extra-Wide Swath, which acquires a 400 km swath composed of 5 subswaths.
 
-yyyymmddThhmmss = ISO date of acquisition time.
+yyyymmddThhmmss: ISO date and time of acquisition.
 
-pp = Two character combination that represents the mode of radar orientation for both signal transmission and reception. The first position represents the transmit orientation mode and the second position represents the receive orientation mode.
+pp: Two character combination that represents the mode of radar orientation (polarization) for both signal transmission and reception. The first position represents the transmit orientation mode and the second position represents the receive orientation mode.
 
-HH = Horizontal Transmit - Horizontal Receive
-HV = Horizontal Transmit - Vertical Receive
-VH = Vertical Transmit - Horizontal Receive
-VV = Vertical Transmit - Vertical Receive
+    HH: Horizontal Transmit - Horizontal Receive
+    HV: Horizontal Transmit - Vertical Receive
+    VH: Vertical Transmit - Horizontal Receive
+    VV: Vertical Transmit - Vertical Receive
 
-cccc = 4-character "Product Unique Identifier" from the SLC filename.
+cccc: 4-character "Product Unique Identifier" from the SLC filename.
 
-Files in the product folder are named as product_folder_filename.filetype
-
-filename: conncomp, corr, dem, lv_phi, lv_theta, wrapped_phase, unw_phase, or README.md
-
-filetype: txt for metadata and README.md and tif or png for burst outputs.
+Files contained in the product directory are named using the directory name followed by a tag indicating the file type.
 
 ----------------
 ### Pixel Spacing ###
@@ -62,6 +58,7 @@ those with 5x1 looks have a pixel spacing of 20 m.
 
 This product uses {{ range_looks }} range looks and {{ azimuth_looks }} azimuth looks, resulting in a pixel spacing
 of {{ pixel_spacing|int }} m.
+
 ----------------
 ### Using this data ###
 
@@ -93,6 +90,7 @@ Refer to https://github.com/isce-framework/isce2#readme for more information abo
 ----------------
 *Consider opening this document in a Markdown editor/viewer for easier reading.*
 ----------------
+
 Interferometric SAR (InSAR) uses the phase differences from repeat passes over the same area to identify regions where
 the distance between the sensor and the earth's surface has changed. This allows for the detection and quantification
 of deformation or movement.
@@ -136,8 +134,6 @@ The files generated in this process include:
 7. DEM used to process the data (GeoTIFF)
 8. README.md.txt (Text File)
 
-
-
 *See below for detailed descriptions of each of the product files.*
 
 ----------------
@@ -173,7 +169,6 @@ No atmospheric correction has been applied to this interferogram. While SAR sign
 The unwrapped interferogram files are tagged with _unw_phase, and the _unw_phase.tif file contains the data values. The PNG is 2048 pixels wide.
 
 ----------------
-
 ## 3. Coherence Map
 
 The spectra of the two images used for InSAR must overlap well enough to generate interferometric fringes. Areas without common overlap must be filtered out prior to InSAR generation. The correlation indicates the accuracy of the phase information, or the visibility of fringes. Areas with low correlation will have noisier phase. The magnitude of the correlation is commonly referred to as coherence. The coherence map is output as a GeoTIFF with values ranging from 0 to 1; the larger the number, the higher the coherence (and the better the correlation).
@@ -200,7 +195,6 @@ Two look vector maps are output with as GeoTIFFs. The lv_theta map indicates the
 The lv_theta map is required for applying atmospheric corrections, and for calculating vertical displacement values relative to a new phase unwrapping reference point.
 
 ----------------
-
 ## 7. DEM used to process the data
 
 This is a copy of the Digital Elevation Model (DEM) layer used for processing. This layer is tagged with _dem.tif, and is a 16-bit signed integer GeoTIFF.
