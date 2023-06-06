@@ -328,15 +328,15 @@ These steps are run using these calls within hyp3-isce2:
 - topsapp.swap_burst_vrts(): Switch the reference and secondary bursts to use the burst data download from ASF
 - topsapp.run_topsapp_burst(start='computeBaselines', end='unwrap2stage', config_xml=config_path):
     Run the remaining processing steps including:
-        - Calculate the perpendicular and parallel baselines
-        - Verify the DEM file to make sure it covers the bursts
-        - Map DEM into the radar coordinates of the reference image. As output this generates the longitude,
-            latitude, height and LOS angles on a pixel by pixel grid for each burst
-        - Estimate the azimuth offsets between the input SLCs (The Enhanced spectral diversity (ESD) method is NOT used)
-        - Estimate the range offsets between the input SLCS
-        - Coregister the secondary SLC by applying the estimated range and azimuth offsets
-        - Produce the wrapped phase interferogram
-        - Unwrap the wrapped phase interferogram using SNAPHU to produce the wrapped phase interferogram
+    - Calculate the perpendicular and parallel baselines
+    - Verify the DEM file to make sure it covers the bursts
+    - Map DEM into the radar coordinates of the reference image. This generates the longitude,
+            latitude, height and LOS angles on a pixel by pixel grid for each burst.
+    - Estimate the azimuth offsets between the input SLCs (The Enhanced Spectral Diversity (ESD) method is NOT used)
+    - Estimate the range offsets between the input SLCS
+    - Coregister the secondary SLC by applying the estimated range and azimuth offsets
+    - Produce the wrapped phase interferogram
+    - Unwrap the wrapped phase interferogram using SNAPHU to produce the wrapped phase interferogram
 - topsapp.run_topsapp_burst(start='geocode', end='geocode', config_xml=config_path): Geocode the output products
 
 
