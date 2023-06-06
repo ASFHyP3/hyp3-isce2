@@ -371,8 +371,8 @@ def main():
 
     payload = {}
     payload['product_dir'] = Path(product_name)
-    payload['reference_granule_burst_name'] = args.granules[0]
-    payload['secondary_granule_burst_name'] = args.granules[1]
+    payload['reference_burst_name'] = args.granules[0]
+    payload['secondary_burst_name'] = args.granules[1]
     payload['processing_date'] = datetime.now(timezone.utc)
     payload['range_looks'] = args.range_looks
     payload['azimuth_looks'] = args.azimuth_looks
