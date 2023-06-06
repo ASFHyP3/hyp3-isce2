@@ -1,6 +1,6 @@
 from osgeo import gdal
 
-from hyp3_isce2.utils import GDALConfigManager, extent_from_geotransform, utm_from_lon_lat
+from hyp3_isce2.utils import GDALConfigManager, extent_from_geotransform, oldest_granule_first, utm_from_lon_lat
 
 gdal.UseExceptions()
 
@@ -42,3 +42,10 @@ def test_gdal_config_manager():
     assert gdal.GetConfigOption('OPTION2') == 'VALUE2'
     assert gdal.GetConfigOption('OPTION3') is None
     assert gdal.GetConfigOption('OPTION4') == 'VALUE4'
+
+
+def test_oldest_granule_first():
+    oldest = "S1_249434_IW1_20230511T170732_VV_07DE-BURST"
+    latest = "S1_249434_IW1_20230523T170733_VV_8850-BURST"
+    assert oldest_granule_first(oldest, latest) == (oldest, latest)
+    assert oldest_granule_first(latest, oldest) == (oldest, latest)

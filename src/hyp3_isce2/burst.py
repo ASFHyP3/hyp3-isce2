@@ -8,6 +8,7 @@ from dataclasses import dataclass
 from pathlib import Path
 from typing import Iterator, List, Optional, Tuple, Union
 
+import asf_search
 import isce  # noqa: F401
 import requests
 from isceobj.Sensor.TOPS.Sentinel1 import Sentinel1
@@ -337,3 +338,24 @@ def get_product_name(
         The name of the interferogram product.
     """
     return f'{reference_scene}x{secondary_scene}'
+
+
+def search_cmr_uat(scene_name: str) -> asf_search.ASFSearchResults:
+    opts = asf_search.ASFSearchOptions(host='cmr.uat.earthdata.nasa.gov')
+    return asf_search.search(product_list=[scene_name], opts=opts)
+
+
+def get_burst_params(scene_name: str) -> BurstParams:
+    results = search_cmr_uat(scene_name)
+
+    if len(results) == 0:
+        raise ValueError(f'ASF Search failed to find {scene_name}.')
+    if len(results) > 1:
+        raise ValueError(f'ASF Search found multiple results for {scene_name}.')
+
+    return BurstParams(
+        granule=results[0].umm['InputGranules'][0].split('-')[0],
+        swath=results[0].properties['burst']['subswath'],
+        polarization=results[0].properties['polarization'],
+        burst_number=results[0].properties['burst']['burstIndex'],
+    )

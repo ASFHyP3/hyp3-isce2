@@ -11,7 +11,6 @@ from datetime import datetime, timezone
 from pathlib import Path
 from shutil import copyfile, make_archive
 
-import asf_search
 import isce
 from hyp3lib.aws import upload_file_to_s3
 from hyp3lib.get_orb import downloadSentinelOrbitFile
@@ -22,8 +21,8 @@ from osgeo import gdal
 import hyp3_isce2
 from hyp3_isce2 import topsapp
 from hyp3_isce2.burst import (
-    BurstParams,
     download_bursts,
+    get_burst_params,
     get_isce2_burst_bbox,
     get_product_name,
     get_region_of_interest,
@@ -32,7 +31,7 @@ from hyp3_isce2.dem import download_dem_for_isce2
 from hyp3_isce2.logging import configure_root_logger
 from hyp3_isce2.metadata import util
 from hyp3_isce2.s1_auxcal import download_aux_cal
-from hyp3_isce2.utils import make_browse_image, utm_from_lon_lat
+from hyp3_isce2.utils import make_browse_image, oldest_granule_first, utm_from_lon_lat
 
 
 gdal.UseExceptions()
@@ -69,35 +68,9 @@ def insar_tops_burst(
     aux_cal_dir = Path('aux_cal')
     dem_dir = Path('dem')
 
-    opts = asf_search.ASFSearchOptions(
-        host='cmr.uat.earthdata.nasa.gov',
-        granule_list=[reference_scene, secondary_scene],
-    )
-    results = asf_search.search(opts=opts)
+    ref_params = get_burst_params(reference_scene)
+    sec_params = get_burst_params(secondary_scene)
 
-    fileIDs = [feature['properties']['fileID'] for feature in results.geojson()['features']]
-
-    ref_not_found = reference_scene not in fileIDs
-    sec_not_found = secondary_scene not in fileIDs
-    if ref_not_found and sec_not_found:
-        raise ValueError(f'ASF Search failed to find both {reference_scene} and {secondary_scene}.')
-    elif ref_not_found:
-        raise ValueError(f'ASF Search failed to find {reference_scene}.')
-    elif sec_not_found:
-        raise ValueError(f'ASF Search failed to find {secondary_scene}.')
-
-    ref_params = BurstParams(
-        results[0].umm['InputGranules'][0].split('-')[0],
-        results[0].properties['burst']['subswath'],
-        results[0].properties['polarization'],
-        results[0].properties['burst']['burstIndex'],
-    )
-    sec_params = BurstParams(
-        results[1].umm['InputGranules'][0].split('-')[0],
-        results[1].properties['burst']['subswath'],
-        results[1].properties['polarization'],
-        results[1].properties['burst']['burstIndex'],
-    )
     ref_metadata, sec_metadata = download_bursts([ref_params, sec_params])
 
     is_ascending = ref_metadata.orbit_direction == 'ascending'
@@ -143,8 +116,8 @@ def make_parameter_file(
     reference_scene: str,
     secondary_scene: str,
     swath_number: int,
-    azimuth_looks: int = 4,
-    range_looks: int = 20,
+    azimuth_looks: int,
+    range_looks: int,
     dem_name: str = 'GLO_30',
     dem_resolution: int = 30
 ) -> None:
@@ -251,11 +224,22 @@ def translate_outputs(isce_output_dir: Path, product_name: str):
         isce_output_dir: Path to the ISCE output directory
         product_name: Name of the product
     """
+
+    src_ds = gdal.Open(str(isce_output_dir / 'filt_topophase.unw.geo'))
+    src_geotransform = src_ds.GetGeoTransform()
+    src_projection = src_ds.GetProjection()
+
+    target_ds = gdal.Open(str(isce_output_dir / 'dem.crop'), gdal.GA_Update)
+    target_ds.SetGeoTransform(src_geotransform)
+    target_ds.SetProjection(src_projection)
+
+    del src_ds, target_ds
+
     ISCE2Dataset = namedtuple('ISCE2Dataset', ['name', 'suffix', 'band'])
     datasets = [
         ISCE2Dataset('filt_topophase.unw.geo', 'unw_phase', 2),
         ISCE2Dataset('phsig.cor.geo', 'corr', 1),
-        ISCE2Dataset('z.rdr.full.geo', 'dem', 1),
+        ISCE2Dataset('dem.crop', 'dem', 1),
         ISCE2Dataset('filt_topophase.unw.conncomp.geo', 'conncomp', 1),
     ]
 
@@ -339,30 +323,42 @@ def main():
 
     parser.add_argument('--bucket', help='AWS S3 bucket HyP3 for upload the final product(s)')
     parser.add_argument('--bucket-prefix', default='', help='Add a bucket prefix to product(s)')
-    parser.add_argument('--azimuth-looks', type=int, default=4)
-    parser.add_argument('--range-looks', type=int, default=20)
-    parser.add_argument('granules', type=str, nargs=2)
+    parser.add_argument(
+        '--looks',
+        choices=['20x4', '10x2', '5x1'],
+        default='20x4',
+        help='Number of looks to take in range and azimuth'
+    )
+    # Allows granules to be given as a space-delimited list of strings (e.g. foo bar) or as a single
+    # quoted string that contains spaces (e.g. "foo bar"). AWS Batch uses the latter format when
+    # invoking the container command.
+    parser.add_argument('granules', type=str.split, nargs='+')
 
     args = parser.parse_args()
+
+    args.granules = [item for sublist in args.granules for item in sublist]
+    if len(args.granules) != 2:
+        parser.error('Must provide exactly two granules')
 
     configure_root_logger()
     log.debug(' '.join(sys.argv))
 
     log.info('Begin ISCE2 TopsApp run')
 
-    swath_number = int(args.granules[0][12])
+    reference_scene, secondary_scene = oldest_granule_first(args.granules[0], args.granules[1])
+    swath_number = int(reference_scene[12])
+    range_looks, azimuth_looks = [int(looks) for looks in args.looks.split('x')]
 
     isce_output_dir = insar_tops_burst(
-        reference_scene=args.granules[0],
-        secondary_scene=args.granules[1],
-        azimuth_looks=args.azimuth_looks,
-        range_looks=args.range_looks,
+        reference_scene=reference_scene,
+        secondary_scene=secondary_scene,
+        azimuth_looks=azimuth_looks,
+        range_looks=range_looks,
         swath_number=swath_number
     )
 
     log.info('ISCE2 TopsApp run completed successfully')
-
-    product_name = get_product_name(args.granules[0], args.granules[1])
+    product_name = get_product_name(reference_scene, secondary_scene)
 
     product_dir = Path(product_name)
     product_dir.mkdir(parents=True, exist_ok=True)
@@ -402,10 +398,10 @@ def main():
 
     make_parameter_file(
         Path(f'{product_name}/{product_name}.txt'),
-        reference_scene=args.granules[0],
-        secondary_scene=args.granules[1],
-        azimuth_looks=args.azimuth_looks,
-        range_looks=args.range_looks,
+        reference_scene=reference_scene,
+        secondary_scene=secondary_scene,
+        azimuth_looks=azimuth_looks,
+        range_looks=range_looks,
         swath_number=swath_number
     )
     output_zip = make_archive(base_name=product_name, format='zip', base_dir=product_name)
