@@ -176,7 +176,7 @@ The coherence map is tagged with _corr.tif
 ----------------
 ## 4. Connected Components
 
-The connected components file contains the regions that the SNAPHU unwrapping algorithm unwrapped as a consistent unit. In general, fewer and larger regions indicates a higher quality unwrapping product. This file is used by post-processors such as MintPy to correct unwrapping errors.
+The connected components file delineates regions unwrapped as contiguous units by the SNAPHU unwrapping algorithm. In general, products with fewer and larger regions will have higher quality (or "more robust" rather than "higher quality"?) phase unwrapping results than products with many small regions. This file is used by post-processors such as MintPy to correct unwrapping errors.
 
 The connected components file is tagged with _conncomp.tif
 
