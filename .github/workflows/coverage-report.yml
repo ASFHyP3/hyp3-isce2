@@ -1,0 +1,46 @@
+on:
+  pull_request:
+    inputs:
+      local_package_name:
+        required: true
+        type: string
+      python_versions:
+        required: false
+        default: >-
+          ["3.10"]
+        description: JSON string containing the list of python versions to test
+        type: string
+      fail_fast:
+        required: false
+        default: false
+        description: Cancel all in-progress and queued pytest jobs if any job in the matrix fails
+        type: boolean
+
+jobs:
+  pytest:
+    runs-on: ubuntu-latest
+
+    strategy:
+      fail-fast: ${{ inputs.fail_fast }}
+      matrix:
+        python_version: ${{ fromJson(inputs.python_versions) }}
+
+    steps:
+      - uses: actions/checkout@v3
+
+      - uses: mamba-org/provision-with-micromamba@v15
+        with:
+          extra-specs: |
+            python=${{ matrix.python_version }}
+
+      - name: Pytest in conda environment
+        shell: bash -l {0}
+        run: |
+          python -m pip install --no-deps .
+          pytest --junitxml=pytest.xml --cov-report=term-missing:skip-covered --cov=app tests/ | tee pytest-coverage.txt
+
+      - name: Pytest coverage comment
+        uses: MishaKav/pytest-coverage-comment@main
+        with:
+          pytest-coverage-path: ./pytest-coverage.txt
+          junitxml-path: ./pytest.xml
