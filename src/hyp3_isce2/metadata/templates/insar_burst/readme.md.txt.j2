@@ -65,9 +65,6 @@ of {{ pixel_spacing|int }} m.
 ----------------
 ### Using this data ###
 
-Please refer to the ASF Sentinel-1 Burst InSAR Product Guide for in-depth guidance on the use of this dataset:
-* https://hyp3-docs.asf.alaska.edu/guides/burst_insar_product_guide/ #TODO: add a product guide, or remove this reference....
-
 When using this data as an image in a publication such as journal papers, articles, presentations, posters,
 and websites, please include the following credit with the image (portions in square brackets are optional):
 
@@ -146,10 +143,11 @@ The files generated in this process include:
 ----------------
 ## 1. Wrapped Interferogram
 
-The wrapped interferogram is output in GeoTIFF file. Because the fringes are on a wrapped 2-pi scale rather than representing continuous phase difference values, a wrapped interferogram tends to be most useful as a color visualization. This product displays deformation in multiples of half of the sensor wavelength, so areas with fringes that are very close together indicate greater amounts of deformation in the line-of-sight direction from the sensor. Each 2-pi cycle is equivalent to about 2.8 cm in line-of-sight displacement (half the wavelength of the Sentinel-1 sensor, which is about 5.6 cm).
+The wrapped interferogram is generated from the interferogram phase prior to unwrapping and output as a GeoTIFF.
 
-The wrapped interferogram image is generated from the interferogram phase prior to unwrapping. The PNG and KMZ files are tagged with _color_phase, and are 2048 pixels wide. The optional GeoTIFF is tagged with _wrapped_phase.tif
+Because the fringes are on a wrapped 2-pi scale rather than representing continuous phase difference values, a wrapped interferogram tends to be most useful as a color visualization. This product displays deformation in multiples of half of the sensor wavelength, so areas with fringes that are very close together indicate greater amounts of deformation in the line-of-sight direction from the sensor. Each 2-pi cycle is equivalent to about 2.8 cm in line-of-sight displacement (half the wavelength of the Sentinel-1 sensor, which is about 5.6 cm).
 
+The wrapped interferogram file is tagged with wrapped_phase.tif
 
 ----------------
 ## 2. Unwrapped Interferogram #TODO: Update details on unwrapping algorithms and reference point selection
@@ -172,7 +170,7 @@ One potential source of error is the presence of extensive surface water (coasta
 
 No atmospheric correction has been applied to this interferogram. While SAR signals can penetrate clouds, atmospheric conditions can delay the transmission of the signal, resulting in phase differences between acquisition that can look like surface deformation signals. Use caution when interpreting single interferograms. In some cases, atmospheric models can be used to remove these impacts. Time series analysis may also be helpful for identifying and correcting both unwrapping errors and atmospheric impacts.
 
-The unwrapped interferogram files are tagged with _unw_phase, and the _unw_phase.tif file contains the data values. The PNG and KMZ files are both 2048 pixels wide.
+The unwrapped interferogram files are tagged with _unw_phase, and the _unw_phase.tif file contains the data values. The PNG is 2048 pixels wide.
 
 ----------------
 
@@ -185,12 +183,12 @@ The coherence map is tagged with _corr.tif
 ----------------
 ## 4. Connected Components TODO: Populate content
 
-
+The connected components file is tagged with _conncomp.tif
 
 ----------------
 ## 5. Parameter Documentation
 
-The text file included with the product lists the key processing parameters used, including the full granule names, baseline length, number of looks, output resolution, and source DEM information.
+The text file included with the product lists the key processing parameters used, including the filenames of the reference and secondary bursts used, baseline length, number of looks, output resolution, and source DEM information.
 
 The text file is not tagged; it has a .txt extension on the base filename.
 
@@ -203,13 +201,11 @@ The lv_theta map is required for applying atmospheric corrections, and for calcu
 
 ----------------
 
-## 7. DEM used to process the data TODO: Edit as appropriate
+## 7. DEM used to process the data
 
-This is a copy of the Digital Elevation Model (DEM) layer used for processing. This layer is tagged with _dem.tif, and is a 32-bit float GeoTIFF.
+This is a copy of the Digital Elevation Model (DEM) layer used for processing. This layer is tagged with _dem.tif, and is a 16-bit signed integer GeoTIFF.
 
 The source DEM has a geoid correction applied before it is used for processing, so height values in this file will differ from the source DEM. The DEM is down-sampled to twice the pixel spacing of the desired InSAR output pixel spacing to smooth it before processing. As such, an 80-m InSAR product requires the DEM to be down-sampled to a pixel spacing of 160 m. It is provided in the same pixel spacing/alignment and projected to the same UTM Zone as the interferogram files.
-
-*This file is optional. Select the "Include DEM" option in the On Demand HyP3 Processing Options to include it in the product package.*
 
 The DEM used for this product is {{ dem_name }}, which has a native pixel spacing of {{ dem_pixel_spacing }}.
 The Copernicus DEM GLO-30 is a global Digital Surface Model (DSM) derived from the WorldDEM. The WorldDEM is based on
