@@ -174,7 +174,9 @@ The spectra of the two images used for InSAR must overlap well enough to generat
 The coherence map is tagged with _corr.tif
 
 ----------------
-## 4. Connected Components TODO: Populate content
+## 4. Connected Components
+
+The connected components file contains the regions that the SNAPHU unwrapping algorithm unwrapped as a consistent unit. In general, fewer and larger regions indicates a higher quality unwrapping product. This file is used by post-processors such as MintPy to correct unwrapping errors.
 
 The connected components file is tagged with _conncomp.tif
 
@@ -239,41 +241,59 @@ The detailed process, including the calls to ISCE2 software, is as follows: TODO
 The prepare-processing and InSAR processing are combined in the insar_tps_burst function.
 
 ## Pre-processing ##
- - download_bursts   # Download the bursts according to reference and secondary parameters
- - get_region_of_interest # Calculate the intersection area
- - download_dem_for_isce2 # Download the DEM file
- - download_aux_cal # Download the aux cal file
- - downloadSentinelOrbitFile # Download the orbit file
- - topsapp.TopsappBurstConfig # Set the configure file
+ - download_bursts: Download the bursts according to reference and secondary parameters and re-create a SAFE-style directory
+ - get_region_of_interest: Calculate the intersection area
+ - download_dem_for_isce2 : Download the DEM file
+ - download_aux_cal: Download: the aux cal file
+ - downloadSentinelOrbitFile: Download the orbit file
+ - topsapp.TopsappBurstConfig: Set the configuration file
 
 ## InSAR processing ##
-ISCE2 InSAR processing generally includes the following steps:
-['startup', 'preprocess', 'computeBaselines', 'verifyDEM', 'topo', 'subsetoverlaps', 'coarseoffsets', 'coarseresamp',
- 'overlapifg', 'prepesd', 'esd', 'rangecoreg', 'fineoffsets', 'fineresamp', 'ion', 'burstifg', 'mergebursts', 'filter',
- 'unwrap', 'unwrap2stage', 'geocode', 'denseoffsets', 'filteroffsets', 'geocodeoffsets']
+The ISCE2 InSAR processing this product uses includes the following ISCE2 topsApp steps:
+- startup 
+- preprocess
+- computeBaselines
+- verifyDEM
+- topo
+- subsetoverlaps
+- coarseoffsets
+- coarseresamp
+- overlapifg
+- prepesd
+- esd
+- rangecoreg
+- fineoffsets
+- fineresamp
+- ion
+- burstifg
+- mergebursts
+- filter
+- unwrap
+- unwrap2stage
+- geocode
 
-This workflow includes the following processes (refer to https://github.com/isce-framework/isce2-docs/blob/66a66ff31f4673eed9305f06982aaf4302a163cc/Notebooks/UNAVCO_2020/TOPS/topsApp.ipynb)
-
-- topsapp.run_topsapp_burst(start='startup', end='preprocess', config_xml=config_path): Extract the orbits, IPF(Instrument Processing Facility), burst data, and antenna pattern if it is necessary
-- topsapp.swap_burst_vrts(): Switch the reference and secondary bursts
+These steps are run using these calls within hyp3-isce2:
+- topsapp.run_topsapp_burst(start='startup', end='preprocess', config_xml=config_path): Extract the orbits, IPF (Instrument Processing Facility) version, burst data, and antenna pattern if it is necessary
+- topsapp.swap_burst_vrts(): Switch the reference and secondary bursts to use the burst data download from ASF
 - topsapp.run_topsapp_burst(start='computeBaselines', end='unwrap2stage', config_xml=config_path):
-    Calculate the perpendicular and parallel baselines
-    Verify the DEM file to make sure it covers the bursts
-    Map DEM into the radar coordinates of the reference image. As output this generates the longitude, latitude, height and LOS angles on a pixel by pixel grid for each burst
-    Estimate the azimuth coregistration with Enhanced spectral diversity (ESD) method
-    Estimate the offset in range direction
-    Coregister secondary burst by applying the estimated range ane azimuth offsets
-    Produce the wrapped phase
-    Unwrapping the wrapped phase
-- topsapp.run_topsapp_burst(start='geocode', end='geocode', config_xml=config_path): Geocode many of the output products
+    Run the remaining processing steps including:
+        - Calculate the perpendicular and parallel baselines
+        - Verify the DEM file to make sure it covers the bursts
+        - Map DEM into the radar coordinates of the reference image. As output this generates the longitude, latitude, height and LOS angles on a pixel by pixel grid for each burst
+        - Estimate the azimuth offsets between the input SLCs (The Enhanced spectral diversity (ESD) method is NOT used)
+        - Estimate the range offsets between the input SLCS
+        - Coregister the secondary SLC by applying the estimated range and azimuth offsets
+        - Produce the wrapped phase interferogram
+        - Unwrap the wrapped phase interferogram using SNAPHU to produce the wrapped phase interferogram
+- topsapp.run_topsapp_burst(start='geocode', end='geocode', config_xml=config_path): Geocode the output products
 
 
 ## Post-Processing ##
- - translate_outputs # Convert the outputs of hyp3-isce2 to hyp3-gamma formatted geotiff files
- - make_readme_file  # Produce the readme.md.txt file in the product
- - make_parameter_file # Produce metadata text file in the product
- - make_archive # Zip the output files
- - upload_file_to_s3 # Upload the files in the product directory to the s3
+ - translate_outputs: Convert the outputs of hyp3-isce2 to hyp3-gamma formatted geotiff files
+ - make_readme_file: Produce the readme.md.txt file in the product
+ - make_parameter_file: Produce metadata text file in the product
+ - make_archive: Zip the output files
+ - upload_file_to_s3: Upload the files in the product directory to the s3
 
 *************
 # The Sentinel-1 mission #
