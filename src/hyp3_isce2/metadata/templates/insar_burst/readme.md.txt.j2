@@ -146,7 +146,7 @@ Because the fringes are on a wrapped 2-pi scale rather than representing continu
 The wrapped interferogram file is tagged with wrapped_phase.tif
 
 ----------------
-## 2. Unwrapped Interferogram #TODO: Update details on unwrapping algorithms and reference point selection
+## 2. Unwrapped Interferogram
 
 The unwrapped interferogram uses a reference point to convert the wrapped 2-pi scale into a continuous scale (of multiples of pi), and is the most important and complicated step in InSAR processing. The statistical-cost network-flow algorithm for phase unwrapping (SNAPHU) (https://doi.org/10.1364/JOSAA.18.000338) was used for phase unwrapping this product, and the reference point was set internally by SNAPHU in a manner that minimizes the statistical cost of the resulting unwrapped solution.
 
