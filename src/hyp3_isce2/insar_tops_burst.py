@@ -370,8 +370,8 @@ def main():
     payload['reference_burst_name'] = args.granules[0]
     payload['secondary_burst_name'] = args.granules[1]
     payload['processing_date'] = datetime.now(timezone.utc)
-    payload['range_looks'] = args.range_looks
-    payload['azimuth_looks'] = args.azimuth_looks
+    payload['range_looks'] = range_looks
+    payload['azimuth_looks'] = azimuth_looks
     payload['dem_name'] = 'GLO-30'
     payload['dem_pixel_spacing'] = '30 m'
     payload['plugin_name'] = hyp3_isce2.__name__
