@@ -1,3 +1,5 @@
+name: Generate Coverage Report
+
 on: pull_request
     
 jobs:
