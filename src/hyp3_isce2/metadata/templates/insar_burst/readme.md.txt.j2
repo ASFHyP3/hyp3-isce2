@@ -262,17 +262,18 @@ ISCE2 InSAR processing generally includes the following steps:
 
 This workflow includes the following processes (refer to https://github.com/isce-framework/isce2-docs/blob/66a66ff31f4673eed9305f06982aaf4302a163cc/Notebooks/UNAVCO_2020/TOPS/topsApp.ipynb)
 
-- Extract the orbits, IPF(Instrument Processing Facility), burst data, and antenna pattern if it is necessary.
-- Switch the reference and secondary bursts.
-- Calculate the perpendicular and parallel baselines.
-- Verify the DEM file to make sure it covers the bursts.
-- Map DEM into the radar coordinates of the reference image. As output this generates the longitude, latitude, height and LOS angles on a pixel by pixel grid for each burst.
-- Estimate the azimuth coregistration with Enhanced spectral diversity (ESD) method.
-- Estimate the offset in range direction.
-- Coregister secondary burst by applying the estimated range ane azimuth offsets.
-- produce the wrapped phase.
-- unwrapping the wrapped phase.
-- geocode many of the output products.
+- topsapp.run_topsapp_burst(start='startup', end='preprocess', config_xml=config_path): Extract the orbits, IPF(Instrument Processing Facility), burst data, and antenna pattern if it is necessary
+- topsapp.swap_burst_vrts(): Switch the reference and secondary bursts
+- topsapp.run_topsapp_burst(start='computeBaselines', end='unwrap2stage', config_xml=config_path):
+    Calculate the perpendicular and parallel baselines
+    Verify the DEM file to make sure it covers the bursts
+    Map DEM into the radar coordinates of the reference image. As output this generates the longitude, latitude, height and LOS angles on a pixel by pixel grid for each burst
+    Estimate the azimuth coregistration with Enhanced spectral diversity (ESD) method
+    Estimate the offset in range direction
+    Coregister secondary burst by applying the estimated range ane azimuth offsets
+    Produce the wrapped phase
+    Unwrapping the wrapped phase
+- topsapp.run_topsapp_burst(start='geocode', end='geocode', config_xml=config_path): Geocode many of the output products
 
 
 ## Post-Processing ##
