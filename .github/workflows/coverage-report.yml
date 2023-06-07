@@ -25,7 +25,7 @@ jobs:
           junitxml-path: ./pytest.xml
 
       - name: Commit README Badge
-      - uses: EndBug/add-and-commit@v9
+        uses: EndBug/add-and-commit@v9
         with:
           default_author: github_actions
           message: 'Update test coverage badge'
