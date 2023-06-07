@@ -1,7 +1,7 @@
 name: Generate Coverage Report
 
 on: [push, pull_request]
-    
+
 jobs:
   pytest:
     runs-on: ubuntu-latest
@@ -11,21 +11,18 @@ jobs:
 
       - uses: mamba-org/provision-with-micromamba@v15
 
-      - name: Pytest in conda environment
+      - name: Generate Coverage Report and Badge
         run: |
           python -m pip install --no-deps .
+          python -m pip install coverage-badge
           pytest --junitxml=pytest.xml --cov-report=term-missing:skip-covered --cov=hyp3_isce2 tests/ | tee pytest-coverage.txt
+          coverate-badge -o images/coverage.svg
 
-      - name: Pytest coverage comment
+      - name: PR Coverage Comment
         uses: MishaKav/pytest-coverage-comment@main
         with:
           pytest-coverage-path: ./pytest-coverage.txt
           junitxml-path: ./pytest.xml
-
-      - name: Generate README Badge
-        run: |
-          python -m pip install 
-          coverate-badge -o images/coverage.svg
 
       - name: Commit README Badge
       - uses: EndBug/add-and-commit@v9
