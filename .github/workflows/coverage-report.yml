@@ -1,3 +1,5 @@
+name: Generate Test Coverage Report and Badge
+
 on: pull_request
 
 jobs:
