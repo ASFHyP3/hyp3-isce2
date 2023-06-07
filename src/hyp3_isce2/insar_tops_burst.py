@@ -357,8 +357,6 @@ def main():
         swath_number=swath_number
     )
 
-    s = "adding to test a workflow"
-
     log.info('ISCE2 TopsApp run completed successfully')
     product_name = get_product_name(reference_scene, secondary_scene)
 
