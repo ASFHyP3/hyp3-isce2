@@ -22,9 +22,7 @@ jobs:
       - name: Generate Coverage Report and Badge
         run: |
           python -m pip install --no-deps .
-          python -m pip install coverage-badge
           pytest --junitxml=pytest.xml --cov-report=term-missing:skip-covered --cov=hyp3_isce2 tests/ | tee pytest-coverage.txt
-          coverate-badge -o images/coverage.svg
 
       - name: PR Coverage Comment
         uses: MishaKav/pytest-coverage-comment@main
@@ -32,9 +30,9 @@ jobs:
           pytest-coverage-path: ./pytest-coverage.txt
           junitxml-path: ./pytest.xml
 
-      - name: Commit README Badge
-        uses: EndBug/add-and-commit@v9
-        with:
-          default_author: github_actions
-          message: 'Update test coverage badge'
-          add: 'images/coverage.svg'
+      # - name: Commit README Badge
+      #   uses: EndBug/add-and-commit@v9
+      #   with:
+      #     default_author: github_actions
+      #     message: 'Update test coverage badge'
+      #     add: 'images/coverage.svg'
