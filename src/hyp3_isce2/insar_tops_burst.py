@@ -7,15 +7,19 @@ import site
 import subprocess
 import sys
 from collections import namedtuple
+from datetime import datetime, timezone
 from pathlib import Path
 from shutil import copyfile, make_archive
 
+import isce
 from hyp3lib.aws import upload_file_to_s3
 from hyp3lib.get_orb import downloadSentinelOrbitFile
 from hyp3lib.image import create_thumbnail
 from lxml import etree
 from osgeo import gdal
 
+import hyp3_isce2
+import hyp3_isce2.metadata.util
 from hyp3_isce2 import topsapp
 from hyp3_isce2.burst import (
     download_bursts,
@@ -28,6 +32,7 @@ from hyp3_isce2.dem import download_dem_for_isce2
 from hyp3_isce2.logging import configure_root_logger
 from hyp3_isce2.s1_auxcal import download_aux_cal
 from hyp3_isce2.utils import make_browse_image, oldest_granule_first, utm_from_lon_lat
+
 
 gdal.UseExceptions()
 
@@ -104,6 +109,41 @@ def insar_tops_burst(
     topsapp.run_topsapp_burst(start='geocode', end='geocode', config_xml=config_path)
 
     return Path('merged')
+
+
+def make_readme(
+        product_dir: Path,
+        product_name: str,
+        reference_scene: str,
+        secondary_scene: str,
+        range_looks: int,
+        azimuth_looks: int) -> None:
+
+    wrapped_phase_path = product_dir / f'{product_name}_wrapped_phase.tif'
+    info = gdal.Info(str(wrapped_phase_path), format='json')
+    secondary_granule_datetime_str = secondary_scene.split("_")[3]
+
+    payload = {
+        'processing_date': datetime.now(timezone.utc),
+        'plugin_name': hyp3_isce2.__name__,
+        'plugin_version': hyp3_isce2.__version__,
+        'processor_name': isce.__name__.upper(),
+        'processor_version': isce.__version__,
+        'projection': hyp3_isce2.metadata.util.get_projection(info['coordinateSystem']['wkt']),
+        'pixel_spacing': info['geoTransform'][1],
+        'reference_burst_name': reference_scene,
+        'secondary_burst_name': secondary_scene,
+        'range_looks': range_looks,
+        'azimuth_looks': azimuth_looks,
+        'secondary_granule_date': datetime.strptime(secondary_granule_datetime_str, '%Y%m%dT%H%M%S'),
+        'dem_name': 'GLO-30',
+        'dem_pixel_spacing': '30 m',
+    }
+    content = hyp3_isce2.metadata.util.render_template('insar_burst/readme.md.txt.j2', payload)
+
+    output_file = product_dir / f'{product_name}_README.md.txt'
+    with open(output_file, 'w') as f:
+        f.write(content)
 
 
 def make_parameter_file(
@@ -359,6 +399,15 @@ def main():
     product_dir.mkdir(parents=True, exist_ok=True)
 
     translate_outputs(isce_output_dir, product_name)
+
+    make_readme(
+        product_dir=product_dir,
+        product_name=product_name,
+        reference_scene=reference_scene,
+        secondary_scene=secondary_scene,
+        range_looks=range_looks,
+        azimuth_looks=azimuth_looks
+    )
     make_parameter_file(
         Path(f'{product_name}/{product_name}.txt'),
         reference_scene=reference_scene,

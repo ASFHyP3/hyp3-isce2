@@ -337,6 +337,8 @@ def get_product_name(
     Returns:
         The name of the interferogram product.
     """
+    # If this changes, we will also need to update the burst product README template,
+    # which documents this naming convention.
     return f'{reference_scene}x{secondary_scene}'
 
 
