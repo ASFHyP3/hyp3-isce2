@@ -20,7 +20,7 @@ jobs:
           python -m pip install --no-deps .
           python -m pip install coverage-badge
           pytest --junitxml=pytest.xml --cov-report=term-missing:skip-covered --cov=hyp3_isce2 tests/ | tee pytest-coverage.txt
-          coverage-badge -o images/coverage.svg
+          coverage-badge -fo images/coverage.svg
 
       - name: Commit Coverage Badge
         uses: EndBug/add-and-commit@v9
