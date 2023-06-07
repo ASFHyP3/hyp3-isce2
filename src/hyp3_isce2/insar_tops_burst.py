@@ -19,6 +19,7 @@ from lxml import etree
 from osgeo import gdal
 
 import hyp3_isce2
+import hyp3_isce2.metadata.util
 from hyp3_isce2 import topsapp
 from hyp3_isce2.burst import (
     download_bursts,
@@ -29,7 +30,6 @@ from hyp3_isce2.burst import (
 )
 from hyp3_isce2.dem import download_dem_for_isce2
 from hyp3_isce2.logging import configure_root_logger
-from hyp3_isce2.metadata import util
 from hyp3_isce2.s1_auxcal import download_aux_cal
 from hyp3_isce2.utils import make_browse_image, oldest_granule_first, utm_from_lon_lat
 
@@ -129,7 +129,7 @@ def make_readme(
         'plugin_version': hyp3_isce2.__version__,
         'processor_name': isce.__name__.upper(),
         'processor_version': isce.__version__,
-        'projection': util.get_projection(info['coordinateSystem']['wkt']),
+        'projection': hyp3_isce2.metadata.util.get_projection(info['coordinateSystem']['wkt']),
         'pixel_spacing': info['geoTransform'][1],
         'reference_burst_name': reference_scene,
         'secondary_burst_name': secondary_scene,
@@ -139,7 +139,7 @@ def make_readme(
         'dem_name': 'GLO-30',
         'dem_pixel_spacing': '30 m',
     }
-    content = util.render_template('insar_burst/readme.md.txt.j2', payload)
+    content = hyp3_isce2.metadata.util.render_template('insar_burst/readme.md.txt.j2', payload)
 
     output_file = product_dir / f'{product_name}_README.md.txt'
     with open(output_file, 'w') as f:
