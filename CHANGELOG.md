@@ -9,7 +9,7 @@ and uses [Semantic Versioning](https://semver.org/spec/v2.0.0.html).
 
 ## [0.4.1]
 ### Added
-* Functionality and a template for generating a README file to be included with generated products that describes the processing workflow.
+* Generate a README file to be included with burst products that describes the processing workflow.
 
 ## [0.4.0]
 ### Changed
