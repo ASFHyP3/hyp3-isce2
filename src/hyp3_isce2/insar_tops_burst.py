@@ -111,6 +111,41 @@ def insar_tops_burst(
     return Path('merged')
 
 
+def make_readme(
+        product_dir: Path,
+        product_name: str,
+        reference_scene: str,
+        secondary_scene: str,
+        range_looks: int,
+        azimuth_looks: int) -> None:
+
+    wrapped_phase_path = product_dir / f'{product_name}_wrapped_phase.tif'
+    info = gdal.Info(str(wrapped_phase_path), format='json')
+    secondary_granule_datetime_str = secondary_scene.split("_")[3]
+
+    payload = {
+        'processing_date': datetime.now(timezone.utc),
+        'plugin_name': hyp3_isce2.__name__,
+        'plugin_version': hyp3_isce2.__version__,
+        'processor_name': isce.__name__.upper(),
+        'processor_version': isce.__version__,
+        'projection': util.get_projection(info['coordinateSystem']['wkt']),
+        'pixel_spacing': info['geoTransform'][1],
+        'reference_burst_name': reference_scene,
+        'secondary_burst_name': secondary_scene,
+        'range_looks': range_looks,
+        'azimuth_looks': azimuth_looks,
+        'secondary_granule_date': datetime.strptime(secondary_granule_datetime_str, '%Y%m%dT%H%M%S'),
+        'dem_name': 'GLO-30',
+        'dem_pixel_spacing': '30 m',
+    }
+    content = util.render_template('insar_burst/readme.md.txt.j2', payload)
+
+    output_file = product_dir / f'{product_name}_README.md.txt'
+    with open(output_file, 'w') as f:
+        f.write(content)
+
+
 def make_parameter_file(
     out_path: Path,
     reference_scene: str,
@@ -365,37 +400,14 @@ def main():
 
     translate_outputs(isce_output_dir, product_name)
 
-    payload = {}
-    payload['product_dir'] = Path(product_name)
-    payload['reference_burst_name'] = args.granules[0]
-    payload['secondary_burst_name'] = args.granules[1]
-    payload['processing_date'] = datetime.now(timezone.utc)
-    payload['range_looks'] = range_looks
-    payload['azimuth_looks'] = azimuth_looks
-    payload['dem_name'] = 'GLO-30'
-    payload['dem_pixel_spacing'] = '30 m'
-    payload['plugin_name'] = hyp3_isce2.__name__
-    payload['plugin_version'] = hyp3_isce2.__version__
-    payload['processor_name'] = isce.__name__.upper()
-    payload['processor_version'] = isce.__version__
-
-    secondary_granule_datetime_str = args.granules[1].split("_")[3]
-    payload['secondary_granule'] = datetime.strptime(secondary_granule_datetime_str, '%Y%m%dT%H%M%S')
-
-    payload['water_mask_applied'] = False
-
-    reference_file = product_dir / f'{product_name}_wrapped_phase.tif'
-    info = gdal.Info(str(reference_file), format='json')
-    payload['reference_file'] = reference_file.name
-    payload['pixel_spacing'] = info['geoTransform'][1]
-    payload['projection'] = util.get_projection(info['coordinateSystem']['wkt'])
-
-    content = util.render_template('insar_burst/readme.md.txt.j2', payload)
-
-    output_file = product_dir / f'{product_dir}_README.md.txt'
-    with open(output_file, 'w') as f:
-        f.write(content)
-
+    make_readme(
+        product_dir=product_dir,
+        product_name=product_name,
+        reference_scene=reference_scene,
+        secondary_scene=secondary_scene,
+        range_looks=range_looks,
+        azimuth_looks=azimuth_looks
+    )
     make_parameter_file(
         Path(f'{product_name}/{product_name}.txt'),
         reference_scene=reference_scene,
