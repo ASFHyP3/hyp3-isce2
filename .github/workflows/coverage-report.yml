@@ -13,10 +13,19 @@ jobs:
         shell: bash -l {0}
         run: |
           python -m pip install --no-deps .
+          python -m pip install coverage-badge
           pytest --junitxml=pytest.xml --cov-report=term-missing:skip-covered --cov=hyp3_isce2 tests/ | tee pytest-coverage.txt
+          coverage-badge -o images/coverage.svg
 
       - name: PR Coverage Comment
         uses: MishaKav/pytest-coverage-comment@main
         with:
           pytest-coverage-path: ./pytest-coverage.txt
           junitxml-path: ./pytest.xml
+
+      - name: Commit Coverage Badge
+        uses: EndBug/add-and-commit@v9
+        with:
+          default_author: github_actions
+          add: 'images/coverage.svg'
+          message: 'update coverage image'
