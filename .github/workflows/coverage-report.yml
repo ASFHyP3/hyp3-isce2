@@ -12,7 +12,7 @@ jobs:
           repository: ${{ github.event.pull_request.head.repo.full_name }}
           ref: ${{ github.event.pull_request.head.ref }}
 
-      - uses: mamba-org/provision-with-micromamba@v15
+      - uses: mamba-org/provision-with-micromamba@v16
 
       - name: Generate Coverage Report and Badge
         shell: bash -l {0}
