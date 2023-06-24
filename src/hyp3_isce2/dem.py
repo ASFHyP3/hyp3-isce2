@@ -17,8 +17,10 @@ import site
 import subprocess
 from pathlib import Path
 
+from pyproj import Proj
 import dem_stitcher
 import numpy as np
+from osgeo import osr
 import rasterio
 from lxml import etree
 from shapely.geometry import box
@@ -58,9 +60,28 @@ def buffer_extent(extent: list, buffer: float) -> list:
     ]
 
 
+def utm_from_lon_lat(lon: float, lat: float) -> int:
+    hemisphere = 32600 if lat >= 0 else 32700
+    zone = int(lon // 6 + 30) % 60 + 1
+    return hemisphere + zone
+
+
+def get_dem_resolution(extent, res):
+    lonc = (extent[2] + extent[0])/2
+    latc = (extent[3] + extent[1])/2
+    epsg_code = utm_from_lon_lat(lonc, latc)
+    myprj = Proj(f'EPSG:{epsg_code}')
+    xc, yc = myprj(lonc, latc)
+    x2 = xc + res
+    y2 = yc + res
+    lon2, lat2 = myprj(x2, y2, inverse=True)
+    return abs(lat2 - latc)
+
+
 def download_dem_for_isce2(
         extent: list,
         dem_name: str = 'glo_30',
+        dem_res: float = 80.0,
         dem_dir: Path = None,
         buffer: float = .4) -> Path:
     """Download the given DEM for the given extent.
@@ -86,8 +107,9 @@ def download_dem_for_isce2(
         dst_area_or_point='Point',
         n_threads_downloading=5,
         # ensures square resolution
-        dst_resolution=DEM_RESOLUTION,
+        dst_resolution=DEM_RESOLUTION
     )
+
     dem_array[np.isnan(dem_array)] = 0.
 
     dem_profile['nodata'] = None
@@ -97,10 +119,15 @@ def download_dem_for_isce2(
     for key in ['blockxsize', 'blockysize', 'compress', 'interleave', 'tiled']:
         del dem_profile[key]
 
+    dem_path_tmp = dem_dir / 'full_res.dem.wgs84.tmp'
     dem_path = dem_dir / 'full_res.dem.wgs84'
-    with rasterio.open(dem_path, 'w', **dem_profile) as ds:
+    with rasterio.open(dem_path_tmp, 'w', **dem_profile) as ds:
         ds.write(dem_array, 1)
 
+    res = get_dem_resolution(extent, dem_res)
+    ds2 = gdal.Warp(dem_path, dem_path_tmp, xRes=res, yRes=res, targetAlignedPixels=True,
+                    resampleAlg='cubic', multithread=True)
+    del ds2
     xml_path = tag_dem_xml_as_ellipsoidal(dem_path)
     fix_image_xml(xml_path)
 

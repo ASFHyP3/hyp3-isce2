@@ -51,6 +51,7 @@ def insar_tops_burst(
     swath_number: int,
     azimuth_looks: int = 4,
     range_looks: int = 20,
+    res = 80
 ) -> Path:
     """Create a burst interferogram
 
@@ -82,7 +83,7 @@ def insar_tops_burst(
     log.info(f'InSAR ROI: {insar_roi}')
     log.info(f'DEM ROI: {dem_roi}')
 
-    dem_path = download_dem_for_isce2(dem_roi, dem_name='glo_30', dem_dir=dem_dir, buffer=0)
+    dem_path = download_dem_for_isce2(dem_roi, dem_name='glo_30', dem_res=res, dem_dir=dem_dir, buffer=0)
     download_aux_cal(aux_cal_dir)
 
     orbit_dir.mkdir(exist_ok=True, parents=True)
@@ -352,6 +353,12 @@ def translate_outputs(isce_output_dir: Path, product_name: str):
     make_browse_image(f'{product_name}/{product_name}_unw_phase.tif', f'{product_name}/{product_name}_unw_phase.png')
 
 
+def get_res(choice):
+    choices = ['20x4', '10x2', '5x1']
+    reses = [80, 40, 20]
+    return reses[choices.index(choice)]
+
+
 def main():
     """HyP3 entrypoint for the burst TOPS workflow"""
     parser = argparse.ArgumentParser(description=__doc__, formatter_class=argparse.ArgumentDefaultsHelpFormatter)
@@ -389,7 +396,8 @@ def main():
         secondary_scene=secondary_scene,
         azimuth_looks=azimuth_looks,
         range_looks=range_looks,
-        swath_number=swath_number
+        swath_number=swath_number,
+        res=get_res(args.looks)
     )
 
     log.info('ISCE2 TopsApp run completed successfully')
