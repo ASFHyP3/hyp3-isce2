@@ -15,12 +15,13 @@
 
 import site
 import subprocess
+import os
 from pathlib import Path
 
 from pyproj import Proj
 import dem_stitcher
 import numpy as np
-from osgeo import osr
+from osgeo import gdal, osr
 import rasterio
 from lxml import etree
 from shapely.geometry import box
@@ -75,7 +76,7 @@ def get_dem_resolution(extent, res):
     x2 = xc + res
     y2 = yc + res
     lon2, lat2 = myprj(x2, y2, inverse=True)
-    return abs(lat2 - latc)
+    return abs(lon2 - lonc)
 
 
 def download_dem_for_isce2(
@@ -99,7 +100,7 @@ def download_dem_for_isce2(
     dem_dir.mkdir(exist_ok=True, parents=True)
 
     extent_buffered = buffer_extent(extent, buffer)
-
+    res = get_dem_resolution(extent, dem_res)
     dem_array, dem_profile = dem_stitcher.stitch_dem(
         extent_buffered,
         dem_name,
@@ -107,7 +108,7 @@ def download_dem_for_isce2(
         dst_area_or_point='Point',
         n_threads_downloading=5,
         # ensures square resolution
-        dst_resolution=DEM_RESOLUTION
+        dst_resolution=res
     )
 
     dem_array[np.isnan(dem_array)] = 0.
@@ -119,15 +120,15 @@ def download_dem_for_isce2(
     for key in ['blockxsize', 'blockysize', 'compress', 'interleave', 'tiled']:
         del dem_profile[key]
 
-    dem_path_tmp = dem_dir / 'full_res.dem.wgs84.tmp'
     dem_path = dem_dir / 'full_res.dem.wgs84'
-    with rasterio.open(dem_path_tmp, 'w', **dem_profile) as ds:
+    with rasterio.open(dem_path, 'w', **dem_profile) as ds:
         ds.write(dem_array, 1)
 
-    res = get_dem_resolution(extent, dem_res)
-    ds2 = gdal.Warp(dem_path, dem_path_tmp, xRes=res, yRes=res, targetAlignedPixels=True,
-                    resampleAlg='cubic', multithread=True)
-    del ds2
+    # ds2 = gdal.Warp(str(dem_path_tmp), gdal.Open(str(dem_path)), xRes=res, yRes=res, targetAlignedPixels=True,
+    #                resampleAlg='cubic', multithread=True)
+    # del ds2
+    # os.system(f'cp {dem_path_tmp} {dem_path}')
+
     xml_path = tag_dem_xml_as_ellipsoidal(dem_path)
     fix_image_xml(xml_path)
 
