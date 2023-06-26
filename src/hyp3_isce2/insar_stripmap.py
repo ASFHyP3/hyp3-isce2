@@ -4,7 +4,6 @@ ISCE2 stripmap processing
 
 import argparse
 import logging
-import os
 import site
 import sys
 from pathlib import Path
@@ -46,42 +45,42 @@ def insar_stripmap(user: str, password: str, reference_scene: str, secondary_sce
         Path to the output files
     """
     session = asf.ASFSession().auth_with_creds(user, password)
-    
-    results = asf.granule_search([reference_scene,secondary_scene])
-    
-    polys=[]
-    durls=[]
+
+    results = asf.granule_search([reference_scene, secondary_scene])
+
+    polys = []
+    durls = []
     for result in results:
         if 'L1.0' in result.properties['url']:
             polys.append(Polygon(results[0].geometry['coordinates'][0]))
             durls.append(result.properties['url'])
-        
+
     for i in range(len(polys)):
-        if i==0:
-            intersection=polys[i].intersection(polys[i+1])
+        if i == 0:
+            intersection = polys[i].intersection(polys[i+1])
         else:
-            intersection=polys[i].intersection(intersection)
-    
+            intersection = polys[i].intersection(intersection)
+
     dem_dir = Path('dem')
     dem_path = download_dem_for_isce2(intersection.bounds, dem_name='glo_30', dem_dir=dem_dir, buffer=0)
-    
-    insar_roi=intersection.bounds
-    asf.download_urls(urls=durls, path='./', session=session,processes=2)
-    
-    zips=glob.glob('*.zip')
-    for i,zipf in enumerate(sorted(zips[0:2])):
+
+    insar_roi = intersection.bounds
+    asf.download_urls(urls=durls, path='./', session=session, processes=2)
+
+    zips = glob.glob('*.zip')
+    for i, zipf in enumerate(sorted(zips[0:2])):
         with zipfile.ZipFile(zipf, 'r') as zip_ref:
             zip_ref.extractall('./')
-        
-        if i==0:
-            reference_image=glob.glob('./'+zipf.split('.zip')[0]+'/IMG-*')[0]
-            reference_leader=glob.glob('./'+zipf.split('.zip')[0]+'/LED-*')[0]
+
+        if i == 0:
+            reference_image = glob.glob('./' + zipf.split('.zip')[0] + '/IMG-*')[0]
+            reference_leader = glob.glob('./' + zipf.split('.zip')[0] + '/LED-*')[0]
         else:
-            secondary_image=glob.glob('./'+zipf.split('.zip')[0]+'/IMG-*')[0]
-            secondary_leader=glob.glob('./'+zipf.split('.zip')[0]+'/LED-*')[0]
-        
+            secondary_image = glob.glob('./' + zipf.split('.zip')[0] + '/IMG-*')[0]
+            secondary_leader = glob.glob('./' + zipf.split('.zip')[0] + '/LED-*')[0]
+
         os.remove(zipf)
-    
+
     config = stripmapapp.StripmapappConfig(
         reference_image=reference_image,
         reference_leader=reference_leader,
@@ -91,7 +90,7 @@ def insar_stripmap(user: str, password: str, reference_scene: str, secondary_sce
         dem_filename=str(dem_path),
     )
     config_path = config.write_template('stripmapApp.xml')
-    
+
     stripmapapp.run_stripmapapp(start='startup', end='geocode', config_xml=config_path)
     #stripmapapp.run_stripmapapp(start='rubber_sheet_range', end='geocode', config_xml=config_path)
     #stripmapapp.run_stripmapapp(start='startup', end='geocode', config_xml=config_path)
@@ -102,9 +101,8 @@ def insar_stripmap(user: str, password: str, reference_scene: str, secondary_sce
 
 
 def main():
-    
     """ Entrypoint for the stripmap workflow"""
-    
+
     parser = argparse.ArgumentParser(description=__doc__, formatter_class=argparse.ArgumentDefaultsHelpFormatter)
 
     parser.add_argument('--bucket', help='AWS S3 bucket HyP3 for upload the final product(s)')
@@ -127,7 +125,7 @@ def main():
         reference_scene=args.reference_scene,
         secondary_scene=args.secondary_scene,
     )
-    
+
     log.info('InSAR Stripmap run completed successfully')
 
     if args.bucket:
@@ -138,4 +136,3 @@ def main():
             thumbnail = create_thumbnail(browse)
             upload_file_to_s3(browse, args.bucket, args.bucket_prefix)
             upload_file_to_s3(thumbnail, args.bucket, args.bucket_prefix)
-    
