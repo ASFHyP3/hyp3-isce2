@@ -11,7 +11,7 @@ dependencies:
   - rasterio
   - shapely
   - jinja2
-  - asf_search
+  - asf_search>=6.4.0
   - opencv
   # For packaging, and testing
   - flake8

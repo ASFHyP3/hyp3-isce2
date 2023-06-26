@@ -21,6 +21,8 @@ import os
 import asf_search as asf
 from shapely.geometry.polygon import Polygon
 
+from hyp3_isce2.logging import configure_root_logger
+
 
 log = logging.getLogger(__name__)
 
@@ -114,10 +116,11 @@ def main():
 
     args = parser.parse_args()
 
-    logging.basicConfig(stream=sys.stdout, format='%(asctime)s - %(levelname)s - %(message)s', level=logging.INFO)
+    configure_root_logger()
     log.debug(' '.join(sys.argv))
 
-    
+    log.info('Begin InSAR Stripmap run')
+
     product_file = insar_stripmap(
         user=args.username,
         password=args.password,

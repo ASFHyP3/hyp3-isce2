@@ -7,6 +7,30 @@ and this project adheres to [PEP 440](https://www.python.org/dev/peps/pep-0440/)
 and uses [Semantic Versioning](https://semver.org/spec/v2.0.0.html).
 
 
+## [0.4.1]
+### Added
+* Generate a README file to be included with burst products that describes the processing workflow.
+
+## [0.4.0]
+### Changed
+* `insar_tops_burst` workflow now takes the burst product names rather than the SLC product names.
+* Replace `--range-looks` and `--azimuth-looks` options with a single `--looks` option for `insar_tops` and `insar_tops_burst` workflows
+* `insar_tops_burst` workflow now always uses the oldest granule as the reference.
+
+### Fixed
+* Incomplete DEM generation issue by switching to using `merged/dem.crop` as the source
+
+## [0.3.0]
+### Added
+* `insar_tops` workflow for processing of full Sentinel-1 SLCs.
+* Ability to pass Earthdata username and password as environment variables to workflows. This allows the credentials to be passed to the Docker container via the `-e` option.
+* The `++omp-num-threads` parameter for control of the number of threads used when ISCE2 calls OpenMP functionality.
+* Added to the `insar_tops_burst` workflow:
+  * Generation of output geotiff products with sensible names in subfolder that is also added as a zip archive.
+  * Generation of a product browse image based on the unwrapped phase geotiff.
+  * Generation of a parameter file for the burst products
+  * Generation of output satellite geometry products (azimuth angle and lookup angle) to enable further time series processing.
+
 ## [0.2.1]
 ### Added
 * The `get_isce2_burst_bbox` function to calculate burst bounding boxes using ISCE2 directly to fix inaccurate generation of burst bounding boxes.

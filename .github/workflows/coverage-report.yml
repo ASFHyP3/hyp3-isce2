@@ -1,0 +1,36 @@
+name: Generate Test Coverage Report and Badge
+
+on: pull_request
+
+jobs:
+  pytest:
+    runs-on: ubuntu-latest
+
+    steps:
+      - uses: actions/checkout@v3
+        with:
+          repository: ${{ github.event.pull_request.head.repo.full_name }}
+          ref: ${{ github.event.pull_request.head.ref }}
+
+      - uses: mamba-org/provision-with-micromamba@v15
+
+      - name: Generate Coverage Report and Badge
+        shell: bash -l {0}
+        run: |
+          python -m pip install --no-deps .
+          python -m pip install coverage-badge
+          pytest --junitxml=pytest.xml --cov-report=term-missing:skip-covered --cov=hyp3_isce2 tests/ | tee pytest-coverage.txt
+          coverage-badge -fo images/coverage.svg
+
+      - name: Commit Coverage Badge
+        uses: EndBug/add-and-commit@v9
+        with:
+          default_author: github_actions
+          add: 'images/coverage.svg'
+          message: 'update coverage image'
+
+      - name: PR Coverage Comment
+        uses: MishaKav/pytest-coverage-comment@main
+        with:
+          pytest-coverage-path: ./pytest-coverage.txt
+          junitxml-path: ./pytest.xml
