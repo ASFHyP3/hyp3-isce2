@@ -1,43 +1,43 @@
 <?xml version="1.0" encoding="UTF-8"?>
 <stripmapApp>
-  <component name="stripmapApp">
-    <property name="sensor name">ALOS</property>
-    <component name="reference">
-        <property name="IMAGEFILE">{{ reference_image }}</property>
-		<property name="LEADERFILE">{{ reference_leader }}</property>
-		<property name="OUTPUT">reference</property>
+    <component name="stripmapApp">
+        <property name="sensor name">ALOS</property>
+        <component name="reference">
+            <property name="IMAGEFILE">{{ reference_image }}</property>
+            <property name="LEADERFILE">{{ reference_leader }}</property>
+            <property name="OUTPUT">reference</property>
+        </component>
+        <component name="secondary">
+            <property name="IMAGEFILE">{{ secondary_image }}</property>
+            <property name="LEADERFILE">{{ secondary_leader }}</property>
+            <property name="OUTPUT">secondary</property>
+        </component>
+        <property name="demFilename">
+            <value>{{ dem_filename }}</value>
+        </property>
+
+        <property name="do rubbersheetingAzimuth">False</property>
+        <property name="do rubbersheetingRange">False</property>
+
+        <property name="filter strength">{{ filter_strength }}</property>
+        <property name="dispersive filter coherence threshold">{{ filter_coherence }}</property>
+        <property name="regionOfInterest">{{ roi }}</property>
+        <property name="range looks">{{ range_looks }}</property>
+        <property name="azimuth looks">{{ azimuth_looks }}</property>
+        <property name="do denseoffsets">False</property>
+        <property name="do split spectrum">True</property>
+        <property name="do unwrap">{{ do_unwrap }}</property>
+        <property name="unwrapper name">snaphu</property>
+        <property name="do dispersive">True</property>
+        <!--
+        <property name="dispersive filter kernel x-size">800</property>
+        <property name="dispersive filter kernel y-size">800</property>
+        <property name="dispersive filter kernel sigma_x">100</property>
+        <property name="dispersive filter kernel sigma_y">100</property>
+        <property name="dispersive filter kernel rotation">0</property>
+        <property name="dispersive filter number of iterations">5</property>
+        <property name="dispersive filter mask type">connected_components</property>
+        <property name="rubber sheet SNR Threshold">USER_INPUT</property>
+        -->
     </component>
-    <component name="secondary">
-        <property name="IMAGEFILE">{{ secondary_image }}</property>
-		<property name="LEADERFILE">{{ secondary_leader }}</property>
-		<property name="OUTPUT">secondary</property>
-    </component>
-    <property name="demFilename">
-        <value>{{ dem_filename }}</value>
-    </property>
-    
-      <property name="do rubbersheetingAzimuth">False</property>
-      <property name="do rubbersheetingRange">False</property>
-    
-	<property name="filter strength">{{ filter_strength }}</property>
-	<property name="dispersive filter coherence threshold">{{ filter_coherence }}</property>
-	<property name="regionOfInterest">{{ roi }}</property>
-	<property name="range looks">{{ range_looks }}</property>
-	<property name="azimuth looks">{{ azimuth_looks }}</property>
-    <property name="do denseoffsets">False</property>
-    <property name="do split spectrum">True</property>
-	<property name="do unwrap">{{ do_unwrap }}</property>
-    <property name="unwrapper name">snaphu</property> 
-    <property name="do dispersive">True</property>
-	<!--
-    <property name="dispersive filter kernel x-size">800</property>
-    <property name="dispersive filter kernel y-size">800</property>
-    <property name="dispersive filter kernel sigma_x">100</property>
-    <property name="dispersive filter kernel sigma_y">100</property>
-    <property name="dispersive filter kernel rotation">0</property>
-    <property name="dispersive filter number of iterations">5</property>
-    <property name="dispersive filter mask type">connected_components</property>
-	<property name="rubber sheet SNR Threshold">USER_INPUT</property>
-	-->
-  </component>
 </stripmapApp>
