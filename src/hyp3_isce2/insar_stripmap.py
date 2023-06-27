@@ -38,6 +38,8 @@ def insar_stripmap(user: str, password: str, reference_scene: str, secondary_sce
     This is a placeholder function. It will be replaced with your actual scientific workflow.
 
     Args:
+        user: Earthdata username
+        password: Earthdata password
         reference_scene: Reference scene name
         secondary_scene: Secondary scene name
 
@@ -55,11 +57,9 @@ def insar_stripmap(user: str, password: str, reference_scene: str, secondary_sce
             polys.append(Polygon(results[0].geometry['coordinates'][0]))
             durls.append(result.properties['url'])
 
-    for i in range(len(polys)):
-        if i == 0:
-            intersection = polys[i].intersection(polys[i+1])
-        else:
-            intersection = polys[i].intersection(intersection)
+    intersection = polys[0].intersection(polys[1])
+    for i in range(1, len(polys)):
+        intersection = polys[i].intersection(intersection)
 
     dem_dir = Path('dem')
     dem_path = download_dem_for_isce2(intersection.bounds, dem_name='glo_30', dem_dir=dem_dir, buffer=0)
@@ -129,7 +129,7 @@ def main():
     log.info('InSAR Stripmap run completed successfully')
 
     if args.bucket:
-        base_name = f'{reference_scene}x{secondary_scene}'
+        base_name = f'{args.reference_scene}x{args.secondary_scene}'
         upload_file_to_s3(product_file, args.bucket, args.bucket_prefix)
         browse_images = product_file.with_suffix('.png')
         for browse in browse_images:
