@@ -18,7 +18,7 @@ import subprocess
 import os
 from pathlib import Path
 
-from pyproj import Proj
+import pyproj
 import dem_stitcher
 import numpy as np
 from osgeo import gdal, osr
@@ -76,11 +76,12 @@ def get_dem_resolution(extent, res):
     # lonc = extent[0]
     # latc = extent[3]
     epsg_code = utm_from_lon_lat(lonc, latc)
-    myprj = Proj(f'EPSG:{epsg_code}')
-    xc, yc = myprj(lonc, latc)
+    myprj1 = pyproj.Transformer.from_crs(4326, epsg_code, always_xy=True)
+    myprj2 = pyproj.Transformer.from_crs(epsg_code, 4326, always_xy=True)
+    xc, yc = myprj1.transform(lonc, latc)
     x2 = xc + res
     y2 = yc - res
-    lon2, lat2 = myprj(x2, y2, inverse=True)
+    lon2, lat2 = myprj2(x2, y2, inverse=True)
     return abs(lon2 - lonc), abs(lat2 - latc)
 
 
