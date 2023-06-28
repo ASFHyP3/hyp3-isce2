@@ -354,9 +354,8 @@ def translate_outputs(isce_output_dir: Path, product_name: str):
 
 
 def get_res(choice):
-    choices = ['20x4', '10x2', '5x1']
-    reses = [80, 40, 20]
-    return reses[choices.index(choice)]
+    choices = {'20x4': 80.0, '10x2': 40.0, '5x1': 20.0}
+    return choices[choice]
 
 
 def main():
