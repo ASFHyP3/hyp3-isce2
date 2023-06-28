@@ -1,14 +1,14 @@
 from pathlib import Path
-from typing import Iterable, Union
+from typing import Union
 
 from isce.applications.stripmapApp import Insar
 from jinja2 import Template
-from osgeo import gdal
 import os
 
-os.environ["PATH"] += os.pathsep+':'+os.environ['ISCE_HOME']+'/applications'
+os.environ['PATH'] += os.pathsep + str(Path(os.environ['ISCE_HOME']) / 'applications')
 
 TEMPLATE_DIR = Path(__file__).parent / 'templates'
+
 STRIPMAPAPP_STEPS = [
     'startup',
     'preprocess',
@@ -40,6 +40,7 @@ STRIPMAPAPP_STEPS = [
     'geocodeoffsets',
     'endup'
 ]
+
 STRIPMAPAPP_GEOCODE_LIST = [
     'interferogram/phsig.cor',
     'interferogram/filt_topophase.unw',
@@ -60,11 +61,10 @@ class StripmapappConfig:
         reference_leader: str,
         secondary_image: str,
         secondary_leader: str,
-        roi: Iterable[float],
+        roi: list[float],
         dem_filename: str,
         azimuth_looks: int = 14,
         range_looks: int = 4,
-        do_unwrap: bool = True,
     ):
         self.reference_image = reference_image
         self.reference_leader = reference_leader
@@ -109,13 +109,14 @@ class StripmapappConfig:
 
         return filename
 
+
 def run_stripmapapp(dostep: str = '', start: str = '', end: str = '', config_xml: Path = Path('stripmapApp.xml')):
     """Run topsApp.py for a burst pair with the desired steps and config file
 
     Args:
         dostep: The step to run
         start: The step to start at
-        stop: The step to stop at
+        end: The step to stop at
         config_xml: The config file to use
 
     Raises:
