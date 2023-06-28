@@ -289,7 +289,7 @@ def translate_outputs(isce_output_dir: Path, product_name: str):
             bandList=[dataset.band],
             format='GTiff',
             noData=0,
-            creationOptions=['TILED=YES', 'COMPRESS=LZW', 'NUM_THREADS=ALL_CPUS'],
+            creationOptions=['TILED=YES', 'COMPRESS=LZW', 'NUM_THREADS=ALL_CPUS']
         )
 
     # Use numpy.angle to extract the phase component of the complex wrapped interferogram
@@ -348,6 +348,8 @@ def translate_outputs(isce_output_dir: Path, product_name: str):
             file,
             dstSRS=f'epsg:{epsg}',
             creationOptions=['TILED=YES', 'COMPRESS=LZW', 'NUM_THREADS=ALL_CPUS'],
+            xRes=80,
+            yRes=80
         )
 
     make_browse_image(f'{product_name}/{product_name}_unw_phase.tif', f'{product_name}/{product_name}_unw_phase.png')
