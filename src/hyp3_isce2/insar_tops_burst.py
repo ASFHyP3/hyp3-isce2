@@ -253,7 +253,7 @@ def make_parameter_file(
         outfile.write(output_string)
 
 
-def translate_outputs(isce_output_dir: Path, product_name: str):
+def translate_outputs(isce_output_dir: Path, product_name: str, res: int):
     """Translate ISCE outputs to a standard GTiff format with a UTM projection
 
     Args:
@@ -348,8 +348,8 @@ def translate_outputs(isce_output_dir: Path, product_name: str):
             file,
             dstSRS=f'epsg:{epsg}',
             creationOptions=['TILED=YES', 'COMPRESS=LZW', 'NUM_THREADS=ALL_CPUS'],
-            xRes=80,
-            yRes=80
+            xRes=res,
+            yRes=res
         )
 
     make_browse_image(f'{product_name}/{product_name}_unw_phase.tif', f'{product_name}/{product_name}_unw_phase.png')
@@ -408,7 +408,7 @@ def main():
     product_dir = Path(product_name)
     product_dir.mkdir(parents=True, exist_ok=True)
 
-    translate_outputs(isce_output_dir, product_name)
+    translate_outputs(isce_output_dir, product_name, get_res(args.looks))
 
     make_readme(
         product_dir=product_dir,
