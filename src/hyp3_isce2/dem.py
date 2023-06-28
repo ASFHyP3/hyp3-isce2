@@ -81,7 +81,7 @@ def get_dem_resolution(extent, res):
     xc, yc = myprj1.transform(lonc, latc)
     x2 = xc + res
     y2 = yc - res
-    lon2, lat2 = myprj2(x2, y2, inverse=True)
+    lon2, lat2 = myprj2.transform(x2, y2)
     return abs(lon2 - lonc), abs(lat2 - latc)
 
 
