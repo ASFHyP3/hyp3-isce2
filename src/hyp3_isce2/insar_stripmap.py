@@ -57,9 +57,11 @@ def insar_stripmap(user: str, password: str, reference_scene: str, secondary_sce
             polys.append(Polygon(results[0].geometry['coordinates'][0]))
             durls.append(result.properties['url'])
 
-    intersection = polys[0].intersection(polys[1])
-    for i in range(1, len(polys)):
-        intersection = polys[i].intersection(intersection)
+    for i in range(len(polys)):
+        if i == 0:
+            intersection = polys[i].intersection(polys[i + 1])
+        else:
+            intersection = polys[i].intersection(intersection)
 
     dem_dir = Path('dem')
     dem_path = download_dem_for_isce2(intersection.bounds, dem_name='glo_30', dem_dir=dem_dir, buffer=0)
