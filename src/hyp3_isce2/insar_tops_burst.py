@@ -253,7 +253,7 @@ def make_parameter_file(
         outfile.write(output_string)
 
 
-def translate_outputs(isce_output_dir: Path, product_name: str, res: int):
+def translate_outputs(isce_output_dir: Path, product_name: str, res: float):
     """Translate ISCE outputs to a standard GTiff format with a UTM projection
 
     Args:
