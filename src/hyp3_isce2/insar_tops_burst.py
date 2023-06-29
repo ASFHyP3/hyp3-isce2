@@ -425,7 +425,8 @@ def main():
         secondary_scene=secondary_scene,
         azimuth_looks=azimuth_looks,
         range_looks=range_looks,
-        swath_number=swath_number
+        swath_number=swath_number,
+        dem_resolution=get_res(args.looks)
     )
     output_zip = make_archive(base_name=product_name, format='zip', base_dir=product_name)
 
