@@ -68,13 +68,10 @@ def utm_from_lon_lat(lon: float, lat: float) -> int:
 
 
 def get_dem_resolution(extent, res):
-    # center pixel coordinates
-    lonc = (extent[2] + extent[0])/2
-    latc = (extent[3] + extent[1])/2
+    # coordinates of the upper left corner pixel
+    lonc = extent[0]
+    latc = extent[3]
 
-    # upper left corner coordinates
-    # lonc = extent[0]
-    # latc = extent[3]
     epsg_code = utm_from_lon_lat(lonc, latc)
     myprj1 = pyproj.Transformer.from_crs(4326, epsg_code, always_xy=True)
     myprj2 = pyproj.Transformer.from_crs(epsg_code, 4326, always_xy=True)
@@ -113,7 +110,6 @@ def download_dem_for_isce2(
         dst_ellipsoidal_height=True,
         dst_area_or_point='Point',
         n_threads_downloading=5,
-        # ensures square resolution
         dst_resolution=xres
     )
 
