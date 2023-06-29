@@ -91,6 +91,7 @@ def download_dem_for_isce2(
     Args:
         extent: A list [xmin, ymin, xmax, ymax] for epsg:4326 (i.e. (x, y) = (lon, lat)).
         dem_name: One of the names from `dem_stitcher`.
+        dem_res: pixel spacing of output product
         dem_dir: The output directory.
         buffer: The extent buffer in degrees, by default .4, which is about 44 km at the equator
                 (or about 2.5 bursts at the equator).

@@ -42,6 +42,7 @@ def test_download_dem_for_isce2(tmp_path):
         dem_path = dem.download_dem_for_isce2(
             extent=[-168.7, 53.2, -168.2, 53.7],
             dem_name='glo_30',
+            dem_res=80.0,
             dem_dir=dem_dir,
             buffer=0,
         )
@@ -52,7 +53,7 @@ def test_download_dem_for_isce2(tmp_path):
             dst_ellipsoidal_height=True,
             dst_area_or_point='Point',
             n_threads_downloading=5,
-            dst_resolution=dem.DEM_RESOLUTION,
+            dst_resolution=dem.get_dem_resolution(extent=[-168.7, 53.2, -168.2, 53.7], res=80.0)[0]
         )
 
         root = etree.parse(str(dem_path) + '.xml').getroot()
