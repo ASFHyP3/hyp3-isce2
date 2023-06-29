@@ -17,10 +17,9 @@ import site
 import subprocess
 from pathlib import Path
 
-import pyproj
 import dem_stitcher
+import pyproj
 import numpy as np
-from osgeo import gdal, osr
 import rasterio
 from lxml import etree
 from shapely.geometry import box
