@@ -18,8 +18,8 @@ import subprocess
 from pathlib import Path
 
 import dem_stitcher
-import pyproj
 import numpy as np
+import pyproj
 import rasterio
 from lxml import etree
 from shapely.geometry import box

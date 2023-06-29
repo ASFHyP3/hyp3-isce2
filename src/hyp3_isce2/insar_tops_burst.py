@@ -51,7 +51,7 @@ def insar_tops_burst(
     swath_number: int,
     azimuth_looks: int = 4,
     range_looks: int = 20,
-    res = 80
+    res: float = 80.0
 ) -> Path:
     """Create a burst interferogram
 
@@ -61,7 +61,7 @@ def insar_tops_burst(
         swath_number: Number of swath to grab bursts from (1, 2, or 3) for IW
         azimuth_looks: Number of azimuth looks
         range_looks: Number of range looks
-
+        res: pixel spacing of the output products
     Returns:
         Path to the output files
     """
