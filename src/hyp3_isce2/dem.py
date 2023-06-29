@@ -15,7 +15,6 @@
 
 import site
 import subprocess
-import os
 from pathlib import Path
 
 import pyproj
@@ -125,11 +124,6 @@ def download_dem_for_isce2(
     dem_path = dem_dir / 'full_res.dem.wgs84'
     with rasterio.open(dem_path, 'w', **dem_profile) as ds:
         ds.write(dem_array, 1)
-
-    # ds2 = gdal.Warp(str(dem_path_tmp), gdal.Open(str(dem_path)), xRes=res, yRes=res, targetAlignedPixels=True,
-    #                resampleAlg='cubic', multithread=True)
-    # del ds2
-    # os.system(f'cp {dem_path_tmp} {dem_path}')
 
     xml_path = tag_dem_xml_as_ellipsoidal(dem_path)
     fix_image_xml(xml_path)
