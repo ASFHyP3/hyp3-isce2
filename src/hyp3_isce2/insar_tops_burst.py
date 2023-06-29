@@ -259,6 +259,7 @@ def translate_outputs(isce_output_dir: Path, product_name: str, res: int):
     Args:
         isce_output_dir: Path to the ISCE output directory
         product_name: Name of the product
+        res: resolution determined by looks
     """
 
     src_ds = gdal.Open(str(isce_output_dir / 'filt_topophase.unw.geo'))
@@ -357,9 +358,8 @@ def translate_outputs(isce_output_dir: Path, product_name: str, res: int):
 
 
 def get_res(choice):
-    choices = ['20x4', '10x2', '5x1']
-    reses = [80, 40, 20]
-    return reses[choices.index(choice)]
+    choices = {'20x4': 80.0, '10x2': 40.0, '5x1': 20.0}
+    return choices[choice]
 
 
 def main():

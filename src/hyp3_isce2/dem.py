@@ -15,7 +15,6 @@
 
 import site
 import subprocess
-import os
 from pathlib import Path
 
 import pyproj
@@ -68,13 +67,10 @@ def utm_from_lon_lat(lon: float, lat: float) -> int:
 
 
 def get_dem_resolution(extent, res):
-    # center pixel coordinates
-    lonc = (extent[2] + extent[0])/2
-    latc = (extent[3] + extent[1])/2
+    # coordinates of the upper left corner pixel
+    lonc = extent[0]
+    latc = extent[3]
 
-    # upper left corner coordinates
-    # lonc = extent[0]
-    # latc = extent[3]
     epsg_code = utm_from_lon_lat(lonc, latc)
     myprj1 = pyproj.Transformer.from_crs(4326, epsg_code, always_xy=True)
     myprj2 = pyproj.Transformer.from_crs(epsg_code, 4326, always_xy=True)
@@ -113,7 +109,6 @@ def download_dem_for_isce2(
         dst_ellipsoidal_height=True,
         dst_area_or_point='Point',
         n_threads_downloading=5,
-        # ensures square resolution
         dst_resolution=xres
     )
 
@@ -129,11 +124,6 @@ def download_dem_for_isce2(
     dem_path = dem_dir / 'full_res.dem.wgs84'
     with rasterio.open(dem_path, 'w', **dem_profile) as ds:
         ds.write(dem_array, 1)
-
-    # ds2 = gdal.Warp(str(dem_path_tmp), gdal.Open(str(dem_path)), xRes=res, yRes=res, targetAlignedPixels=True,
-    #                resampleAlg='cubic', multithread=True)
-    # del ds2
-    # os.system(f'cp {dem_path_tmp} {dem_path}')
 
     xml_path = tag_dem_xml_as_ellipsoidal(dem_path)
     fix_image_xml(xml_path)
