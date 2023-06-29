@@ -349,7 +349,8 @@ def translate_outputs(isce_output_dir: Path, product_name: str, res: int):
             dstSRS=f'epsg:{epsg}',
             creationOptions=['TILED=YES', 'COMPRESS=LZW', 'NUM_THREADS=ALL_CPUS'],
             xRes=res,
-            yRes=res
+            yRes=res,
+            targetAlignedPixels=True
         )
 
     make_browse_image(f'{product_name}/{product_name}_unw_phase.tif', f'{product_name}/{product_name}_unw_phase.png')
