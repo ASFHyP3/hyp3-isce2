@@ -66,18 +66,25 @@ def utm_from_lon_lat(lon: float, lat: float) -> int:
 
 
 def get_dem_resolution(extent, res):
-    # coordinates of the upper left corner pixel
-    lonc = extent[0]
-    latc = extent[3]
+    # coordinates of the center pixel
+    if extent[0] > 0.0 and extent[2] < 0.0:
+        extent[2] += 360.0
 
-    epsg_code = utm_from_lon_lat(lonc, latc)
+    lon_ul = (extent[0] + extent[2])/2.0
+    lat_ul = (extent[1] + extent[3])/2.0
+
+    epsg_code = utm_from_lon_lat(lon_ul, lat_ul)
     myprj1 = pyproj.Transformer.from_crs(4326, epsg_code, always_xy=True)
     myprj2 = pyproj.Transformer.from_crs(epsg_code, 4326, always_xy=True)
-    xc, yc = myprj1.transform(lonc, latc)
-    x2 = xc + res
-    y2 = yc - res
-    lon2, lat2 = myprj2.transform(x2, y2)
-    return abs(lon2 - lonc), abs(lat2 - latc)
+
+    x_ul, y_ul = myprj1.transform(lon_ul, lat_ul)
+    lon_lr, lat_lr = myprj2.transform(x_ul + res, y_ul - res)
+
+    # adjust the lon value for the pixel crossing over antimeridian
+    if lon_ul > 0.0 and lon_lr < 0.0:
+        lon_lr += 360.0
+
+    return max(abs(lon_lr - lon_ul), abs(lat_ul - lat_lr))
 
 
 def download_dem_for_isce2(
@@ -102,14 +109,13 @@ def download_dem_for_isce2(
     dem_dir.mkdir(exist_ok=True, parents=True)
 
     extent_buffered = buffer_extent(extent, buffer)
-    xres, yres = get_dem_resolution(extent, dem_res)
     dem_array, dem_profile = dem_stitcher.stitch_dem(
         extent_buffered,
         dem_name,
         dst_ellipsoidal_height=True,
         dst_area_or_point='Point',
         n_threads_downloading=5,
-        dst_resolution=xres
+        dst_resolution=get_dem_resolution(extent, dem_res)
     )
 
     dem_array[np.isnan(dem_array)] = 0.
