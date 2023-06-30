@@ -76,7 +76,7 @@ def get_dem_resolution(extent: list, res: float = 80.0):
     """Calculate the pixel spacing in WGS84 for a given pixel spacing in UTM
     Args:
         extent: A list [xmin, ymin, xmax, ymax] for epsg:4326 (i.e. (x, y) = (lon, lat))
-        res: piexl spacing of output product
+        res: pixel spacing of output product
     Returns:
         The pixel spacing in WGS84 for the given pixel spacing in UTM
         """
