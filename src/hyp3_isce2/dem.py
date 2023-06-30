@@ -60,12 +60,26 @@ def buffer_extent(extent: list, buffer: float) -> list:
 
 
 def utm_from_lon_lat(lon: float, lat: float) -> int:
+    """Calculate the UTM EPSG code for a given location (lon,lat)
+    Args:
+        lon: longitude of the location
+        lat: latitude of the location
+    Returns:
+        UTM EPSG code
+     """
     hemisphere = 32600 if lat >= 0 else 32700
     zone = int(lon // 6 + 30) % 60 + 1
     return hemisphere + zone
 
 
-def get_dem_resolution(extent, res):
+def get_dem_resolution(extent: list, res: float = 80.0):
+    """Calculate the pixel spacing in WGS84 for a given pixel spacing in UTM
+    Args:
+        extent: A list [xmin, ymin, xmax, ymax] for epsg:4326 (i.e. (x, y) = (lon, lat))
+        res: piexl spacing of output product
+    Returns:
+        The pixel spacing in WGS84 for the given pixel spacing in UTM
+        """
     # coordinates of the center pixel
     if extent[0] > 0.0 and extent[2] < 0.0:
         extent[2] += 360.0
