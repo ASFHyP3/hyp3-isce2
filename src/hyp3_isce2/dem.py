@@ -107,7 +107,7 @@ def get_dem_resolution(extent: list, res: float = 80.0):
     # envelope of the pixel in WGS84
     envelope = [min(lon_ul, lon_ll), min(lat_ll, lat_lr), max(lon_ur, lon_lr), max(lat_ul, lat_ur)]
 
-    return abs(envelope[2]-envelope[0]), abs(envelope[3] - envelope[1])
+    return max(abs(envelope[2]-envelope[0]), abs(envelope[3] - envelope[1]))
 
 
 def download_dem_for_isce2(

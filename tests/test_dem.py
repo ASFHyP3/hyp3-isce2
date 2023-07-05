@@ -35,7 +35,7 @@ MOCK_DEM_PROFILE = {
 def test_get_dem_resolution():
     extent = [-168.7, 53.2, -168.2, 53.7]
     res = 80.0
-    assert dem.get_dem_resolution(extent, res) == 0.0011603589688036209
+    assert dem.get_dem_resolution(extent, res) == 0.0012464877821116715
 
 
 def test_download_dem_for_isce2(tmp_path):
