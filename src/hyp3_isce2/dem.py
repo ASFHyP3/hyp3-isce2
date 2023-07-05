@@ -81,7 +81,7 @@ def get_dem_resolution(extent: list, res: float = 80.0):
         The pixel spacing in WGS84 for the given pixel spacing in UTM
         """
     # coordinates of the center pixel
-    if extent[0] > 0.0 and extent[2] < 0.0:
+    if extent[0] > 0.0 > extent[2]:
         extent[2] += 360.0
 
     lon_ul = (extent[0] + extent[2])/2.0
@@ -92,13 +92,22 @@ def get_dem_resolution(extent: list, res: float = 80.0):
     myprj2 = pyproj.Transformer.from_crs(epsg_code, 4326, always_xy=True)
 
     x_ul, y_ul = myprj1.transform(lon_ul, lat_ul)
+    lon_ur, lat_ur = myprj2.transform(x_ul + res, y_ul)
+    lon_ll, lat_ll = myprj2.transform(x_ul, y_ul - res)
     lon_lr, lat_lr = myprj2.transform(x_ul + res, y_ul - res)
 
-    # adjust the lon value for the pixel crossing over antimeridian
-    if lon_ul > 0.0 and lon_lr < 0.0:
-        lon_lr += 360.0
+    # adjust the lon values for the pixel crossing over antimeridian
+    if any(val > 0 for val in [lon_ul, lon_ll]) and any(val < 0 for val in [lon_ur, lon_lr]):
 
-    return max(abs(lon_lr - lon_ul), abs(lat_ul - lat_lr))
+        if lon_lr < 0:
+            lon_lr += 360.0
+        if lon_ur < 0:
+            lon_ur += 360
+
+    # envelope of the pixel in WGS84
+    envelope = [min(lon_ul, lon_ll), min(lat_ll, lat_lr), max(lon_ur, lon_lr), max(lat_ul, lat_ur)]
+
+    return abs(envelope[2]-envelope[0]), abs(envelope[3] - envelope[1])
 
 
 def download_dem_for_isce2(
