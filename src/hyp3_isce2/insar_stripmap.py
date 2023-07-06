@@ -58,9 +58,8 @@ def insar_stripmap(user: str, password: str, reference_scene: str, secondary_sce
     polys = []
     durls = []
     for result in results:
-    # TODO should this reference `result` rather than `results[0]`?
-    polys.append(Polygon(results[0].geometry['coordinates'][0]))
-    durls.append(result.properties['url'])
+        polys.append(Polygon(result.geometry['coordinates'][0]))
+        durls.append(result.properties['url'])
 
     for i in range(len(polys)):
         if i == 0:
