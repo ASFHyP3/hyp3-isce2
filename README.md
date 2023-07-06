@@ -1,5 +1,5 @@
 
-[![DOI](https://zenodo.org/badge/DOI/10.5281/zenodo.8007397.svg)](https://doi.org/10.5281/zenodo.8007397)
+[![DOI](https://zenodo.org/badge/DOI/10.5281/zenodo.8007397.svg)](https://doi.org/10.5281/zenodo.8007397) ![Coverage](images/coverage.svg)
 
 # HyP3 ISCE2 Plugin
 
@@ -16,8 +16,8 @@ To run a workflow, simply run `python -m hyp3_isce2 ++process [WORKFLOW_NAME] [W
 
 ```
 python -m hyp3_isce2 ++process insar_tops_burst \
-  S1_249434_IW1_20230523T170733_VV_8850-BURST \
-  S1_249434_IW1_20230511T170732_VV_07DE-BURST \
+  S1_136231_IW2_20200604T022312_VV_7C85-BURST \
+  S1_136231_IW2_20200616T022313_VV_5D11-BURST \
   --looks 20x4
 ```
 
