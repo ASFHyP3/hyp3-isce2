@@ -72,7 +72,7 @@ def insar_stripmap(user: str, password: str, reference_scene: str, secondary_sce
     dem_path = download_dem_for_isce2(intersection.bounds, dem_name='glo_30', dem_dir=dem_dir, buffer=0)
 
     insar_roi = intersection.bounds
-    asf.download_urls(urls=durls, path='./', session=session, processes=2)
+    asf_search.download_urls(urls=durls, path='./', session=session, processes=2)
 
     zips = glob.glob('*.zip')
     for i, zipf in enumerate(sorted(zips[0:2])):
