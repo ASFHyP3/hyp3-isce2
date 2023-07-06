@@ -10,6 +10,10 @@ and uses [Semantic Versioning](https://semver.org/spec/v2.0.0.html).
 ### Changed
 * Pixel size of output products is set to be the same resolution as Geocoding DEM
 
+## [0.5.0]
+### Changed
+* `insar_tops_burst` workflow now supports burst products advertised in CMR production, rather than CMR UAT
+
 ## [0.4.1]
 ### Added
 * Generate a README file to be included with burst products that describes the processing workflow.
