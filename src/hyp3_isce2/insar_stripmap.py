@@ -49,7 +49,11 @@ def insar_stripmap(user: str, password: str, reference_scene: str, secondary_sce
     """
     session = asf.ASFSession().auth_with_creds(user, password)
 
-    results = asf.granule_search([reference_scene, secondary_scene])
+    results = asf_search.search(
+        granule_list=[reference_scene, secondary_scene],
+        processingLevel=asf_search.L1_0,
+    )
+    assert len(results) == 2
 
     polys = []
     durls = []
