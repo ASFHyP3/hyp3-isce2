@@ -17,7 +17,7 @@ import zipfile
 import glob
 import os
 
-import asf_search as asf
+import asf_search
 from shapely.geometry.polygon import Polygon
 
 from hyp3_isce2.logging import configure_root_logger
