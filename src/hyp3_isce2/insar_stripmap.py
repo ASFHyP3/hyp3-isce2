@@ -47,7 +47,7 @@ def insar_stripmap(user: str, password: str, reference_scene: str, secondary_sce
     Returns:
         Path to the output files
     """
-    session = asf.ASFSession().auth_with_creds(user, password)
+    session = asf_search.ASFSession().auth_with_creds(user, password)
 
     results = asf_search.search(
         granule_list=[reference_scene, secondary_scene],
