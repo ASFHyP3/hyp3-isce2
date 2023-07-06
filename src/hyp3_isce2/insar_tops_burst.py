@@ -15,6 +15,7 @@ import isce
 from hyp3lib.aws import upload_file_to_s3
 from hyp3lib.get_orb import downloadSentinelOrbitFile
 from hyp3lib.image import create_thumbnail
+from hyp3lib.util import string_is_true
 from lxml import etree
 from osgeo import gdal
 
@@ -32,6 +33,7 @@ from hyp3_isce2.dem import download_dem_for_isce2
 from hyp3_isce2.logging import configure_root_logger
 from hyp3_isce2.s1_auxcal import download_aux_cal
 from hyp3_isce2.utils import make_browse_image, oldest_granule_first, utm_from_lon_lat
+from hyp3_isce2.water_mask import create_water_mask
 
 
 gdal.UseExceptions()
@@ -364,6 +366,12 @@ def main():
         default='20x4',
         help='Number of looks to take in range and azimuth'
     )
+    parser.add_argument(
+        '--apply-water-mask',
+        type=string_is_true,
+        default=False,
+        help='Apply a water body mask to wrapped and unwrapped phase GeoTIFFs (after unwrapping)',
+    )
     # Allows granules to be given as a space-delimited list of strings (e.g. foo bar) or as a single
     # quoted string that contains spaces (e.g. "foo bar"). AWS Batch uses the latter format when
     # invoking the container command.
@@ -399,6 +407,23 @@ def main():
     product_dir.mkdir(parents=True, exist_ok=True)
 
     translate_outputs(isce_output_dir, product_name)
+
+    if args.apply_water_mask:
+        unwrapped_phase = f'{product_name}/{product_name}_unw_phase.tif'
+        wrapped_phase =  f'{product_name}/{product_name}_wrapped_phase.tif'
+        water_mask = f'{product_name}/{product_name}_water_mask.tif'
+        create_water_mask(wrapped_phase, water_mask)
+        for geotiff in [wrapped_phase, unwrapped_phase]:
+            cmd = (
+                'gdal_calc.py '
+                f'--outfile {geotiff} '
+                f'-A {geotiff} -B {water_mask} '
+                '--calc A*B '
+                '--overwrite '
+                '--NoDataValue 0 '
+                '--creation-option TILED=YES --creation-option COMPRESS=LZW --creation-option NUM_THREADS=ALL_CPUS'
+            )
+            subprocess.check_call(cmd.split(' '))
 
     make_readme(
         product_dir=product_dir,
