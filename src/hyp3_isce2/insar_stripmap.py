@@ -7,11 +7,11 @@ import logging
 import site
 import sys
 from pathlib import Path
+from shutil import make_archive
 
 from hyp3_isce2 import stripmapapp_alos as stripmapapp
 
 from hyp3lib.aws import upload_file_to_s3
-from hyp3lib.image import create_thumbnail
 from hyp3_isce2.dem import download_dem_for_isce2
 import zipfile
 import glob
@@ -120,7 +120,7 @@ def main():
 
     log.info('Begin InSAR Stripmap run')
 
-    product_file = insar_stripmap(
+    product_dir = insar_stripmap(
         user=args.username,
         password=args.password,
         reference_scene=args.reference_scene,
@@ -129,12 +129,13 @@ def main():
 
     log.info('InSAR Stripmap run completed successfully')
 
-    if args.bucket:
-        upload_file_to_s3(product_file, args.bucket, args.bucket_prefix)
+    # TODO is this our desired product name?
+    product_name = f'{args.reference_scene}x{args.secondary_scene}'
+    output_zip = make_archive(base_name=product_name, format='zip', base_dir=product_dir)
 
-        # FIXME browse_images is not a list
-        browse_images = product_file.with_suffix('.png')
-        for browse in browse_images:
-            thumbnail = create_thumbnail(browse)
-            upload_file_to_s3(browse, args.bucket, args.bucket_prefix)
-            upload_file_to_s3(thumbnail, args.bucket, args.bucket_prefix)
+    if args.bucket:
+        # TODO do we want browse images?
+
+        upload_file_to_s3(Path(output_zip), args.bucket, args.bucket_prefix)
+
+        # TODO upload individual files to S3?
