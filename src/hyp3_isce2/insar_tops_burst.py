@@ -51,6 +51,7 @@ def insar_tops_burst(
     swath_number: int,
     azimuth_looks: int = 4,
     range_looks: int = 20,
+    pixel_size: float = 80.0
 ) -> Path:
     """Create a burst interferogram
 
@@ -60,7 +61,7 @@ def insar_tops_burst(
         swath_number: Number of swath to grab bursts from (1, 2, or 3) for IW
         azimuth_looks: Number of azimuth looks
         range_looks: Number of range looks
-
+        res: pixel spacing of the output products
     Returns:
         Path to the output files
     """
@@ -82,7 +83,7 @@ def insar_tops_burst(
     log.info(f'InSAR ROI: {insar_roi}')
     log.info(f'DEM ROI: {dem_roi}')
 
-    dem_path = download_dem_for_isce2(dem_roi, dem_name='glo_30', dem_dir=dem_dir, buffer=0)
+    dem_path = download_dem_for_isce2(dem_roi, dem_name='glo_30', pixel_size=pixel_size, dem_dir=dem_dir, buffer=0)
     download_aux_cal(aux_cal_dir)
 
     orbit_dir.mkdir(exist_ok=True, parents=True)
@@ -252,12 +253,13 @@ def make_parameter_file(
         outfile.write(output_string)
 
 
-def translate_outputs(isce_output_dir: Path, product_name: str):
+def translate_outputs(isce_output_dir: Path, product_name: str, res: float):
     """Translate ISCE outputs to a standard GTiff format with a UTM projection
 
     Args:
         isce_output_dir: Path to the ISCE output directory
         product_name: Name of the product
+        res: resolution determined by looks
     """
 
     src_ds = gdal.Open(str(isce_output_dir / 'filt_topophase.unw.geo'))
@@ -288,7 +290,7 @@ def translate_outputs(isce_output_dir: Path, product_name: str):
             bandList=[dataset.band],
             format='GTiff',
             noData=0,
-            creationOptions=['TILED=YES', 'COMPRESS=LZW', 'NUM_THREADS=ALL_CPUS'],
+            creationOptions=['TILED=YES', 'COMPRESS=LZW', 'NUM_THREADS=ALL_CPUS']
         )
 
     # Use numpy.angle to extract the phase component of the complex wrapped interferogram
@@ -347,9 +349,17 @@ def translate_outputs(isce_output_dir: Path, product_name: str):
             file,
             dstSRS=f'epsg:{epsg}',
             creationOptions=['TILED=YES', 'COMPRESS=LZW', 'NUM_THREADS=ALL_CPUS'],
+            xRes=res,
+            yRes=res,
+            targetAlignedPixels=True
         )
 
     make_browse_image(f'{product_name}/{product_name}_unw_phase.tif', f'{product_name}/{product_name}_unw_phase.png')
+
+
+def get_res(choice):
+    choices = {'20x4': 80.0, '10x2': 40.0, '5x1': 20.0}
+    return choices[choice]
 
 
 def main():
@@ -389,7 +399,8 @@ def main():
         secondary_scene=secondary_scene,
         azimuth_looks=azimuth_looks,
         range_looks=range_looks,
-        swath_number=swath_number
+        swath_number=swath_number,
+        pixel_size=get_res(args.looks)
     )
 
     log.info('ISCE2 TopsApp run completed successfully')
@@ -398,7 +409,7 @@ def main():
     product_dir = Path(product_name)
     product_dir.mkdir(parents=True, exist_ok=True)
 
-    translate_outputs(isce_output_dir, product_name)
+    translate_outputs(isce_output_dir, product_name, get_res(args.looks))
 
     make_readme(
         product_dir=product_dir,
@@ -414,7 +425,8 @@ def main():
         secondary_scene=secondary_scene,
         azimuth_looks=azimuth_looks,
         range_looks=range_looks,
-        swath_number=swath_number
+        swath_number=swath_number,
+        dem_resolution=get_res(args.looks)
     )
     output_zip = make_archive(base_name=product_name, format='zip', base_dir=product_name)
 
