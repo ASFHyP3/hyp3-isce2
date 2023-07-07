@@ -129,7 +129,6 @@ def main():
 
     log.info('InSAR Stripmap run completed successfully')
 
-    # TODO is this our desired product name?
     product_name = f'{args.reference_scene}x{args.secondary_scene}'
     output_zip = make_archive(base_name=product_name, format='zip', base_dir=product_dir)
 
