@@ -49,43 +49,33 @@ def insar_stripmap(user: str, password: str, reference_scene: str, secondary_sce
     """
     session = asf_search.ASFSession().auth_with_creds(user, password)
 
-    results = asf_search.search(
+    reference_product, secondary_product = asf_search.search(
         granule_list=[reference_scene, secondary_scene],
         processingLevel=asf_search.L1_0,
     )
-    assert len(results) == 2
+    assert reference_product.properties['sceneName'] == reference_scene
+    assert secondary_product.properties['sceneName'] == secondary_scene
+    products = (reference_product, secondary_product)
 
-    polys = []
-    durls = []
-    for result in results:
-        polys.append(Polygon(result.geometry['coordinates'][0]))
-        durls.append(result.properties['url'])
+    polygons = [Polygon(product.geometry['coordinates'][0]) for product in products]
+    insar_roi = polygons[0].intersection(polygons[1]).bounds
 
-    for i in range(len(polys)):
-        if i == 0:
-            intersection = polys[i].intersection(polys[i + 1])
-        else:
-            intersection = polys[i].intersection(intersection)
+    dem_path = download_dem_for_isce2(insar_roi, dem_name='glo_30', dem_dir=Path('dem'), buffer=0)
 
-    dem_dir = Path('dem')
-    dem_path = download_dem_for_isce2(intersection.bounds, dem_name='glo_30', dem_dir=dem_dir, buffer=0)
+    urls = [product.properties['url'] for product in products]
+    asf_search.download_urls(urls=urls, path=os.getcwd(), session=session, processes=2)
 
-    insar_roi = intersection.bounds
-    asf_search.download_urls(urls=durls, path='./', session=session, processes=2)
+    zip_paths = [product.properties['fileName'] for product in products]
+    for zip_path in zip_paths:
+        with zipfile.ZipFile(zip_path, 'r') as zip_file:
+            zip_file.extractall()
+        os.remove(zip_path)
 
-    zips = glob.glob('*.zip')
-    for i, zipf in enumerate(sorted(zips[0:2])):
-        with zipfile.ZipFile(zipf, 'r') as zip_ref:
-            zip_ref.extractall('./')
+    reference_image = get_product_file(reference_product, 'IMG-')
+    reference_leader = get_product_file(reference_product, 'LED-')
 
-        if i == 0:
-            reference_image = glob.glob('./' + zipf.split('.zip')[0] + '/IMG-*')[0]
-            reference_leader = glob.glob('./' + zipf.split('.zip')[0] + '/LED-*')[0]
-        else:
-            secondary_image = glob.glob('./' + zipf.split('.zip')[0] + '/IMG-*')[0]
-            secondary_leader = glob.glob('./' + zipf.split('.zip')[0] + '/LED-*')[0]
-
-        os.remove(zipf)
+    secondary_image = get_product_file(secondary_product, 'IMG-')
+    secondary_leader = get_product_file(secondary_product, 'LED-')
 
     config = stripmapapp.StripmapappConfig(
         reference_image=reference_image,
@@ -98,12 +88,17 @@ def insar_stripmap(user: str, password: str, reference_scene: str, secondary_sce
     config_path = config.write_template('stripmapApp.xml')
 
     stripmapapp.run_stripmapapp(start='startup', end='geocode', config_xml=config_path)
-    #stripmapapp.run_stripmapapp(start='rubber_sheet_range', end='geocode', config_xml=config_path)
-    #stripmapapp.run_stripmapapp(start='startup', end='geocode', config_xml=config_path)
-    #raise NotImplementedError('This is a placeholder function. Replace it with your actual scientific workflow.')
 
-    #product_file = Path("product_file_name.zip")
+    # TODO is this still needed?
+    #stripmapapp.run_stripmapapp(start='rubber_sheet_range', end='geocode', config_xml=config_path)
+
     return Path('interferogram')
+
+
+def get_product_file(product: asf_search.ASFProduct, file_prefix: str) -> str:
+    paths = glob.glob(str(Path(product.properties['fileID']) / f'{file_prefix}*'))
+    assert len(paths) == 1
+    return paths[0]
 
 
 def main():
@@ -135,8 +130,9 @@ def main():
     log.info('InSAR Stripmap run completed successfully')
 
     if args.bucket:
-        base_name = f'{args.reference_scene}x{args.secondary_scene}'
         upload_file_to_s3(product_file, args.bucket, args.bucket_prefix)
+
+        # FIXME browse_images is not a list
         browse_images = product_file.with_suffix('.png')
         for browse in browse_images:
             thumbnail = create_thumbnail(browse)
