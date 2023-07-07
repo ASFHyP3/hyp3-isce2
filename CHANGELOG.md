@@ -6,6 +6,9 @@ The format is based on [Keep a Changelog](https://keepachangelog.com/en/1.0.0/),
 and this project adheres to [PEP 440](https://www.python.org/dev/peps/pep-0440/)
 and uses [Semantic Versioning](https://semver.org/spec/v2.0.0.html).
 
+## [0.5.1]
+### Changed
+* Pixel size of output products is set to be the same resolution as Geocoding DEM
 
 ## [0.5.0]
 ### Changed
