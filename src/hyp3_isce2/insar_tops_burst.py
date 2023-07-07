@@ -51,7 +51,7 @@ def insar_tops_burst(
     swath_number: int,
     azimuth_looks: int = 4,
     range_looks: int = 20,
-    res: float = 80.0
+    pixel_size: float = 80.0
 ) -> Path:
     """Create a burst interferogram
 
@@ -83,7 +83,7 @@ def insar_tops_burst(
     log.info(f'InSAR ROI: {insar_roi}')
     log.info(f'DEM ROI: {dem_roi}')
 
-    dem_path = download_dem_for_isce2(dem_roi, dem_name='glo_30', dem_res=res, dem_dir=dem_dir, buffer=0)
+    dem_path = download_dem_for_isce2(dem_roi, dem_name='glo_30', pixel_size=pixel_size, dem_dir=dem_dir, buffer=0)
     download_aux_cal(aux_cal_dir)
 
     orbit_dir.mkdir(exist_ok=True, parents=True)
@@ -400,7 +400,7 @@ def main():
         azimuth_looks=azimuth_looks,
         range_looks=range_looks,
         swath_number=swath_number,
-        res=get_res(args.looks)
+        pixel_size=get_res(args.looks)
     )
 
     log.info('ISCE2 TopsApp run completed successfully')
