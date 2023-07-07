@@ -155,7 +155,6 @@ def make_parameter_file(
     range_looks: int,
     dem_name: str = 'GLO_30',
     dem_resolution: int = 30,
-    pixel_size: float = 30.
 ) -> None:
     """Create a parameter file for the output product
 
@@ -244,7 +243,6 @@ def make_parameter_file(
         'Azimuth bandpass filter: no\n',
         f'DEM source: {dem_name}\n',
         f'DEM resolution (m): {dem_resolution}\n',
-        f'Pixel Size (m): {pixel_size}\n',
         f'Unwrapping type: {unwrapper_type}\n',
         'Speckle filter: yes\n'
     ]
@@ -382,8 +380,6 @@ def main():
 
     args = parser.parse_args()
 
-    pixel_size = get_pixel_size(args.looks)
-
     args.granules = [item for sublist in args.granules for item in sublist]
     if len(args.granules) != 2:
         parser.error('Must provide exactly two granules')
@@ -411,6 +407,7 @@ def main():
     product_dir = Path(product_name)
     product_dir.mkdir(parents=True, exist_ok=True)
 
+    pixel_size = get_pixel_size(args.looks)
     translate_outputs(isce_output_dir, product_name, pixel_size=pixel_size)
 
     make_readme(
