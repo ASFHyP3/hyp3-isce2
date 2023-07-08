@@ -89,9 +89,6 @@ def insar_stripmap(user: str, password: str, reference_scene: str, secondary_sce
 
     stripmapapp.run_stripmapapp(start='startup', end='geocode', config_xml=config_path)
 
-    # TODO is this still needed?
-    #stripmapapp.run_stripmapapp(start='rubber_sheet_range', end='geocode', config_xml=config_path)
-
     return Path('interferogram')
 
 
