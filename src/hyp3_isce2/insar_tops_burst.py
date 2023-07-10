@@ -167,7 +167,6 @@ def make_parameter_file(
         range_looks: Number of range looks
         dem_name: Name of the DEM that is use
         dem_resolution: Resolution of the DEM
-        pixel_size: pixel spacing of output product
 
     returns:
         None
@@ -425,7 +424,6 @@ def main():
         azimuth_looks=azimuth_looks,
         range_looks=range_looks,
         swath_number=swath_number,
-        pixel_size=pixel_size
     )
     output_zip = make_archive(base_name=product_name, format='zip', base_dir=product_name)
 
