@@ -8,7 +8,7 @@ and uses [Semantic Versioning](https://semver.org/spec/v2.0.0.html).
 
 ## [0.6.0]
 ### Changed
-* Pixel size of output products is set to be the same resolution as Geocoding DEM
+* Pixel sizes of output GeoTIFFs now better reflect their resolution: 80m for 20x4 looks, 40m for 10x2 looks, and 20m for 5x1 looks.
 
 ## [0.5.0]
 ### Changed
