@@ -12,6 +12,8 @@ dependencies:
   - shapely
   - jinja2
   - asf_search>=6.4.0
+  - geopandas
+  - gdal
   # For packaging, and testing
   - flake8
   - flake8-import-order
