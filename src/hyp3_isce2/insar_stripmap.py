@@ -4,6 +4,7 @@ ISCE2 stripmap processing
 
 import argparse
 import logging
+import shutil
 import site
 import sys
 from pathlib import Path
@@ -89,7 +90,18 @@ def insar_stripmap(user: str, password: str, reference_scene: str, secondary_sce
 
     stripmapapp.run_stripmapapp(start='startup', end='geocode', config_xml=config_path)
 
-    return Path('interferogram')
+    product_dir = Path(f'{reference_scene}x{secondary_scene}')
+    (product_dir / 'interferogram').mkdir(parents=True)
+
+    for filename in os.listdir('interferogram'):
+        path = Path('interferogram') / filename
+        if os.path.isfile(path):
+            shutil.move(path, product_dir / path)
+
+    shutil.move('geometry', product_dir)
+    shutil.move('ionosphere', product_dir)
+
+    return product_dir
 
 
 def get_product_file(product: asf_search.ASFProduct, file_prefix: str) -> str:
@@ -126,8 +138,7 @@ def main():
 
     log.info('InSAR Stripmap run completed successfully')
 
-    product_name = f'{args.reference_scene}x{args.secondary_scene}'
-    output_zip = make_archive(base_name=product_name, format='zip', base_dir=product_dir)
+    output_zip = make_archive(base_name=product_dir.name, format='zip', base_dir=product_dir)
 
     if args.bucket:
         # TODO do we want browse images?
