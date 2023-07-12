@@ -351,8 +351,6 @@ def translate_outputs(isce_output_dir: Path, product_name: str):
             creationOptions=['TILED=YES', 'COMPRESS=LZW', 'NUM_THREADS=ALL_CPUS'],
         )
 
-    make_browse_image(f'{product_name}/{product_name}_unw_phase.tif', f'{product_name}/{product_name}_unw_phase.png')
-
 
 def main():
     """HyP3 entrypoint for the burst TOPS workflow"""
@@ -410,7 +408,7 @@ def main():
 
     if args.apply_water_mask:
         unwrapped_phase = f'{product_name}/{product_name}_unw_phase.tif'
-        wrapped_phase =  f'{product_name}/{product_name}_wrapped_phase.tif'
+        wrapped_phase = f'{product_name}/{product_name}_wrapped_phase.tif'
         water_mask = f'{product_name}/{product_name}_water_mask.tif'
         create_water_mask(wrapped_phase, water_mask)
         for geotiff in [wrapped_phase, unwrapped_phase]:
@@ -424,6 +422,8 @@ def main():
                 '--creation-option TILED=YES --creation-option COMPRESS=LZW --creation-option NUM_THREADS=ALL_CPUS'
             )
             subprocess.check_call(cmd.split(' '))
+
+    make_browse_image(f'{product_name}/{product_name}_unw_phase.tif', f'{product_name}/{product_name}_unw_phase.png')
 
     make_readme(
         product_dir=product_dir,

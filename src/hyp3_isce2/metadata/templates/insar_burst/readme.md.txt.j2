@@ -139,7 +139,9 @@ The files generated in this process include:
 5. Parameter Documentation (Text File)
 6. Look Vector Maps (GeoTIFFs)
 7. DEM used to process the data (GeoTIFF)
-8. README.md.txt (Text File)
+8. Water Mask (GeoTIFF, optional)
+9. README.md.txt (Text File)
+
 
 *See below for detailed descriptions of each of the product files.*
 
@@ -258,6 +260,13 @@ Defence and Space, and edited to flatten water bodies, provide consistent flow o
 shore/coastlines and special features. For an overview of the dataset, visit
 https://spacedata.copernicus.eu/collections/copernicus-digital-elevation-model.
 
+## 8. Water Mask
+
+This is the water mask geotiff applied to mask out the water pixels in the output. The water pixels in the final product
+is presented as nodata. This layer is available when optional apply_water_mask is True.
+The water mask is assembled from GSHHG v2.3.7 Levels 1, 2, 3, and 5 at full resolution.
+To learn more, visit https://www.soest.hawaii.edu/pwessel/gshhg/. Shoreline data is unbuffered and pixel values of 1
+indicate land touches the pixel and 0 indicates there is no land in the pixel.
 
 *************
 # Burst InSAR Processing #
