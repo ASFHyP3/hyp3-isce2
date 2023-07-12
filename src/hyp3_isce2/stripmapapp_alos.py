@@ -76,7 +76,7 @@ class StripmapappConfig:
         self.azimuth_looks = azimuth_looks
         self.range_looks = range_looks
 
-        # hardcoded params for topsapp burst processing
+        # hardcoded params for topsapp stripmap processing
         self.filter_strength = 0.5
         self.filter_coherence = 0.6
         self.do_unwrap = True
