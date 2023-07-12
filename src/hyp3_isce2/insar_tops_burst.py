@@ -158,7 +158,7 @@ def make_parameter_file(
     azimuth_looks: int,
     range_looks: int,
     dem_name: str = 'GLO_30',
-    dem_resolution: int = 30
+    dem_resolution: int = 30,
 ) -> None:
     """Create a parameter file for the output product
 
@@ -256,7 +256,7 @@ def make_parameter_file(
         outfile.write(output_string)
 
 
-def translate_outputs(isce_output_dir: Path, product_name: str):
+def translate_outputs(isce_output_dir: Path, product_name: str, pixel_size: float = 30.):
     """Translate ISCE outputs to a standard GTiff format with a UTM projection
 
     Args:
@@ -351,7 +351,15 @@ def translate_outputs(isce_output_dir: Path, product_name: str):
             file,
             dstSRS=f'epsg:{epsg}',
             creationOptions=['TILED=YES', 'COMPRESS=LZW', 'NUM_THREADS=ALL_CPUS'],
+            xRes=pixel_size,
+            yRes=pixel_size,
+            targetAlignedPixels=True
         )
+
+
+def get_pixel_size(choice):
+    choices = {'20x4': 80.0, '10x2': 40.0, '5x1': 20.0}
+    return choices[choice]
 
 
 def main():
@@ -406,7 +414,8 @@ def main():
     product_dir = Path(product_name)
     product_dir.mkdir(parents=True, exist_ok=True)
 
-    translate_outputs(isce_output_dir, product_name)
+    pixel_size = get_pixel_size(args.looks)
+    translate_outputs(isce_output_dir, product_name, pixel_size=pixel_size)
 
     unwrapped_phase = f'{product_name}/{product_name}_unw_phase.tif'
     wrapped_phase = f'{product_name}/{product_name}_wrapped_phase.tif'
@@ -443,7 +452,7 @@ def main():
         secondary_scene=secondary_scene,
         azimuth_looks=azimuth_looks,
         range_looks=range_looks,
-        swath_number=swath_number
+        swath_number=swath_number,
     )
     output_zip = make_archive(base_name=product_name, format='zip', base_dir=product_name)
 

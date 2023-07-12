@@ -10,6 +10,11 @@ and uses [Semantic Versioning](https://semver.org/spec/v2.0.0.html).
 ### Added
 * `apply_water_mask` optional argument to apply water mask in the output geotiff files 
 
+## [0.6.0]
+### Changed
+* Pixel sizes of output GeoTIFFs now better reflect their resolution: 80m for 20x4 looks, 40m for 10x2 looks, and 20m for 5x1 looks.
+
+
 ## [0.5.0]
 ### Changed
 * `insar_tops_burst` workflow now supports burst products advertised in CMR production, rather than CMR UAT
