@@ -33,11 +33,8 @@ if str(ISCE_APPLICATIONS) not in os.environ['PATH'].split(os.pathsep):
     os.environ['PATH'] = str(ISCE_APPLICATIONS) + os.pathsep + os.environ['PATH']
 
 
-# TODO update docstring description
 def insar_stripmap(user: str, password: str, reference_scene: str, secondary_scene: str) -> Path:
-    """Create an interferogram
-
-    This is a placeholder function. It will be replaced with your actual scientific workflow.
+    """Create a Stripmap interferogram
 
     Args:
         user: Earthdata username
