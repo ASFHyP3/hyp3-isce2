@@ -52,7 +52,6 @@ def test_download_dem_for_isce2(tmp_path):
             dst_ellipsoidal_height=True,
             dst_area_or_point='Point',
             n_threads_downloading=5,
-            dst_resolution=dem.DEM_RESOLUTION,
         )
 
         root = etree.parse(str(dem_path) + '.xml').getroot()

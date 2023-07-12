@@ -109,8 +109,8 @@ def mock_asf_search_results(
 
 
 def test_get_burst_params_08F8():
-    with patch.object(burst, 'search_cmr_uat') as mock_search_cmr_uat:
-        mock_search_cmr_uat.return_value = mock_asf_search_results(
+    with patch.object(asf_search, 'search') as mock_search:
+        mock_search.return_value = mock_asf_search_results(
             slc_name='S1A_IW_SLC__1SDV_20230526T190821_20230526T190847_048709_05DBA8_08F8-SLC',
             subswath='IW3',
             polarization='VV',
@@ -122,12 +122,12 @@ def test_get_burst_params_08F8():
             polarization='VV',
             burst_number=8,
         )
-        mock_search_cmr_uat.assert_called_once_with('S1_346041_IW3_20230526T190843_VV_08F8-BURST')
+        mock_search.assert_called_once_with(product_list=['S1_346041_IW3_20230526T190843_VV_08F8-BURST'])
 
 
 def test_get_burst_params_1B3B():
-    with patch.object(burst, 'search_cmr_uat') as mock_search_cmr_uat:
-        mock_search_cmr_uat.return_value = mock_asf_search_results(
+    with patch.object(asf_search, 'search') as mock_search:
+        mock_search.return_value = mock_asf_search_results(
             slc_name='S1A_EW_SLC__1SDH_20230526T143200_20230526T143303_048706_05DB92_1B3B-SLC',
             subswath='EW5',
             polarization='HH',
@@ -139,20 +139,20 @@ def test_get_burst_params_1B3B():
             polarization='HH',
             burst_number=19,
         )
-        mock_search_cmr_uat.assert_called_with('S1_308695_EW5_20230526T143259_HH_1B3B-BURST')
+        mock_search.assert_called_with(product_list=['S1_308695_EW5_20230526T143259_HH_1B3B-BURST'])
 
 
 def test_get_burst_params_burst_does_not_exist():
-    with patch.object(burst, 'search_cmr_uat') as mock_search_cmr_uat:
-        mock_search_cmr_uat.return_value = []
+    with patch.object(asf_search, 'search') as mock_search:
+        mock_search.return_value = []
         with pytest.raises(ValueError, match=r'.*failed to find.*'):
             burst.get_burst_params('this burst does not exist')
-        mock_search_cmr_uat.assert_called_once_with('this burst does not exist')
+        mock_search.assert_called_once_with(product_list=['this burst does not exist'])
 
 
 def test_get_burst_params_multiple_results():
-    with patch.object(burst, 'search_cmr_uat') as mock_search_cmr_uat:
-        mock_search_cmr_uat.return_value = ['foo', 'bar']
+    with patch.object(asf_search, 'search') as mock_search:
+        mock_search.return_value = ['foo', 'bar']
         with pytest.raises(ValueError, match=r'.*found multiple results.*'):
             burst.get_burst_params('there are multiple copies of this burst')
-        mock_search_cmr_uat.assert_called_once_with('there are multiple copies of this burst')
+        mock_search.assert_called_once_with(product_list=['there are multiple copies of this burst'])
