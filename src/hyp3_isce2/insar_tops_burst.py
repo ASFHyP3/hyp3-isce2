@@ -119,7 +119,8 @@ def make_readme(
         reference_scene: str,
         secondary_scene: str,
         range_looks: int,
-        azimuth_looks: int) -> None:
+        azimuth_looks: int,
+        apply_water_mask: bool) -> None:
 
     wrapped_phase_path = product_dir / f'{product_name}_wrapped_phase.tif'
     info = gdal.Info(str(wrapped_phase_path), format='json')
@@ -140,6 +141,7 @@ def make_readme(
         'secondary_granule_date': datetime.strptime(secondary_granule_datetime_str, '%Y%m%dT%H%M%S'),
         'dem_name': 'GLO-30',
         'dem_pixel_spacing': '30 m',
+        'apply_water_mask': apply_water_mask
     }
     content = hyp3_isce2.metadata.util.render_template('insar_burst/readme.md.txt.j2', payload)
 
@@ -406,11 +408,12 @@ def main():
 
     translate_outputs(isce_output_dir, product_name)
 
+    unwrapped_phase = f'{product_name}/{product_name}_unw_phase.tif'
+    wrapped_phase = f'{product_name}/{product_name}_wrapped_phase.tif'
+    water_mask = f'{product_name}/{product_name}_water_mask.tif'
+    create_water_mask(wrapped_phase, water_mask)
+
     if args.apply_water_mask:
-        unwrapped_phase = f'{product_name}/{product_name}_unw_phase.tif'
-        wrapped_phase = f'{product_name}/{product_name}_wrapped_phase.tif'
-        water_mask = f'{product_name}/{product_name}_water_mask.tif'
-        create_water_mask(wrapped_phase, water_mask)
         for geotiff in [wrapped_phase, unwrapped_phase]:
             cmd = (
                 'gdal_calc.py '
@@ -423,7 +426,7 @@ def main():
             )
             subprocess.check_call(cmd.split(' '))
 
-    make_browse_image(f'{product_name}/{product_name}_unw_phase.tif', f'{product_name}/{product_name}_unw_phase.png')
+    make_browse_image(unwrapped_phase, f'{product_name}/{product_name}_unw_phase.png')
 
     make_readme(
         product_dir=product_dir,
@@ -431,7 +434,8 @@ def main():
         reference_scene=reference_scene,
         secondary_scene=secondary_scene,
         range_looks=range_looks,
-        azimuth_looks=azimuth_looks
+        azimuth_looks=azimuth_looks,
+        apply_water_mask=args.apply_water_mask
     )
     make_parameter_file(
         Path(f'{product_name}/{product_name}.txt'),

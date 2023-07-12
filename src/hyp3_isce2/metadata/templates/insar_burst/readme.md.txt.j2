@@ -199,7 +199,7 @@ interpreting unwrapped phase results close to surface water.
 
 There is the option to apply a water mask *after* phase unwrapping. While it doesn't correct for phase unwrapping
 errors over water, it can make the interferograms less visually distracting. This product
-{{ "has" if water_mask_applied else "has not" }} had a water mask applied.
+{{ "has" if apply_water_mask else "has not" }} had a water mask applied.
 
 No atmospheric correction has been applied to this interferogram. While SAR signals can penetrate clouds,
 atmospheric conditions can delay the transmission of the signal, resulting in phase differences between acquisition
