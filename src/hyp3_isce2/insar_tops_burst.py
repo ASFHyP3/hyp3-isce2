@@ -410,7 +410,7 @@ def main():
 
     if args.apply_water_mask:
         unwrapped_phase = f'{product_name}/{product_name}_unw_phase.tif'
-        wrapped_phase =  f'{product_name}/{product_name}_wrapped_phase.tif'
+        wrapped_phase = f'{product_name}/{product_name}_wrapped_phase.tif'
         water_mask = f'{product_name}/{product_name}_water_mask.tif'
         create_water_mask(wrapped_phase, water_mask)
         for geotiff in [wrapped_phase, unwrapped_phase]:
