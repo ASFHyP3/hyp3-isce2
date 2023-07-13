@@ -35,7 +35,8 @@ def create_water_mask(input_tif: str, output_tif: str):
 
     src_ds = gdal.Open(input_tif)
 
-    dst_ds = gdal.GetDriverByName('GTiff').Create(output_tif, src_ds.RasterXSize, src_ds.RasterYSize, 1, gdal.GDT_Byte)
+    dst_ds = gdal.GetDriverByName('GTiff').Create(output_tif, src_ds.RasterXSize, src_ds.RasterYSize, 1, gdal.GDT_Byte,
+                                                  ['COMPRESS=LZW', 'TILED=YES', 'NUM_THREADS=ALL_CPUS'])
     dst_ds.SetGeoTransform(src_ds.GetGeoTransform())
     dst_ds.SetProjection(src_ds.GetProjection())
     dst_ds.SetMetadataItem('AREA_OR_POINT', src_ds.GetMetadataItem('AREA_OR_POINT'))
