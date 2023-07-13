@@ -18,10 +18,11 @@ To run a workflow, simply run `python -m hyp3_isce2 ++process [WORKFLOW_NAME] [W
 python -m hyp3_isce2 ++process insar_tops_burst \
   S1_136231_IW2_20200604T022312_VV_7C85-BURST \
   S1_136231_IW2_20200616T022313_VV_5D11-BURST \
-  --looks 20x4
+  --looks 20x4 \
+  --apply-water-mask True
 ```
 
-This command will create a Sentinel-1 interferogram that contains a deformation signal related to a 2020 Iranian earthquake.
+This command will create a Sentinel-1 interferogram that contains a deformation signal related to a 2020 Iranian earthquake. water mask geotiff file is included in the product and applied to wrapped and unwrapped phase geotiff files.
 To learn about the arguments for each workflow, look at the help documentation (`python -m hyp3_isce2 ++process [WORKFLOW_NAME] --help`).
 
 For all workflows the user will need to provide their Earthdata login credentials to download input data. If you do not already have an account, you can sign up [here](https://urs.earthdata.nasa.gov/home). Your credentials can either be passed to the workflows via environment variables (`EARTHDATA_USERNAME` and `EARTHDATA_PASSWORD`), or via your `.netrc` file. If you haven't set up a `.netrc` file before, check out this [guide](https://harmony.earthdata.nasa.gov/docs#getting-started) to get started.
