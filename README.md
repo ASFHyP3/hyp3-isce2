@@ -22,12 +22,45 @@ python -m hyp3_isce2 ++process insar_tops_burst \
   --apply-water-mask True
 ```
 
-This command will create a Sentinel-1 interferogram that contains a deformation signal related to a 2020 Iranian earthquake. water mask geotiff file is included in the product and applied to wrapped and unwrapped phase geotiff files.
-To learn about the arguments for each workflow, look at the help documentation (`python -m hyp3_isce2 ++process [WORKFLOW_NAME] --help`).
+This command will create a Sentinel-1 interferogram that contains a deformation signal related to a 
+2020 Iranian earthquake. 
 
-For all workflows the user will need to provide their Earthdata login credentials to download input data. If you do not already have an account, you can sign up [here](https://urs.earthdata.nasa.gov/home). Your credentials can either be passed to the workflows via environment variables (`EARTHDATA_USERNAME` and `EARTHDATA_PASSWORD`), or via your `.netrc` file. If you haven't set up a `.netrc` file before, check out this [guide](https://harmony.earthdata.nasa.gov/docs#getting-started) to get started.
+### Options
+To learn about the arguments for each workflow, look at the help documentation 
+(`python -m hyp3_isce2 ++process [WORKFLOW_NAME] --help`).
 
-The ultimate goal of this project is to create a docker container that can run ISCE2 workflows within a HyP3 deployment. To run the current version of the project's container, use this command:
+#### Looks Option
+When ordering Sentinel-1 Burst InSAR On Demand products, users can choose the number of **looks** (`--looks`) to use 
+in processing, which drives the resolution and pixel spacing of the output products. The available options are 
+20x4, 10x2, or 5x1. The first number indicates the number of looks in range, the second is the number of looks 
+in azimuth.
+
+The output product pixel spacing depends on the number of looks in azimuth:
+pixel spacing = 20 * azimuth looks
+
+Products with 20x4 looks have a pixel spacing of 80 m, those with 10x2 looks have a pixel spacing of 40 m, and
+those with 5x1 looks have a pixel spacing of 20 m.
+
+#### Water Mask Option
+There is always a water mask geotiff file included in the product package, but setting the **apply-water-mask** 
+(`--apply-water-mask`) option to True will apply the mask to the interferograms (both wrapped and unwrapped phase) 
+and browse image. 
+
+Note that ISCE2 currently only supports masking *after* phase unwrapping. As such, the masking does _not_ mitigate 
+phase unwrapping errors that may occur over water, but simply removes distracting signals afterwards to improve 
+the visualization of the interferogram.
+
+### Earthdata Login
+
+For all workflows the user will need to provide their Earthdata login credentials to download input data. 
+If you do not already have an account, you can sign up [here](https://urs.earthdata.nasa.gov/home). 
+Your credentials can either be passed to the workflows via environment variables 
+(`EARTHDATA_USERNAME` and `EARTHDATA_PASSWORD`), or via your `.netrc` file. If you haven't set up a `.netrc` file 
+before, check out this [guide](https://harmony.earthdata.nasa.gov/docs#getting-started) to get started.
+
+### Docker Container
+The ultimate goal of this project is to create a docker container that can run ISCE2 workflows within a HyP3 
+deployment. To run the current version of the project's container, use this command:
 ```
 docker run -it --rm \
     -e EARTHDATA_USERNAME=[YOUR_USERNAME_HERE] \
@@ -38,9 +71,10 @@ docker run -it --rm \
 ```
 
 **NOTE** Each workflow can also be accessed via an alternative CLI with the format (`[WORKFLOW_NAME] [WORKFLOW_ARGS]`)
+
 ## Developer Setup
-1. Ensure that conda is installed on your system (we reccomend using [mambaforge](https://github.com/conda-forge/miniforge#mambaforge) to reduce setup times).
-2. Download a local version of the HyP3-ISCE2 repository (`git clone https://github.com/ASFHyP3/hyp3-isce2.git`)
+1. Ensure that conda is installed on your system (we recommend using [mambaforge](https://github.com/conda-forge/miniforge#mambaforge) to reduce setup times).
+2. Download a local version of the `hyp3-isce2` repository (`git clone https://github.com/ASFHyP3/hyp3-isce2.git`)
 3. In the base directory for this project call `mamba env create -f environment.yml` to create your Python environment, then activate it (`mamba activate hyp3-isce2`)
 4. Finally, install a development version of the package (`python -m pip install -e .`)
 
