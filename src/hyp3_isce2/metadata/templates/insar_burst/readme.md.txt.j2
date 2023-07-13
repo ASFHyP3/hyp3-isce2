@@ -139,7 +139,8 @@ The files generated in this process include:
 5. Parameter Documentation (Text File)
 6. Look Vector Maps (GeoTIFFs)
 7. DEM used to process the data (GeoTIFF)
-8. README.md.txt (Text File)
+8. Water Mask (GeoTIFF)
+9. README.md.txt (Text File)
 
 *See below for detailed descriptions of each of the product files.*
 
@@ -195,6 +196,10 @@ water should not be coherent. When this happens, phase unwrapping can occur over
 unexpected/invalid phase unwrapping results over land. Masking areas of water before unwrapping is a common approach
 used to mitigate this issue, but ISCE2 does not currently support this functionality. Thus, use caution when
 interpreting unwrapped phase results close to surface water.
+
+There is the option to apply a water mask *after* phase unwrapping. While it doesn't correct for phase unwrapping
+errors over water, it can make the interferograms less visually distracting. This product
+{{ "has" if apply_water_mask else "has not" }} had a water mask applied.
 
 No atmospheric correction has been applied to this interferogram. While SAR signals can penetrate clouds,
 atmospheric conditions can delay the transmission of the signal, resulting in phase differences between acquisition
@@ -258,6 +263,31 @@ Defence and Space, and edited to flatten water bodies, provide consistent flow o
 shore/coastlines and special features. For an overview of the dataset, visit
 https://spacedata.copernicus.eu/collections/copernicus-digital-elevation-model.
 
+----------------
+## 8. Water Mask
+
+The water mask identifies coastal waters and major inland waterbodies. These areas are assigned a pixel value of 0.
+All remaining pixels (land, islands in large lakes, small inland waterbodies, and landfast Antarctic ice) have
+a value of 1. The water mask is stored as an 8-bit unsigned integer GeoTIFF file and is always included in the product
+package.
+
+Users can choose to apply the water mask to output products, which affects the wrapped interferogram,
+the unwrapped interferogram, and the browse images. It returns NoData values over the areas covered by the water mask
+in these output images. This product {{ "has" if apply_water_mask else "has not" }} had the water mask applied.
+
+The water mask is generated using the Global Self-consistent, Hierarchical, High-resolution Geography Database (GSHHG)
+dataset (https://www.ngdc.noaa.gov/mgg/shorelines). To generate the global mask, we combined the full-resolution
+L1 and L5 datasets, and removed the L2 dataset minus the L3 dataset. The L1 dataset is the boundary between land
+and ocean, excluding Antarctica, and the L5 dataset is the boundary between Antarctic ice and ocean. The L2
+dataset is the boundary between lakes and land, and the L3 dataset is the boundary between islands and the
+lakes they are within. The GSHHG dataset was last updated in 2017, so there may be discrepancies where
+shorelines have changed.
+
+ISCE2 currently only supports applying a water mask to an interferogram *after* phase unwrapping. Note that
+applying the mask after phase unwrapping does not prevent unwrapping errors caused by the inclusion of water pixels
+as valid data during the phase unwrapping process. When phase unwrapping occurs over large expanses of water, it can
+lead to unexpected deformation signals or phase jumps in the unwrapped outputs, and the current masking approach
+does not correct for these impacts.
 
 *************
 # Burst InSAR Processing #
