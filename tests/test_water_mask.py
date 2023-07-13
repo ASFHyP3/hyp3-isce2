@@ -63,7 +63,9 @@ def test_create_water_mask_with_no_water(tmp_path, test_data_dir):
     assert info['bands'][0]['type'] == 'Byte'
     assert info['bands'][0]['minimum'] == 1
     assert info['bands'][0]['maximum'] == 1
+    assert info['bands'][0]['block'] == [256, 256]
     assert info['metadata']['']['AREA_OR_POINT'] == 'Area'
+    assert info['metadata']['IMAGE_STRUCTURE']['COMPRESSION'] == 'LZW'
 
 
 def test_create_water_mask_with_water_and_land(tmp_path, test_data_dir):
@@ -74,7 +76,9 @@ def test_create_water_mask_with_water_and_land(tmp_path, test_data_dir):
     info = gdal.Info(output_tif, format='json')
     assert info['geoTransform'] == [200360.0, 80.0, 0.0, 1756920.0, 0.0, -80.0]
     assert info['bands'][0]['type'] == 'Byte'
+    assert info['bands'][0]['block'] == [256, 256]
     assert info['metadata']['']['AREA_OR_POINT'] == 'Point'
+    assert info['metadata']['IMAGE_STRUCTURE']['COMPRESSION'] == 'LZW'
 
     ds = gdal.Open(str(output_tif))
     data = ds.GetRasterBand(1).ReadAsArray()
