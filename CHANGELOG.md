@@ -8,7 +8,7 @@ and uses [Semantic Versioning](https://semver.org/spec/v2.0.0.html).
 
 ## [0.6.1]
 ### Added
-* `apply_water_mask` optional argument to apply water mask in the output geotiff files 
+* `apply_water_mask` optional argument to apply water mask in the wrapped and unwrapped phase geotiff files 
 
 ## [0.6.0]
 ### Changed
