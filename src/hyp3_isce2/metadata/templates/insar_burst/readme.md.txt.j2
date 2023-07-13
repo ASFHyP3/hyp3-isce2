@@ -310,10 +310,11 @@ The basic steps in Sentinel-1 Burst InSAR processing are as follows:
 
 *Post-Processing*
 11. translate output files to hyp3-gamma format
-12. write the README text file
-13. write the metadata txt file
-14. zip the output files
-15. upload the files to s3
+12. create water mask geotiff file, apply the water mask to the wrapped and unwrapped phase geotiff files if needed
+13. write the README text file
+14. write the metadata txt file
+15. zip the output files
+16. upload the files to s3
 
 ----------------
 The detailed process, including the calls to ISCE2 software, is as follows:
