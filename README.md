@@ -42,8 +42,8 @@ Products with 20x4 looks have a pixel spacing of 80 m, those with 10x2 looks hav
 those with 5x1 looks have a pixel spacing of 20 m.
 
 #### Water Mask Option
-There is always a water mask geotiff file included in the product package, but setting the (`--apply-water-mask`) 
-**apply-water-mask** option to True will apply the mask to the interferograms (both wrapped and unwrapped phase) 
+There is always a water mask geotiff file included in the product package, but setting the **apply-water-mask** 
+(`--apply-water-mask`) option to True will apply the mask to the interferograms (both wrapped and unwrapped phase) 
 and browse image. 
 
 Note that ISCE2 currently only supports masking *after* phase unwrapping. As such, the masking does _not_ mitigate 
