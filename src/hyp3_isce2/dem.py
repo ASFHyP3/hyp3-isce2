@@ -58,10 +58,10 @@ def buffer_extent(extent: list, buffer: float) -> list:
 
 def distance_meters_to_degrees(distance_meters, latitude):
     # The circumference of the Earth for any given longitude is constant
-    EARTHS_CIRCUMFERENCE_LONGITUDE = 40030173.59204114 # 2 * pi * 6371000.0 (Earth's Radius)
+    EARTHS_CIRCUMFERENCE_LONGITUDE = 40030173.59204114  # 2 * pi * 6371000.0 (Earth's Radius)
     lat_radians = np.radians(latitude)
     circumference_at_latitude = EARTHS_CIRCUMFERENCE_LONGITUDE * np.cos(lat_radians)
-    distance_degrees_lat = distance_meters / circumference_at_latitude * 360    
+    distance_degrees_lat = distance_meters / circumference_at_latitude * 360
     distance_degrees_lon = distance_meters / EARTHS_CIRCUMFERENCE_LONGITUDE * 360
     return (distance_degrees_lon, distance_degrees_lat)
 
