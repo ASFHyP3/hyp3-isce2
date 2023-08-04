@@ -56,11 +56,21 @@ def buffer_extent(extent: list, buffer: float) -> list:
     ]
 
 
+def distance_meters_to_degrees(distance_meters, latitude):
+    earth_radius = 6371000.0
+    lat_radians = np.radians(latitude)
+    circumference_at_latitude = 2 * np.pi * earth_radius * np.cos(lat_radians)
+    distance_degrees = distance_meters / circumference_at_latitude * 360
+    return distance_degrees
+
+
 def download_dem_for_isce2(
         extent: list,
         dem_name: str = 'glo_30',
         dem_dir: Path = None,
-        buffer: float = .4) -> Path:
+        buffer: float = .4,
+        resample: bool = False
+) -> Path:
     """Download the given DEM for the given extent.
 
     Args:
@@ -77,13 +87,25 @@ def download_dem_for_isce2(
 
     extent_buffered = buffer_extent(extent, buffer)
 
-    dem_array, dem_profile = dem_stitcher.stitch_dem(
-        extent_buffered,
-        dem_name,
-        dst_ellipsoidal_height=True,
-        dst_area_or_point='Point',
-        n_threads_downloading=5,
-    )
+    if resample:
+        res_degrees = distance_meters_to_degrees(20.0, extent_buffered[1])
+        dem_array, dem_profile = dem_stitcher.stitch_dem(
+            extent_buffered,
+            dem_name,
+            dst_ellipsoidal_height=True,
+            dst_area_or_point='Point',
+            n_threads_downloading=5,
+            dst_resolution=res_degrees
+        )
+    else:
+        dem_array, dem_profile = dem_stitcher.stitch_dem(
+            extent_buffered,
+            dem_name,
+            dst_ellipsoidal_height=True,
+            dst_area_or_point='Point',
+            n_threads_downloading=5,
+        )
+
     dem_array[np.isnan(dem_array)] = 0.
 
     dem_profile['nodata'] = None
@@ -93,7 +115,10 @@ def download_dem_for_isce2(
     for key in ['blockxsize', 'blockysize', 'compress', 'interleave', 'tiled']:
         del dem_profile[key]
 
-    dem_path = dem_dir / 'full_res.dem.wgs84'
+    if resample:
+        dem_path = dem_dir / 'full_res_geocode.dem.wgs84'
+    else:
+        dem_path = dem_dir / 'full_res.dem.wgs84'
     with rasterio.open(dem_path, 'w', **dem_profile) as ds:
         ds.write(dem_array, 1)
 
