@@ -70,11 +70,11 @@ def distance_meters_to_degrees(distance_meters, latitude):
         raise ZeroDivisionError("A Latitude of 90 degrees results in dividing by zero.")
     # The circumference of the Earth for any given line of longitude is constant
     EARTHS_CIRCUMFERENCE_LON = 40030173.59204114  # 2 * pi * 6371000.0 (Earth's Radius)
-    DISTANCE_DEGREES_LON = 0.00017986432118374611  # distance_meters / EARTHS_CIRCUMFERENCE_LONGITUDE * 360
     lat_radians = np.radians(latitude)
     circumference_at_latitude = EARTHS_CIRCUMFERENCE_LON * np.cos(lat_radians)
     distance_degrees_lat = distance_meters / circumference_at_latitude * 360
-    return (np.round(DISTANCE_DEGREES_LON, 15), np.round(distance_degrees_lat, 15))
+    distance_degrees_lon = distance_meters / EARTHS_CIRCUMFERENCE_LON * 360
+    return (np.round(distance_degrees_lon, 15), np.round(distance_degrees_lat, 15))
 
 
 def download_dem_for_isce2(
