@@ -83,9 +83,9 @@ def test_buffer_extent():
 
 def test_distance_meters_to_degrees():
     # A degree of latitude always has roughly the same distance in meters
-    degrees_per_meter_latitude = 0.00017986432118374611
-    assert dem.distance_meters_to_degrees(20, 0) == (degrees_per_meter_latitude, 0.00017986432118374611)
-    assert dem.distance_meters_to_degrees(20, 45) == (degrees_per_meter_latitude, 0.0002543665624050841)
+    degrees_per_meter_latitude = 0.000179864321184
+    assert dem.distance_meters_to_degrees(20, 0) == (degrees_per_meter_latitude, 0.000179864321184)
+    assert dem.distance_meters_to_degrees(20, 45) == (degrees_per_meter_latitude, 0.000254366562405)
     assert dem.distance_meters_to_degrees(20, 89.9) == (degrees_per_meter_latitude, 0.103054717208573)
     # The longitudenal distance in degrees will get larger and larger towards 90 degrees, approaching MAX_FLOAT.
     # This is since cos(90) = 0, leading to a divide by zero issue.
