@@ -65,7 +65,7 @@ def distance_meters_to_degrees(distance_meters, latitude):
     Returns:
         The length in degrees for longitude and latitude, respectively.
     """
-    if latitude == 90:
+    if np.abs(latitude) == 90:
         # np.cos won't return exactly 0, so we must manually raise this exception.
         raise ZeroDivisionError('A Latitude of 90 degrees results in dividing by zero.')
     EARTHS_CIRCUMFERENCE = 40_030_173.59204114  # 2 * pi * 6,371,000.0 (Earth's average radius in meters)
