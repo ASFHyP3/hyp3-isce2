@@ -4,6 +4,7 @@ import numpy as np
 import rasterio
 from affine import Affine
 from lxml import etree
+from pytest import raises
 from rasterio import CRS
 
 from hyp3_isce2 import dem
@@ -78,3 +79,15 @@ def test_buffer_extent():
     assert dem.buffer_extent(extent2, 0.1) == [-170, 53, -167, 55]
     assert dem.buffer_extent(extent2, 0.3) == [-170, 53, -167, 55]
     assert dem.buffer_extent(extent2, 0.4) == [-171, 52, -166, 56]
+
+
+def test_distance_meters_to_degrees():
+    # A degree of latitude always has roughly the same distance in meters
+    degrees_per_meter_latitude = 0.00017986432118374611
+    assert dem.distance_meters_to_degrees(20, 0) == (degrees_per_meter_latitude, 0.00017986432118374611)
+    assert dem.distance_meters_to_degrees(20, 45) == (degrees_per_meter_latitude, 0.0002543665624050841)
+    assert dem.distance_meters_to_degrees(20, 89.9) == (degrees_per_meter_latitude, 0.103054717208573)
+    # The longitudenal distance in degrees will get larger and larger towards 90 degrees, approaching MAX_FLOAT.
+    # This is since cos(90) = 0, leading to a divide by zero issue.
+    with raises(ZeroDivisionError):
+        dem.distance_meters_to_degrees(20, 90)
