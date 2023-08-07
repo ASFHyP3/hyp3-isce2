@@ -72,8 +72,8 @@ def distance_meters_to_degrees(distance_meters, latitude):
     EARTHS_CIRCUMFERENCE_LON = 40030173.59204114  # 2 * pi * 6371000.0 (Earth's Radius)
     lat_radians = np.radians(latitude)
     circumference_at_latitude = EARTHS_CIRCUMFERENCE_LON * np.cos(lat_radians)
-    distance_degrees_lat = distance_meters / circumference_at_latitude * 360
-    distance_degrees_lon = distance_meters / EARTHS_CIRCUMFERENCE_LON * 360
+    distance_degrees_lon = distance_meters / circumference_at_latitude * 360
+    distance_degrees_lat = distance_meters / EARTHS_CIRCUMFERENCE_LON * 360
     return (np.round(distance_degrees_lon, 15), np.round(distance_degrees_lat, 15))
 
 
