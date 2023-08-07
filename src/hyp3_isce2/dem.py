@@ -80,7 +80,7 @@ def download_dem_for_isce2(
         dem_name: str = 'glo_30',
         dem_dir: Path = None,
         buffer: float = .4,
-        resample: bool = False
+        resample_20m: bool = False
 ) -> Path:
     """Download the given DEM for the given extent.
 
@@ -90,6 +90,7 @@ def download_dem_for_isce2(
         dem_dir: The output directory.
         buffer: The extent buffer in degrees, by default .4, which is about 44 km at the equator
                 (or about 2.5 bursts at the equator).
+        resample_20m: Whether or not the DEM should be resampled to 20 meters.
     Returns:
         The path to the downloaded DEM.
     """
@@ -98,7 +99,7 @@ def download_dem_for_isce2(
 
     extent_buffered = buffer_extent(extent, buffer)
 
-    if resample:
+    if resample_20m:
         res_degrees = distance_meters_to_degrees(20.0, extent_buffered[1])
         dem_array, dem_profile = dem_stitcher.stitch_dem(
             extent_buffered,
@@ -126,7 +127,7 @@ def download_dem_for_isce2(
     for key in ['blockxsize', 'blockysize', 'compress', 'interleave', 'tiled']:
         del dem_profile[key]
 
-    if resample:
+    if resample_20m:
         dem_path = dem_dir / 'full_res_geocode.dem.wgs84'
     else:
         dem_path = dem_dir / 'full_res.dem.wgs84'
