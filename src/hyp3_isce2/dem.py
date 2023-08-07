@@ -109,6 +109,7 @@ def download_dem_for_isce2(
             n_threads_downloading=5,
             dst_resolution=res_degrees
         )
+        dem_path = dem_dir / 'full_res_geocode.dem.wgs84'
     else:
         dem_array, dem_profile = dem_stitcher.stitch_dem(
             extent_buffered,
@@ -117,6 +118,7 @@ def download_dem_for_isce2(
             dst_area_or_point='Point',
             n_threads_downloading=5,
         )
+        dem_path = dem_dir / 'full_res.dem.wgs84'
 
     dem_array[np.isnan(dem_array)] = 0.
 
@@ -127,10 +129,6 @@ def download_dem_for_isce2(
     for key in ['blockxsize', 'blockysize', 'compress', 'interleave', 'tiled']:
         del dem_profile[key]
 
-    if resample_20m:
-        dem_path = dem_dir / 'full_res_geocode.dem.wgs84'
-    else:
-        dem_path = dem_dir / 'full_res.dem.wgs84'
     with rasterio.open(dem_path, 'w', **dem_profile) as ds:
         ds.write(dem_array, 1)
 
