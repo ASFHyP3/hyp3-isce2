@@ -82,7 +82,6 @@ def test_buffer_extent():
 
 
 def test_distance_meters_to_degrees():
-    # A degree of latitude always has roughly the same distance in meters
     assert dem.distance_meters_to_degrees(distance_meters=20, latitude=0) == (0.000179864321184, 0.000179864321184)
     assert dem.distance_meters_to_degrees(distance_meters=20, latitude=45) == (0.000254366562405, 0.000179864321184)
     assert dem.distance_meters_to_degrees(distance_meters=20, latitude=89.9) == (0.103054717208573, 0.000179864321184)
