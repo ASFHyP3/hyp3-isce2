@@ -57,13 +57,13 @@ def buffer_extent(extent: list, buffer: float) -> list:
 
 
 def distance_meters_to_degrees(distance_meters, latitude):
-    """Get the arc length in degrees for a give distance in meters along lines of longitude and latitude.
+    """Convert a distance from meters to degrees in longitude and latitude
 
     Args:
         distance_meters: The desired arc length in meters.
-        latitude: The desired line of latitude.
+        latitude: The line of latitude at which the calculation takes place.
     Returns:
-        The length in degrees for longitude and the given latitude, respectively.
+        The length in degrees for longitude and latitude, respectively.
     """
     if latitude == 90:
         # np.cos won't return exactly 0, so we must manually raise this exception.
