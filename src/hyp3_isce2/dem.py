@@ -60,7 +60,7 @@ def distance_meters_to_degrees(distance_meters, latitude):
     """Convert a distance from meters to degrees in longitude and latitude
 
     Args:
-        distance_meters: The desired arc length in meters.
+        distance_meters: Arc length in meters.
         latitude: The line of latitude at which the calculation takes place.
     Returns:
         The length in degrees for longitude and latitude, respectively.
