@@ -101,7 +101,6 @@ def insar_tops_burst(
             buffer=0,
             resample_20m=True
         )
-        download_aux_cal(aux_cal_dir)
     else:
         geocode_dem_path = dem_path
 
