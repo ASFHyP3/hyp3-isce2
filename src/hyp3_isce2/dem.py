@@ -65,7 +65,7 @@ def distance_meters_to_degrees(distance_meters, latitude):
     Returns:
         The length in degrees for longitude and the given latitude, respectively.
     """
-    if (latitude == 90):
+    if latitude == 90:
         # np.cos won't return exactly 0, so we must manually raise this exception.
         raise ZeroDivisionError('A Latitude of 90 degrees results in dividing by zero.')
     # The circumference of the Earth for any given line of longitude is constant
