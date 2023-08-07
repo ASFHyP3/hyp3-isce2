@@ -87,7 +87,6 @@ def test_distance_meters_to_degrees():
     assert dem.distance_meters_to_degrees(distance_meters=20, latitude=89.9) == (0.103054717208573, 0.000179864321184)
     assert dem.distance_meters_to_degrees(distance_meters=20, latitude=-45) == (0.000254366562405, 0.000179864321184)
     assert dem.distance_meters_to_degrees(distance_meters=20, latitude=-89.9) == (0.103054717208573, 0.000179864321184)
-    # The longitudenal distance in degrees will get larger and larger towards 90 degrees, approaching MAX_FLOAT.
     # This is since cos(90) = 0, leading to a divide by zero issue.
     with raises(ZeroDivisionError):
         dem.distance_meters_to_degrees(20, 90)
