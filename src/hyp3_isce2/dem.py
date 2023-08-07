@@ -69,9 +69,8 @@ def distance_meters_to_degrees(distance_meters, latitude):
         # np.cos won't return exactly 0, so we must manually raise this exception.
         raise ZeroDivisionError('A Latitude of 90 degrees results in dividing by zero.')
     EARTHS_CIRCUMFERENCE = 40_030_173.59204114  # 2 * pi * 6,371,000.0 (Earth's average radius in meters)
-    lat_radians = np.radians(latitude)
-    circumference_at_latitude = EARTHS_CIRCUMFERENCE * np.cos(lat_radians)
-    distance_degrees_lon = distance_meters / circumference_at_latitude * 360
+    latitude_circumference = EARTHS_CIRCUMFERENCE * np.cos(np.radians(latitude))
+    distance_degrees_lon = distance_meters / latitude_circumference * 360
     distance_degrees_lat = distance_meters / EARTHS_CIRCUMFERENCE * 360
     return (np.round(distance_degrees_lon, 15), np.round(distance_degrees_lat, 15))
 
