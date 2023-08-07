@@ -84,11 +84,23 @@ def insar_tops_burst(
     log.info(f'InSAR ROI: {insar_roi}')
     log.info(f'DEM ROI: {dem_roi}')
 
-    dem_path = download_dem_for_isce2(dem_roi, dem_name='glo_30', dem_dir=dem_dir, buffer=0, resample_20m=False)
+    dem_path = download_dem_for_isce2(
+        dem_roi,
+        dem_name='glo_30',
+        dem_dir=dem_dir,
+        buffer=0,
+        resample_20m=False
+    )
     download_aux_cal(aux_cal_dir)
 
     if range_looks == 5:
-        geocode_dem_path = download_dem_for_isce2(dem_roi, dem_name='glo_30', dem_dir=dem_dir, buffer=0, resample_20m=True)
+        geocode_dem_path = download_dem_for_isce2(
+            dem_roi,
+            dem_name='glo_30',
+            dem_dir=dem_dir,
+            buffer=0,
+            resample_20m=True
+        )
         download_aux_cal(aux_cal_dir)
     else:
         geocode_dem_path = dem_path
