@@ -57,13 +57,24 @@ def buffer_extent(extent: list, buffer: float) -> list:
 
 
 def distance_meters_to_degrees(distance_meters, latitude):
-    # The circumference of the Earth for any given longitude is constant
-    EARTHS_CIRCUMFERENCE_LONGITUDE = 40030173.59204114  # 2 * pi * 6371000.0 (Earth's Radius)
+    """Get the arc length in degrees for a give distance in meters along lines of longitude and latitude.
+
+    Args:
+        distance_meters: The desired arc length in meters.
+        latitude: The desired line of latitude.
+    Returns:
+        The length in degrees for longitude and the given latitude, respectively.
+    """
+    if (latitude == 90):
+        # np.cos won't return exactly 0, so we must manually raise this exception.
+        raise ZeroDivisionError("A Latitude of 90 degrees results in dividing by zero.")
+    # The circumference of the Earth for any given line of longitude is constant
+    EARTHS_CIRCUMFERENCE_LON = 40030173.59204114  # 2 * pi * 6371000.0 (Earth's Radius)
+    DISTANCE_DEGREES_LON = 0.00017986432118374611  # distance_meters / EARTHS_CIRCUMFERENCE_LONGITUDE * 360
     lat_radians = np.radians(latitude)
-    circumference_at_latitude = EARTHS_CIRCUMFERENCE_LONGITUDE * np.cos(lat_radians)
+    circumference_at_latitude = EARTHS_CIRCUMFERENCE_LON * np.cos(lat_radians)
     distance_degrees_lat = distance_meters / circumference_at_latitude * 360
-    distance_degrees_lon = distance_meters / EARTHS_CIRCUMFERENCE_LONGITUDE * 360
-    return (distance_degrees_lon, distance_degrees_lat)
+    return (DISTANCE_DEGREES_LON, distance_degrees_lat)
 
 
 def download_dem_for_isce2(
