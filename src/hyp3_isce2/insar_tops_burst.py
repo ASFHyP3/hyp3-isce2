@@ -427,12 +427,12 @@ def main():
     )
 
     log.info('ISCE2 TopsApp run completed successfully')
-    product_name = get_product_name(reference_scene, secondary_scene)
+    pixel_size = get_pixel_size(args.looks)
+    product_name = get_product_name(reference_scene, secondary_scene, pixel_spacing=int(pixel_size))
 
     product_dir = Path(product_name)
     product_dir.mkdir(parents=True, exist_ok=True)
 
-    pixel_size = get_pixel_size(args.looks)
     translate_outputs(isce_output_dir, product_name, pixel_size=pixel_size)
 
     unwrapped_phase = f'{product_name}/{product_name}_unw_phase.tif'

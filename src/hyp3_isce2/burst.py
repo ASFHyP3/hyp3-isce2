@@ -327,19 +327,52 @@ def download_bursts(param_list: Iterator[BurstParams]) -> List[BurstMetadata]:
 def get_product_name(
     reference_scene: str,
     secondary_scene: str,
+    pixel_spacing: int
 ) -> str:
     """Get the name of the interferogram product.
+
+    Format is S1_tttttt_iiw_aaaaaaaa_gggggggg_pp_INTzz_ssss
+        t: burst id
+        i: image mode (IW or EW)
+        w: swath number
+        a: reference burst date
+        g: secondary burst date
+        p: polariztion
+        z: pixel spacing
+        s: ASF product id
 
     Args:
         reference_scene: The reference burst name.
         secondary_scene: The secondary burst name.
-
+        pixel_spacing: The spacing of the pixels in the output image.
+        
     Returns:
         The name of the interferogram product.
     """
     # If this changes, we will also need to update the burst product README template,
     # which documents this naming convention.
-    return f'{reference_scene}x{secondary_scene}'
+    reference_split = reference_scene.split('_')
+    secondary_split = secondary_scene.split('_')
+
+    platform = reference_split[0]
+    burst_id = reference_split[1]
+    image_plus_swath = reference_split[2]
+    reference_date = reference_split[3]
+    secondary_date = secondary_split[3]
+    polarization = reference_split[4]
+    pixel_spacing = "INT" + str(pixel_spacing)
+    product_id = reference_split[5][0:4]
+
+    return '_'.join([
+        platform,
+        burst_id,
+        image_plus_swath,
+        reference_date,
+        secondary_date,
+        polarization,
+        pixel_spacing,
+        product_id
+    ])
 
 
 def get_burst_params(scene_name: str) -> BurstParams:
