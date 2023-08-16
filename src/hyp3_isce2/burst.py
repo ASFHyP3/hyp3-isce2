@@ -350,7 +350,7 @@ def get_product_name(
     reference_date = reference_split[3]
     secondary_date = secondary_split[3]
     polarization = reference_split[4]
-    pixel_spacing = "INT" + str(pixel_spacing)
+    pixel_spacing = "INT" + str(int(pixel_spacing))
     product_id = token_hex(2).upper()
 
     return '_'.join([
