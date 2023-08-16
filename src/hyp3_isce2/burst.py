@@ -332,26 +332,15 @@ def get_product_name(
 ) -> str:
     """Get the name of the interferogram product.
 
-    Format is S1_tttttt_iiw_aaaaaaaa_gggggggg_pp_INTzz_ssss
-        t: burst id
-        i: image mode (IW or EW)
-        w: swath number
-        a: reference burst date
-        g: secondary burst date
-        p: polariztion
-        z: pixel spacing
-        s: ASF product id
-
     Args:
         reference_scene: The reference burst name.
         secondary_scene: The secondary burst name.
         pixel_spacing: The spacing of the pixels in the output image.
-        
+
     Returns:
         The name of the interferogram product.
     """
-    # If this changes, we will also need to update the burst product README template,
-    # which documents this naming convention.
+
     reference_split = reference_scene.split('_')
     secondary_split = secondary_scene.split('_')
 
