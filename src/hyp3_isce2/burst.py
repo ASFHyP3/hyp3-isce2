@@ -6,6 +6,7 @@ import time
 from concurrent.futures import ThreadPoolExecutor
 from dataclasses import dataclass
 from pathlib import Path
+from secrets import token_hex
 from typing import Iterator, List, Optional, Tuple, Union
 
 import asf_search
@@ -361,7 +362,7 @@ def get_product_name(
     secondary_date = secondary_split[3]
     polarization = reference_split[4]
     pixel_spacing = "INT" + str(pixel_spacing)
-    product_id = reference_split[5][0:4]
+    product_id = token_hex(2).upper()
 
     return '_'.join([
         platform,
