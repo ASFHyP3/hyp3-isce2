@@ -19,13 +19,11 @@ The source bursts for this InSAR product are:
 
 Processing Date/Time: {{ processing_date.isoformat(timespec='seconds') }}
 
-The product directory is named <reference_burst_name>x<secondary_burst_name>
+The directory name for this product is: {{ product_name }}
 
-The directory name for this product is: {{ reference_burst_name }}x{{ secondary_burst_name }}.
+The output directory uses the following naming convention:
 
-The reference_burst_name and secondary_burst_name use the following naming conventions:
-
-S1_bbbbbb_xxn_yyyymmddThhmmss_pp_cccc-BURST
+S1_bbbbbb_xxn_yyyymmddThhmmss_yyyymmddThhmmss_pp_INTzz_cccc
 
 bbbbbb: Relative burst ID values assigned by ESA. Each value identifies a consistent burst footprint; relative burst
         ID values differ from one subswath to the next.
@@ -35,7 +33,7 @@ xxn: Three character combination that represents the acquisition mode and subswa
         (1-3 for IW, 1-5 for EW). IW mode indicates Interferometric Wideswath, which acquires a 250 km swath composed
         of three subswaths. EW mode indicates Extra-Wide Swath, which acquires a 400 km swath composed of 5 subswaths.
 
-yyyymmddThhmmss: ISO date and time of acquisition.
+yyyymmddThhmmss: ISO date and time of acquisition of the reference and secondary images, respectively.
 
 pp: Two character combination that represents the mode of radar orientation (polarization) for both signal
         transmission and reception. The first position represents the transmit orientation mode and the second
@@ -45,6 +43,8 @@ pp: Two character combination that represents the mode of radar orientation (pol
     HV: Horizontal Transmit - Vertical Receive
     VH: Vertical Transmit - Horizontal Receive
     VV: Vertical Transmit - Vertical Receive
+
+zz: The pixel spacing of the output image.
 
 cccc: 4-character "Product Unique Identifier" from the SLC filename.
 

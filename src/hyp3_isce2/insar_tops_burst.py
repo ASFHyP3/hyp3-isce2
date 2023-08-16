@@ -152,6 +152,7 @@ def make_readme(
         'processor_version': isce.__version__,
         'projection': hyp3_isce2.metadata.util.get_projection(info['coordinateSystem']['wkt']),
         'pixel_spacing': info['geoTransform'][1],
+        'product_name': product_name,
         'reference_burst_name': reference_scene,
         'secondary_burst_name': secondary_scene,
         'range_looks': range_looks,
