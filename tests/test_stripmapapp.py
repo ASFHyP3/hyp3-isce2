@@ -45,6 +45,3 @@ def test_run_stripmapapp(tmp_path):
 
     with pytest.raises(ValueError, match=r'^If dostep is specified, start and stop cannot be used$'):
         run_stripmapapp('preprocess', 'startup', config_xml=template_path)
-
-    #monkeypatch.chdir(tmp_path)
-    #run_stripmapapp('preprocess', config_xml=template_path)
