@@ -51,6 +51,7 @@ class TopsappBurstConfig:
         orbit_directory: str,
         aux_cal_directory: str,
         dem_filename: str,
+        geocode_dem_filename: str,
         roi: Iterable[float],
         swaths: int or Iterable[int] = [1, 2, 3],
         azimuth_looks: int = 4,
@@ -63,7 +64,7 @@ class TopsappBurstConfig:
         self.aux_cal_directory = aux_cal_directory
         self.roi = [roi[1], roi[3], roi[0], roi[2]]
         self.dem_filename = dem_filename
-        self.geocode_dem_filename = dem_filename
+        self.geocode_dem_filename = geocode_dem_filename
         self.azimuth_looks = azimuth_looks
         self.range_looks = range_looks
         self.do_unwrap = do_unwrap

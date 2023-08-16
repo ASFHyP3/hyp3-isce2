@@ -7,6 +7,10 @@ and this project adheres to [PEP 440](https://www.python.org/dev/peps/pep-0440/)
 and uses [Semantic Versioning](https://semver.org/spec/v2.0.0.html).
 
 
+## [0.6.2]
+### Changed
+* The geocoding DEM is now resampled to ~20m in the case of 5x1 looks.
+
 ## [0.6.1]
 ### Added
 * `apply_water_mask` optional argument to apply water mask in the wrapped and unwrapped phase geotiff files

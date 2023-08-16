@@ -11,6 +11,7 @@ def test_topsapp_burst_config(tmp_path):
         aux_cal_directory='aux_cal',
         roi=[-118.0, 37.0, -117.0, 38.0],
         dem_filename='dem.tif',
+        geocode_dem_filename='dem_geocode.tif',
         swaths=1,
     )
 
@@ -25,6 +26,7 @@ def test_topsapp_burst_config(tmp_path):
         assert 'orbits' in template
         assert 'aux_cal' in template
         assert 'dem.tif' in template
+        assert 'dem_geocode.tif' in template
         assert '[37.0, 38.0, -118.0, -117.0]' in template
         assert '[1]' in template
 
@@ -55,6 +57,7 @@ def test_run_topsapp_burst(tmp_path, monkeypatch):
         aux_cal_directory='',
         roi=[0, 1, 2, 3],
         dem_filename='',
+        geocode_dem_filename='',
         swaths=1,
         azimuth_looks=1,
         range_looks=1,
