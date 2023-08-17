@@ -152,6 +152,7 @@ def make_readme(
         'processor_version': isce.__version__,
         'projection': hyp3_isce2.metadata.util.get_projection(info['coordinateSystem']['wkt']),
         'pixel_spacing': info['geoTransform'][1],
+        'product_name': product_name,
         'reference_burst_name': reference_scene,
         'secondary_burst_name': secondary_scene,
         'range_looks': range_looks,
@@ -427,12 +428,12 @@ def main():
     )
 
     log.info('ISCE2 TopsApp run completed successfully')
-    product_name = get_product_name(reference_scene, secondary_scene)
+    pixel_size = get_pixel_size(args.looks)
+    product_name = get_product_name(reference_scene, secondary_scene, pixel_spacing=int(pixel_size))
 
     product_dir = Path(product_name)
     product_dir.mkdir(parents=True, exist_ok=True)
 
-    pixel_size = get_pixel_size(args.looks)
     translate_outputs(isce_output_dir, product_name, pixel_size=pixel_size)
 
     unwrapped_phase = f'{product_name}/{product_name}_unw_phase.tif'
