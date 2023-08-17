@@ -10,6 +10,7 @@ and uses [Semantic Versioning](https://semver.org/spec/v2.0.0.html).
 ## [0.7.0]
 ### Changed
 * The naming convention for the burst products has been updated.
+* InSAR stripmap workflow to support AVO's ALOS-1 processing efforts. This workflow is specific to AVO currently, and may not work for others.
 
 ## [0.6.2]
 ### Changed
