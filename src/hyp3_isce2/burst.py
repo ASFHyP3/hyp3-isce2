@@ -347,10 +347,11 @@ def get_product_name(
     platform = reference_split[0]
     burst_id = reference_split[1]
     image_plus_swath = reference_split[2]
-    reference_date = reference_split[3]
-    secondary_date = secondary_split[3]
+    reference_date = reference_split[3][0:8]
+    secondary_date = secondary_split[3][0:8]
     polarization = reference_split[4]
-    pixel_spacing = "INT" + str(int(pixel_spacing))
+    product_type = "INT"
+    pixel_spacing = str(int(pixel_spacing))
     product_id = token_hex(2).upper()
 
     return '_'.join([
@@ -360,7 +361,7 @@ def get_product_name(
         reference_date,
         secondary_date,
         polarization,
-        pixel_spacing,
+        product_type + pixel_spacing,
         product_id
     ])
 
