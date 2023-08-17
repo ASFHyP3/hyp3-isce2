@@ -23,8 +23,6 @@ import rasterio
 from lxml import etree
 from shapely.geometry import box
 
-DEM_RESOLUTION = 0.0002777777777777777775
-
 
 def tag_dem_xml_as_ellipsoidal(dem_path: Path) -> str:
     xml_path = str(dem_path) + '.xml'
@@ -58,11 +56,32 @@ def buffer_extent(extent: list, buffer: float) -> list:
     ]
 
 
+def distance_meters_to_degrees(distance_meters, latitude):
+    """Convert a distance from meters to degrees in longitude and latitude
+
+    Args:
+        distance_meters: Arc length in meters.
+        latitude: The line of latitude at which the calculation takes place.
+    Returns:
+        The length in degrees for longitude and latitude, respectively.
+    """
+    if np.abs(latitude) == 90:
+        # np.cos won't return exactly 0, so we must manually raise this exception.
+        raise ZeroDivisionError('A Latitude of 90 degrees results in dividing by zero.')
+    EARTHS_CIRCUMFERENCE = 40_030_173.59204114  # 2 * pi * 6,371,000.0 (Earth's average radius in meters)
+    latitude_circumference = EARTHS_CIRCUMFERENCE * np.cos(np.radians(latitude))
+    distance_degrees_lon = distance_meters / latitude_circumference * 360
+    distance_degrees_lat = distance_meters / EARTHS_CIRCUMFERENCE * 360
+    return (np.round(distance_degrees_lon, 15), np.round(distance_degrees_lat, 15))
+
+
 def download_dem_for_isce2(
         extent: list,
         dem_name: str = 'glo_30',
         dem_dir: Path = None,
-        buffer: float = .4) -> Path:
+        buffer: float = .4,
+        resample_20m: bool = False
+) -> Path:
     """Download the given DEM for the given extent.
 
     Args:
@@ -71,6 +90,7 @@ def download_dem_for_isce2(
         dem_dir: The output directory.
         buffer: The extent buffer in degrees, by default .4, which is about 44 km at the equator
                 (or about 2.5 bursts at the equator).
+        resample_20m: Whether or not the DEM should be resampled to 20 meters.
     Returns:
         The path to the downloaded DEM.
     """
@@ -79,15 +99,27 @@ def download_dem_for_isce2(
 
     extent_buffered = buffer_extent(extent, buffer)
 
-    dem_array, dem_profile = dem_stitcher.stitch_dem(
-        extent_buffered,
-        dem_name,
-        dst_ellipsoidal_height=True,
-        dst_area_or_point='Point',
-        n_threads_downloading=5,
-        # ensures square resolution
-        dst_resolution=DEM_RESOLUTION,
-    )
+    if resample_20m:
+        res_degrees = distance_meters_to_degrees(20.0, extent_buffered[1])
+        dem_array, dem_profile = dem_stitcher.stitch_dem(
+            extent_buffered,
+            dem_name,
+            dst_ellipsoidal_height=True,
+            dst_area_or_point='Point',
+            n_threads_downloading=5,
+            dst_resolution=res_degrees
+        )
+        dem_path = dem_dir / 'full_res_geocode.dem.wgs84'
+    else:
+        dem_array, dem_profile = dem_stitcher.stitch_dem(
+            extent_buffered,
+            dem_name,
+            dst_ellipsoidal_height=True,
+            dst_area_or_point='Point',
+            n_threads_downloading=5,
+        )
+        dem_path = dem_dir / 'full_res.dem.wgs84'
+
     dem_array[np.isnan(dem_array)] = 0.
 
     dem_profile['nodata'] = None
@@ -97,7 +129,6 @@ def download_dem_for_isce2(
     for key in ['blockxsize', 'blockysize', 'compress', 'interleave', 'tiled']:
         del dem_profile[key]
 
-    dem_path = dem_dir / 'full_res.dem.wgs84'
     with rasterio.open(dem_path, 'w', **dem_profile) as ds:
         ds.write(dem_array, 1)
 

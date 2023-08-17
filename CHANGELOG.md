@@ -7,6 +7,31 @@ and this project adheres to [PEP 440](https://www.python.org/dev/peps/pep-0440/)
 and uses [Semantic Versioning](https://semver.org/spec/v2.0.0.html).
 
 
+## [0.7.0]
+### Changed
+* The naming convention for the burst products has been updated.
+* InSAR stripmap workflow to support AVO's ALOS-1 processing efforts. This workflow is specific to AVO currently, and may not work for others.
+
+## [0.6.2]
+### Changed
+* The geocoding DEM is now resampled to ~20m in the case of 5x1 looks.
+
+## [0.6.1]
+### Added
+* `apply_water_mask` optional argument to apply water mask in the wrapped and unwrapped phase geotiff files
+
+### Changed
+* updated product readme template to include references to the water masking layer and the option to apply it
+* updated repo readme to include information on processing options
+
+## [0.6.0]
+### Changed
+* Pixel sizes of output GeoTIFFs now better reflect their resolution: 80m for 20x4 looks, 40m for 10x2 looks, and 20m for 5x1 looks.
+
+## [0.5.0]
+### Changed
+* `insar_tops_burst` workflow now supports burst products advertised in CMR production, rather than CMR UAT
+
 ## [0.4.1]
 ### Added
 * Generate a README file to be included with burst products that describes the processing workflow.
