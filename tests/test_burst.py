@@ -100,8 +100,8 @@ def test_get_product_name():
     assert match("[A-F0-9]{4}", name_20m[-4:]) is not None
     assert match("[A-F0-9]{4}", name_80m[-4:]) is not None
 
-    assert name_20m.startswith('S1_136231_IW2_20200604T022312_20200616T022313_VV_INT20')
-    assert name_80m.startswith('S1_136231_IW2_20200604T022312_20200616T022313_VV_INT80')
+    assert name_20m.startswith('S1_136231_IW2_20200604_20200616_VV_INT20')
+    assert name_80m.startswith('S1_136231_IW2_20200604_20200616_VV_INT80')
 
 
 def mock_asf_search_results(
