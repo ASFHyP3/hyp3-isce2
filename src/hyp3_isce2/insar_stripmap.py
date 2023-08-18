@@ -9,16 +9,14 @@ import os
 import shutil
 import site
 import sys
-
+import zipfile
 from pathlib import Path
 from shutil import make_archive
 
 import asf_search
-import zipfile
-
+from hyp3lib.aws import upload_file_to_s3
 from shapely.geometry.polygon import Polygon
 
-from hyp3lib.aws import upload_file_to_s3
 from hyp3_isce2 import stripmapapp_alos as stripmapapp
 from hyp3_isce2.dem import download_dem_for_isce2
 from hyp3_isce2.logging import configure_root_logger
