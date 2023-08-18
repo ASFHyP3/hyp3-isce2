@@ -1,9 +1,9 @@
+import os
 from pathlib import Path
 from typing import Union
 
 from isce.applications.stripmapApp import Insar
 from jinja2 import Template
-import os
 
 os.environ['PATH'] += os.pathsep + str(Path(os.environ['ISCE_HOME']) / 'applications')
 
