@@ -25,7 +25,8 @@ def test_stripmap_config(tmp_path):
         assert 'ALPSRP162831200-L1.0/LED-ALPSRP162831200-H1.0__A' in template
         assert 'dem/full_res.dem.wgs84' in template
         assert '[59.96148524563291, 60.56159446867566, -153.212, -151.871]' in template
-        
+
+
 def test_run_stripmapapp(tmp_path):
     with pytest.raises(IOError):
         run_stripmapapp('stripmapApp.xml')
@@ -35,7 +36,7 @@ def test_run_stripmapapp(tmp_path):
         reference_leader='',
         secondary_image='',
         secondary_leader='',
-        roi=[1,2,3,4],
+        roi=[1, 2, 3, 4],
         dem_filename='',
     )
     template_path = config.write_template(tmp_path / 'stripmapApp.xml')
