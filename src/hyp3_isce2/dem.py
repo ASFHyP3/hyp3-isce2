@@ -15,7 +15,9 @@
 
 import site
 import subprocess
+import requests
 from pathlib import Path
+from typing import Tuple
 
 import dem_stitcher
 import numpy as np
@@ -75,6 +77,25 @@ def distance_meters_to_degrees(distance_meters, latitude):
     return (np.round(distance_degrees_lon, 15), np.round(distance_degrees_lat, 15))
 
 
+def validate_dem_coverage(extent: Tuple[float, float, float, float]):
+    """Check whether the DEM covers the area of interest.
+
+    Args:
+        extent: The extent of the area of interest. (xmin, ymin, xmax, ymax)
+
+    Returns:
+        None
+    """
+
+    xmin, ymin, xmax, ymax = extent
+    url = f'https://portal.opentopography.org/ajaxRasterJob?action=checkIntersect&opentopoID=OTSDEM.032021.4326.3&x1={xmin}&y1={ymin}&x2={xmax}&y2={ymax}'
+    res = requests.get(url=url)
+    if res.json()['intersect'] == False:
+        raise ValueError(
+            f'The extent {extent} is not covered by the COP30 DSM.'
+        )
+
+
 def download_dem_for_isce2(
         extent: list,
         dem_name: str = 'glo_30',
@@ -94,6 +115,9 @@ def download_dem_for_isce2(
     Returns:
         The path to the downloaded DEM.
     """
+
+    validate_dem_coverage(extent=extent)
+
     dem_dir = dem_dir or Path('.')
     dem_dir.mkdir(exist_ok=True, parents=True)
 
