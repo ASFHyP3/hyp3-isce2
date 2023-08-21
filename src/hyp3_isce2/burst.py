@@ -415,8 +415,6 @@ def validate_bursts(reference_name, secondary_name):
         None
     """
 
-    # TODO: Ensure COP30 DEM Coverage for the Bursts.
-
     validate_burst_date(reference_name)
     validate_burst_date(secondary_name)
 
