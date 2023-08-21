@@ -80,7 +80,7 @@ def distance_meters_to_degrees(distance_meters, latitude):
 def validate_dem_coverage(extent: Tuple[float, float, float, float]):
     """Check whether the DEM covers the area of interest.
 
-    The API used comes from the coordinates section of this page: 
+    The API used comes from the coordinates section of this page:
     https://portal.opentopography.org/raster?opentopoID=OTGMRT.112016.4326.1
     This API returns intersect == True if there is DEM coverage for ANY of the AOI,
     and it returns intersect == False if there is no DEM coverage for ALL of the AOI.
