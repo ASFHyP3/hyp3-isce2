@@ -15,13 +15,13 @@
 
 import site
 import subprocess
-import requests
 from pathlib import Path
 from typing import Tuple
 
 import dem_stitcher
 import numpy as np
 import rasterio
+import requests
 from lxml import etree
 from shapely.geometry import box
 
@@ -88,9 +88,10 @@ def validate_dem_coverage(extent: Tuple[float, float, float, float]):
     """
 
     xmin, ymin, xmax, ymax = extent
-    url = f'https://portal.opentopography.org/ajaxRasterJob?action=checkIntersect&opentopoID=OTSDEM.032021.4326.3&x1={xmin}&y1={ymin}&x2={xmax}&y2={ymax}'
-    res = requests.get(url=url)
-    if res.json()['intersect'] == False:
+    url = 'https://portal.opentopography.org/ajaxRasterJob'
+    query = f'?action=checkIntersect&opentopoID=OTSDEM.032021.4326.3&x1={xmin}&y1={ymin}&x2={xmax}&y2={ymax}'
+    res = requests.get(url=url+query)
+    if res.json()['intersect'] is False:
         raise ValueError(
             f'The extent {extent} is not covered by the COP30 DSM.'
         )
