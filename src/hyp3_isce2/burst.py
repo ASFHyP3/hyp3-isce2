@@ -380,3 +380,62 @@ def get_burst_params(scene_name: str) -> BurstParams:
         polarization=results[0].properties['polarization'],
         burst_number=results[0].properties['burst']['burstIndex'],
     )
+
+
+def validate_burst_date(burst_name):
+    """Check whether the burst occurs after the date ASF began storing bursts.
+
+    Args:
+        burst_name: The reference burst name.
+
+    Returns:
+        None
+    """
+
+    # TODO: Get real date.
+    oldest_burst_date = '20200101'
+    burst_date = burst_name.split('_')[3][0:8]
+
+    if burst_date < oldest_burst_date:
+        raise ValueError(
+            f'Bursts before {oldest_burst_date} are not currently available from ASF. {burst_name} isn\'t available.'
+        )
+
+    return None
+
+
+def validate_bursts(reference_name, secondary_name):
+    """Check whether the reference and secondary bursts are valid.
+
+    Args:
+        reference_scene: The reference burst name.
+        secondary_scene: The secondary burst name.
+
+    Returns:
+        None
+    """
+
+    # TODO: Ensure COP30 DEM Coverage for the Bursts.
+
+    validate_burst_date(reference_name)
+    validate_burst_date(secondary_name)
+
+    ref_split = reference_name.split('_')
+    sec_split = secondary_name.split('_')
+
+    ref_burst_id = ref_split[1]
+    sec_burst_id = sec_split[1]
+    ref_polarization = ref_split[4]
+    sec_polarization = sec_split[4]
+
+    if ref_burst_id != sec_burst_id:
+        raise ValueError(
+            f'The reference and secondary bursts do not share a common BurstID: {ref_burst_id} and {sec_burst_id}.'
+        )
+
+    if ref_polarization != sec_polarization:
+        raise ValueError(
+            f'The reference and secondary polarizations are not the same: {ref_polarization} and {sec_polarization}.'
+        )
+
+    return None
