@@ -168,3 +168,32 @@ def test_get_burst_params_multiple_results():
         with pytest.raises(ValueError, match=r'.*found multiple results.*'):
             burst.get_burst_params('there are multiple copies of this burst')
         mock_search.assert_called_once_with(product_list=['there are multiple copies of this burst'])
+
+
+def test_validate_burst_date():
+    try:
+        burst.validate_burst_date('S1_030349_IW1_20230808T171601_VV_4A37-BURST')
+    except Exception as e:
+        assert False, f'Unexpected exception for valid date: {e}'
+    with pytest.raises(ValueError, match=r'.*not currently available from ASF.*'):
+        burst.validate_burst_date('S1_030349_IW1_20180808T171601_VV_4A37-BURST')
+
+
+def test_validate_bursts():
+    try:
+        burst.validate_bursts(  # valid burst pair
+            'S1_030349_IW1_20230808T171601_VV_4A37-BURST',
+            'S1_030349_IW1_20230820T171602_VV_5AC3-BURST'
+        )
+    except Exception as e:
+        assert False, f'Unexpected exception for valid burst pair: {e}'
+    with pytest.raises(ValueError, match=r'.*polarizations are not the same.*'):  # different polarizations
+        burst.validate_bursts(
+            'S1_215032_IW2_20230802T144608_VV_7EE2-BURST',
+            'S1_215032_IW2_20230721T144607_VH_B3FA-BURST'
+        )
+    with pytest.raises(ValueError, match=r'.*do not share a common BurstID.*'):  # different burst ids
+        burst.validate_bursts(
+            'S1_030349_IW1_20230808T171601_VV_4A37-BURST',
+            'S1_030348_IW1_20230820T171602_VV_5AC3-BURST'
+        )
