@@ -28,6 +28,7 @@ from hyp3_isce2.burst import (
     get_isce2_burst_bbox,
     get_product_name,
     get_region_of_interest,
+    validate_bursts
 )
 from hyp3_isce2.dem import download_dem_for_isce2
 from hyp3_isce2.logging import configure_root_logger
@@ -416,6 +417,7 @@ def main():
     log.info('Begin ISCE2 TopsApp run')
 
     reference_scene, secondary_scene = oldest_granule_first(args.granules[0], args.granules[1])
+    validate_bursts(reference_scene, secondary_scene)
     swath_number = int(reference_scene[12])
     range_looks, azimuth_looks = [int(looks) for looks in args.looks.split('x')]
 
