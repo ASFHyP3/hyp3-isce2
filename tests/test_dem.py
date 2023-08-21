@@ -97,7 +97,7 @@ def test_distance_meters_to_degrees():
 def test_validate_dem_coverage():
     try:
         dem.validate_dem_coverage([-100, 30, -101, 31])  # Valid extent over Texas
-    except Exception as e:
+    except ValueError as e:
         assert False, f'Unexpected exception for valid DEM extent: {e}'
     with raises(ValueError, match=r'.*not covered by the COP30 DSM.*'):
         dem.validate_dem_coverage([45, 40, 49, 41])  # Invalid extent over Azerbaijan

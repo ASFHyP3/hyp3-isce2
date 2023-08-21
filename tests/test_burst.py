@@ -173,7 +173,7 @@ def test_get_burst_params_multiple_results():
 def test_validate_burst_date():
     try:
         burst.validate_burst_date('S1_030349_IW1_20230808T171601_VV_4A37-BURST')
-    except Exception as e:
+    except ValueError as e:
         assert False, f'Unexpected exception for valid date: {e}'
     with pytest.raises(ValueError, match=r'.*not currently available from ASF.*'):
         burst.validate_burst_date('S1_030349_IW1_20180808T171601_VV_4A37-BURST')
@@ -185,7 +185,7 @@ def test_validate_bursts():
             'S1_030349_IW1_20230808T171601_VV_4A37-BURST',
             'S1_030349_IW1_20230820T171602_VV_5AC3-BURST'
         )
-    except Exception as e:
+    except ValueError as e:
         assert False, f'Unexpected exception for valid burst pair: {e}'
     with pytest.raises(ValueError, match=r'.*polarizations are not the same.*'):  # different polarizations
         burst.validate_bursts(
