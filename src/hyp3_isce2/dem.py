@@ -16,7 +16,6 @@
 import site
 import subprocess
 from pathlib import Path
-from typing import Tuple
 
 import dem_stitcher
 import numpy as np
