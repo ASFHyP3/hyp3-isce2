@@ -21,7 +21,6 @@ from typing import Tuple
 import dem_stitcher
 import numpy as np
 import rasterio
-import requests
 from lxml import etree
 from shapely.geometry import box
 
@@ -77,31 +76,6 @@ def distance_meters_to_degrees(distance_meters, latitude):
     return (np.round(distance_degrees_lon, 15), np.round(distance_degrees_lat, 15))
 
 
-def validate_dem_coverage(extent: Tuple[float, float, float, float]):
-    """Check whether the DEM covers the area of interest.
-
-    The API used comes from the coordinates section of this page:
-    https://portal.opentopography.org/raster?opentopoID=OTGMRT.112016.4326.1
-    This API returns intersect == True if there is DEM coverage for ANY of the AOI,
-    and it returns intersect == False if there is no DEM coverage for ALL of the AOI.
-
-    Args:
-        extent: The extent of the area of interest. (xmin, ymin, xmax, ymax)
-
-    Returns:
-        None
-    """
-
-    xmin, ymin, xmax, ymax = extent
-    url = 'https://portal.opentopography.org/ajaxRasterJob'
-    query = f'?action=checkIntersect&opentopoID=OTSDEM.032021.4326.3&x1={xmin}&y1={ymin}&x2={xmax}&y2={ymax}'
-    res = requests.get(url=url+query)
-    if res.json()['intersect'] is False:
-        raise ValueError(
-            f'The extent {extent} is not covered by the COP30 DSM.'
-        )
-
-
 def download_dem_for_isce2(
         extent: list,
         dem_name: str = 'glo_30',
@@ -121,8 +95,6 @@ def download_dem_for_isce2(
     Returns:
         The path to the downloaded DEM.
     """
-
-    validate_dem_coverage(extent=extent)
 
     dem_dir = dem_dir or Path('.')
     dem_dir.mkdir(exist_ok=True, parents=True)

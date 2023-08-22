@@ -170,15 +170,6 @@ def test_get_burst_params_multiple_results():
         mock_search.assert_called_once_with(product_list=['there are multiple copies of this burst'])
 
 
-def test_validate_burst_date():
-    try:
-        burst.validate_burst_date('S1_030349_IW1_20230808T171601_VV_4A37-BURST')
-    except ValueError as e:
-        assert False, f'Unexpected exception for valid date: {e}'
-    with pytest.raises(ValueError, match=r'.*not currently available from ASF.*'):
-        burst.validate_burst_date('S1_030349_IW1_20180808T171601_VV_4A37-BURST')
-
-
 def test_validate_bursts():
     try:
         burst.validate_bursts(  # valid burst pair
