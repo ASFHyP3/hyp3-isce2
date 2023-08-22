@@ -411,4 +411,9 @@ def validate_bursts(reference_name, secondary_name):
             f'The reference and secondary polarizations are not the same: {ref_polarization} and {sec_polarization}.'
         )
 
+    if ref_polarization != "VV" and ref_polarization != "HH":
+        raise ValueError(
+            f'{ref_polarization} polarization is not currently supported, only VV and HH.'
+        )
+
     return None
