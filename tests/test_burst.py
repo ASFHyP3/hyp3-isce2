@@ -181,10 +181,15 @@ def test_validate_bursts():
     with pytest.raises(ValueError, match=r'.*polarizations are not the same.*'):  # different polarizations
         burst.validate_bursts(
             'S1_215032_IW2_20230802T144608_VV_7EE2-BURST',
-            'S1_215032_IW2_20230721T144607_VH_B3FA-BURST'
+            'S1_215032_IW2_20230721T144607_HH_B3FA-BURST'
         )
     with pytest.raises(ValueError, match=r'.*do not share a common BurstID.*'):  # different burst ids
         burst.validate_bursts(
             'S1_030349_IW1_20230808T171601_VV_4A37-BURST',
             'S1_030348_IW1_20230820T171602_VV_5AC3-BURST'
+        )
+    with pytest.raises(ValueError, match=r'.*only VV and HH.*'):  # incorrect polarizations
+        burst.validate_bursts(
+            'S1_030349_IW1_20230808T171601_VH_4A37-BURST',
+            'S1_030349_IW1_20230820T171602_VH_5AC3-BURST'
         )
