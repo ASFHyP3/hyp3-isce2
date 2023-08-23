@@ -392,7 +392,6 @@ def validate_bursts(reference_name: str, secondary_name: str) -> None:
     Returns:
         None
     """
-
     ref_split = reference_name.split('_')
     sec_split = secondary_name.split('_')
 
