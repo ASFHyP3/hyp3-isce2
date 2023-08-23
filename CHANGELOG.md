@@ -8,7 +8,7 @@ and uses [Semantic Versioning](https://semver.org/spec/v2.0.0.html).
 
 ## [0.7.1]
 ### Added
-* insar_tops_bursts now validates burst pair granule names.
+* insar_tops_burst now validates burst pair granule names.
 
 ## [0.7.0]
 ### Added
