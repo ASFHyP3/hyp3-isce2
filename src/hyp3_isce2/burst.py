@@ -380,3 +380,38 @@ def get_burst_params(scene_name: str) -> BurstParams:
         polarization=results[0].properties['polarization'],
         burst_number=results[0].properties['burst']['burstIndex'],
     )
+
+
+def validate_bursts(reference_name: str, secondary_name: str) -> None:
+    """Check whether the reference and secondary bursts are valid.
+
+    Args:
+        reference_scene: The reference burst name.
+        secondary_scene: The secondary burst name.
+
+    Returns:
+        None
+    """
+    ref_split = reference_name.split('_')
+    sec_split = secondary_name.split('_')
+
+    ref_burst_id = ref_split[1]
+    sec_burst_id = sec_split[1]
+
+    ref_polarization = ref_split[4]
+    sec_polarization = sec_split[4]
+
+    if ref_burst_id != sec_burst_id:
+        raise ValueError(
+            f'The reference and secondary burst IDs are not the same: {ref_burst_id} and {sec_burst_id}.'
+        )
+
+    if ref_polarization != sec_polarization:
+        raise ValueError(
+            f'The reference and secondary polarizations are not the same: {ref_polarization} and {sec_polarization}.'
+        )
+
+    if ref_polarization != "VV" and ref_polarization != "HH":
+        raise ValueError(
+            f'{ref_polarization} polarization is not currently supported, only VV and HH.'
+        )
