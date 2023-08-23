@@ -8,7 +8,7 @@ and uses [Semantic Versioning](https://semver.org/spec/v2.0.0.html).
 
 ## [0.7.1]
 ### Added
-* insar_tops_bursts now checks if burst pairs are valid, and that they have COP30 coverage.
+* insar_tops_bursts now validates burst pair granule names.
 
 ## [0.7.0]
 ### Added
