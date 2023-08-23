@@ -185,7 +185,7 @@ def test_validate_bursts():
             'S1_030349_IW1_20230808T171601_VV_4A37-BURST',
             'S1_030348_IW1_20230820T171602_VV_5AC3-BURST'
         )
-    with pytest.raises(ValueError, match=r'.*only VV and HH.*'):  # incorrect polarizations
+    with pytest.raises(ValueError, match=r'.*only VV and HH.*'):
         burst.validate_bursts(
             'S1_030349_IW1_20230808T171601_VH_4A37-BURST',
             'S1_030349_IW1_20230820T171602_VH_5AC3-BURST'
