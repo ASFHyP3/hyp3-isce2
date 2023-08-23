@@ -398,6 +398,7 @@ def validate_bursts(reference_name: str, secondary_name: str) -> None:
 
     ref_burst_id = ref_split[1]
     sec_burst_id = sec_split[1]
+
     ref_polarization = ref_split[4]
     sec_polarization = sec_split[4]
 
