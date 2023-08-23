@@ -94,7 +94,6 @@ def download_dem_for_isce2(
     Returns:
         The path to the downloaded DEM.
     """
-
     dem_dir = dem_dir or Path('.')
     dem_dir.mkdir(exist_ok=True, parents=True)
 
