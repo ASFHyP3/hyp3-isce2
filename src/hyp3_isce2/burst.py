@@ -382,7 +382,7 @@ def get_burst_params(scene_name: str) -> BurstParams:
     )
 
 
-def validate_bursts(reference_name, secondary_name):
+def validate_bursts(reference_name: str, secondary_name: str) -> None:
     """Check whether the reference and secondary bursts are valid.
 
     Args:
