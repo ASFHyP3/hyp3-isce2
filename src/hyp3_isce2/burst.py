@@ -403,7 +403,7 @@ def validate_bursts(reference_name: str, secondary_name: str) -> None:
 
     if ref_burst_id != sec_burst_id:
         raise ValueError(
-            f'The reference and secondary bursts do not share a common BurstID: {ref_burst_id} and {sec_burst_id}.'
+            f'The reference and secondary burst IDs are not the same: {ref_burst_id} and {sec_burst_id}.'
         )
 
     if ref_polarization != sec_polarization:
