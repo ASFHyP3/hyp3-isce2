@@ -168,3 +168,25 @@ def test_get_burst_params_multiple_results():
         with pytest.raises(ValueError, match=r'.*found multiple results.*'):
             burst.get_burst_params('there are multiple copies of this burst')
         mock_search.assert_called_once_with(product_list=['there are multiple copies of this burst'])
+
+
+def test_validate_bursts():
+    burst.validate_bursts(
+        'S1_030349_IW1_20230808T171601_VV_4A37-BURST',
+        'S1_030349_IW1_20230820T171602_VV_5AC3-BURST'
+    )
+    with pytest.raises(ValueError, match=r'.*polarizations are not the same.*'):
+        burst.validate_bursts(
+            'S1_215032_IW2_20230802T144608_VV_7EE2-BURST',
+            'S1_215032_IW2_20230721T144607_HH_B3FA-BURST'
+        )
+    with pytest.raises(ValueError, match=r'.*burst IDs are not the same.*'):
+        burst.validate_bursts(
+            'S1_030349_IW1_20230808T171601_VV_4A37-BURST',
+            'S1_030348_IW1_20230820T171602_VV_5AC3-BURST'
+        )
+    with pytest.raises(ValueError, match=r'.*only VV and HH.*'):
+        burst.validate_bursts(
+            'S1_030349_IW1_20230808T171601_VH_4A37-BURST',
+            'S1_030349_IW1_20230820T171602_VH_5AC3-BURST'
+        )
