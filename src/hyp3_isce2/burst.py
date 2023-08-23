@@ -415,5 +415,3 @@ def validate_bursts(reference_name, secondary_name):
         raise ValueError(
             f'{ref_polarization} polarization is not currently supported, only VV and HH.'
         )
-
-    return None
