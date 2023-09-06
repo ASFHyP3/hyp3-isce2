@@ -6,6 +6,7 @@ import time
 from concurrent.futures import ThreadPoolExecutor
 from dataclasses import dataclass
 from pathlib import Path
+from secrets import token_hex
 from typing import Iterator, List, Optional, Tuple, Union
 
 import asf_search
@@ -327,19 +328,42 @@ def download_bursts(param_list: Iterator[BurstParams]) -> List[BurstMetadata]:
 def get_product_name(
     reference_scene: str,
     secondary_scene: str,
+    pixel_spacing: int
 ) -> str:
     """Get the name of the interferogram product.
 
     Args:
         reference_scene: The reference burst name.
         secondary_scene: The secondary burst name.
+        pixel_spacing: The spacing of the pixels in the output image.
 
     Returns:
         The name of the interferogram product.
     """
-    # If this changes, we will also need to update the burst product README template,
-    # which documents this naming convention.
-    return f'{reference_scene}x{secondary_scene}'
+
+    reference_split = reference_scene.split('_')
+    secondary_split = secondary_scene.split('_')
+
+    platform = reference_split[0]
+    burst_id = reference_split[1]
+    image_plus_swath = reference_split[2]
+    reference_date = reference_split[3][0:8]
+    secondary_date = secondary_split[3][0:8]
+    polarization = reference_split[4]
+    product_type = 'INT'
+    pixel_spacing = str(int(pixel_spacing))
+    product_id = token_hex(2).upper()
+
+    return '_'.join([
+        platform,
+        burst_id,
+        image_plus_swath,
+        reference_date,
+        secondary_date,
+        polarization,
+        product_type + pixel_spacing,
+        product_id
+    ])
 
 
 def get_burst_params(scene_name: str) -> BurstParams:
@@ -356,3 +380,38 @@ def get_burst_params(scene_name: str) -> BurstParams:
         polarization=results[0].properties['polarization'],
         burst_number=results[0].properties['burst']['burstIndex'],
     )
+
+
+def validate_bursts(reference_name: str, secondary_name: str) -> None:
+    """Check whether the reference and secondary bursts are valid.
+
+    Args:
+        reference_scene: The reference burst name.
+        secondary_scene: The secondary burst name.
+
+    Returns:
+        None
+    """
+    ref_split = reference_name.split('_')
+    sec_split = secondary_name.split('_')
+
+    ref_burst_id = ref_split[1]
+    sec_burst_id = sec_split[1]
+
+    ref_polarization = ref_split[4]
+    sec_polarization = sec_split[4]
+
+    if ref_burst_id != sec_burst_id:
+        raise ValueError(
+            f'The reference and secondary burst IDs are not the same: {ref_burst_id} and {sec_burst_id}.'
+        )
+
+    if ref_polarization != sec_polarization:
+        raise ValueError(
+            f'The reference and secondary polarizations are not the same: {ref_polarization} and {sec_polarization}.'
+        )
+
+    if ref_polarization != "VV" and ref_polarization != "HH":
+        raise ValueError(
+            f'{ref_polarization} polarization is not currently supported, only VV and HH.'
+        )

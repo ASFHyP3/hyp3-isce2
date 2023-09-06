@@ -28,6 +28,7 @@ from hyp3_isce2.burst import (
     get_isce2_burst_bbox,
     get_product_name,
     get_region_of_interest,
+    validate_bursts
 )
 from hyp3_isce2.dem import download_dem_for_isce2
 from hyp3_isce2.logging import configure_root_logger
@@ -84,8 +85,25 @@ def insar_tops_burst(
     log.info(f'InSAR ROI: {insar_roi}')
     log.info(f'DEM ROI: {dem_roi}')
 
-    dem_path = download_dem_for_isce2(dem_roi, dem_name='glo_30', dem_dir=dem_dir, buffer=0)
+    dem_path = download_dem_for_isce2(
+        dem_roi,
+        dem_name='glo_30',
+        dem_dir=dem_dir,
+        buffer=0,
+        resample_20m=False
+    )
     download_aux_cal(aux_cal_dir)
+
+    if range_looks == 5:
+        geocode_dem_path = download_dem_for_isce2(
+            dem_roi,
+            dem_name='glo_30',
+            dem_dir=dem_dir,
+            buffer=0,
+            resample_20m=True
+        )
+    else:
+        geocode_dem_path = dem_path
 
     orbit_dir.mkdir(exist_ok=True, parents=True)
     for granule in (ref_params.granule, sec_params.granule):
@@ -98,6 +116,7 @@ def insar_tops_burst(
         aux_cal_directory=str(aux_cal_dir),
         roi=insar_roi,
         dem_filename=str(dem_path),
+        geocode_dem_filename=str(geocode_dem_path),
         swaths=swath_number,
         azimuth_looks=azimuth_looks,
         range_looks=range_looks,
@@ -134,6 +153,7 @@ def make_readme(
         'processor_version': isce.__version__,
         'projection': hyp3_isce2.metadata.util.get_projection(info['coordinateSystem']['wkt']),
         'pixel_spacing': info['geoTransform'][1],
+        'product_name': product_name,
         'reference_burst_name': reference_scene,
         'secondary_burst_name': secondary_scene,
         'range_looks': range_looks,
@@ -397,6 +417,7 @@ def main():
     log.info('Begin ISCE2 TopsApp run')
 
     reference_scene, secondary_scene = oldest_granule_first(args.granules[0], args.granules[1])
+    validate_bursts(reference_scene, secondary_scene)
     swath_number = int(reference_scene[12])
     range_looks, azimuth_looks = [int(looks) for looks in args.looks.split('x')]
 
@@ -409,12 +430,12 @@ def main():
     )
 
     log.info('ISCE2 TopsApp run completed successfully')
-    product_name = get_product_name(reference_scene, secondary_scene)
+    pixel_size = get_pixel_size(args.looks)
+    product_name = get_product_name(reference_scene, secondary_scene, pixel_spacing=int(pixel_size))
 
     product_dir = Path(product_name)
     product_dir.mkdir(parents=True, exist_ok=True)
 
-    pixel_size = get_pixel_size(args.looks)
     translate_outputs(isce_output_dir, product_name, pixel_size=pixel_size)
 
     unwrapped_phase = f'{product_name}/{product_name}_unw_phase.tif'

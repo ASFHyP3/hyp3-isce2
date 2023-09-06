@@ -1,4 +1,5 @@
 from pathlib import Path
+from re import match
 from unittest.mock import patch
 
 import asf_search
@@ -89,7 +90,18 @@ def test_get_region_of_interest(tmp_path, orbit):
 
 
 def test_get_product_name():
-    assert burst.get_product_name('A', 'B') == 'AxB'
+
+    reference_name = "S1_136231_IW2_20200604T022312_VV_7C85-BURST"
+    secondary_name = "S1_136231_IW2_20200616T022313_VV_5D11-BURST"
+
+    name_20m = burst.get_product_name(reference_name, secondary_name, pixel_spacing=20.0)
+    name_80m = burst.get_product_name(reference_name, secondary_name, pixel_spacing=80)
+
+    assert match("[A-F0-9]{4}", name_20m[-4:]) is not None
+    assert match("[A-F0-9]{4}", name_80m[-4:]) is not None
+
+    assert name_20m.startswith('S1_136231_IW2_20200604_20200616_VV_INT20')
+    assert name_80m.startswith('S1_136231_IW2_20200604_20200616_VV_INT80')
 
 
 def mock_asf_search_results(
@@ -156,3 +168,25 @@ def test_get_burst_params_multiple_results():
         with pytest.raises(ValueError, match=r'.*found multiple results.*'):
             burst.get_burst_params('there are multiple copies of this burst')
         mock_search.assert_called_once_with(product_list=['there are multiple copies of this burst'])
+
+
+def test_validate_bursts():
+    burst.validate_bursts(
+        'S1_030349_IW1_20230808T171601_VV_4A37-BURST',
+        'S1_030349_IW1_20230820T171602_VV_5AC3-BURST'
+    )
+    with pytest.raises(ValueError, match=r'.*polarizations are not the same.*'):
+        burst.validate_bursts(
+            'S1_215032_IW2_20230802T144608_VV_7EE2-BURST',
+            'S1_215032_IW2_20230721T144607_HH_B3FA-BURST'
+        )
+    with pytest.raises(ValueError, match=r'.*burst IDs are not the same.*'):
+        burst.validate_bursts(
+            'S1_030349_IW1_20230808T171601_VV_4A37-BURST',
+            'S1_030348_IW1_20230820T171602_VV_5AC3-BURST'
+        )
+    with pytest.raises(ValueError, match=r'.*only VV and HH.*'):
+        burst.validate_bursts(
+            'S1_030349_IW1_20230808T171601_VH_4A37-BURST',
+            'S1_030349_IW1_20230820T171602_VH_5AC3-BURST'
+        )

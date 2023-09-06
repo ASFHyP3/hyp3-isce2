@@ -6,6 +6,19 @@ The format is based on [Keep a Changelog](https://keepachangelog.com/en/1.0.0/),
 and this project adheres to [PEP 440](https://www.python.org/dev/peps/pep-0440/)
 and uses [Semantic Versioning](https://semver.org/spec/v2.0.0.html).
 
+## [0.7.1]
+### Added
+* insar_tops_burst now validates burst pair granule names.
+
+## [0.7.0]
+### Added
+* InSAR stripmap workflow to support AVO's ALOS-1 processing efforts. This workflow is specific to AVO currently, and may not work for others.
+### Changed
+* The naming convention for the burst products has been updated.
+
+## [0.6.2]
+### Changed
+* The geocoding DEM is now resampled to ~20m in the case of 5x1 looks.
 
 ## [0.6.1]
 ### Added
