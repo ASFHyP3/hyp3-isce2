@@ -52,7 +52,7 @@ def test_oldest_granule_first():
 
 
 def test_make_browse_image():
-    input_tif = "test/data/test_geotiff.tif"
-    output_png = "test/data/test_browse_image2.png"
+    input_tif = "tests/data/test_geotiff.tif"
+    output_png = "tests/data/test_browse_image2.png"
     make_browse_image(input_tif, output_png)
-    assert open(output_png, "rb").read() == open("test/data/test_browse_image.png", "rb").read()
+    assert open(output_png, "rb").read() == open("tests/data/test_browse_image.png", "rb").read()
