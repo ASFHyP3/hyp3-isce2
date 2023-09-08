@@ -131,6 +131,7 @@ def insar_tops_burst(
     return Path('merged')
 
 
+# TODO tests
 def make_readme(
         product_dir: Path,
         product_name: str,
@@ -169,6 +170,7 @@ def make_readme(
         f.write(content)
 
 
+# TODO tests
 def make_parameter_file(
         out_path: Path,
         reference_scene: str,
@@ -375,6 +377,7 @@ def translate_outputs(isce_output_dir: Path, product_name: str, pixel_size: floa
         )
 
 
+# TODO tests
 def get_pixel_size(looks: str) -> float:
     return {'20x4': 80.0, '10x2': 40.0, '5x1': 20.0}[looks]
 
