@@ -1,7 +1,8 @@
 from os import remove
+
 from osgeo import gdal
 
-from hyp3_isce2.utils import GDALConfigManager, extent_from_geotransform, oldest_granule_first, utm_from_lon_lat, make_browse_image
+from hyp3_isce2.utils import GDALConfigManager, extent_from_geotransform, make_browse_image, oldest_granule_first, utm_from_lon_lat
 
 gdal.UseExceptions()
 
