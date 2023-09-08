@@ -49,12 +49,11 @@ if str(ISCE_APPLICATIONS) not in os.environ['PATH'].split(os.pathsep):
 
 
 def insar_tops_burst(
-    reference_scene: str,
-    secondary_scene: str,
-    swath_number: int,
-    azimuth_looks: int = 4,
-    range_looks: int = 20,
-) -> Path:
+        reference_scene: str,
+        secondary_scene: str,
+        swath_number: int,
+        azimuth_looks: int = 4,
+        range_looks: int = 20) -> Path:
     """Create a burst interferogram
 
     Args:
@@ -143,7 +142,7 @@ def make_readme(
 
     wrapped_phase_path = product_dir / f'{product_name}_wrapped_phase.tif'
     info = gdal.Info(str(wrapped_phase_path), format='json')
-    secondary_granule_datetime_str = secondary_scene.split("_")[3]
+    secondary_granule_datetime_str = secondary_scene.split('_')[3]
 
     payload = {
         'processing_date': datetime.now(timezone.utc),
@@ -171,15 +170,14 @@ def make_readme(
 
 
 def make_parameter_file(
-    out_path: Path,
-    reference_scene: str,
-    secondary_scene: str,
-    swath_number: int,
-    azimuth_looks: int,
-    range_looks: int,
-    dem_name: str = 'GLO_30',
-    dem_resolution: int = 30,
-) -> None:
+        out_path: Path,
+        reference_scene: str,
+        secondary_scene: str,
+        swath_number: int,
+        azimuth_looks: int,
+        range_looks: int,
+        dem_name: str = 'GLO_30',
+        dem_resolution: int = 30) -> None:
     """Create a parameter file for the output product
 
     Args:
@@ -195,7 +193,6 @@ def make_parameter_file(
     returns:
         None
     """
-
     SPEED_OF_LIGHT = 299792458.0
     SPACECRAFT_HEIGHT = 693000.0
     EARTH_RADIUS = 6337286.638938101
@@ -270,18 +267,19 @@ def make_parameter_file(
         'Speckle filter: yes\n'
     ]
 
-    output_string = "".join(output_strings)
+    output_string = ''.join(output_strings)
 
     with open(out_path.__str__(), 'w') as outfile:
         outfile.write(output_string)
 
 
-def translate_outputs(isce_output_dir: Path, product_name: str, pixel_size: float = 30.):
+def translate_outputs(isce_output_dir: Path, product_name: str, pixel_size: float) -> None:
     """Translate ISCE outputs to a standard GTiff format with a UTM projection
 
     Args:
         isce_output_dir: Path to the ISCE output directory
         product_name: Name of the product
+        pixel_size: Pixel size
     """
 
     src_ds = gdal.Open(str(isce_output_dir / 'filt_topophase.unw.geo'))
@@ -377,9 +375,8 @@ def translate_outputs(isce_output_dir: Path, product_name: str, pixel_size: floa
         )
 
 
-def get_pixel_size(choice):
-    choices = {'20x4': 80.0, '10x2': 40.0, '5x1': 20.0}
-    return choices[choice]
+def get_pixel_size(looks: str) -> float:
+    return {'20x4': 80.0, '10x2': 40.0, '5x1': 20.0}[looks]
 
 
 def main():
