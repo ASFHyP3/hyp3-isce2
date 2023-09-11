@@ -170,7 +170,6 @@ def make_readme(
         f.write(content)
 
 
-# TODO tests
 def make_parameter_file(
         out_path: Path,
         reference_scene: str,
