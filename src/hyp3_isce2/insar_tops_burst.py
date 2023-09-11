@@ -377,7 +377,6 @@ def translate_outputs(isce_output_dir: Path, product_name: str, pixel_size: floa
         )
 
 
-# TODO tests
 def get_pixel_size(looks: str) -> float:
     return {'20x4': 80.0, '10x2': 40.0, '5x1': 20.0}[looks]
 
