@@ -131,7 +131,6 @@ def insar_tops_burst(
     return Path('merged')
 
 
-# TODO tests
 def make_readme(
         product_dir: Path,
         product_name: str,
