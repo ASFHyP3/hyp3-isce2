@@ -1,4 +1,4 @@
-from os import remove
+import os
 
 from osgeo import gdal
 
@@ -64,4 +64,4 @@ def test_make_browse_image():
     output_png = "tests/data/test_browse_image2.png"
     make_browse_image(input_tif, output_png)
     assert open(output_png, "rb").read() == open("tests/data/test_browse_image.png", "rb").read()
-    remove(output_png)
+    os.remove(output_png)
