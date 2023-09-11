@@ -1,6 +1,14 @@
+from os import remove
+
 from osgeo import gdal
 
-from hyp3_isce2.utils import GDALConfigManager, extent_from_geotransform, oldest_granule_first, utm_from_lon_lat
+from hyp3_isce2.utils import (
+    GDALConfigManager,
+    extent_from_geotransform,
+    make_browse_image,
+    oldest_granule_first,
+    utm_from_lon_lat
+)
 
 gdal.UseExceptions()
 
@@ -49,3 +57,11 @@ def test_oldest_granule_first():
     latest = "S1_249434_IW1_20230523T170733_VV_8850-BURST"
     assert oldest_granule_first(oldest, latest) == (oldest, latest)
     assert oldest_granule_first(latest, oldest) == (oldest, latest)
+
+
+def test_make_browse_image():
+    input_tif = "tests/data/test_geotiff.tif"
+    output_png = "tests/data/test_browse_image2.png"
+    make_browse_image(input_tif, output_png)
+    assert open(output_png, "rb").read() == open("tests/data/test_browse_image.png", "rb").read()
+    remove(output_png)
