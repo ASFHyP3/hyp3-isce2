@@ -72,7 +72,7 @@ def distance_meters_to_degrees(distance_meters, latitude):
     latitude_circumference = EARTHS_CIRCUMFERENCE * np.cos(np.radians(latitude))
     distance_degrees_lon = distance_meters / latitude_circumference * 360
     distance_degrees_lat = distance_meters / EARTHS_CIRCUMFERENCE * 360
-    return (np.round(distance_degrees_lon, 15), np.round(distance_degrees_lat, 15))
+    return np.round(distance_degrees_lon, 15), np.round(distance_degrees_lat, 15)
 
 
 def download_dem_for_isce2(

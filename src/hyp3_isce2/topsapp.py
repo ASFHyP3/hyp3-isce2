@@ -1,5 +1,5 @@
 from pathlib import Path
-from typing import Iterable, Union
+from typing import Iterable, Sequence, Union
 
 from isce.applications.topsApp import TopsInSAR
 from jinja2 import Template
@@ -52,8 +52,8 @@ class TopsappBurstConfig:
         aux_cal_directory: str,
         dem_filename: str,
         geocode_dem_filename: str,
-        roi: Iterable[float],
-        swaths: int or Iterable[int] = [1, 2, 3],
+        roi: Sequence[float],
+        swaths: Union[int, Iterable[int]] = (1, 2, 3),
         azimuth_looks: int = 4,
         range_looks: int = 20,
         do_unwrap: bool = True,
@@ -139,7 +139,7 @@ def run_topsapp_burst(dostep: str = '', start: str = '', end: str = '', config_x
     Args:
         dostep: The step to run
         start: The step to start at
-        stop: The step to stop at
+        end: The step to stop at
         config_xml: The config file to use
 
     Raises:
