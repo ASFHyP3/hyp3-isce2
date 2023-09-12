@@ -382,18 +382,18 @@ def get_burst_params(scene_name: str) -> BurstParams:
     )
 
 
-def validate_bursts(reference_name: str, secondary_name: str) -> None:
+def validate_bursts(reference_scene: str, secondary_scene: str) -> None:
     """Check whether the reference and secondary bursts are valid.
 
     Args:
-        reference_name: The reference burst name.
-        secondary_name: The secondary burst name.
+        reference_scene: The reference burst name.
+        secondary_scene: The secondary burst name.
 
     Returns:
         None
     """
-    ref_split = reference_name.split('_')
-    sec_split = secondary_name.split('_')
+    ref_split = reference_scene.split('_')
+    sec_split = secondary_scene.split('_')
 
     ref_burst_id = ref_split[1]
     sec_burst_id = sec_split[1]
