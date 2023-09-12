@@ -93,7 +93,7 @@ def wait_for_extractor(response: requests.Response, sleep_time: int = 15) -> boo
         True if the burst was successfully downloaded, False otherwise.
     """
     if response.status_code == 202:
-        time.sleep(15)
+        time.sleep(sleep_time)
         return False
 
     response.raise_for_status()
@@ -382,7 +382,7 @@ def get_burst_params(scene_name: str) -> BurstParams:
     )
 
 
-def validate_bursts(reference_name: str, secondary_name: str) -> None:
+def validate_bursts(reference_scene: str, secondary_scene: str) -> None:
     """Check whether the reference and secondary bursts are valid.
 
     Args:
@@ -392,8 +392,8 @@ def validate_bursts(reference_name: str, secondary_name: str) -> None:
     Returns:
         None
     """
-    ref_split = reference_name.split('_')
-    sec_split = secondary_name.split('_')
+    ref_split = reference_scene.split('_')
+    sec_split = secondary_scene.split('_')
 
     ref_burst_id = ref_split[1]
     sec_burst_id = sec_split[1]
