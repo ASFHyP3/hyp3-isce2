@@ -7,6 +7,10 @@ and this project adheres to [PEP 440](https://www.python.org/dev/peps/pep-0440/)
 and uses [Semantic Versioning](https://semver.org/spec/v2.0.0.html).
 
 ## [0.7.1]
+### Fixed
+* Description of the range of the lv_phi in the readme.md.txt.j2.
+
+## [0.7.1]
 ### Added
 * insar_tops_burst now validates burst pair granule names.
 
