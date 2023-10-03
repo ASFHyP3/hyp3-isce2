@@ -297,15 +297,15 @@ def translate_outputs(product_name: str, pixel_size: float, include_radar: bool 
 
     ISCE2Dataset = namedtuple('ISCE2Dataset', ['name', 'suffix', 'band'])
     datasets = [
-        ISCE2Dataset('merged/filt_topophase.unw.geo', 'unw_phase', 2),
-        ISCE2Dataset('merged/phsig.cor.geo', 'corr', 1),
-        ISCE2Dataset('merged/dem.crop', 'dem', 1),
-        ISCE2Dataset('merged/filt_topophase.unw.conncomp.geo', 'conncomp', 1),
+        ISCE2Dataset('merged/filt_topophase.unw.geo', 'unw_phase', [2]),
+        ISCE2Dataset('merged/phsig.cor.geo', 'corr', [1]),
+        ISCE2Dataset('merged/dem.crop', 'dem', [1]),
+        ISCE2Dataset('merged/filt_topophase.unw.conncomp.geo', 'conncomp', [1]),
     ]
 
     rdr_datasets = [
-        ISCE2Dataset(find_product('fine_interferogram/IW*/burst_01.int.vrt'), 'wrapped_phase_rdr', 1),
-        ISCE2Dataset(find_product('geom_reference/IW*/los_01.rdr.vrt'), 'los_rdr', 1),
+        ISCE2Dataset(find_product('fine_interferogram/IW*/burst_01.int.vrt'), 'wrapped_phase_rdr', [1]),
+        ISCE2Dataset(find_product('geom_reference/IW*/los_01.rdr.vrt'), 'los_rdr', [1,2]),
     ]
     if include_radar:
         datasets += rdr_datasets
@@ -315,7 +315,7 @@ def translate_outputs(product_name: str, pixel_size: float, include_radar: bool 
         gdal.Translate(
             destName=out_file,
             srcDS=dataset.name,
-            bandList=[dataset.band],
+            bandList=dataset.band,
             format='GTiff',
             noData=0,
             creationOptions=['TILED=YES', 'COMPRESS=LZW', 'NUM_THREADS=ALL_CPUS'],
