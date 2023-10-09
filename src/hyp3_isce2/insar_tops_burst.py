@@ -12,6 +12,7 @@ from pathlib import Path
 from shutil import copyfile, make_archive
 
 import isce
+from iscesys.Component.ProductManager import ProductManager as PM
 from hyp3lib.aws import upload_file_to_s3
 from hyp3lib.get_orb import downloadSentinelOrbitFile
 from hyp3lib.image import create_thumbnail
@@ -228,6 +229,14 @@ def make_parameter_file(
     s = ref_time.split('T')[1].split(':')
     utc_time = (int(s[0]) * 60 + int(s[1]) * 60) + float(s[2])
 
+    pm = PM()
+    pm.configure()
+    product = pm.loadProduct(list(Path('fine_interferogram').glob('IW*xml'))[0])
+    first_valid_line = product.bursts[0].firstValidLine
+    num_valid_lines = product.bursts[0].numValidLines
+    first_valid_sample = product.bursts[0].firstValidSample
+    num_valid_samples = product.bursts[0].numValidSamples
+
     output_strings = [
         f'Reference Granule: {reference_scene}\n',
         f'Secondary Granule: {secondary_scene}\n',
@@ -253,6 +262,10 @@ def make_parameter_file(
         f'DEM resolution (m): {dem_resolution}\n',
         f'Unwrapping type: {unwrapper_type}\n',
         'Speckle filter: yes\n',
+        f'Full resolution first valid line: {first_valid_line}\n'
+        f'Full resolution number of lines: {num_valid_lines}\n'
+        f'Full resolution first valid sample: {first_valid_sample}\n'
+        f'Full resolution number of samples: {num_valid_samples}\n'
     ]
 
     output_string = ''.join(output_strings)
