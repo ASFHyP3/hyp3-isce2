@@ -305,6 +305,8 @@ def translate_outputs(product_name: str, pixel_size: float, include_radar: bool 
 
     rdr_datasets = [
         ISCE2Dataset(find_product('fine_interferogram/IW*/burst_01.int.vrt'), 'wrapped_phase_rdr', [1]),
+        ISCE2Dataset(find_product('geom_reference/IW*/lat_01.rdr.vrt'), 'lat_rdr', [1]),
+        ISCE2Dataset(find_product('geom_reference/IW*/lon_01.rdr.vrt'), 'lon_rdr', [1]),
         ISCE2Dataset(find_product('geom_reference/IW*/los_01.rdr.vrt'), 'los_rdr', [1,2]),
     ]
     if include_radar:
