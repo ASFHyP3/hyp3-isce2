@@ -70,6 +70,7 @@ def insar_tops(
         orbit_directory=str(orbit_dir),
         aux_cal_directory=str(aux_cal_dir),
         dem_filename=str(dem_path),
+        geocode_dem_filename=str(dem_path),
         roi=roi,
         swaths=swaths,
         azimuth_looks=azimuth_looks,
