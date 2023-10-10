@@ -85,10 +85,6 @@ class BurstProduct:
     start_utc: datetime.datetime
     isce2_burst_number: int = field(default=None)
 
-    @property
-    def granule_start_time(self):
-        return datetime.datetime.strptime(self.granule.split('_')[5], '%Y%m%dT%H%M%S')
-
     def to_burst_params(self):
         return burst_utils.BurstParams(self.granule, self.swath, self.polarization, self.burst_number)
 
@@ -284,7 +280,7 @@ def create_s1_instance(swath, products, polarization='VV', outdir='fine_interfer
     obj.output = os.path.join(outdir, 'IW{0}'.format(swath))
     obj.parse()
 
-    products = sorted(products, key=lambda x: (x.granule_start_time, x.burst_number))
+    products = sorted(products, key=lambda x: x.start_utc)
     obj.select_bursts([b.start_utc for b in products])
     obj.update_burst_properties(products)
     obj.write_xml()
