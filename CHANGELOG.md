@@ -6,6 +6,10 @@ The format is based on [Keep a Changelog](https://keepachangelog.com/en/1.0.0/),
 and this project adheres to [PEP 440](https://www.python.org/dev/peps/pep-0440/)
 and uses [Semantic Versioning](https://semver.org/spec/v2.0.0.html).
 
+## [0.7.2]
+### Fixed
+* Description of the range of the lv_phi in the readme.md.txt.j2.
+
 ## [0.7.1]
 ### Added
 * insar_tops_burst now validates burst pair granule names.
