@@ -16,12 +16,13 @@ from typing import Iterable, Tuple
 import asf_search
 import geopandas
 import lxml.etree as ET
+import pandas as pd
 import numpy as np
 import s3fs
 import shapely
 from hyp3lib.util import string_is_true
 from osgeo import gdal
-from shapely import geometry
+from shapely import geometry, wkt
 from shapely.geometry import box
 
 import isce  # noqa
@@ -603,6 +604,16 @@ def goldstein_werner_filter(filter_strength: float = 0.5, mergedir: str = 'merge
     phsigImage.renderHdr()
 
 
+def get_geo_partition(coordinate, round_value=90):
+    x, y = coordinate
+    x_rounded = round(x / round_value) * round_value
+    y_rounded = round(y / round_value) * round_value
+    x_fill = str(x_rounded).zfill(4)
+    y_fill = str(y_rounded).zfill(4)
+    partition = f'{y_fill}_{x_fill}'
+    return partition
+
+
 def create_water_mask(template_image: str = 'full_res.dem.wgs84', mergedir: str = 'merged'):
     """Create a water mask in geographic coordinates with the same dimensions as the template image.
     The template image will typically be your DEM.
@@ -637,12 +648,15 @@ def create_water_mask(template_image: str = 'full_res.dem.wgs84', mergedir: str 
     south = north + delta_y * (y_size - 1)
     east = west + delta_x * (x_size - 1)
     extent = box(west, south, east, north)
-    extent = split_geometry_on_antimeridian(json.loads(shapely.to_geojson(extent)))
+    corrected_extent = split_geometry_on_antimeridian(json.loads(shapely.to_geojson(extent)))
 
+    filters = list(set([('lat_lon', '=', get_geo_partition(coord)) for coord in extent.exterior.coords]))
     s3_fs = s3fs.S3FileSystem(anon=True, default_block_size=5 * (2**20))
-    with s3_fs.open('asf-dem-west/WATER_MASK/GSHHG/hyp3_water_mask_20220912.parquet', 'rb') as s3_file:
-        full_gdf = geopandas.read_parquet(s3_file)
-        mask = geopandas.clip(full_gdf, geometry.shape(extent))
+    df = pd.read_parquet('asf-dem-west/WATER_MASK/GSHHG/hyp3_water_mask_20220912', filesystem=s3_fs, filters=filters)
+    df['geometry'] = df['geometry'].apply(wkt.loads)
+    df['lat_lon'] = df['lat_lon'].astype(str)
+    gdf = geopandas.GeoDataFrame(df, crs='EPSG:4326')
+    mask = geopandas.clip(gdf, geometry.shape(corrected_extent))
 
     with TemporaryDirectory() as temp_dir:
         temp_file = Path(temp_dir) / 'mask.shp'
