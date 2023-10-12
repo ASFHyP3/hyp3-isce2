@@ -1,7 +1,10 @@
-import isce # noqa
-import isceobj
+import os
+import shutil
 
+import isce  # noqa
+import isceobj
 import numpy as np
+from isceobj.Util.ImageUtil.ImageLib import loadImage
 from osgeo import gdal
 
 gdal.UseExceptions()
@@ -9,6 +12,7 @@ gdal.UseExceptions()
 
 class GDALConfigManager:
     """Context manager for setting GDAL config options temporarily"""
+
     def __init__(self, **options):
         """
         Args:
@@ -118,3 +122,32 @@ def resample_to_radar(image_to_resample: str, latin: str, lonin: str, output: st
     croppedim = isceobj.createImage()
     croppedim.initImage(output, 'read', cropped.shape[1], maskim.dataType)
     croppedim.renderHdr()
+
+
+def isce2_copy(in_path: str, out_path: str):
+    """Copy an ISCE2 image file and its metadata.
+    
+    Args:
+        in_path: The path to the input image file (not the xml).
+        out_path: The path to the output image file (not the xml).
+    """
+    image, data_name, meta_name = loadImage(in_path)
+    clone = image.clone('write')
+    clone.setFilename(out_path)
+    clone.renderHdr()
+    shutil.copy(out_path, out_path)
+
+
+def image_math(image_a_path: str, image_b_path: str, out_path: str, expression: str):
+    """Run ISCE2's ImageMath.py on two images.
+
+    Args:
+        image_a_path: The path to the first image (not the xml).
+        image_b_path: The path to the second image (not the xml).
+        out_path: The path to the output image.
+        expression: The expression to pass to ImageMath.py.
+    """
+    cmd = f"ImageMath.py -e '{expression}' --a={image_a_path} --b={image_b_path} -o {out_path}"
+    status = os.system(cmd)
+    if status != 0:
+        raise Exception('error when running:\n{}\n'.format(cmd))

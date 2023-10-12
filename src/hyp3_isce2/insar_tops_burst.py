@@ -34,7 +34,14 @@ from hyp3_isce2.burst import (
 from hyp3_isce2.dem import download_dem_for_isce2
 from hyp3_isce2.logging import configure_root_logger
 from hyp3_isce2.s1_auxcal import download_aux_cal
-from hyp3_isce2.utils import make_browse_image, oldest_granule_first, resample_to_radar, utm_from_lon_lat
+from hyp3_isce2.utils import (
+    image_math,
+    isce2_copy,
+    make_browse_image,
+    oldest_granule_first,
+    resample_to_radar,
+    utm_from_lon_lat,
+)
 from hyp3_isce2.water_mask import create_water_mask
 
 
@@ -133,22 +140,13 @@ def insar_tops_burst(
     topsapp.swap_burst_vrts()
     if apply_water_mask:
         topsapp.run_topsapp_burst(start='computeBaselines', end='filter', config_xml=config_path)
-        # multilook lat/lon file
         multilook('merged/lon.rdr.full', outname='merged/lon.rdr', alks=azimuth_looks, rlks=range_looks)
         multilook('merged/lat.rdr.full', outname='merged/lat.rdr', alks=azimuth_looks, rlks=range_looks)
-        # resample water mask to radar coordinates
         resample_to_radar('water_mask.tif', 'merged/lat.rdr', 'merged/lon.rdr', 'merged/water_mask.rdr')
-        # mask the coherence file
-        cmd = "ImageMath.py -e 'a*b' --a=phsig.cor --b=merged/water_mask.rdr -o merged/masked.phsig.cor"
-        status = os.system(cmd)
-        if status != 0:
-            raise Exception('error when running:\n{}\n'.format(cmd))
-        # make sure the name of the masked coherence file is the base name for coherence in ISCE2
-        # TODO
-        # run the unrwapping step through unwrap2stage
+        isce2_copy('merged/phsig.cor', 'merged/unmasked.phsig.cor')
+        image_math('merged/unmasked.phsig.cor', 'merged/water_mask.rdr', 'merged/phsig.cor', 'a*b')
         topsapp.run_topsapp_burst(start='unwrap', end='unwrap2stage', config_xml=config_path)
-        # replace the masked verion of coherence with the unmasked version
-        # TODO
+        isce2_copy('merged/unmasked.phsig.cor', 'merged/phsig.cor')
     else:
         topsapp.run_topsapp_burst(start='computeBaselines', end='unwrap2stage', config_xml=config_path)
     copyfile('merged/z.rdr.full.xml', 'merged/z.rdr.full.vrt.xml')
