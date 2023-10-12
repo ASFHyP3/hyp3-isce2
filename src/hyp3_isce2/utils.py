@@ -1,3 +1,7 @@
+import isce # noqa
+import isceobj
+
+import numpy as np
 from osgeo import gdal
 
 gdal.UseExceptions()
@@ -80,3 +84,37 @@ def oldest_granule_first(g1, g2):
     if g1[14:29] <= g2[14:29]:
         return g1, g2
     return g2, g1
+
+
+def resample_to_radar(image_to_resample: str, latin: str, lonin: str, output: str):
+    """Resample a geographic image to radar coordinates using a nearest neighbor method.
+    The latin and lonin images are used to map from geographic to radar coordinates.
+
+    Args:
+        image_to_resample: The path to the image to resample
+        latin: The path to the latitude image
+        lonin: The path to the longitude image
+        output: The path to the output image
+    """
+    maskim = isceobj.createImage()
+    maskim.load(image_to_resample + '.xml')
+    latim = isceobj.createImage()
+    latim.load(latin + '.xml')
+    lonim = isceobj.createImage()
+    lonim.load(lonin + '.xml')
+    mask = np.fromfile(image_to_resample, maskim.toNumpyDataType())
+    lat = np.fromfile(latin, latim.toNumpyDataType())
+    lon = np.fromfile(lonin, lonim.toNumpyDataType())
+    mask = np.reshape(mask, [maskim.coord2.coordSize, maskim.coord1.coordSize])
+    startLat = maskim.coord2.coordStart
+    deltaLat = maskim.coord2.coordDelta
+    startLon = maskim.coord1.coordStart
+    deltaLon = maskim.coord1.coordDelta
+    lati = np.clip(((lat - startLat) / deltaLat).astype(int), 0, mask.shape[0] - 1)
+    loni = np.clip(((lon - startLon) / deltaLon).astype(int), 0, mask.shape[1] - 1)
+    cropped = (mask[lati, loni]).astype(maskim.toNumpyDataType())
+    cropped = np.reshape(cropped, (latim.coord2.coordSize, latim.coord1.coordSize))
+    cropped.tofile(output)
+    croppedim = isceobj.createImage()
+    croppedim.initImage(output, 'read', cropped.shape[1], maskim.dataType)
+    croppedim.renderHdr()
