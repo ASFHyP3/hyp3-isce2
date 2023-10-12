@@ -53,7 +53,8 @@ def insar_tops_burst(
         secondary_scene: str,
         swath_number: int,
         azimuth_looks: int = 4,
-        range_looks: int = 20) -> Path:
+        range_looks: int = 20,
+        apply_water_mask: bool = False) -> Path:
     """Create a burst interferogram
 
     Args:
@@ -62,9 +63,7 @@ def insar_tops_burst(
         swath_number: Number of swath to grab bursts from (1, 2, or 3) for IW
         azimuth_looks: Number of azimuth looks
         range_looks: Number of range looks
-
-    Returns:
-        Path to the output files
+        apply_water_mask: Whether to apply a pre-unwrap water mask
     """
     orbit_dir = Path('orbits')
     aux_cal_dir = Path('aux_cal')
@@ -124,7 +123,11 @@ def insar_tops_burst(
 
     topsapp.run_topsapp_burst(start='startup', end='preprocess', config_xml=config_path)
     topsapp.swap_burst_vrts()
-    topsapp.run_topsapp_burst(start='computeBaselines', end='unwrap2stage', config_xml=config_path)
+    if apply_water_mask:
+        # TODO update to use water_mask
+        topsapp.run_topsapp_burst(start='computeBaselines', end='unwrap2stage', config_xml=config_path)
+    else:
+        topsapp.run_topsapp_burst(start='computeBaselines', end='unwrap2stage', config_xml=config_path)
     copyfile('merged/z.rdr.full.xml', 'merged/z.rdr.full.vrt.xml')
     topsapp.run_topsapp_burst(start='geocode', end='geocode', config_xml=config_path)
 
@@ -423,7 +426,8 @@ def main():
         secondary_scene=secondary_scene,
         azimuth_looks=azimuth_looks,
         range_looks=range_looks,
-        swath_number=swath_number
+        swath_number=swath_number,
+        apply_water_mask=args.apply_water_mask
     )
 
     log.info('ISCE2 TopsApp run completed successfully')
