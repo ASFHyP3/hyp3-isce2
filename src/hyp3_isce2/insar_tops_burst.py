@@ -12,6 +12,7 @@ from pathlib import Path
 from shutil import copyfile, make_archive
 
 import isce
+from isceobj.TopsProc.runMergeBursts import multilook
 from hyp3lib.aws import upload_file_to_s3
 from hyp3lib.get_orb import downloadSentinelOrbitFile
 from hyp3lib.image import create_thumbnail
@@ -64,6 +65,9 @@ def insar_tops_burst(
         azimuth_looks: Number of azimuth looks
         range_looks: Number of range looks
         apply_water_mask: Whether to apply a pre-unwrap water mask
+
+    Returns:
+        Path to results directory
     """
     orbit_dir = Path('orbits')
     aux_cal_dir = Path('aux_cal')
@@ -90,6 +94,10 @@ def insar_tops_burst(
         buffer=0,
         resample_20m=False
     )
+    if apply_water_mask:
+        water_mask_path = 'water_mask.wgs84'
+        create_water_mask(str(dem_path), water_mask_path)
+
     download_aux_cal(aux_cal_dir)
 
     if range_looks == 5:
@@ -124,8 +132,14 @@ def insar_tops_burst(
     topsapp.run_topsapp_burst(start='startup', end='preprocess', config_xml=config_path)
     topsapp.swap_burst_vrts()
     if apply_water_mask:
-        # TODO update to use water_mask
-        topsapp.run_topsapp_burst(start='computeBaselines', end='unwrap2stage', config_xml=config_path)
+        topsapp.run_topsapp_burst(start='computeBaselines', end='filter', config_xml=config_path)
+        # multilook lat/lon file
+        # resample water mask to radar coordinates
+        # make a copy of the coherence file
+        # mask the copy of the coherence file
+        # make sure the name of the masked coherence file is the base name for coherence in ISCE2
+        # run the unrwapping step through unwrap2stage
+        # replace the masked verion of coherence with the unmasked version
     else:
         topsapp.run_topsapp_burst(start='computeBaselines', end='unwrap2stage', config_xml=config_path)
     copyfile('merged/z.rdr.full.xml', 'merged/z.rdr.full.vrt.xml')
@@ -442,6 +456,7 @@ def main():
     unwrapped_phase = f'{product_name}/{product_name}_unw_phase.tif'
     wrapped_phase = f'{product_name}/{product_name}_wrapped_phase.tif'
     water_mask = f'{product_name}/{product_name}_water_mask.tif'
+    #TODO resample water_mask instead of re-creating
     create_water_mask(wrapped_phase, water_mask)
 
     if args.apply_water_mask:

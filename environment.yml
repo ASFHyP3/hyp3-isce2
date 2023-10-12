@@ -15,6 +15,7 @@ dependencies:
   - geopandas
   - gdal
   - opencv
+  - s3fs
   # For packaging, and testing
   - flake8
   - flake8-import-order
