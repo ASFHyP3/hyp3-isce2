@@ -39,7 +39,7 @@ from hyp3_isce2.utils import (
     isce2_copy,
     make_browse_image,
     oldest_granule_first,
-    resample_to_radar,
+    resample_to_radar_io,
     utm_from_lon_lat,
 )
 from hyp3_isce2.water_mask import create_water_mask
@@ -140,7 +140,7 @@ def insar_tops_burst(
         create_water_mask(str(dem_path), water_mask_path, gdal_format='ISCE')
         multilook('merged/lon.rdr.full', outname='merged/lon.rdr', alks=azimuth_looks, rlks=range_looks)
         multilook('merged/lat.rdr.full', outname='merged/lat.rdr', alks=azimuth_looks, rlks=range_looks)
-        resample_to_radar(water_mask_path, 'merged/lat.rdr', 'merged/lon.rdr', 'merged/water_mask.rdr')
+        resample_to_radar_io(water_mask_path, 'merged/lat.rdr', 'merged/lon.rdr', 'merged/water_mask.rdr')
         isce2_copy('merged/phsig.cor', 'merged/unmasked.phsig.cor')
         image_math('merged/unmasked.phsig.cor', 'merged/water_mask.rdr', 'merged/phsig.cor', 'a*b')
         topsapp.run_topsapp_burst(start='unwrap', end='unwrap2stage', config_xml=config_path)
