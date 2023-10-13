@@ -90,7 +90,85 @@ def oldest_granule_first(g1, g2):
     return g2, g1
 
 
-def resample_to_radar(image_to_resample: str, latin: str, lonin: str, output: str):
+def load_isce2_image(in_path) -> tuple[isceobj.Image, np.ndarray]:
+    """ Read an ISCE2 image file and return the image object and array.
+    
+    Args:
+        in_path: The path to the image to resample (not the xml).
+    """
+
+    image_obj, _, _ = loadImage(in_path)
+    array = np.fromfile(in_path, image_obj.toNumpyDataType())
+    return image_obj, array
+
+
+def write_isce2_image(output_path, array=None, width=None, mode='read', data_type='FLOAT') -> None:
+    """ Write an ISCE2 image file.
+    
+    Args:
+        output_path: The path to the output image file.
+        array: The array to write to the file.
+        width: The width of the image.
+        mode: The mode to open the image in.
+        data_type: The data type of the image.
+    """
+    
+    if array is not None:
+        array.tofile(output_path)
+        width = array.shape[1]
+    elif width is None:
+        raise ValueError('Either a width or an input array must be provided')
+
+    out_obj = isceobj.createImage()
+    out_obj.initImage(output_path, mode, width, data_type)
+    out_obj.renderHdr()
+
+
+def get_geotransform_from_dataset(dataset: isceobj.Image) -> tuple:
+    """Get the geotransform from an ISCE2 image object.
+    
+    Args:
+        dataset: The ISCE2 image object to get the geotransform from.
+    """
+
+    startLat = dataset.coord2.coordStart
+    deltaLat = dataset.coord2.coordDelta
+    startLon = dataset.coord1.coordStart
+    deltaLon = dataset.coord1.coordDelta
+
+    return (startLon, deltaLon, 0, startLat, 0, deltaLat)
+
+
+def resample_to_radar(
+    mask: np.ndarray,
+    lat: np.ndarray,
+    lon: np.ndarray,
+    geotransform: tuple,
+    type: type,
+    outshape: tuple[int, int]
+) -> np.ndarray:
+    """Resample a geographic image to radar coordinates using a nearest neighbor method.
+    The latin and lonin images are used to map from geographic to radar coordinates.
+
+    Args:
+        mask: The array of the image to resample
+        lat: The latitude array
+        lon: The longitude array
+
+    Returns:
+        resampled_image: The resampled image array
+    """
+
+    startLon, deltaLon, startLat, deltaLat = geotransform[0], geotransform[1], geotransform[3], geotransform[5]
+
+    lati = np.clip(((lat - startLat) / deltaLat).astype(int), 0, mask.shape[0] - 1)
+    loni = np.clip(((lon - startLon) / deltaLon).astype(int), 0, mask.shape[1] - 1)
+    resampled_image = (mask[lati, loni]).astype(type)
+    resampled_image = np.reshape(resampled_image, outshape)
+    return resampled_image
+
+
+def resample_to_radar_io(image_to_resample: str, latin: str, lonin: str, output: str) -> None:
     """Resample a geographic image to radar coordinates using a nearest neighbor method.
     The latin and lonin images are used to map from geographic to radar coordinates.
 
@@ -100,28 +178,20 @@ def resample_to_radar(image_to_resample: str, latin: str, lonin: str, output: st
         lonin: The path to the longitude image
         output: The path to the output image
     """
-    maskim = isceobj.createImage()
-    maskim.load(image_to_resample + '.xml')
-    latim = isceobj.createImage()
-    latim.load(latin + '.xml')
-    lonim = isceobj.createImage()
-    lonim.load(lonin + '.xml')
-    mask = np.fromfile(image_to_resample, maskim.toNumpyDataType())
-    lat = np.fromfile(latin, latim.toNumpyDataType())
-    lon = np.fromfile(lonin, lonim.toNumpyDataType())
+    maskim, mask = load_isce2_image(image_to_resample)
+    latim, lat = load_isce2_image(latin)
+    _, lon = load_isce2_image(lonin)
     mask = np.reshape(mask, [maskim.coord2.coordSize, maskim.coord1.coordSize])
-    startLat = maskim.coord2.coordStart
-    deltaLat = maskim.coord2.coordDelta
-    startLon = maskim.coord1.coordStart
-    deltaLon = maskim.coord1.coordDelta
-    lati = np.clip(((lat - startLat) / deltaLat).astype(int), 0, mask.shape[0] - 1)
-    loni = np.clip(((lon - startLon) / deltaLon).astype(int), 0, mask.shape[1] - 1)
-    cropped = (mask[lati, loni]).astype(maskim.toNumpyDataType())
-    cropped = np.reshape(cropped, (latim.coord2.coordSize, latim.coord1.coordSize))
-    cropped.tofile(output)
-    croppedim = isceobj.createImage()
-    croppedim.initImage(output, 'read', cropped.shape[1], maskim.dataType)
-    croppedim.renderHdr()
+    geotransform = get_geotransform_from_dataset(maskim)
+    cropped = resample_to_radar(
+        maskim = maskim,
+        mask = mask,
+        lat = lat,
+        lon = lon,
+        geotransform = geotransform,
+        outshape = (latim.coord2.coordSize, latim.coord1.coordSize)
+    )
+    write_isce2_image(outputh_path=output, array=cropped, data_type=maskim.dataType)
 
 
 def isce2_copy(in_path: str, out_path: str):
