@@ -1,5 +1,7 @@
 import os
 
+import numpy as np
+
 from osgeo import gdal
 
 from hyp3_isce2.utils import (
@@ -7,7 +9,8 @@ from hyp3_isce2.utils import (
     extent_from_geotransform,
     make_browse_image,
     oldest_granule_first,
-    utm_from_lon_lat
+    utm_from_lon_lat,
+    resample_to_radar
 )
 
 gdal.UseExceptions()
@@ -65,3 +68,44 @@ def test_make_browse_image():
     make_browse_image(input_tif, output_png)
     assert open(output_png, "rb").read() == open("tests/data/test_browse_image.png", "rb").read()
     os.remove(output_png)
+
+
+
+
+def test_resample_to_radar():
+
+    def find_nearest(array, value):
+        array = np.asarray(array)
+        idx = (np.abs(array - value)).argmin()
+        return idx
+
+    def back_to_2d(index, cols):
+        return index // cols, index % cols
+
+    dim1 = 20
+    dim2 = 15
+    mask = np.zeros((dim1, dim2))
+    np.fill_diagonal(mask, 1)
+    lat = np.zeros((dim1, dim2))
+    lon = np.zeros((dim1, dim2))
+    geotransform = (-136, 0.000555556, 0, 65.0001, 0, -0.000277778)
+    type = np.byte
+    outshape = (dim1,dim2)
+
+    for i in range(dim1):
+        for j in range(dim2):
+            lat[i, j] = 65.0001 + i * (-0.000277778 + (-0.000277778 / 2))
+            lon[i, j] = -136 + j * (0.000555556 + (0.000555556 / 2))
+
+    resampled_image = resample_to_radar(mask, lat, lon, geotransform, type, outshape)
+
+    for i in range(dim1):
+        for j in range(dim2):
+            mask_lat = 65.0001 + i * -0.000277778
+            mask_lon = -136 + j * 0.000555556
+            flat_lat_index = find_nearest(lat, mask_lat)
+            lat_index = back_to_2d(flat_lat_index, dim2)
+            flat_lon_index = find_nearest(lon, mask_lon)
+            lon_index = back_to_2d(flat_lon_index, dim2)
+            if mask[i, j] == 1:
+                assert resampled_image[lat_index[0], lon_index[1]] == 1
