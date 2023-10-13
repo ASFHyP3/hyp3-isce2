@@ -189,6 +189,7 @@ def resample_to_radar_io(image_to_resample: str, latin: str, lonin: str, output:
         lat = lat,
         lon = lon,
         geotransform = geotransform,
+        type = maskim.toNumpyDataType(),
         outshape = (latim.coord2.coordSize, latim.coord1.coordSize)
     )
     write_isce2_image(outputh_path=output, array=cropped, data_type=maskim.dataType)
