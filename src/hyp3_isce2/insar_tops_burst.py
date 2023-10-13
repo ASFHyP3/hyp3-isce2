@@ -101,10 +101,6 @@ def insar_tops_burst(
         buffer=0,
         resample_20m=False
     )
-    if apply_water_mask:
-        water_mask_path = 'water_mask.tif'
-        create_water_mask(str(dem_path), water_mask_path)
-
     download_aux_cal(aux_cal_dir)
 
     if range_looks == 5:
@@ -140,9 +136,11 @@ def insar_tops_burst(
     topsapp.swap_burst_vrts()
     if apply_water_mask:
         topsapp.run_topsapp_burst(start='computeBaselines', end='filter', config_xml=config_path)
+        water_mask_path = 'water_mask.wgs84'
+        create_water_mask(str(dem_path), water_mask_path, gdal_format='ISCE')
         multilook('merged/lon.rdr.full', outname='merged/lon.rdr', alks=azimuth_looks, rlks=range_looks)
         multilook('merged/lat.rdr.full', outname='merged/lat.rdr', alks=azimuth_looks, rlks=range_looks)
-        resample_to_radar('water_mask.tif', 'merged/lat.rdr', 'merged/lon.rdr', 'merged/water_mask.rdr')
+        resample_to_radar(water_mask_path, 'merged/lat.rdr', 'merged/lon.rdr', 'merged/water_mask.rdr')
         isce2_copy('merged/phsig.cor', 'merged/unmasked.phsig.cor')
         image_math('merged/unmasked.phsig.cor', 'merged/water_mask.rdr', 'merged/phsig.cor', 'a*b')
         topsapp.run_topsapp_burst(start='unwrap', end='unwrap2stage', config_xml=config_path)
@@ -463,7 +461,7 @@ def main():
     unwrapped_phase = f'{product_name}/{product_name}_unw_phase.tif'
     wrapped_phase = f'{product_name}/{product_name}_wrapped_phase.tif'
     water_mask = f'{product_name}/{product_name}_water_mask.tif'
-    #TODO resample water_mask instead of re-creating
+    #TODO should we resample water_mask instead of re-creating?
     create_water_mask(wrapped_phase, water_mask)
 
     if args.apply_water_mask:

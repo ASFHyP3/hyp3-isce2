@@ -126,16 +126,16 @@ def resample_to_radar(image_to_resample: str, latin: str, lonin: str, output: st
 
 def isce2_copy(in_path: str, out_path: str):
     """Copy an ISCE2 image file and its metadata.
-    
+
     Args:
         in_path: The path to the input image file (not the xml).
         out_path: The path to the output image file (not the xml).
     """
-    image, data_name, meta_name = loadImage(in_path)
+    image, _, _ = loadImage(in_path)
     clone = image.clone('write')
     clone.setFilename(out_path)
     clone.renderHdr()
-    shutil.copy(out_path, out_path)
+    shutil.copy(in_path, out_path)
 
 
 def image_math(image_a_path: str, image_b_path: str, out_path: str, expression: str):
