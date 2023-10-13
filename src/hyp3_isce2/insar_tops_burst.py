@@ -12,11 +12,11 @@ from pathlib import Path
 from shutil import copyfile, make_archive
 
 import isce
-from isceobj.TopsProc.runMergeBursts import multilook
 from hyp3lib.aws import upload_file_to_s3
 from hyp3lib.get_orb import downloadSentinelOrbitFile
 from hyp3lib.image import create_thumbnail
 from hyp3lib.util import string_is_true
+from isceobj.TopsProc.runMergeBursts import multilook
 from lxml import etree
 from osgeo import gdal
 
@@ -461,7 +461,7 @@ def main():
     unwrapped_phase = f'{product_name}/{product_name}_unw_phase.tif'
     wrapped_phase = f'{product_name}/{product_name}_wrapped_phase.tif'
     water_mask = f'{product_name}/{product_name}_water_mask.tif'
-    #TODO should we resample water_mask instead of re-creating?
+    # TODO should we resample water_mask instead of re-creating?
     create_water_mask(wrapped_phase, water_mask)
 
     if args.apply_water_mask:
