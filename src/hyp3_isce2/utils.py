@@ -168,6 +168,60 @@ def resample_to_radar(
     return resampled_image
 
 
+def resample_to_radar_old(
+    mask: np.ndarray,
+    lat: np.ndarray,
+    lon: np.ndarray,
+    geotransform: tuple,
+    type: type,
+    outshape: tuple[int, int]
+) -> np.ndarray:
+    """Resample a geographic image to radar coordinates using a nearest neighbor method.
+    The latin and lonin images are used to map from geographic to radar coordinates.
+
+    Args:
+        mask: The array of the image to resample
+        lat: The latitude array
+        lon: The longitude array
+
+    Returns:
+        resampled_image: The resampled image array
+    """
+
+    startLon, deltaLon, startLat, deltaLat = geotransform[0], geotransform[1], geotransform[3], geotransform[5]
+
+    def find_nearest(array, value):
+        array = np.asarray(array)
+        idx = (np.abs(array - value))
+        return idx
+
+    def back_to_2d(index, cols):
+        return index // cols, index % cols
+
+    lon_lat_complex = lon + 1j * lat
+
+    resampled_image = np.zeros(outshape, dtype=type)
+
+    x_sample_increase = int(len(mask[:, 0]) / len(resampled_image[:, 0]))
+    y_sample_increase = int(len(mask[0, :]) / len(resampled_image[0, :]))
+
+    for row in range(len(mask[:, 0])):
+        for col in range(len(mask[0, :])):
+            mask_lat = startLat + j * row * deltaLat
+            mask_lon = startLon + col * deltaLon
+            index = find_nearest(lon_lat_complex, mask_lon + 1j * mask_lat)
+            resampled_image[index[0], index[1]] = mask[row, col]   
+
+    # lati = np.clip(((lat - startLat) / deltaLat).astype(int), 0, mask.shape[0] - 1)
+    # loni = np.clip(((lon - startLon) / deltaLon).astype(int), 0, mask.shape[1] - 1)
+    # resampled_image = (mask[loni, lati]).astype(type)
+    # resampled_image = np.reshape(resampled_image, outshape)
+
+    print("Resampled: \n", resampled_image)
+
+    return resampled_image
+
+
 def resample_to_radar_io(image_to_resample: str, latin: str, lonin: str, output: str) -> None:
     """Resample a geographic image to radar coordinates using a nearest neighbor method.
     The latin and lonin images are used to map from geographic to radar coordinates.

@@ -70,9 +70,19 @@ def test_make_browse_image():
     os.remove(output_png)
 
 
+def foo(mask, lat, lon, geotransform, type, outshape):
 
+    x, x_res, y, y_res = geotransform[0], geotransform[1], geotransform[3], geotransform[5]
 
-def test_resample_to_radar():
+    rows = len(lat[:, 0])
+    cols = len(lat[0, :])
+
+    for row in range(len(lat[:, 0])):
+        for col in range(len(lat[0, :])):
+            lat[row, col] = y + row * y_res
+            lon[row, col] = x + col * x_res
+
+    resampled_image = resample_to_radar(mask, lat, lon, geotransform, type, outshape)
 
     def find_nearest(array, value):
         array = np.asarray(array)
@@ -82,30 +92,45 @@ def test_resample_to_radar():
     def back_to_2d(index, cols):
         return index // cols, index % cols
 
-    dim1 = 20
-    dim2 = 15
-    mask = np.zeros((dim1, dim2))
-    np.fill_diagonal(mask, 1)
-    lat = np.zeros((dim1, dim2))
-    lon = np.zeros((dim1, dim2))
-    geotransform = (-136, 0.000555556, 0, 65.0001, 0, -0.000277778)
+    lon_lat_complex = lon + 1j * lat
+
+    for row in range(len(mask[:, 0])):
+        for col in range(len(mask[0, :])):
+            mask_lat = y + row * y_res
+            mask_lon = x + col * x_res
+            flat_index = find_nearest(lon_lat_complex, mask_lon + 1j * mask_lat)
+            index = back_to_2d(flat_index, cols)
+            if mask[row, col] == 1:
+                assert resampled_image[index[0], index[1]] == 1
+
+    return mask, resampled_image
+
+def test_resample_to_radar():
+
+    rows_1 = 20
+    cols_1 = 15
     type = np.byte
-    outshape = (dim1,dim2)
+    outshape_1 = (rows_1, cols_1)
+    lat_1 = np.zeros((rows_1, cols_1))
+    lon_1 = np.zeros((rows_1, cols_1))
+    mask_1 = np.zeros((rows_1, cols_1))
+    np.fill_diagonal(mask_1, 1)
+    mask_1[0, 14] = 1
+    mask_1[19, 0] = 1
 
-    for i in range(dim1):
-        for j in range(dim2):
-            lat[i, j] = 65.0001 + i * (-0.000277778 + (-0.000277778 / 2))
-            lon[i, j] = -136 + j * (0.000555556 + (0.000555556 / 2))
+    # rows_2 = 20
+    # cols_2 = 10
+    # type = np.byte
+    # outshape_2 = (rows_2, cols_2)
+    # lat_2 = np.zeros((rows_2, cols_2))
+    # lon_2 = np.zeros((rows_2, cols_2))
+    # mask_2 = np.zeros((20, 20))
+    # np.fill_diagonal(mask_2, 1)
+    # mask_2[0, 19] = 1
+    # mask_2[19, 0] = 1
 
-    resampled_image = resample_to_radar(mask, lat, lon, geotransform, type, outshape)
+    geotransform = (x := 10, x_res := 1, 0, y := 15, 0, y_res := -1)
 
-    for i in range(dim1):
-        for j in range(dim2):
-            mask_lat = 65.0001 + i * -0.000277778
-            mask_lon = -136 + j * 0.000555556
-            flat_lat_index = find_nearest(lat, mask_lat)
-            lat_index = back_to_2d(flat_lat_index, dim2)
-            flat_lon_index = find_nearest(lon, mask_lon)
-            lon_index = back_to_2d(flat_lon_index, dim2)
-            if mask[i, j] == 1:
-                assert resampled_image[lat_index[0], lon_index[1]] == 1
+    print("input", mask_1)
+    m, r = foo(mask_1, lat_1, lon_1, geotransform, type, outshape_1)
+    print("output", r)
