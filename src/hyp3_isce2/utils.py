@@ -94,6 +94,10 @@ def load_isce2_image(in_path) -> tuple[isceobj.Image, np.ndarray]:
 
     Args:
         in_path: The path to the image to resample (not the xml).
+    
+    Returns:
+        image_obj: The ISCE2 image object.
+        array: The image as a numpy array.
     """
     image_obj, _, _ = loadImage(in_path)
     array = np.fromfile(in_path, image_obj.toNumpyDataType())
