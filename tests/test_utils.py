@@ -69,7 +69,7 @@ def test_make_browse_image():
     os.remove(output_png)
 
 
-def check_correctness_of_resample(mask, lat, lon, geotransform, data_type, outshape):
+def check_correctness_of_resample(mask, lat, lon, geotransform, data_type, outshape, lat_shift = 0, lon_shift = 0):
     x, x_res, y, y_res = geotransform[0], geotransform[1], geotransform[3], geotransform[5]
     rows = len(lat[:, 0])
     cols = len(lat[0, :])
@@ -83,8 +83,8 @@ def check_correctness_of_resample(mask, lat, lon, geotransform, data_type, outsh
 
     for row in range(rows):
         for col in range(cols):
-            lat[row, col] = y + row * mask_y_res
-            lon[row, col] = x + col * mask_x_res
+            lat[row, col] = y + lat_shift + row * mask_y_res
+            lon[row, col] = x + lon_shift + col * mask_x_res
 
     resampled_image = resample_to_radar(mask, lat, lon, geotransform, data_type, outshape)
 
@@ -101,8 +101,10 @@ def check_correctness_of_resample(mask, lat, lon, geotransform, data_type, outsh
             if mask[row, col] == 1:
                 assert resampled_image[index[0], index[1]] == 1
 
+    return mask, resampled_image
 
-def resample_with_different_case(resample_rows, resample_cols, mask_rows, mask_cols, geotransform):
+
+def resample_with_different_case(resample_rows, resample_cols, mask_rows, mask_cols, geotransform, lat_shift = 0, lon_shift = 0):
     lat = np.zeros((resample_rows, resample_cols))
     lon = np.zeros((resample_rows, resample_cols))
     mask = np.zeros((mask_rows, mask_cols))
@@ -111,7 +113,7 @@ def resample_with_different_case(resample_rows, resample_cols, mask_rows, mask_c
     mask[mask_rows-1, 0] = 1
     outshape = (resample_rows, resample_cols)
     data_type = np.byte
-    check_correctness_of_resample(mask, lat, lon, geotransform, data_type, outshape)
+    return check_correctness_of_resample(mask, lat, lon, geotransform, data_type, outshape)
 
 
 def test_resample_to_radar():
@@ -122,3 +124,16 @@ def test_resample_to_radar():
     resample_with_different_case(10, 20, 10, 10, geotransform)
     resample_with_different_case(20, 10, 10, 10, geotransform)
     resample_with_different_case(30, 10, 10, 10, geotransform)
+    m1, r1 = resample_with_different_case(30, 10, 10, 10, geotransform, lat_shift = 4)
+    m2, r2 = resample_with_different_case(30, 10, 10, 10, geotransform, lon_shift = 4)
+    m3, r3 = resample_with_different_case(30, 10, 10, 10, geotransform, lat_shift = 4, lon_shift = 4)
+
+    print("LAT SHIFT ONLY\n")
+    print(m1)
+    print(r1)
+    print("LON SHIFT ONLY\n")
+    print(m2)
+    print(r2)
+    print("LAT AND LON SHIFT\n")
+    print(m3)
+    print(r3)
