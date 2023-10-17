@@ -70,20 +70,16 @@ def test_make_browse_image():
 
 
 def check_correctness_of_resample(mask, lat, lon, geotransform, data_type, outshape):
-
     x, x_res, y, y_res = geotransform[0], geotransform[1], geotransform[3], geotransform[5]
-
     rows = len(lat[:, 0])
     cols = len(lat[0, :])
-    # get corner coordinates
     mask_rows = len(mask[:, 0])
     mask_cols = len(mask[0, :])
+    # get corner coordinates
     ul = (x, y)
-    lr = (x+x_res*(mask_cols-1), y+y_res*(mask_rows-1))
-
-    mask_x_res = (lr[0]-ul[0])/(cols-1)
-
-    mask_y_res = (lr[1] - ul[1])/(rows-1)
+    lr = (x + x_res * (mask_cols - 1), y + y_res * (mask_rows - 1))
+    mask_x_res = (lr[0] - ul[0]) / (cols - 1)
+    mask_y_res = (lr[1] - ul[1]) / (rows - 1)
 
     for row in range(rows):
         for col in range(cols):
@@ -92,28 +88,18 @@ def check_correctness_of_resample(mask, lat, lon, geotransform, data_type, outsh
 
     resampled_image = resample_to_radar(mask, lat, lon, geotransform, data_type, outshape)
 
-    print("mask", mask.astype(int))
-    print("resampled_mask", resampled_image)
-
-    def find_nearest(array, value):
-        array = np.asarray(array)
-        idx = (np.abs(array - value)).argmin()
-        return idx
-
-    def back_to_2d(index, cols):
-        return index // cols, index % cols
-
     lon_lat_complex = lon + 1j * lat
 
     for row in range(len(mask[:, 0])):
         for col in range(len(mask[0, :])):
             mask_lat = y + row * y_res
             mask_lon = x + col * x_res
-            flat_index = find_nearest(lon_lat_complex, mask_lon + 1j * mask_lat)
-            index = back_to_2d(flat_index, cols)
+            complex_pos = mask_lon + 1j * mask_lat
+            flat_index = (np.abs(lon_lat_complex - complex_pos)).argmin()
+            index = flat_index // cols, flat_index % cols
+            # Ensure that the 1's in the original mask are mapped to the resampled image.
             if mask[row, col] == 1:
                 assert resampled_image[index[0], index[1]] == 1
-    return mask, resampled_image
 
 
 def resample_with_different_case(resample_rows, resample_cols, mask_rows, mask_cols, geotransform):
@@ -130,7 +116,6 @@ def resample_with_different_case(resample_rows, resample_cols, mask_rows, mask_c
 
 def test_resample_to_radar():
     geotransform = (10, 1, 0, 15, 0, -1)
-
     resample_with_different_case(20, 20, 20, 20, geotransform)
     resample_with_different_case(10, 10, 20, 20, geotransform)
     resample_with_different_case(20, 20, 10, 10, geotransform)
