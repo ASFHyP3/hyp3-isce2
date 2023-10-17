@@ -13,6 +13,9 @@ from hyp3_isce2.utils import (
     resample_to_radar
 )
 
+
+import pdb
+
 gdal.UseExceptions()
 
 
@@ -70,19 +73,31 @@ def test_make_browse_image():
     os.remove(output_png)
 
 
-def foo(mask, lat, lon, geotransform, type, outshape):
+def check_correction_of_resample(mask, lat, lon, geotransform, type, outshape):
 
     x, x_res, y, y_res = geotransform[0], geotransform[1], geotransform[3], geotransform[5]
 
     rows = len(lat[:, 0])
     cols = len(lat[0, :])
+    # get corner coordinates
+    mask_rows = len(mask[:,0])
+    mask_cols = len(mask[0,:])
+    ul = (x, y)
+    lr = (x+x_res*(mask_cols-1), y+y_res*(mask_rows-1))
 
-    for row in range(len(lat[:, 0])):
-        for col in range(len(lat[0, :])):
-            lat[row, col] = y + row * y_res
-            lon[row, col] = x + col * x_res
+    mask_x_res = (lr[0]-ul[0])/(cols-1)
+
+    mask_y_res = (lr[1] - ul[1])/(rows-1)
+
+    for row in range(rows):
+        for col in range(cols):
+            lat[row, col] = y + row * mask_y_res
+            lon[row, col] = x + col * mask_x_res
 
     resampled_image = resample_to_radar(mask, lat, lon, geotransform, type, outshape)
+
+    print("mask", mask.astype(int))
+    print("resampled_mask", resampled_image)
 
     def find_nearest(array, value):
         array = np.asarray(array)
@@ -102,35 +117,32 @@ def foo(mask, lat, lon, geotransform, type, outshape):
             index = back_to_2d(flat_index, cols)
             if mask[row, col] == 1:
                 assert resampled_image[index[0], index[1]] == 1
-
     return mask, resampled_image
 
-def test_resample_to_radar():
 
-    rows_1 = 20
-    cols_1 = 15
+def resample_with_different_case(resample_rows, resample_cols, mask_rows, mask_cols, geotransform):
+    lat = np.zeros((resample_rows, resample_cols))
+    lon = np.zeros((resample_rows, resample_cols))
+    mask = np.zeros((mask_rows, mask_cols))
+    np.fill_diagonal(mask, 1)
+    mask[0, mask_cols-1] = 1
+    mask[mask_rows-1, 0] = 1
+    outshape = (resample_rows, resample_cols)
     type = np.byte
-    outshape_1 = (rows_1, cols_1)
-    lat_1 = np.zeros((rows_1, cols_1))
-    lon_1 = np.zeros((rows_1, cols_1))
-    mask_1 = np.zeros((rows_1, cols_1))
-    np.fill_diagonal(mask_1, 1)
-    mask_1[0, 14] = 1
-    mask_1[19, 0] = 1
+    m, r = check_correction_of_resample(mask, lat, lon, geotransform, type, outshape)
+    print("mask", m)
+    print("output", r)
 
-    # rows_2 = 20
-    # cols_2 = 10
-    # type = np.byte
-    # outshape_2 = (rows_2, cols_2)
-    # lat_2 = np.zeros((rows_2, cols_2))
-    # lon_2 = np.zeros((rows_2, cols_2))
-    # mask_2 = np.zeros((20, 20))
-    # np.fill_diagonal(mask_2, 1)
-    # mask_2[0, 19] = 1
-    # mask_2[19, 0] = 1
-
+def test_resample_to_radar():
+    type = np.byte
     geotransform = (x := 10, x_res := 1, 0, y := 15, 0, y_res := -1)
 
-    print("input", mask_1)
-    m, r = foo(mask_1, lat_1, lon_1, geotransform, type, outshape_1)
-    print("output", r)
+    resample_with_different_case(20, 20, 20, 20, geotransform)
+    resample_with_different_case(10, 10, 20, 20, geotransform)
+    resample_with_different_case(20, 20, 10, 10, geotransform)
+    resample_with_different_case(10, 20, 10, 10, geotransform)
+    resample_with_different_case(20, 10, 10, 10, geotransform)
+    resample_with_different_case(30, 10, 10, 10, geotransform)
+
+
+
