@@ -126,6 +126,9 @@ def get_geotransform_from_dataset(dataset: isceobj.Image) -> tuple:
 
     Args:
         dataset: The ISCE2 image object to get the geotransform from.
+
+    Returns:
+        tuple: The geotransform in GDAL Format: (startLon, deltaLon, 0, startLat, 0, deltaLat)
     """
     startLat = dataset.coord2.coordStart
     deltaLat = dataset.coord2.coordDelta
@@ -150,6 +153,9 @@ def resample_to_radar(
         mask: The array of the image to resample
         lat: The latitude array
         lon: The longitude array
+        geotransform: The geotransform of the image to resample
+        data_type: The data type of the image to resample
+        outshape: The shape of the output image
 
     Returns:
         resampled_image: The resampled image array
