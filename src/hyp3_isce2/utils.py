@@ -73,15 +73,14 @@ def extent_from_geotransform(geotransform: tuple, x_size: int, y_size: int) -> t
 def make_browse_image(input_tif: str, output_png: str) -> None:
     with GDALConfigManager(GDAL_PAM_ENABLED='NO'):
         stats = gdal.Info(input_tif, format='json', stats=True)['stac']['raster:bands'][0]['stats']
-        gdal.Translate(
-            destName=output_png,
-            srcDS=input_tif,
-            format='png',
-            outputType=gdal.GDT_Byte,
-            width=2048,
-            strict=True,
-            scaleParams=[[stats['minimum'], stats['maximum']]],
-        )
+        gdal.Translate(destName=output_png,
+                       srcDS=input_tif,
+                       format='png',
+                       outputType=gdal.GDT_Byte,
+                       width=2048,
+                       strict=True,
+                       scaleParams=[[stats['minimum'], stats['maximum']]],
+                       )
 
 
 def oldest_granule_first(g1, g2):
@@ -124,11 +123,10 @@ def write_isce2_image(output_path, array=None, width=None, mode='read', data_typ
 
 def get_geotransform_from_dataset(dataset: isceobj.Image) -> tuple:
     """Get the geotransform from an ISCE2 image object.
-    
+
     Args:
         dataset: The ISCE2 image object to get the geotransform from.
     """
-
     startLat = dataset.coord2.coordStart
     deltaLat = dataset.coord2.coordDelta
     startLon = dataset.coord1.coordStart
