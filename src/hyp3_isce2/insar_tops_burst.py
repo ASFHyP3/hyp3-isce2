@@ -461,7 +461,6 @@ def main():
     unwrapped_phase = f'{product_name}/{product_name}_unw_phase.tif'
     wrapped_phase = f'{product_name}/{product_name}_wrapped_phase.tif'
     water_mask = f'{product_name}/{product_name}_water_mask.tif'
-    # TODO should we resample water_mask instead of re-creating?
     create_water_mask(wrapped_phase, water_mask)
 
     if args.apply_water_mask:
