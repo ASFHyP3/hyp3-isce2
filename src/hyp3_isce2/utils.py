@@ -179,12 +179,11 @@ def resample_to_radar_io(image_to_resample: str, latin: str, lonin: str, output:
     _, lon = load_isce2_image(lonin)
     mask = np.reshape(mask, [maskim.coord2.coordSize, maskim.coord1.coordSize])
     geotransform = get_geotransform_from_dataset(maskim)
-    cropped = resample_to_radar(maskim=maskim,
-                                mask=mask,
+    cropped = resample_to_radar(mask=mask,
                                 lat=lat,
                                 lon=lon,
                                 geotransform=geotransform,
-                                type=maskim.toNumpyDataType(),
+                                data_type=maskim.toNumpyDataType(),
                                 outshape=(latim.coord2.coordSize, latim.coord1.coordSize)
                                 )
 
