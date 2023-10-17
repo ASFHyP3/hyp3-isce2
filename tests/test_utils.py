@@ -69,7 +69,7 @@ def test_make_browse_image():
     os.remove(output_png)
 
 
-def check_correction_of_resample(mask, lat, lon, geotransform, type, outshape):
+def check_correctness_of_resample(mask, lat, lon, geotransform, data_type, outshape):
 
     x, x_res, y, y_res = geotransform[0], geotransform[1], geotransform[3], geotransform[5]
 
@@ -90,7 +90,7 @@ def check_correction_of_resample(mask, lat, lon, geotransform, type, outshape):
             lat[row, col] = y + row * mask_y_res
             lon[row, col] = x + col * mask_x_res
 
-    resampled_image = resample_to_radar(mask, lat, lon, geotransform, type, outshape)
+    resampled_image = resample_to_radar(mask, lat, lon, geotransform, data_type, outshape)
 
     print("mask", mask.astype(int))
     print("resampled_mask", resampled_image)
@@ -124,15 +124,12 @@ def resample_with_different_case(resample_rows, resample_cols, mask_rows, mask_c
     mask[0, mask_cols-1] = 1
     mask[mask_rows-1, 0] = 1
     outshape = (resample_rows, resample_cols)
-    type = np.byte
-    m, r = check_correction_of_resample(mask, lat, lon, geotransform, type, outshape)
-    print("mask", m)
-    print("output", r)
+    data_type = np.byte
+    check_correctness_of_resample(mask, lat, lon, geotransform, data_type, outshape)
 
 
 def test_resample_to_radar():
-    type = np.byte
-    geotransform = (x := 10, x_res := 1, 0, y := 15, 0, y_res := -1)
+    geotransform = (10, 1, 0, 15, 0, -1)
 
     resample_with_different_case(20, 20, 20, 20, geotransform)
     resample_with_different_case(10, 10, 20, 20, geotransform)
@@ -140,5 +137,3 @@ def test_resample_to_radar():
     resample_with_different_case(10, 20, 10, 10, geotransform)
     resample_with_different_case(20, 10, 10, 10, geotransform)
     resample_with_different_case(30, 10, 10, 10, geotransform)
-
-
