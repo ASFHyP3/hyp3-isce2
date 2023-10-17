@@ -92,11 +92,10 @@ def oldest_granule_first(g1, g2):
 
 def load_isce2_image(in_path) -> tuple[isceobj.Image, np.ndarray]:
     """ Read an ISCE2 image file and return the image object and array.
-    
+
     Args:
         in_path: The path to the image to resample (not the xml).
     """
-
     image_obj, _, _ = loadImage(in_path)
     array = np.fromfile(in_path, image_obj.toNumpyDataType())
     return image_obj, array
@@ -104,7 +103,7 @@ def load_isce2_image(in_path) -> tuple[isceobj.Image, np.ndarray]:
 
 def write_isce2_image(output_path, array=None, width=None, mode='read', data_type='FLOAT') -> None:
     """ Write an ISCE2 image file.
-    
+
     Args:
         output_path: The path to the output image file.
         array: The array to write to the file.
@@ -112,7 +111,6 @@ def write_isce2_image(output_path, array=None, width=None, mode='read', data_typ
         mode: The mode to open the image in.
         data_type: The data type of the image.
     """
-    
     if array is not None:
         array.tofile(output_path)
         width = array.shape[1]
@@ -192,6 +190,7 @@ def resample_to_radar_io(image_to_resample: str, latin: str, lonin: str, output:
         type = maskim.toNumpyDataType(),
         outshape = (latim.coord2.coordSize, latim.coord1.coordSize)
     )
+
     write_isce2_image(outputh_path=output, array=cropped, data_type=maskim.dataType)
 
 

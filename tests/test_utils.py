@@ -1,7 +1,6 @@
 import os
 
 import numpy as np
-
 from osgeo import gdal
 
 from hyp3_isce2.utils import (
@@ -9,12 +8,9 @@ from hyp3_isce2.utils import (
     extent_from_geotransform,
     make_browse_image,
     oldest_granule_first,
-    utm_from_lon_lat,
-    resample_to_radar
+    resample_to_radar,
+    utm_from_lon_lat
 )
-
-
-import pdb
 
 gdal.UseExceptions()
 
