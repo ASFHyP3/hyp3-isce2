@@ -163,8 +163,8 @@ def resample_to_radar(
 
     startLon, deltaLon, startLat, deltaLat = geotransform[0], geotransform[1], geotransform[3], geotransform[5]
 
-    lati = np.clip(((lat - startLat) / deltaLat + 0.5).astype(int), 0, mask.shape[0] - 1)
-    loni = np.clip(((lon - startLon) / deltaLon + 0.5).astype(int), 0, mask.shape[1] - 1)
+    lati = np.clip((((lat - startLat) / deltaLat) + 0.5).astype(int), 0, mask.shape[0] - 1)
+    loni = np.clip((((lon - startLon) / deltaLon) + 0.5).astype(int), 0, mask.shape[1] - 1)
     resampled_image = (mask[lati, loni]).astype(data_type)
     resampled_image = np.reshape(resampled_image, outshape)
     return resampled_image
