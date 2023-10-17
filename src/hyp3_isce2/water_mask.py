@@ -17,10 +17,20 @@ from hyp3_isce2.utils import GDALConfigManager
 gdal.UseExceptions()
 
 
-def get_geo_partition(coordinate, round_value=90):
+def get_geo_partition(coordinate, partition_size=90):
+    """Get the geo-partition for a given coordinate (i.e., the lat/lon box it falls in)
+
+    Args:
+        coordinate: A coordinate tuple (lon, lat)
+        partition_size: The partition size (in degrees) to use for the geo-partition
+            using a value of 90 will result in geo-partitions of 90x90 degrees
+
+    Returns:
+        A string representing the geo-partition for the given coordinate and partition size
+    """
     x, y = coordinate
-    x_rounded = int(np.floor(x / round_value)) * round_value
-    y_rounded = int(np.floor(y / round_value)) * round_value
+    x_rounded = int(np.floor(x / partition_size)) * partition_size
+    y_rounded = int(np.floor(y / partition_size)) * partition_size
     x_fill = str(x_rounded).zfill(4)
     y_fill = str(y_rounded).zfill(4)
     partition = f'{y_fill}_{x_fill}'
