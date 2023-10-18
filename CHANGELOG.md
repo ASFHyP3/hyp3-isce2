@@ -6,6 +6,13 @@ The format is based on [Keep a Changelog](https://keepachangelog.com/en/1.0.0/),
 and this project adheres to [PEP 440](https://www.python.org/dev/peps/pep-0440/)
 and uses [Semantic Versioning](https://semver.org/spec/v2.0.0.html).
 
+## [0.8.0]
+### Added
+* Functions for resampling geographic image to radar coordinates, copying ISCE2 images, and performing ISCE2 image math to utils.py.
+### Changed
+* `create_water_mask` so that if pulls data from a partition parquet file (speeds up downloads), and added option to output water mask in any GDAL format.
+* `insar_tops_burst` so that water masking is done pre-unwrapping if masking is requested.
+
 ## [0.7.2]
 ### Fixed
 * Description of the range of the lv_phi in the readme.md.txt.j2.
