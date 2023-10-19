@@ -94,6 +94,10 @@ def load_isce2_image(in_path) -> tuple[isceobj.Image, np.ndarray]:
 
     Args:
         in_path: The path to the image to resample (not the xml).
+
+    Returns:
+        image_obj: The ISCE2 image object.
+        array: The image as a numpy array.
     """
     image_obj, _, _ = loadImage(in_path)
     array = np.fromfile(in_path, image_obj.toNumpyDataType())
@@ -161,10 +165,10 @@ def resample_to_radar(
         resampled_image: The resampled image array
     """
 
-    startLon, deltaLon, startLat, deltaLat = geotransform[0], geotransform[1], geotransform[3], geotransform[5]
+    start_lon, delta_lon, start_lat, delta_lat = geotransform[0], geotransform[1], geotransform[3], geotransform[5]
 
-    lati = np.clip(((lat - startLat) / deltaLat + 0.5).astype(int), 0, mask.shape[0] - 1)
-    loni = np.clip(((lon - startLon) / deltaLon + 0.5).astype(int), 0, mask.shape[1] - 1)
+    lati = np.clip((((lat - start_lat) / delta_lat) + 0.5).astype(int), 0, mask.shape[0] - 1)
+    loni = np.clip((((lon - start_lon) / delta_lon) + 0.5).astype(int), 0, mask.shape[1] - 1)
     resampled_image = (mask[lati, loni]).astype(data_type)
     resampled_image = np.reshape(resampled_image, outshape)
     return resampled_image
