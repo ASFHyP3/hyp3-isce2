@@ -417,7 +417,7 @@ def main():
         '--apply-water-mask',
         type=string_is_true,
         default=False,
-        help='Apply a water body mask to wrapped and unwrapped phase GeoTIFFs (after unwrapping)',
+        help='Apply a water body mask before unwrapping.',
     )
     # Allows granules to be given as a space-delimited list of strings (e.g. foo bar) or as a single
     # quoted string that contains spaces (e.g. "foo bar"). AWS Batch uses the latter format when
