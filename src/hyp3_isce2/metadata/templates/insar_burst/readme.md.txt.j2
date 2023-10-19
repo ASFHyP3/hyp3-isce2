@@ -302,9 +302,9 @@ The basic steps in Sentinel-1 Burst InSAR processing are as follows:
 *InSAR Processing*
 7. Run topsApp steps 'start' and 'preprocess'
 8. Switch the reference and secondary bursts as necessary
-9. Run topApp step 'computeBaselines'
-10. Reproject the water mask into radar coordinates and apply it.
-11. Run topsApp steps 'unwrap' to 'unwrap2stage'
+9. Run topApp step 'computeBaselines' to 'filter'
+10. If necessary, apply the water mask to the wrapped image.
+11. Run topsApp steps 'unwrap' and 'unwrap2stage'
 12. Run step 'geocode'
 
 *Post-Processing*
@@ -365,12 +365,12 @@ These steps are run using these calls within hyp3-isce2:
     - Estimate the range offsets between the input SLCS
     - Coregister the secondary SLC by applying the estimated range and azimuth offsets
     - Produce the wrapped phase interferogram
+    - If --apply-water-mask is selected, create and apply the water mask to the wrapped interferogram.
     - Unwrap the wrapped phase interferogram using SNAPHU to produce the wrapped phase interferogram
 - topsapp.run_topsapp_burst(start='geocode', end='geocode', config_xml=config_path): Geocode the output products
 
 ## Post-Processing ##
  - translate_outputs: Convert the outputs of hyp3-isce2 to hyp3-gamma formatted geotiff files
- - create_water_mask: Create water mask geotiff file in the product
  - make_readme_file: Produce the readme.md.txt file in the product
  - make_parameter_file: Produce metadata text file in the product
  - make_archive: Zip the output files
