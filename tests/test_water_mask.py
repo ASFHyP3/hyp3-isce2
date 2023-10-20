@@ -6,6 +6,33 @@ from hyp3_isce2 import water_mask
 gdal.UseExceptions()
 
 
+def test_get_geo_partition():
+    coordinates = [
+        (0, 0),
+        (0, 90),
+        (0, -45),
+        (-45, 0),
+        (45, 90),
+    ]
+    expected_90partition = [
+        '0000_0000',
+        '0090_0000',
+        '-090_0000',
+        '0000_-090',
+        '0090_0000',
+    ]
+    expected_45partition = [
+        '0000_0000',
+        '0090_0000',
+        '-045_0000',
+        '0000_-045',
+        '0090_0045',
+    ]
+    for coord, expected90, expected45 in zip(coordinates, expected_90partition, expected_45partition):
+        assert water_mask.get_geo_partition(coord, partition_size=90) == expected90
+        assert water_mask.get_geo_partition(coord, partition_size=45) == expected45
+
+
 def test_split_geometry_on_antimeridian():
     geometry = {
         'type': 'Polygon',
