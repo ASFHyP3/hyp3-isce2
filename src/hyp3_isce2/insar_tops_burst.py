@@ -200,7 +200,7 @@ def make_parameter_file(
         range_looks: int,
         dem_name: str = 'GLO_30',
         dem_resolution: int = 30,
-        apply_water_mask: bool = False) -> None:
+        apply_water_mask: bool) -> None:
     """Create a parameter file for the output product
 
     Args:
