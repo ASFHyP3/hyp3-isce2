@@ -198,6 +198,7 @@ def make_parameter_file(
         swath_number: int,
         azimuth_looks: int,
         range_looks: int,
+        apply_water_mask: bool,
         dem_name: str = 'GLO_30',
         dem_resolution: int = 30) -> None:
     """Create a parameter file for the output product
@@ -286,7 +287,8 @@ def make_parameter_file(
         f'DEM source: {dem_name}\n',
         f'DEM resolution (m): {dem_resolution}\n',
         f'Unwrapping type: {unwrapper_type}\n',
-        'Speckle filter: yes\n'
+        'Speckle filter: yes\n',
+        f'Water mask: {apply_water_mask}\n'
     ]
 
     output_string = ''.join(output_strings)
@@ -417,7 +419,7 @@ def main():
         '--apply-water-mask',
         type=string_is_true,
         default=False,
-        help='Apply a water body mask to wrapped and unwrapped phase GeoTIFFs (after unwrapping)',
+        help='Apply a water body mask before unwrapping.',
     )
     # Allows granules to be given as a space-delimited list of strings (e.g. foo bar) or as a single
     # quoted string that contains spaces (e.g. "foo bar"). AWS Batch uses the latter format when
@@ -439,6 +441,7 @@ def main():
     validate_bursts(reference_scene, secondary_scene)
     swath_number = int(reference_scene[12])
     range_looks, azimuth_looks = [int(looks) for looks in args.looks.split('x')]
+    apply_water_mask = args.apply_water_mask
 
     isce_output_dir = insar_tops_burst(
         reference_scene=reference_scene,
@@ -446,7 +449,7 @@ def main():
         azimuth_looks=azimuth_looks,
         range_looks=range_looks,
         swath_number=swath_number,
-        apply_water_mask=args.apply_water_mask
+        apply_water_mask=apply_water_mask
     )
 
     log.info('ISCE2 TopsApp run completed successfully')
@@ -463,7 +466,7 @@ def main():
     water_mask = f'{product_name}/{product_name}_water_mask.tif'
     create_water_mask(wrapped_phase, water_mask)
 
-    if args.apply_water_mask:
+    if apply_water_mask:
         for geotiff in [wrapped_phase, unwrapped_phase]:
             cmd = (
                 'gdal_calc.py '
@@ -485,7 +488,7 @@ def main():
         secondary_scene=secondary_scene,
         range_looks=range_looks,
         azimuth_looks=azimuth_looks,
-        apply_water_mask=args.apply_water_mask
+        apply_water_mask=apply_water_mask
     )
     make_parameter_file(
         Path(f'{product_name}/{product_name}.txt'),
@@ -494,6 +497,7 @@ def main():
         azimuth_looks=azimuth_looks,
         range_looks=range_looks,
         swath_number=swath_number,
+        apply_water_mask=apply_water_mask
     )
     output_zip = make_archive(base_name=product_name, format='zip', base_dir=product_name)
 

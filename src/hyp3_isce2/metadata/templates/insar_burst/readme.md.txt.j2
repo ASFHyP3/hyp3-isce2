@@ -196,11 +196,7 @@ One potential source of error is the presence of extensive surface water (coasta
 In some cases, signal returns over surface water meet the coherence threshold criteria, even though measurements over
 water should not be coherent. When this happens, phase unwrapping can occur over expanses of water, leading to
 unexpected/invalid phase unwrapping results over land. Masking areas of water before unwrapping is a common approach
-used to mitigate this issue, but ISCE2 does not currently support this functionality. Thus, use caution when
-interpreting unwrapped phase results close to surface water.
-
-There is the option to apply a water mask *after* phase unwrapping. While it doesn't correct for phase unwrapping
-errors over water, it can make the interferograms less visually distracting. This product
+used to mitigate this issue. HyP3 ISCE2 supports this functionality through the --apply-water-mask option. This product
 {{ "has" if apply_water_mask else "has not" }} had a water mask applied.
 
 No atmospheric correction has been applied to this interferogram. While SAR signals can penetrate clouds,
@@ -279,9 +275,10 @@ All remaining pixels (land, islands in large lakes, small inland waterbodies, an
 a value of 1. The water mask is stored as an 8-bit unsigned integer GeoTIFF file and is always included in the product
 package.
 
-Users can choose to apply the water mask to output products, which affects the wrapped interferogram,
-the unwrapped interferogram, and the browse image. It returns NoData values over the areas covered by the water mask
-in these output images. This product {{ "has" if apply_water_mask else "has not" }} had the water mask applied.
+Users can choose to apply the water mask before phase unwrapping. This mitigates potential errors in the unwrapping
+process caused by invalid coherence over water bodies. The water mask will also return nodata values in areas of water
+in the output products. This product {{ "has" if apply_water_mask else "has not" }} 
+had the water mask applied.
 
 The water mask is generated using the Global Self-consistent, Hierarchical, High-resolution Geography Database (GSHHG)
 dataset (https://www.ngdc.noaa.gov/mgg/shorelines). To generate the global mask, we combined the full-resolution
@@ -290,12 +287,6 @@ and ocean, excluding Antarctica, and the L5 dataset is the boundary between Anta
 dataset is the boundary between lakes and land, and the L3 dataset is the boundary between islands and the
 lakes they are within. The GSHHG dataset was last updated in 2017, so there may be discrepancies where
 shorelines have changed.
-
-ISCE2 currently only supports applying a water mask to an interferogram *after* phase unwrapping. Note that
-applying the mask after phase unwrapping does not prevent unwrapping errors caused by the inclusion of water pixels
-as valid data during the phase unwrapping process. When phase unwrapping occurs over large expanses of water, it can
-lead to unexpected deformation signals or phase jumps in the unwrapped outputs, and the current masking approach
-does not correct for these impacts.
 
 *************
 # Burst InSAR Processing #
@@ -313,16 +304,17 @@ The basic steps in Sentinel-1 Burst InSAR processing are as follows:
 *InSAR Processing*
 7. Run topsApp steps 'start' and 'preprocess'
 8. Switch the reference and secondary bursts as necessary
-9. Run topApp steps from 'computeBaselines' to 'unwrap2stage'
-10. Run step 'geocode'
+9. Run topsApp step 'computeBaselines' to 'filter'
+10. Optionally apply the water mask to the wrapped image.
+11. Run topsApp steps 'unwrap' and 'unwrap2stage'
+12. Run step 'geocode'
 
 *Post-Processing*
-11. translate output files to hyp3-gamma format
-12. create water mask geotiff file, and apply it to the wrapped and unwrapped phase geotiff files if water masking option is set to true
-13. write the README text file
-14. write the metadata txt file
-15. zip the output files
-16. upload the files to s3
+13. translate output files to hyp3-gamma format
+14. write the README text file
+15. write the metadata txt file
+16. zip the output files
+17. upload the files to s3
 
 ----------------
 The detailed process, including the calls to ISCE2 software, is as follows:
@@ -375,12 +367,12 @@ These steps are run using these calls within hyp3-isce2:
     - Estimate the range offsets between the input SLCS
     - Coregister the secondary SLC by applying the estimated range and azimuth offsets
     - Produce the wrapped phase interferogram
+    - If --apply-water-mask is selected, create and apply the water mask to the wrapped interferogram.
     - Unwrap the wrapped phase interferogram using SNAPHU to produce the wrapped phase interferogram
 - topsapp.run_topsapp_burst(start='geocode', end='geocode', config_xml=config_path): Geocode the output products
 
 ## Post-Processing ##
  - translate_outputs: Convert the outputs of hyp3-isce2 to hyp3-gamma formatted geotiff files
- - create_water_mask: Create water mask geotiff file in the product
  - make_readme_file: Produce the readme.md.txt file in the product
  - make_parameter_file: Produce metadata text file in the product
  - make_archive: Zip the output files
