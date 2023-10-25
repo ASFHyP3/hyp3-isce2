@@ -10,7 +10,7 @@ and uses [Semantic Versioning](https://semver.org/spec/v2.0.0.html).
 ### Added
 * Functions for resampling geographic image to radar coordinates, copying ISCE2 images, and performing ISCE2 image math to utils.py.
 ### Changed
-* `create_water_mask` so that if pulls data from a partition parquet file (speeds up downloads), and added option to output water mask in any GDAL format.
+* `create_water_mask` so that it pulls data from a partition parquet file (speeds up downloads), and added option to output water mask in any GDAL format.
 * `insar_tops_burst` so that water masking is done pre-unwrapping if masking is requested.
 
 ## [0.7.2]
