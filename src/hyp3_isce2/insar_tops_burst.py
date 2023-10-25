@@ -16,6 +16,7 @@ from hyp3lib.aws import upload_file_to_s3
 from hyp3lib.get_orb import downloadSentinelOrbitFile
 from hyp3lib.image import create_thumbnail
 from hyp3lib.util import string_is_true
+from isceobj.TopsProc.runMergeBursts import multilook
 from lxml import etree
 from osgeo import gdal
 
@@ -33,7 +34,14 @@ from hyp3_isce2.burst import (
 from hyp3_isce2.dem import download_dem_for_isce2
 from hyp3_isce2.logging import configure_root_logger
 from hyp3_isce2.s1_auxcal import download_aux_cal
-from hyp3_isce2.utils import make_browse_image, oldest_granule_first, utm_from_lon_lat
+from hyp3_isce2.utils import (
+    image_math,
+    isce2_copy,
+    make_browse_image,
+    oldest_granule_first,
+    resample_to_radar_io,
+    utm_from_lon_lat,
+)
 from hyp3_isce2.water_mask import create_water_mask
 
 
@@ -53,7 +61,8 @@ def insar_tops_burst(
         secondary_scene: str,
         swath_number: int,
         azimuth_looks: int = 4,
-        range_looks: int = 20) -> Path:
+        range_looks: int = 20,
+        apply_water_mask: bool = False) -> Path:
     """Create a burst interferogram
 
     Args:
@@ -62,9 +71,10 @@ def insar_tops_burst(
         swath_number: Number of swath to grab bursts from (1, 2, or 3) for IW
         azimuth_looks: Number of azimuth looks
         range_looks: Number of range looks
+        apply_water_mask: Whether to apply a pre-unwrap water mask
 
     Returns:
-        Path to the output files
+        Path to results directory
     """
     orbit_dir = Path('orbits')
     aux_cal_dir = Path('aux_cal')
@@ -124,7 +134,19 @@ def insar_tops_burst(
 
     topsapp.run_topsapp_burst(start='startup', end='preprocess', config_xml=config_path)
     topsapp.swap_burst_vrts()
-    topsapp.run_topsapp_burst(start='computeBaselines', end='unwrap2stage', config_xml=config_path)
+    if apply_water_mask:
+        topsapp.run_topsapp_burst(start='computeBaselines', end='filter', config_xml=config_path)
+        water_mask_path = 'water_mask.wgs84'
+        create_water_mask(str(dem_path), water_mask_path, gdal_format='ISCE')
+        multilook('merged/lon.rdr.full', outname='merged/lon.rdr', alks=azimuth_looks, rlks=range_looks)
+        multilook('merged/lat.rdr.full', outname='merged/lat.rdr', alks=azimuth_looks, rlks=range_looks)
+        resample_to_radar_io(water_mask_path, 'merged/lat.rdr', 'merged/lon.rdr', 'merged/water_mask.rdr')
+        isce2_copy('merged/phsig.cor', 'merged/unmasked.phsig.cor')
+        image_math('merged/unmasked.phsig.cor', 'merged/water_mask.rdr', 'merged/phsig.cor', 'a*b')
+        topsapp.run_topsapp_burst(start='unwrap', end='unwrap2stage', config_xml=config_path)
+        isce2_copy('merged/unmasked.phsig.cor', 'merged/phsig.cor')
+    else:
+        topsapp.run_topsapp_burst(start='computeBaselines', end='unwrap2stage', config_xml=config_path)
     copyfile('merged/z.rdr.full.xml', 'merged/z.rdr.full.vrt.xml')
     topsapp.run_topsapp_burst(start='geocode', end='geocode', config_xml=config_path)
 
@@ -176,6 +198,7 @@ def make_parameter_file(
         swath_number: int,
         azimuth_looks: int,
         range_looks: int,
+        apply_water_mask: bool,
         dem_name: str = 'GLO_30',
         dem_resolution: int = 30) -> None:
     """Create a parameter file for the output product
@@ -264,7 +287,8 @@ def make_parameter_file(
         f'DEM source: {dem_name}\n',
         f'DEM resolution (m): {dem_resolution}\n',
         f'Unwrapping type: {unwrapper_type}\n',
-        'Speckle filter: yes\n'
+        'Speckle filter: yes\n',
+        f'Water mask: {apply_water_mask}\n'
     ]
 
     output_string = ''.join(output_strings)
@@ -395,7 +419,7 @@ def main():
         '--apply-water-mask',
         type=string_is_true,
         default=False,
-        help='Apply a water body mask to wrapped and unwrapped phase GeoTIFFs (after unwrapping)',
+        help='Apply a water body mask before unwrapping.',
     )
     # Allows granules to be given as a space-delimited list of strings (e.g. foo bar) or as a single
     # quoted string that contains spaces (e.g. "foo bar"). AWS Batch uses the latter format when
@@ -417,13 +441,15 @@ def main():
     validate_bursts(reference_scene, secondary_scene)
     swath_number = int(reference_scene[12])
     range_looks, azimuth_looks = [int(looks) for looks in args.looks.split('x')]
+    apply_water_mask = args.apply_water_mask
 
     isce_output_dir = insar_tops_burst(
         reference_scene=reference_scene,
         secondary_scene=secondary_scene,
         azimuth_looks=azimuth_looks,
         range_looks=range_looks,
-        swath_number=swath_number
+        swath_number=swath_number,
+        apply_water_mask=apply_water_mask
     )
 
     log.info('ISCE2 TopsApp run completed successfully')
@@ -440,7 +466,7 @@ def main():
     water_mask = f'{product_name}/{product_name}_water_mask.tif'
     create_water_mask(wrapped_phase, water_mask)
 
-    if args.apply_water_mask:
+    if apply_water_mask:
         for geotiff in [wrapped_phase, unwrapped_phase]:
             cmd = (
                 'gdal_calc.py '
@@ -462,7 +488,7 @@ def main():
         secondary_scene=secondary_scene,
         range_looks=range_looks,
         azimuth_looks=azimuth_looks,
-        apply_water_mask=args.apply_water_mask
+        apply_water_mask=apply_water_mask
     )
     make_parameter_file(
         Path(f'{product_name}/{product_name}.txt'),
@@ -471,6 +497,7 @@ def main():
         azimuth_looks=azimuth_looks,
         range_looks=range_looks,
         swath_number=swath_number,
+        apply_water_mask=apply_water_mask
     )
     output_zip = make_archive(base_name=product_name, format='zip', base_dir=product_name)
 
