@@ -1,5 +1,5 @@
-import os
 import shutil
+import subprocess
 
 import isce  # noqa
 import isceobj
