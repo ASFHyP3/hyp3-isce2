@@ -223,7 +223,5 @@ def image_math(image_a_path: str, image_b_path: str, out_path: str, expression: 
         out_path: The path to the output image.
         expression: The expression to pass to ImageMath.py.
     """
-    cmd = f"ImageMath.py -e '{expression}' --a={image_a_path} --b={image_b_path} -o {out_path}"
-    status = os.system(cmd)
-    if status != 0:
-        raise Exception('error when running:\n{}\n'.format(cmd))
+    cmd = ['ImageMath.py', '-e', expression, f'--a={image_a_path}', f'--b={image_b_path}', '-o', out_path]
+    subprocess.run(cmd, check=True)
