@@ -6,6 +6,11 @@ The format is based on [Keep a Changelog](https://keepachangelog.com/en/1.0.0/),
 and this project adheres to [PEP 440](https://www.python.org/dev/peps/pep-0440/)
 and uses [Semantic Versioning](https://semver.org/spec/v2.0.0.html).
 
+## [0.8.1]
+### Fixed
+* Fixed a typo in the call to `imageMath.py`.
+* `imageMath.py` is now called via `subprocess.run` rather than `os.system`.
+
 ## [0.8.0]
 ### Added
 * Functions for resampling geographic image to radar coordinates, copying ISCE2 images, and performing ISCE2 image math to utils.py.
