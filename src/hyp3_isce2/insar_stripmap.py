@@ -7,7 +7,6 @@ import glob
 import logging
 import os
 import shutil
-import site
 import sys
 import zipfile
 from pathlib import Path
@@ -22,12 +21,6 @@ from hyp3_isce2.dem import download_dem_for_isce2
 from hyp3_isce2.logging import configure_root_logger
 
 log = logging.getLogger(__name__)
-
-# ISCE needs its applications to be on the system path.
-# See https://github.com/isce-framework/isce2#setup-your-environment
-ISCE_APPLICATIONS = Path(site.getsitepackages()[0]) / 'isce' / 'applications'
-if str(ISCE_APPLICATIONS) not in os.environ['PATH'].split(os.pathsep):
-    os.environ['PATH'] = str(ISCE_APPLICATIONS) + os.pathsep + os.environ['PATH']
 
 
 def insar_stripmap(user: str, password: str, reference_scene: str, secondary_scene: str) -> Path:

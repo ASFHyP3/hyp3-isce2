@@ -3,7 +3,6 @@
 import argparse
 import logging
 import os
-import site
 import subprocess
 import sys
 from collections import namedtuple
@@ -48,12 +47,6 @@ from hyp3_isce2.water_mask import create_water_mask
 gdal.UseExceptions()
 
 log = logging.getLogger(__name__)
-
-# ISCE needs its applications to be on the system path.
-# See https://github.com/isce-framework/isce2#setup-your-environment
-ISCE_APPLICATIONS = Path(site.getsitepackages()[0]) / 'isce' / 'applications'
-if str(ISCE_APPLICATIONS) not in os.environ['PATH'].split(os.pathsep):
-    os.environ['PATH'] = str(ISCE_APPLICATIONS) + os.pathsep + os.environ['PATH']
 
 
 def insar_tops_burst(
