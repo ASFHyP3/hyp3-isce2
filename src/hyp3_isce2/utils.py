@@ -1,7 +1,6 @@
 import shutil
 import subprocess
 
-import isce  # noqa
 import isceobj
 import numpy as np
 from isceobj.Util.ImageUtil.ImageLib import loadImage

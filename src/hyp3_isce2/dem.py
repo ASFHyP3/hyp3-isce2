@@ -13,7 +13,6 @@
 # See the License for the specific language governing permissions and
 # limitations under the License.
 
-import site
 import subprocess
 from pathlib import Path
 
@@ -40,9 +39,8 @@ def tag_dem_xml_as_ellipsoidal(dem_path: Path) -> str:
 
 
 def fix_image_xml(xml_path: str) -> None:
-    fix_image_path = Path(site.getsitepackages()[0]) / 'isce' / 'applications' / 'fixImageXml.py'
-    fix_cmd = ' '.join([str(fix_image_path), '-i', xml_path, '--full'])
-    subprocess.check_call(fix_cmd, shell=True)
+    cmd = ['fixImageXml.py', '-i', xml_path, '--full']
+    subprocess.run(cmd, check=True)
 
 
 def buffer_extent(extent: list, buffer: float) -> list:
