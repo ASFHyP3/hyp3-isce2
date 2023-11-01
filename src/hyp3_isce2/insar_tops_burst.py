@@ -339,7 +339,7 @@ def translate_outputs(isce_output_dir: Path, product_name: str, pixel_size: floa
         '--calc angle(A) --type Float32 --format GTiff --NoDataValue=0 '
         '--creation-option TILED=YES --creation-option COMPRESS=LZW --creation-option NUM_THREADS=ALL_CPUS'
     )
-    subprocess.check_call(cmd.split(' '))
+    subprocess.run(cmd.split(' '), check=True)
 
     ds = gdal.Open(str(isce_output_dir / 'los.rdr.geo'), gdal.GA_Update)
     ds.GetRasterBand(1).SetNoDataValue(0)
@@ -358,7 +358,7 @@ def translate_outputs(isce_output_dir: Path, product_name: str, pixel_size: floa
         '--calc (90-A)*pi/180 --type Float32 --format GTiff --NoDataValue=0 '
         '--creation-option TILED=YES --creation-option COMPRESS=LZW --creation-option NUM_THREADS=ALL_CPUS'
     )
-    subprocess.check_call(cmd.split(' '))
+    subprocess.run(cmd.split(' '), check=True)
 
     # Performs the inverse of the operation performed by MintPy:
     # https://github.com/insarlab/MintPy/blob/df96e0b73f13cc7e2b6bfa57d380963f140e3159/src/mintpy/objects/stackDict.py#L739-L745
@@ -372,7 +372,7 @@ def translate_outputs(isce_output_dir: Path, product_name: str, pixel_size: floa
         '--calc (90+A)*pi/180 --type Float32 --format GTiff --NoDataValue=0 '
         '--creation-option TILED=YES --creation-option COMPRESS=LZW --creation-option NUM_THREADS=ALL_CPUS'
     )
-    subprocess.check_call(cmd.split(' '))
+    subprocess.run(cmd.split(' '), check=True)
 
     ds = gdal.Open(str(isce_output_dir / 'filt_topophase.unw.geo'))
     geotransform = ds.GetGeoTransform()
@@ -470,7 +470,7 @@ def main():
                 '--NoDataValue 0 '
                 '--creation-option TILED=YES --creation-option COMPRESS=LZW --creation-option NUM_THREADS=ALL_CPUS'
             )
-            subprocess.check_call(cmd.split(' '))
+            subprocess.run(cmd.split(' '), check=True)
 
     make_browse_image(unwrapped_phase, f'{product_name}/{product_name}_unw_phase.png')
 
