@@ -4,6 +4,7 @@ import datetime
 import json
 import logging
 import os
+import shutil
 import sys
 from dataclasses import dataclass, field
 from concurrent.futures import ThreadPoolExecutor
@@ -29,7 +30,7 @@ import isce  # noqa
 import isceobj
 from contrib.Snaphu.Snaphu import Snaphu
 from isceobj.Sensor.TOPS.Sentinel1 import Sentinel1
-from isceobj.TopsProc.runMergeBursts import mergeBox, mergeBursts2, multilook
+from isceobj.TopsProc.runMergeBursts import mergeBox, mergeBursts2
 from isceobj.TopsProc.runIon import maskUnwrap
 from isceobj.Planet.Planet import Planet
 from isceobj.Orbit.Orbit import Orbit
@@ -81,11 +82,16 @@ class BurstProduct:
     polarization: str
     burst_number: int
     product_path: Path
+    n_lines: int
+    n_samples: int
     first_valid_line: int
     n_valid_lines: int
     first_valid_sample: int
     n_valid_samples: int
+    az_time_interval: float
+    rg_pixel_size: float
     start_utc: datetime.datetime
+    stop_utc: datetime.datetime
     isce2_burst_number: int = field(default=None)
 
     def to_burst_params(self):
@@ -98,7 +104,8 @@ def read_product_metadata(meta_file_path: str) -> dict:
     hyp3_meta = {}
     with open(meta_file_path) as f:
         for line in f:
-            key, value = line.strip().replace(' ', '').split(':')[:2]
+            key, *values = line.strip().replace(' ', '').split(':')
+            value = ':'.join(values)
             hyp3_meta[key] = value
     return hyp3_meta
 
@@ -133,10 +140,15 @@ def get_burst_metadata(product_paths: Iterable[Path]) -> Iterable[BurstProduct]:
     start_utc = [
         datetime.datetime.strptime(result.properties['startTime'], '%Y-%m-%dT%H:%M:%S.%fZ') for result in results
     ]
-    first_valid_line = [meta['Fullresolutionfirstvalidline'] for meta in metas]
-    n_valid_lines = [meta['Fullresolutionnumberoflines'] for meta in metas]
-    first_valid_sample = [meta['Fullresolutionfirstvalidsample'] for meta in metas]
-    n_valid_samples = [meta['Fullresolutionnumberofsamples'] for meta in metas]
+    n_lines = [meta['Radarnlines'] for meta in metas]
+    n_samples = [meta['Radarnsamples'] for meta in metas]
+    first_valid_line = [meta['Radarfirstvalidline'] for meta in metas]
+    n_valid_lines = [meta['Radarnvalidlines'] for meta in metas]
+    first_valid_sample = [meta['Radarfirstvalidsample'] for meta in metas]
+    n_valid_samples = [meta['Radarnvalidsamples'] for meta in metas]
+    az_time_interval = [meta['Multilookazimuthtimeinterval'] for meta in metas]
+    rg_pixel_size = [meta['Multilookrangepixelsize'] for meta in metas]
+    stop_utc = [datetime.datetime.strptime(meta['Radarsensingstop'], '%Y-%m-%dT%H:%M:%S.%f') for meta in metas]
     products = []
     for i in range(len(granules)):
         product = BurstProduct(
@@ -145,11 +157,16 @@ def get_burst_metadata(product_paths: Iterable[Path]) -> Iterable[BurstProduct]:
             polarization[i],
             burst_indexes[i],
             product_paths[i],
+            n_lines[i],
+            n_samples[i],
             first_valid_line[i],
             n_valid_lines[i],
             first_valid_sample[i],
             n_valid_samples[i],
+            az_time_interval[i],
+            rg_pixel_size[i],
             start_utc[i],
+            stop_utc[i],
         )
         products.append(product)
     return products
@@ -287,8 +304,8 @@ class Sentinel1BurstSelect(Sentinel1):
         pm.dumpProduct(self.product, os.path.join(outxml + '.xml'))
 
 
-def create_s1_instance(
-    swath: int, products: Iterable[BurstProduct], polarization: str = 'VV', outdir: str = 'fine_interferogram'
+def create_swath_objects(
+    swath: int, products: Iterable[BurstProduct], polarization: str = 'VV', outdir: str = BURST_IFG_DIR
 ) -> Tuple[Iterable[BurstProduct], Sentinel1BurstSelect]:
     """Create an ISCE2 Sentinel1 instance for a set of burst products, and write the xml.
     Also updates the BurstProduct objects with the ISCE2 burst number.
@@ -334,6 +351,22 @@ def create_s1_instance(
     return products, obj
 
 
+def modify_for_multilook(burst_products, swath_obj, outdir=BURST_IFG_DIR):
+    multilook_swath_obj = copy.deepcopy(swath_obj)
+    multilook_swath_obj.output = os.path.join(outdir, 'IW{0}_multilooked'.format(multilook_swath_obj.swath))
+    for new_metadata, burst_obj in zip(burst_products, multilook_swath_obj.product.bursts):
+        burst_obj.numberOfSamples = new_metadata.n_samples
+        burst_obj.numberOfLines = new_metadata.n_lines
+        burst_obj.firstValidSample = new_metadata.first_valid_sample
+        burst_obj.numValidSamples = new_metadata.n_valid_samples
+        burst_obj.firstValidLine = new_metadata.first_valid_line
+        burst_obj.numValidLines = new_metadata.n_valid_lines
+        burst_obj.sensingStop = new_metadata.stop_utc
+        burst_obj.azimuthTimeInterval = new_metadata.az_time_interval
+        burst_obj.rangePixelSize = new_metadata.rg_pixel_size
+    multilook_swath_obj.write_xml()
+
+
 def download_dem(s1_objs: Iterable[Sentinel1BurstSelect]):
     """Download the DEM for the region covered in a set of ISCE2 Sentinel1 instances
 
@@ -371,7 +404,16 @@ def translate_image(in_path: str, out_path: str, width: int, image_type: str):
     else:
         raise NotImplementedError(f'{image_type} is not a valid format')
 
-    gdal.Translate(out_path, in_path, bandList=[n + 1 for n in range(n_bands)], format='ISCE')
+    with TemporaryDirectory() as tmpdir:
+        out_tmp_path = str(Path(tmpdir) / Path(out_path).name)
+        gdal.Translate(
+            out_tmp_path,
+            in_path,
+            bandList=[n + 1 for n in range(n_bands)],
+            format='ENVI',
+            creationOptions=['INTERLEAVE=BIL'],
+        )
+        shutil.copy(out_tmp_path, out_path)
     out_img.renderHdr()
 
 
@@ -404,7 +446,6 @@ def spoof_isce2_setup(burst_products: Iterable[BurstProduct], s1_obj: Sentinel1B
         'lon': 'lon_rdr',
     }
     for product in burst_products:
-        width = s1_obj.product.bursts[product.isce2_burst_number - 1].numberOfSamples
         for image_type in file_types:
             if image_type in ['int', 'cor']:
                 dir = ifg_dir
@@ -414,7 +455,7 @@ def spoof_isce2_setup(burst_products: Iterable[BurstProduct], s1_obj: Sentinel1B
                 name = f'{image_type}_{product.isce2_burst_number:02}.rdr'
             in_path = str(product.product_path / f'{product.product_path.stem}_{file_types[image_type]}.tif')
             out_path = str(dir / product.swath / name)
-            translate_image(in_path, out_path, width, image_type)
+            translate_image(in_path, out_path, product.n_samples, image_type)
 
 
 def getSwathList(indir: str) -> list:
@@ -544,7 +585,7 @@ def merge_bursts(azimuth_looks: int, range_looks: int, mergedir: str = 'merged')
     burstIndex = []
     swathList = getSwathList(BURST_IFG_DIR)
     for swath in swathList:
-        ifg = loadProduct(os.path.join(BURST_IFG_DIR, 'IW{0}.xml'.format(swath)))
+        ifg = loadProduct(os.path.join(BURST_IFG_DIR, 'IW{0}_multilooked.xml'.format(swath)))
         minBurst = ifg.bursts[0].burstNumber - 1
         maxBurst = ifg.bursts[-1].burstNumber
         frames.append(ifg)
@@ -562,9 +603,12 @@ def merge_bursts(azimuth_looks: int, range_looks: int, mergedir: str = 'merged')
         directory, file_pattern, name = file_types[file_type]
         burst_paths = os.path.join(directory, 'IW%d', file_pattern)
         out_path = os.path.join(mergedir, name)
-        merged_path = out_path + '.full'
+        merged_path = out_path
         mergeBursts2(frames, burst_paths, burstIndex, box, merged_path, virtual=True, validOnly=True)
-        multilook(merged_path, outname=out_path, alks=azimuth_looks, rlks=range_looks)
+        with TemporaryDirectory() as tmpdir:
+            out_tmp_path = str(Path(tmpdir) / Path(out_path).name)
+            gdal.Translate(out_tmp_path, out_path + '.vrt', format='ENVI', creationOptions=['INTERLEAVE=BIL'])
+            shutil.copy(out_tmp_path, out_path)
 
 
 def goldstein_werner_filter(filter_strength: float = 0.5, mergedir: str = 'merged'):
@@ -747,7 +791,7 @@ def snaphu_unwrap(
     width = img.getWidth()
 
     swath = getSwathList(BURST_IFG_DIR)[0]
-    ifg = loadProduct(os.path.join(BURST_IFG_DIR, 'IW{0}.xml'.format(swath)))
+    ifg = loadProduct(os.path.join(BURST_IFG_DIR, 'IW{0}_multilooked.xml'.format(swath)))
     wavelength = ifg.bursts[0].radarWavelength
 
     # tmid
@@ -1014,15 +1058,16 @@ def prepare_products(directory: Path):
     products = get_burst_metadata(product_paths)
     download_annotation_xmls([product.to_burst_params() for product in products])
     swaths = list(set([int(product.swath[2:3]) for product in products]))
-    s1_objs = []
+    swath_objs = []
     for swath in swaths:
         swath_products = [product for product in products if int(product.swath[2:3]) == swath]
-        swath_products, s1_obj = create_s1_instance(swath, swath_products)
-        spoof_isce2_setup(swath_products, s1_obj)
-        s1_objs.append(copy.deepcopy(s1_obj))
-        del s1_obj
+        swath_products, swath_obj = create_swath_objects(swath, swath_products)
+        modify_for_multilook(swath_products, swath_obj)
+        spoof_isce2_setup(swath_products, swath_obj)
+        swath_objs.append(copy.deepcopy(swath_obj))
+        del swath_obj
 
-    download_dem(s1_objs)
+    download_dem(swath_objs)
 
 
 def run_isce2_workflow(

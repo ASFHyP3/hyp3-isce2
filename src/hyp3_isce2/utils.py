@@ -5,6 +5,7 @@ import isce  # noqa
 import isceobj
 import numpy as np
 from isceobj.Util.ImageUtil.ImageLib import loadImage
+from iscesys.Component.ProductManager import ProductManager
 from osgeo import gdal
 
 gdal.UseExceptions()
@@ -101,6 +102,16 @@ def load_isce2_image(in_path) -> tuple[isceobj.Image, np.ndarray]:
     """
     image_obj, _, _ = loadImage(in_path)
     array = np.fromfile(in_path, image_obj.toNumpyDataType())
+    array = np.reshape(array, (-1, image_obj.width))
+    if image_obj.bands > 1:
+        if image_obj.imageType == 'bil':
+            shape = (image_obj.bands, image_obj.length, image_obj.width)
+            new_array = np.zeros(shape, dtype=image_obj.toNumpyDataType())
+            for i in range(image_obj.bands):
+                new_array[i, :, :] = array[i :: image_obj.bands]
+            array = new_array.copy()
+        else:
+            raise NotImplementedError('Non-BIL reading is not implemented')
     return image_obj, array
 
 
@@ -227,3 +238,40 @@ def image_math(image_a_path: str, image_b_path: str, out_path: str, expression: 
     status = os.system(cmd)
     if status != 0:
         raise Exception('error when running:\n{}\n'.format(cmd))
+
+
+def load_product(xmlname: str):
+    """Load an ISCE2 product from an xml file
+
+    Args:
+        xmlname: The path to the xml file
+
+    Returns:
+        The ISCE2 product
+    """
+    pm = ProductManager()
+    pm.configure()
+    obj = pm.loadProduct(xmlname)
+    return obj
+
+
+def write_isce2_image_from_obj(image_obj, array):
+    """Write an ISCE2 image file.
+
+    Args:
+        image_obj: ISCE2 image object
+        array: The array to write to the file.
+    """
+    image_obj.renderHdr()
+
+    if image_obj.bands > 1:
+        if image_obj.imageType == 'bil':
+            shape = (image_obj.length * image_obj.bands, image_obj.width)
+            new_array = np.zeros(shape, dtype=image_obj.toNumpyDataType())
+            for i in range(image_obj.bands):
+                new_array[i :: image_obj.bands] = array[i, :, :]
+            array = new_array.copy()
+        else:
+            raise NotImplementedError('Non-BIL writing is not implemented')
+
+    array.tofile(image_obj.filename)

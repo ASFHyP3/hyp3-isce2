@@ -25,11 +25,13 @@ import hyp3_isce2
 import hyp3_isce2.metadata.util
 from hyp3_isce2 import topsapp
 from hyp3_isce2.burst import (
+    BurstPosition,
     download_bursts,
     get_burst_params,
     get_isce2_burst_bbox,
     get_product_name,
     get_region_of_interest,
+    multilook_radar_merge_inputs,
     validate_bursts,
 )
 from hyp3_isce2.dem import download_dem_for_isce2
@@ -189,6 +191,7 @@ def make_parameter_file(
     swath_number: int,
     azimuth_looks: int,
     range_looks: int,
+    multilook_position: BurstPosition,
     dem_name: str = 'GLO_30',
     dem_resolution: int = 30,
 ) -> None:
@@ -254,14 +257,6 @@ def make_parameter_file(
     s = ref_time.split('T')[1].split(':')
     utc_time = (int(s[0]) * 60 + int(s[1]) * 60) + float(s[2])
 
-    pm = PM()
-    pm.configure()
-    product = pm.loadProduct(list(Path('fine_interferogram').glob('IW*xml'))[0])
-    first_valid_line = product.bursts[0].firstValidLine
-    num_valid_lines = product.bursts[0].numValidLines
-    first_valid_sample = product.bursts[0].firstValidSample
-    num_valid_samples = product.bursts[0].numValidSamples
-
     output_strings = [
         f'Reference Granule: {reference_scene}\n',
         f'Secondary Granule: {secondary_scene}\n',
@@ -287,10 +282,15 @@ def make_parameter_file(
         f'DEM resolution (m): {dem_resolution}\n',
         f'Unwrapping type: {unwrapper_type}\n',
         'Speckle filter: yes\n',
-        f'Full resolution first valid line: {first_valid_line}\n'
-        f'Full resolution number of lines: {num_valid_lines}\n'
-        f'Full resolution first valid sample: {first_valid_sample}\n'
-        f'Full resolution number of samples: {num_valid_samples}\n'
+        f'Radar n lines: {multilook_position.n_lines}\n',
+        f'Radar n samples: {multilook_position.n_samples}\n',
+        f'Radar first valid line: {multilook_position.first_valid_line}\n',
+        f'Radar n valid lines: {multilook_position.n_valid_lines}\n',
+        f'Radar first valid sample: {multilook_position.first_valid_sample}\n',
+        f'Radar n valid samples: {multilook_position.n_valid_samples}\n',
+        f'Multilook azimuth time interval: {multilook_position.azimuth_time_interval}\n',
+        f'Multilook range pixel size: {multilook_position.range_pixel_size}\n',
+        f'Radar sensing stop: {datetime.strftime(multilook_position.sensing_stop, "%Y-%m-%dT%H:%M:%S.%f")}'
     ]
 
     output_string = ''.join(output_strings)
@@ -313,7 +313,7 @@ def find_product(pattern: str) -> str:
     return product
 
 
-def translate_outputs(product_name: str, pixel_size: float, include_radar: bool = False) -> None:
+def translate_outputs(product_name: str, pixel_size: float, include_radar: bool = False, use_multilooked=False) -> None:
     """Translate ISCE outputs to a standard GTiff format with a UTM projection.
     Assume you are in the top level of an ISCE run directory
 
@@ -340,12 +340,16 @@ def translate_outputs(product_name: str, pixel_size: float, include_radar: bool 
         ISCE2Dataset('merged/dem.crop', 'dem', [1]),
         ISCE2Dataset('merged/filt_topophase.unw.conncomp.geo', 'conncomp', [1]),
     ]
+   
+    suffix = '01'
+    if use_multilooked:
+        suffix += '.multilooked'
 
     rdr_datasets = [
-        ISCE2Dataset(find_product('fine_interferogram/IW*/burst_01.int.vrt'), 'wrapped_phase_rdr', [1]),
-        ISCE2Dataset(find_product('geom_reference/IW*/lat_01.rdr.vrt'), 'lat_rdr', [1]),
-        ISCE2Dataset(find_product('geom_reference/IW*/lon_01.rdr.vrt'), 'lon_rdr', [1]),
-        ISCE2Dataset(find_product('geom_reference/IW*/los_01.rdr.vrt'), 'los_rdr', [1,2]),
+        ISCE2Dataset(find_product(f'fine_interferogram/IW*/burst_{suffix}.int.vrt'), 'wrapped_phase_rdr', [1]),
+        ISCE2Dataset(find_product(f'geom_reference/IW*/lat_{suffix}.rdr.vrt'), 'lat_rdr', [1]),
+        ISCE2Dataset(find_product(f'geom_reference/IW*/lon_{suffix}.rdr.vrt'), 'lon_rdr', [1]),
+        ISCE2Dataset(find_product(f'geom_reference/IW*/los_{suffix}.rdr.vrt'), 'los_rdr', [1,2]),
     ]
     if include_radar:
         datasets += rdr_datasets
@@ -442,12 +446,6 @@ def main():
         default=False,
         help='Apply a water body mask to wrapped and unwrapped phase GeoTIFFs (after unwrapping)',
     )
-    parser.add_argument(
-        '--include-radar',
-        type=string_is_true,
-        default=False,
-        help='Include full-resolution radar geometry products in output to facilitate merging',
-    )
     # Allows granules to be given as a space-delimited list of strings (e.g. foo bar) or as a single
     # quoted string that contains spaces (e.g. "foo bar"). AWS Batch uses the latter format when
     # invoking the container command.
@@ -479,13 +477,16 @@ def main():
     )
 
     log.info('ISCE2 TopsApp run completed successfully')
+
+    multilook_position = multilook_radar_merge_inputs(swath_number, rg_looks=range_looks, az_looks=azimuth_looks)
+
     pixel_size = get_pixel_size(args.looks)
     product_name = get_product_name(reference_scene, secondary_scene, pixel_spacing=int(pixel_size))
 
     product_dir = Path(product_name)
     product_dir.mkdir(parents=True, exist_ok=True)
 
-    translate_outputs(product_name, pixel_size=pixel_size, include_radar=args.include_radar)
+    translate_outputs(product_name, pixel_size=pixel_size, include_radar=True, use_multilooked=True)
 
     unwrapped_phase = f'{product_name}/{product_name}_unw_phase.tif'
     wrapped_phase = f'{product_name}/{product_name}_wrapped_phase.tif'
@@ -523,6 +524,7 @@ def main():
         azimuth_looks=azimuth_looks,
         range_looks=range_looks,
         swath_number=swath_number,
+        multilook_position=multilook_position,
     )
     output_zip = make_archive(base_name=product_name, format='zip', base_dir=product_name)
 
