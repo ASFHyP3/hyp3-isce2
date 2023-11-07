@@ -1,7 +1,6 @@
-import os
 import shutil
+import subprocess
 
-import isce  # noqa
 import isceobj
 import numpy as np
 from isceobj.Util.ImageUtil.ImageLib import loadImage
@@ -226,18 +225,16 @@ def isce2_copy(in_path: str, out_path: str):
 
 
 def image_math(image_a_path: str, image_b_path: str, out_path: str, expression: str):
-    """Run ISCE2's ImageMath.py on two images.
+    """Run ISCE2's imageMath.py on two images.
 
     Args:
         image_a_path: The path to the first image (not the xml).
         image_b_path: The path to the second image (not the xml).
         out_path: The path to the output image.
-        expression: The expression to pass to ImageMath.py.
+        expression: The expression to pass to imageMath.py.
     """
-    cmd = f"ImageMath.py -e '{expression}' --a={image_a_path} --b={image_b_path} -o {out_path}"
-    status = os.system(cmd)
-    if status != 0:
-        raise Exception('error when running:\n{}\n'.format(cmd))
+    cmd = ['imageMath.py', '-e', expression, f'--a={image_a_path}', f'--b={image_b_path}', '-o', out_path]
+    subprocess.run(cmd, check=True)
 
 
 def load_product(xmlname: str):

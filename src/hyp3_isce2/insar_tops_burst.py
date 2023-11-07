@@ -3,7 +3,6 @@
 import argparse
 import logging
 import os
-import site
 import subprocess
 import sys
 from collections import namedtuple
@@ -50,12 +49,6 @@ from hyp3_isce2.water_mask import create_water_mask
 gdal.UseExceptions()
 
 log = logging.getLogger(__name__)
-
-# ISCE needs its applications to be on the system path.
-# See https://github.com/isce-framework/isce2#setup-your-environment
-ISCE_APPLICATIONS = Path(site.getsitepackages()[0]) / 'isce' / 'applications'
-if str(ISCE_APPLICATIONS) not in os.environ['PATH'].split(os.pathsep):
-    os.environ['PATH'] = str(ISCE_APPLICATIONS) + os.pathsep + os.environ['PATH']
 
 
 def insar_tops_burst(
@@ -191,6 +184,7 @@ def make_parameter_file(
     azimuth_looks: int,
     range_looks: int,
     multilook_position: BurstPosition,
+    apply_water_mask: bool,
     dem_name: str = 'GLO_30',
     dem_resolution: int = 30,
 ) -> None:
@@ -290,6 +284,7 @@ def make_parameter_file(
         f'Multilook azimuth time interval: {multilook_position.azimuth_time_interval}\n',
         f'Multilook range pixel size: {multilook_position.range_pixel_size}\n',
         f'Radar sensing stop: {datetime.strftime(multilook_position.sensing_stop, "%Y-%m-%dT%H:%M:%S.%f")}'
+        f'Water mask: {apply_water_mask}\n'
     ]
 
     output_string = ''.join(output_strings)
@@ -373,7 +368,7 @@ def translate_outputs(product_name: str, pixel_size: float, include_radar: bool 
         '--calc angle(A) --type Float32 --format GTiff --NoDataValue=0 '
         '--creation-option TILED=YES --creation-option COMPRESS=LZW --creation-option NUM_THREADS=ALL_CPUS'
     )
-    subprocess.check_call(cmd.split(' '))
+    subprocess.run(cmd.split(' '), check=True)
 
     ds = gdal.Open('merged/los.rdr.geo', gdal.GA_Update)
     ds.GetRasterBand(1).SetNoDataValue(0)
@@ -392,7 +387,7 @@ def translate_outputs(product_name: str, pixel_size: float, include_radar: bool 
         '--calc (90-A)*pi/180 --type Float32 --format GTiff --NoDataValue=0 '
         '--creation-option TILED=YES --creation-option COMPRESS=LZW --creation-option NUM_THREADS=ALL_CPUS'
     )
-    subprocess.check_call(cmd.split(' '))
+    subprocess.run(cmd.split(' '), check=True)
 
     # Performs the inverse of the operation performed by MintPy:
     # https://github.com/insarlab/MintPy/blob/df96e0b73f13cc7e2b6bfa57d380963f140e3159/src/mintpy/objects/stackDict.py#L739-L745
@@ -406,7 +401,7 @@ def translate_outputs(product_name: str, pixel_size: float, include_radar: bool 
         '--calc (90+A)*pi/180 --type Float32 --format GTiff --NoDataValue=0 '
         '--creation-option TILED=YES --creation-option COMPRESS=LZW --creation-option NUM_THREADS=ALL_CPUS'
     )
-    subprocess.check_call(cmd.split(' '))
+    subprocess.run(cmd.split(' '), check=True)
 
     ds = gdal.Open('merged/filt_topophase.unw.geo')
     geotransform = ds.GetGeoTransform()
@@ -443,7 +438,7 @@ def main():
         '--apply-water-mask',
         type=string_is_true,
         default=False,
-        help='Apply a water body mask to wrapped and unwrapped phase GeoTIFFs (after unwrapping)',
+        help='Apply a water body mask before unwrapping.',
     )
     # Allows granules to be given as a space-delimited list of strings (e.g. foo bar) or as a single
     # quoted string that contains spaces (e.g. "foo bar"). AWS Batch uses the latter format when
@@ -465,6 +460,7 @@ def main():
     validate_bursts(reference_scene, secondary_scene)
     swath_number = int(reference_scene[12])
     range_looks, azimuth_looks = [int(looks) for looks in args.looks.split('x')]
+    apply_water_mask = args.apply_water_mask
 
     insar_tops_burst(
         reference_scene=reference_scene,
@@ -472,7 +468,7 @@ def main():
         azimuth_looks=azimuth_looks,
         range_looks=range_looks,
         swath_number=swath_number,
-        apply_water_mask=args.apply_water_mask
+        apply_water_mask=apply_water_mask
     )
 
     log.info('ISCE2 TopsApp run completed successfully')
@@ -492,7 +488,7 @@ def main():
     water_mask = f'{product_name}/{product_name}_water_mask.tif'
     create_water_mask(wrapped_phase, water_mask)
 
-    if args.apply_water_mask:
+    if apply_water_mask:
         for geotiff in [wrapped_phase, unwrapped_phase]:
             cmd = (
                 'gdal_calc.py '
@@ -503,7 +499,7 @@ def main():
                 '--NoDataValue 0 '
                 '--creation-option TILED=YES --creation-option COMPRESS=LZW --creation-option NUM_THREADS=ALL_CPUS'
             )
-            subprocess.check_call(cmd.split(' '))
+            subprocess.run(cmd.split(' '), check=True)
 
     make_browse_image(unwrapped_phase, f'{product_name}/{product_name}_unw_phase.png')
 
@@ -514,7 +510,7 @@ def main():
         secondary_scene=secondary_scene,
         range_looks=range_looks,
         azimuth_looks=azimuth_looks,
-        apply_water_mask=args.apply_water_mask,
+        apply_water_mask=apply_water_mask
     )
     make_parameter_file(
         Path(f'{product_name}/{product_name}.txt'),
@@ -524,6 +520,7 @@ def main():
         range_looks=range_looks,
         swath_number=swath_number,
         multilook_position=multilook_position,
+        apply_water_mask=apply_water_mask
     )
     output_zip = make_archive(base_name=product_name, format='zip', base_dir=product_name)
 

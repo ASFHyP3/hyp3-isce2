@@ -11,7 +11,6 @@ from secrets import token_hex
 from typing import Iterator, List, Optional, Tuple, Union
 
 import asf_search
-import isce  # noqa: F401
 import requests
 import numpy as np
 from isceobj.Sensor.TOPS.Sentinel1 import Sentinel1
