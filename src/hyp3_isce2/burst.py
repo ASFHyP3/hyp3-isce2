@@ -562,7 +562,7 @@ def multilook_radar_merge_inputs(swath_number: int, rg_looks: int, az_looks: int
     """
     swath = f'IW{swath_number}'
     position_params = get_multilook_parameters(f'fine_interferogram/{swath}.xml', rg_looks, az_looks)
-    safely_multilook('fine_interferogram/IW2/burst_01.int', position_params, rg_looks, az_looks)
+    safely_multilook(f'fine_interferogram/{swath}/burst_01.int', position_params, rg_looks, az_looks)
 
     for geom in ['lat_01.rdr', 'lon_01.rdr', 'los_01.rdr']:
         geom_path = str(Path('geom_reference') / swath / geom)
