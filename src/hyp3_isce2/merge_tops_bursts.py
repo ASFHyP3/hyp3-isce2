@@ -7,6 +7,7 @@ import shutil
 import sys
 from dataclasses import dataclass, field
 from concurrent.futures import ThreadPoolExecutor
+from itertools import combinations
 from pathlib import Path
 from secrets import token_hex
 from shutil import make_archive
@@ -70,12 +71,17 @@ class BurstProduct:
     """A dataclass to hold burst metadata"""
 
     granule: str
+    reference_date: datetime.datetime
+    secondary_date: datetime.datetime
+    burst_id: int
     swath: str
     polarization: str
     burst_number: int
     product_path: Path
     n_lines: int
     n_samples: int
+    range_looks: int
+    azimuth_looks: int
     first_valid_line: int
     n_valid_lines: int
     first_valid_sample: int
@@ -84,6 +90,7 @@ class BurstProduct:
     rg_pixel_size: float
     start_utc: datetime.datetime
     stop_utc: datetime.datetime
+    relative_orbit: int
     isce2_burst_number: int = field(default=None)
 
     def to_burst_params(self):
@@ -123,23 +130,23 @@ def get_burst_metadata(product_paths: Iterable[Path]) -> Iterable[BurstProduct]:
     # TODO why does asf_search not return values in order?
     results = [asf_search.granule_search(item['ReferenceGranule'])[0] for item in metas]
 
-    relative_orbits = list(set([result.properties['pathNumber'] for result in results]))
-    if len(relative_orbits) > 1:
-        msg = (
-            'Only burst from the same relative orbit can be merged.'
-            f'Currently have bursts from orbits: {", ".join(relative_orbits)}'
-        )
-        raise ValueError(msg)
-
+    relative_orbits = [result.properties['pathNumber'] for result in results]
     granules = [Path(result.properties['url']).parts[2] for result in results]
+    pattern = '%Y%m%dT%H%M%S'
+    reference_granules = [datetime.datetime.strptime(item['ReferenceGranule'].split('_')[3], pattern) for item in metas]
+    secondary_granules = [datetime.datetime.strptime(item['SecondaryGranule'].split('_')[3], pattern) for item in metas]
     swaths = [result.properties['burst']['subswath'] for result in results]
+    burst_ids = [result.properties['burst']['relativeBurstID'] for result in results]
     burst_indexes = [result.properties['burst']['burstIndex'] for result in results]
     polarization = [result.properties['polarization'] for result in results]
     start_utc = [
         datetime.datetime.strptime(result.properties['startTime'], '%Y-%m-%dT%H:%M:%S.%fZ') for result in results
     ]
+    relative_orbits = [result.properties['pathNumber'] for result in results]
     n_lines = [meta['Radarnlines'] for meta in metas]
     n_samples = [meta['Radarnsamples'] for meta in metas]
+    range_looks = [int(meta['Rangelooks']) for meta in metas]
+    azimuth_looks = [int(meta['Azimuthlooks']) for meta in metas]
     first_valid_line = [meta['Radarfirstvalidline'] for meta in metas]
     n_valid_lines = [meta['Radarnvalidlines'] for meta in metas]
     first_valid_sample = [meta['Radarfirstvalidsample'] for meta in metas]
@@ -151,12 +158,17 @@ def get_burst_metadata(product_paths: Iterable[Path]) -> Iterable[BurstProduct]:
     for i in range(len(granules)):
         product = BurstProduct(
             granules[i],
+            reference_granules[i],
+            secondary_granules[i],
+            burst_ids[i],
             swaths[i],
             polarization[i],
             burst_indexes[i],
             product_paths[i],
             n_lines[i],
             n_samples[i],
+            range_looks[i],
+            azimuth_looks[i],
             first_valid_line[i],
             n_valid_lines[i],
             first_valid_sample[i],
@@ -165,6 +177,7 @@ def get_burst_metadata(product_paths: Iterable[Path]) -> Iterable[BurstProduct]:
             rg_pixel_size[i],
             start_utc[i],
             stop_utc[i],
+            relative_orbits[i],
         )
         products.append(product)
     return products
@@ -969,6 +982,58 @@ def make_parameter_file(
         outfile.write(output_string)
 
 
+def check_burst_group_validity(products) -> None:
+    """Check that a set of burst products are valid for merging. This includes:
+    All products have the same:
+        - date
+        - relative orbit
+        - polarization
+        - multilook
+    All products must also be contiguous. This means:
+        - A given swath has a continuous series of bursts
+        - Neighboring swaths have at at most one burst separation
+
+    This function will raise a ValueError if any of these conditions are not met.
+
+    Args:
+        products: A list of BurstProduct objects
+    """
+    reference_dates = set([product.reference_date.date() for product in products])
+    secondary_dates = set([product.secondary_date.date() for product in products])
+    polarizations = set([product.polarization for product in products])
+    relative_orbits = set([product.relative_orbit for product in products])
+    range_looks = [product.range_looks for product in products]
+    azimuth_looks = [product.azimuth_looks for product in products]
+    looks = set([f'{rgl}x{azl}' for rgl, azl in zip(range_looks, azimuth_looks)])
+
+    sets = {
+        'reference_date': reference_dates,
+        'secondary_date': secondary_dates,
+        'polarization': polarizations,
+        'relative_orbit': relative_orbits,
+        'looks': looks,
+    }
+    for key, value in sets.items():
+        if len(value) > 1:
+            key_name = key.replace('_', ' ')
+            value_names = ", ".join([str(v) for v in value])
+            raise ValueError(f'All products must have the same {key_name}. Found {value_names}.')
+
+    swath_ids = {}
+    for swath in set([product.swath for product in products]):
+        swath_products = [product for product in products if product.swath == swath]
+        swath_products.sort(key=lambda x: x.burst_id)
+        ids = np.array([p.burst_id for p in swath_products])
+        if not np.all(ids - ids.min() == np.arange(len(ids))):
+            raise ValueError(f'Products for swath {swath} are not contiguous')
+        swath_ids[swath] = ids
+
+    for swath1, swath2 in combinations(swath_ids.keys(), 2):
+        separations = np.concatenate([swath_ids[swath1] - elem for elem in swath_ids[swath2]])
+        if separations.min() > 1:
+            raise ValueError(f'Products from swaths {swath1} and {swath2} do not overlap')
+
+
 def prepare_products(directory: Path) -> None:
     """Set up a directory for ISCE2-based burst merging using a set of ASF burst products.
     This includes:
@@ -982,6 +1047,7 @@ def prepare_products(directory: Path) -> None:
     """
     product_paths = list(directory.glob('S1_??????_IW?_*'))
     products = get_burst_metadata(product_paths)
+    check_burst_group_validity(products)
     download_annotation_xmls([product.to_burst_params() for product in products])
     swaths = list(set([int(product.swath[2:3]) for product in products]))
     swath_objs = []
