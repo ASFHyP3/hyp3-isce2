@@ -283,7 +283,7 @@ def make_parameter_file(
         f'Radar n valid samples: {multilook_position.n_valid_samples}\n',
         f'Multilook azimuth time interval: {multilook_position.azimuth_time_interval}\n',
         f'Multilook range pixel size: {multilook_position.range_pixel_size}\n',
-        f'Radar sensing stop: {datetime.strftime(multilook_position.sensing_stop, "%Y-%m-%dT%H:%M:%S.%f")}'
+        f'Radar sensing stop: {datetime.strftime(multilook_position.sensing_stop, "%Y-%m-%dT%H:%M:%S.%f")}\n'
         f'Water mask: {apply_water_mask}\n'
     ]
 
