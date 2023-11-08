@@ -1,7 +1,6 @@
 import argparse
 import copy
 import datetime
-import json
 import logging
 import os
 import shutil
@@ -15,18 +14,12 @@ from tempfile import TemporaryDirectory
 from typing import Iterable, Tuple
 
 import asf_search
-import geopandas
-import lxml.etree as ET
-import pandas as pd
-import numpy as np
-import s3fs
-import shapely
 from hyp3lib.util import string_is_true
+import lxml.etree as ET
+import numpy as np
 from osgeo import gdal
-from shapely import geometry, wkt
-from shapely.geometry import box
+from shapely import geometry
 
-import isce  # noqa
 import isceobj
 from contrib.Snaphu.Snaphu import Snaphu
 from isceobj.Sensor.TOPS.Sentinel1 import Sentinel1
@@ -43,8 +36,8 @@ from zerodop.geozero import createGeozero
 
 from hyp3_isce2.dem import download_dem_for_isce2
 import hyp3_isce2.burst as burst_utils
-from hyp3_isce2.utils import make_browse_image, GDALConfigManager
-from hyp3_isce2.water_mask import get_geo_partition, split_geometry_on_antimeridian
+from hyp3_isce2.utils import make_browse_image, image_math, resample_to_radar_io
+from hyp3_isce2.water_mask import create_water_mask
 
 log_format = '%(asctime)s - %(name)s - %(levelname)s - %(message)s'
 logging.basicConfig(stream=sys.stdout, format=log_format, level=logging.INFO, force=True)
@@ -52,7 +45,6 @@ log = logging.getLogger(__name__)
 
 from hyp3_isce2.insar_tops_burst import get_pixel_size, translate_outputs  # noqa
 
-os.environ['PATH'] = f"{os.environ.get('PATH')}:{os.environ.get('ISCE_HOME') + '/applications'}"
 
 BURST_IFG_DIR = 'fine_interferogram'
 BURST_GEOM_DIR = 'geom_reference'
@@ -680,107 +672,17 @@ def goldstein_werner_filter(filter_strength: float = 0.6, mergedir: str = 'merge
     phsigImage.renderHdr()
 
 
-def create_water_mask(template_image: str = 'full_res.dem.wgs84', mergedir: str = 'merged') -> None:
-    """Create a water mask in geographic coordinates with the same dimensions as the template image.
-    The template image will typically be your DEM.
-
-    Args:
-        template_image: The name of the template image
-        mergedir: The output directory containing the merged interferogram
-    """
-    output_image = str(Path(mergedir) / 'water_mask')
-
-    image = isceobj.createDemImage()
-    image.load(f'{template_image}.xml')
-    image.setAccessMode('read')
-
-    y_size = image.length
-    x_size = image.width
-    upper_left_x = image.coord1.coordStart
-    delta_x = image.coord1.coordDelta
-    upper_left_y = image.coord2.coordStart
-    delta_y = image.coord2.coordDelta
-    geotransform = (upper_left_x, delta_x, 0, upper_left_y, 0, delta_y)
-    dst_ds = gdal.GetDriverByName('ISCE').Create(output_image, x_size, y_size)
-    dst_ds.SetGeoTransform(geotransform)
-
-    srs = gdal.osr.SpatialReference()
-    srs.ImportFromEPSG(4326)
-    dst_ds.SetProjection(srs.ExportToWkt())
-    dst_ds.SetMetadataItem('AREA_OR_POINT', 'Area')
-
-    north = upper_left_y
-    west = upper_left_x
-    south = north + delta_y * (y_size - 1)
-    east = west + delta_x * (x_size - 1)
-    extent = box(west, south, east, north)
-    corrected_extent = split_geometry_on_antimeridian(json.loads(shapely.to_geojson(extent)))
-
-    filters = list(set([('lat_lon', '=', get_geo_partition(coord)) for coord in extent.exterior.coords]))
-    s3_fs = s3fs.S3FileSystem(anon=True, default_block_size=5 * (2**20))
-    df = pd.read_parquet('asf-dem-west/WATER_MASK/GSHHG/hyp3_water_mask_20220912', filesystem=s3_fs, filters=filters)
-    df['geometry'] = df['geometry'].apply(wkt.loads)
-    df['lat_lon'] = df['lat_lon'].astype(str)
-    gdf = geopandas.GeoDataFrame(df, crs='EPSG:4326')
-    mask = geopandas.clip(gdf, geometry.shape(corrected_extent))
-
-    with TemporaryDirectory() as temp_dir:
-        temp_file = Path(temp_dir) / 'mask.shp'
-        mask.to_file(temp_file)
-        with GDALConfigManager(OGR_ENABLE_PARTIAL_REPROJECTION='YES'):
-            gdal.Rasterize(dst_ds, str(temp_file), allTouched=True, burnValues=[1])
-
-    del dst_ds
-
-
-def resample_to_radar(image_to_resample: str, latin: str, lonin: str, output: str) -> None:
-    """Resample a geographic image to radar coordinates using a nearest neighbor method.
-    The latin and lonin images are used to map from geographic to radar coordinates.
-
-    Args:
-        image_to_resample: The path to the image to resample
-        latin: The path to the latitude image
-        lonin: The path to the longitude image
-        output: The path to the output image
-    """
-    maskim = isceobj.createImage()
-    maskim.load(image_to_resample + '.xml')
-    latim = isceobj.createImage()
-    latim.load(latin + '.xml')
-    lonim = isceobj.createImage()
-    lonim.load(lonin + '.xml')
-    mask = np.fromfile(image_to_resample, maskim.toNumpyDataType())
-    lat = np.fromfile(latin, latim.toNumpyDataType())
-    lon = np.fromfile(lonin, lonim.toNumpyDataType())
-    mask = np.reshape(mask, [maskim.coord2.coordSize, maskim.coord1.coordSize])
-    startLat = maskim.coord2.coordStart
-    deltaLat = maskim.coord2.coordDelta
-    startLon = maskim.coord1.coordStart
-    deltaLon = maskim.coord1.coordDelta
-    lati = np.clip(((lat - startLat) / deltaLat).astype(int), 0, mask.shape[0] - 1)
-    loni = np.clip(((lon - startLon) / deltaLon).astype(int), 0, mask.shape[1] - 1)
-    cropped = (mask[lati, loni]).astype(maskim.toNumpyDataType())
-    cropped = np.reshape(cropped, (latim.coord2.coordSize, latim.coord1.coordSize))
-    cropped.tofile(output)
-    croppedim = isceobj.createImage()
-    croppedim.initImage(output, 'read', cropped.shape[1], maskim.dataType)
-    croppedim.renderHdr()
-
-
-def mask_coherence(mergedir='merged'):
+def mask_coherence(out_name, mergedir='merged'):
     """Mask the coherence image with a water mask that has been resampled to radar coordinates
 
     Args:
         mergedir: The output directory containing the merged interferogram
     """
-    create_water_mask()
-    mask_geo, lat, lon, mask_rdr, coh = ('water_mask', LAT_NAME, LON_NAME, 'water_mask.rdr', COH_NAME)
-    mask_geo, lat, lon, mask_rdr, coh = [str(Path(mergedir) / name) for name in (mask_geo, lat, lon, mask_rdr, coh)]
-    resample_to_radar(mask_geo, lat, lon, mask_rdr)
-    cmd = f"ImageMath.py -e 'a*b' --a={coh} --b={mask_rdr} -o {mergedir}/masked.{COH_NAME}"
-    status = os.system(cmd)
-    if status != 0:
-        raise Exception('error when running:\n{}\n'.format(cmd))
+    input_files = ('water_mask', LAT_NAME, LON_NAME, 'water_mask.rdr', COH_NAME, out_name)
+    mask_geo, lat, lon, mask_rdr, coh, masked_coh = [str(Path(mergedir) / name) for name in input_files]
+    create_water_mask(input_image='full_res.dem.wgs84', output_image=mask_geo, gdal_format='ISCE')
+    resample_to_radar_io(mask_geo, lat, lon, mask_rdr)
+    image_math(coh, mask_rdr, masked_coh, 'a*b')
 
 
 def snaphu_unwrap(
@@ -1111,7 +1013,7 @@ def run_isce2_workflow(
     goldstein_werner_filter(filter_strength=filter_strength, mergedir=mergedir)
     if apply_water_mask:
         log.info('Water masking requested, downloading water mask')
-        mask_coherence()
+        mask_coherence(f'masked.{COH_NAME}')
         corrfile = os.path.join(mergedir, f'masked.{COH_NAME}')
     else:
         corrfile = os.path.join(mergedir, COH_NAME)

@@ -73,14 +73,15 @@ def extent_from_geotransform(geotransform: tuple, x_size: int, y_size: int) -> t
 def make_browse_image(input_tif: str, output_png: str) -> None:
     with GDALConfigManager(GDAL_PAM_ENABLED='NO'):
         stats = gdal.Info(input_tif, format='json', stats=True)['stac']['raster:bands'][0]['stats']
-        gdal.Translate(destName=output_png,
-                       srcDS=input_tif,
-                       format='png',
-                       outputType=gdal.GDT_Byte,
-                       width=2048,
-                       strict=True,
-                       scaleParams=[[stats['minimum'], stats['maximum']]],
-                       )
+        gdal.Translate(
+            destName=output_png,
+            srcDS=input_tif,
+            format='png',
+            outputType=gdal.GDT_Byte,
+            width=2048,
+            strict=True,
+            scaleParams=[[stats['minimum'], stats['maximum']]],
+        )
 
 
 def oldest_granule_first(g1, g2):
@@ -90,7 +91,7 @@ def oldest_granule_first(g1, g2):
 
 
 def load_isce2_image(in_path) -> tuple[isceobj.Image, np.ndarray]:
-    """ Read an ISCE2 image file and return the image object and array.
+    """Read an ISCE2 image file and return the image object and array.
 
     Args:
         in_path: The path to the image to resample (not the xml).
@@ -115,7 +116,7 @@ def load_isce2_image(in_path) -> tuple[isceobj.Image, np.ndarray]:
 
 
 def write_isce2_image(output_path, array=None, width=None, mode='read', data_type='FLOAT') -> None:
-    """ Write an ISCE2 image file.
+    """Write an ISCE2 image file.
 
     Args:
         output_path: The path to the output image file.
@@ -153,12 +154,7 @@ def get_geotransform_from_dataset(dataset: isceobj.Image) -> tuple:
 
 
 def resample_to_radar(
-    mask: np.ndarray,
-    lat: np.ndarray,
-    lon: np.ndarray,
-    geotransform: tuple,
-    data_type: type,
-    outshape: tuple[int, int]
+    mask: np.ndarray, lat: np.ndarray, lon: np.ndarray, geotransform: tuple, data_type: type, outshape: tuple[int, int]
 ) -> np.ndarray:
     """Resample a geographic image to radar coordinates using a nearest neighbor method.
     The latin and lonin images are used to map from geographic to radar coordinates.
@@ -199,13 +195,14 @@ def resample_to_radar_io(image_to_resample: str, latin: str, lonin: str, output:
     _, lon = load_isce2_image(lonin)
     mask = np.reshape(mask, [maskim.coord2.coordSize, maskim.coord1.coordSize])
     geotransform = get_geotransform_from_dataset(maskim)
-    cropped = resample_to_radar(mask=mask,
-                                lat=lat,
-                                lon=lon,
-                                geotransform=geotransform,
-                                data_type=maskim.toNumpyDataType(),
-                                outshape=(latim.coord2.coordSize, latim.coord1.coordSize)
-                                )
+    cropped = resample_to_radar(
+        mask=mask,
+        lat=lat,
+        lon=lon,
+        geotransform=geotransform,
+        data_type=maskim.toNumpyDataType(),
+        outshape=(latim.coord2.coordSize, latim.coord1.coordSize),
+    )
 
     write_isce2_image(output, array=cropped, data_type=maskim.dataType)
 
@@ -233,7 +230,7 @@ def image_math(image_a_path: str, image_b_path: str, out_path: str, expression: 
         out_path: The path to the output image.
         expression: The expression to pass to imageMath.py.
     """
-    cmd = ['imageMath.py', '-e', expression, f'--a={image_a_path}', f'--b={image_b_path}', '-o', out_path]
+    cmd = ['imageMath.py', f'--a={image_a_path}', f'--b={image_b_path}', '-o', f'{out_path}', '--eval', expression]
     subprocess.run(cmd, check=True)
 
 
