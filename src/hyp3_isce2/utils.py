@@ -1,5 +1,6 @@
 import shutil
 import subprocess
+from typing import Optional
 
 import isceobj
 import numpy as np
@@ -269,3 +270,53 @@ def write_isce2_image_from_obj(image_obj, array):
             raise NotImplementedError('Non-BIL writing is not implemented')
 
     array.tofile(image_obj.filename)
+
+
+def create_image(
+    out_path: str, width: Optional[int] = None, access_mode: str = 'read', image_subtype: str = 'default', action: str = 'create'
+) -> isceobj.Image.Image:
+    """Create an ISCE2 image object from a set of parameters
+
+    Args:
+        out_path: The path to the output image
+        width: The width of the image
+        access_mode: The access mode of the image (read or write)
+        image_subtype: The type of image to create
+        action: What action to take:
+            'create': create a new image object, but don't write metadata files
+            'finalize': create a new image object, and write metadata files
+            'load': create an imge object by loading an existing metadata file
+
+    Returns:
+        The ISCE2 image object
+    """
+    opts = {
+        'ifg': (isceobj.createIntImage, 1, 'CFLOAT', 'cpx'),
+        'cor': (isceobj.createImage, 1, 'FLOAT', 'cor'),
+        'unw': (isceobj.Image.createUnwImage, 2, 'FLOAT', 'unw'),
+        'conncomp': (isceobj.createImage, 1, 'BYTE', ''),
+        'default': (isceobj.createImage, 1, 'FLOAT', ''),
+    }
+
+    create_func, bands, dtype, image_type = opts[image_subtype]
+    image = create_func()
+    if action == 'load':
+        image.load(out_path + '.xml')
+        image.setAccessMode('read')
+        image.createImage()
+        return image
+
+    if width is None:
+        raise ValueError('Width must be specified when the action is create or finalize')
+
+    image.initImage(out_path, access_mode, width, dtype, bands)
+    image.setImageType(image_type)
+    if action == 'create':
+        image.createImage()
+    elif action == 'finalize':
+        image.renderVRT()
+        image.createImage()
+        image.finalizeImage()
+        image.renderHdr()
+
+    return image

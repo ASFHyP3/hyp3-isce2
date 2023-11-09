@@ -12,7 +12,7 @@ from pathlib import Path
 from secrets import token_hex
 from shutil import make_archive
 from tempfile import TemporaryDirectory
-from typing import Iterable, Optional, Tuple
+from typing import Iterable, Tuple
 
 import asf_search
 from hyp3lib.util import string_is_true
@@ -37,7 +37,7 @@ from zerodop.geozero import createGeozero
 
 from hyp3_isce2.dem import download_dem_for_isce2
 import hyp3_isce2.burst as burst_utils
-from hyp3_isce2.utils import load_product, make_browse_image, image_math, resample_to_radar_io
+from hyp3_isce2.utils import create_image, load_product, make_browse_image, image_math, resample_to_radar_io
 from hyp3_isce2.water_mask import create_water_mask
 
 log_format = '%(asctime)s - %(name)s - %(levelname)s - %(message)s'
@@ -534,56 +534,6 @@ def get_merged_orbit(products: Iterable[Sentinel1]) -> Orbit:
             bb.orbit = orb
 
     return orb
-
-
-def create_image(
-    out_path: str, width: Optional[int] = None, access_mode: str = 'read', image_subtype: str = 'default', action: str = 'create'
-) -> isceobj.Image.Image:
-    """Create an ISCE2 image object from a set of parameters
-
-    Args:
-        out_path: The path to the output image
-        width: The width of the image
-        access_mode: The access mode of the image (read or write)
-        image_subtype: The type of image to create
-        action: What action to take:
-            'create': create a new image object, but don't write metadata files
-            'finalize': create a new image object, and write metadata files
-            'load': create an imge object by loading an existing metadata file
-
-    Returns:
-        The ISCE2 image object
-    """
-    opts = {
-        'ifg': (isceobj.createIntImage, 1, 'CFLOAT', 'cpx'),
-        'cor': (isceobj.createImage, 1, 'FLOAT', 'cor'),
-        'unw': (isceobj.Image.createUnwImage, 2, 'FLOAT', 'unw'),
-        'conncomp': (isceobj.createImage, 1, 'BYTE', ''),
-        'default': (isceobj.createImage, 1, 'FLOAT', ''),
-    }
-
-    create_func, bands, dtype, image_type = opts[image_subtype]
-    image = create_func()
-    if action == 'load':
-        image.load(out_path + '.xml')
-        image.setAccessMode('read')
-        image.createImage()
-        return image
-
-    if width is None:
-        raise ValueError('Width must be specified when the action is create or finalize')
-
-    image.initImage(out_path, access_mode, width, dtype, bands)
-    image.setImageType(image_type)
-    if action == 'create':
-        image.createImage()
-    elif action == 'finalize':
-        image.renderVRT()
-        image.createImage()
-        image.finalizeImage()
-        image.renderHdr()
-
-    return image
 
 
 def merge_bursts(range_looks: int, azimuth_looks: int, mergedir: str = 'merged') -> None:
