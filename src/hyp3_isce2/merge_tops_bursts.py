@@ -12,7 +12,7 @@ from pathlib import Path
 from secrets import token_hex
 from shutil import make_archive
 from tempfile import TemporaryDirectory
-from typing import Iterable, Tuple
+from typing import Iterable, Optional, Tuple
 
 import asf_search
 from hyp3lib.util import string_is_true
@@ -37,7 +37,7 @@ from zerodop.geozero import createGeozero
 
 from hyp3_isce2.dem import download_dem_for_isce2
 import hyp3_isce2.burst as burst_utils
-from hyp3_isce2.utils import make_browse_image, image_math, resample_to_radar_io
+from hyp3_isce2.utils import load_product, make_browse_image, image_math, resample_to_radar_io
 from hyp3_isce2.water_mask import create_water_mask
 
 log_format = '%(asctime)s - %(name)s - %(levelname)s - %(message)s'
@@ -506,21 +506,6 @@ def get_swath_list(indir: str) -> list:
     return swathList
 
 
-def load_product(xmlname: str) -> Sentinel1:
-    """Load an ISCE2 product from an xml file
-
-    Args:
-        xmlname: The path to the xml file
-
-    Returns:
-        The ISCE2 product
-    """
-    pm = ProductManager()
-    pm.configure()
-    obj = pm.loadProduct(xmlname)
-    return obj
-
-
 def get_merged_orbit(products: Iterable[Sentinel1]) -> Orbit:
     """Create a merged orbit from a set of ISCE2 Sentinel1 products
 
@@ -551,28 +536,8 @@ def get_merged_orbit(products: Iterable[Sentinel1]) -> Orbit:
     return orb
 
 
-def open_image(in_path: str, image_subtype: str = None) -> isceobj.Image.Image:
-    """Open an image as an ISCE2 image object
-
-    Args:
-        in_path: The path to the image
-        image_subtype: The type of image to open
-
-    Returns:
-        The ISCE2 image object
-    """
-    if image_subtype == 'ifg':
-        image = isceobj.createIntImage()
-    else:
-        image = isceobj.createImage()
-    image.load(in_path + '.xml')
-    image.setAccessMode('read')
-    image.createImage()
-    return image
-
-
 def create_image(
-    out_path: str, width: int, access_mode: str, image_subtype: str = 'default', finalize: bool = False
+    out_path: str, width: Optional[int] = None, access_mode: str = 'read', image_subtype: str = 'default', action: str = 'create'
 ) -> isceobj.Image.Image:
     """Create an ISCE2 image object from a set of parameters
 
@@ -581,7 +546,10 @@ def create_image(
         width: The width of the image
         access_mode: The access mode of the image (read or write)
         image_subtype: The type of image to create
-        finalize: Whether or not to write xml and hdr files
+        action: What action to take:
+            'create': create a new image object, but don't write metadata files
+            'finalize': create a new image object, and write metadata files
+            'load': create an imge object by loading an existing metadata file
 
     Returns:
         The ISCE2 image object
@@ -596,16 +564,24 @@ def create_image(
 
     create_func, bands, dtype, image_type = opts[image_subtype]
     image = create_func()
+    if action == 'load':
+        image.load(out_path + '.xml')
+        image.setAccessMode('read')
+        image.createImage()
+        return image
+
+    if width is None:
+        raise ValueError('Width must be specified when the action is create or finalize')
+
     image.initImage(out_path, access_mode, width, dtype, bands)
     image.setImageType(image_type)
-
-    if finalize:
+    if action == 'create':
+        image.createImage()
+    elif action == 'finalize':
         image.renderVRT()
         image.createImage()
         image.finalizeImage()
         image.renderHdr()
-    else:
-        image.createImage()
 
     return image
 
@@ -656,7 +632,7 @@ def goldstein_werner_filter(filter_strength: float = 0.6, mergedir: str = 'merge
         filter_strength: The filter strength
         mergedir: The output directory containing the merged interferogram
     """
-    ifg_image = open_image(os.path.join(mergedir, WRP_IFG_NAME), image_subtype='ifg')
+    ifg_image = create_image(os.path.join(mergedir, WRP_IFG_NAME), image_subtype='ifg', action='load')
     width_ifg = ifg_image.getWidth()
 
     filt_ifg_filename = os.path.join(mergedir, FILT_WRP_IFG_NAME)
@@ -774,10 +750,10 @@ def snaphu_unwrap(
     snp.unwrap()
 
     # Render XML
-    create_image(unwrap_name, width, 'read', image_subtype='unw', finalize=True)
+    create_image(unwrap_name, width, 'read', image_subtype='unw', action='finalize')
     # Check if connected components was created
     if snp.dumpConnectedComponents:
-        create_image(unwrap_name + '.conncomp', width, 'read', image_subtype='conncomp', finalize=True)
+        create_image(unwrap_name + '.conncomp', width, 'read', image_subtype='conncomp', action='finalize')
         maskUnwrap(unwrap_name, wrap_name)
 
 
