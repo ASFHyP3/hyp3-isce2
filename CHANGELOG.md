@@ -9,7 +9,7 @@ and uses [Semantic Versioning](https://semver.org/spec/v2.0.0.html).
 ## [0.8.3]
 
 ### Added
-* Ruff configuration and github action for Ruff-based static analysis
+* Ruff configuration and GitHub Action for Ruff-based static analysis
 
 ### Changed
 * Reformatted entire repository with the commands `ruff check --select I --fix .` and `ruff format .`
