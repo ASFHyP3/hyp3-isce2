@@ -1062,6 +1062,23 @@ def prepare_products(directory: Path) -> None:
     download_dem(swath_objs)
 
 
+def get_product_multilook(product_dir: Path) -> Tuple:
+    """Get the multilook values for a set of ASF burst products.
+    You should have already checked that all products have the same multilook,
+    so you can just use the first product's values.
+
+    Args:
+        product_dir: The path to the directory containing the UNZIPPED ASF burst product directories
+
+    Returns:
+        The number of azimuth looks and range looks
+    """
+    product_path = list(product_dir.glob('S1_??????_IW?_*'))[0]
+    metadata_path = product_path / f'{product_path.name}.txt'
+    meta = read_product_metadata(metadata_path)
+    return int(meta['Azimuthlooks']), int(meta['Rangelooks'])
+
+
 def run_isce2_workflow(
     azimuth_looks: int, range_looks: int, mergedir='merged', filter_strength=0.5, apply_water_mask=False
 ) -> None:
@@ -1118,9 +1135,6 @@ def main():
     parser = argparse.ArgumentParser(description=__doc__, formatter_class=argparse.ArgumentDefaultsHelpFormatter)
     parser.add_argument('directory', type=str, help='Directory where your unzipped burst InSAR products are located')
     parser.add_argument(
-        '--looks', choices=['20x4', '10x2', '5x1'], default='20x4', help='Number of looks to take in range and azimuth'
-    )
-    parser.add_argument(
         '--filter-strength', type=float, default=0.6, help='Goldstein-Werner filter strength (between 0 and 1)'
     )
     parser.add_argument(
@@ -1130,14 +1144,14 @@ def main():
         help='Apply a water body mask to wrapped and unwrapped phase GeoTIFFs (after unwrapping)',
     )
     args = parser.parse_args()
-    range_looks, azimuth_looks = [int(looks) for looks in args.looks.split('x')]
     product_directory = Path(args.directory)
 
     prepare_products(product_directory)
+    azimuth_looks, range_looks = get_product_multilook(product_directory)
     run_isce2_workflow(
         azimuth_looks, range_looks, filter_strength=args.filter_strength, apply_water_mask=args.apply_water_mask
     )
-    package_output(product_directory, args.looks, args.filter_strength)
+    package_output(product_directory, f'{range_looks}x{azimuth_looks}', args.filter_strength)
 
 
 if __name__ == '__main__':
