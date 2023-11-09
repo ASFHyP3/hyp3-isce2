@@ -98,7 +98,7 @@ def main():
 
     log.info('Begin ISCE2 TopsApp run')
 
-    range_looks, azimuth_looks = [int(looks) for looks in args.looks.split('x')]
+    range_looks, azimuth_looks = (int(looks) for looks in args.looks.split('x'))
     isce_output_dir = insar_tops(
         reference_scene=args.reference_scene,
         secondary_scene=args.secondary_scene,

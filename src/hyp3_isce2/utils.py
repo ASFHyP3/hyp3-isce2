@@ -14,7 +14,8 @@ class GDALConfigManager:
     """Context manager for setting GDAL config options temporarily"""
 
     def __init__(self, **options):
-        """
+        """Initialize the GDAL config options
+
         Args:
             **options: GDAL Config `option=value` keyword arguments.
         """
@@ -90,7 +91,7 @@ def oldest_granule_first(g1, g2):
 
 
 def load_isce2_image(in_path) -> tuple[isceobj.Image, np.ndarray]:
-    """ Read an ISCE2 image file and return the image object and array.
+    """Read an ISCE2 image file and return the image object and array.
 
     Args:
         in_path: The path to the image to resample (not the xml).
@@ -105,7 +106,7 @@ def load_isce2_image(in_path) -> tuple[isceobj.Image, np.ndarray]:
 
 
 def write_isce2_image(output_path, array=None, width=None, mode='read', data_type='FLOAT') -> None:
-    """ Write an ISCE2 image file.
+    """Write an ISCE2 image file.
 
     Args:
         output_path: The path to the output image file.
@@ -164,7 +165,6 @@ def resample_to_radar(
     Returns:
         resampled_image: The resampled image array
     """
-
     start_lon, delta_lon, start_lat, delta_lat = geotransform[0], geotransform[1], geotransform[3], geotransform[5]
 
     lati = np.clip((((lat - start_lat) / delta_lat) + 0.5).astype(int), 0, mask.shape[0] - 1)

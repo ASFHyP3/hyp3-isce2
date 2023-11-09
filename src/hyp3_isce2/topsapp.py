@@ -90,7 +90,7 @@ class TopsappBurstConfig:
         Returns:
             The rendered template
         """
-        with open(TEMPLATE_DIR / 'topsapp.xml', 'r') as file:
+        with open(TEMPLATE_DIR / 'topsapp.xml') as file:
             template = Template(file.read())
         return template.render(self.__dict__)
 
@@ -149,7 +149,7 @@ def run_topsapp_burst(dostep: str = '', start: str = '', end: str = '', config_x
         ValueError: If the step is not a valid step (see TOPSAPP_STEPS)
     """
     if not config_xml.exists():
-        raise IOError(f'The config file {config_xml} does not exist!')
+        raise OSError(f'The config file {config_xml} does not exist!')
 
     if dostep and (start or end):
         raise ValueError('If dostep is specified, start and stop cannot be used')
