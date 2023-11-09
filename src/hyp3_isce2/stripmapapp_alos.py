@@ -4,6 +4,7 @@ from typing import Union
 from isce.applications.stripmapApp import Insar
 from jinja2 import Template
 
+
 TEMPLATE_DIR = Path(__file__).parent / 'templates'
 
 STRIPMAPAPP_STEPS = [

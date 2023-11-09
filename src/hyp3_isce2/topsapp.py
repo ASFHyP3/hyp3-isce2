@@ -5,6 +5,7 @@ from isce.applications.topsApp import TopsInSAR
 from jinja2 import Template
 from osgeo import gdal
 
+
 gdal.UseExceptions()
 
 TEMPLATE_DIR = Path(__file__).parent / 'templates'

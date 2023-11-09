@@ -9,8 +9,9 @@ from hyp3_isce2.utils import (
     make_browse_image,
     oldest_granule_first,
     resample_to_radar,
-    utm_from_lon_lat
+    utm_from_lon_lat,
 )
+
 
 gdal.UseExceptions()
 

@@ -9,6 +9,7 @@ from rasterio import CRS
 
 from hyp3_isce2 import dem
 
+
 MOCK_DEM_ARRAY = np.ones((3600, 3600), dtype=float)
 MOCK_DEM_ARRAY[:, 1000] = np.nan
 MOCK_DEM_ARRAY[:, 2000] = 2
