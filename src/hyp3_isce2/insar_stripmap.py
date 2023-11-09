@@ -20,6 +20,7 @@ from hyp3_isce2 import stripmapapp_alos as stripmapapp
 from hyp3_isce2.dem import download_dem_for_isce2
 from hyp3_isce2.logging import configure_root_logger
 
+
 log = logging.getLogger(__name__)
 
 

@@ -28,7 +28,7 @@ from hyp3_isce2.burst import (
     get_isce2_burst_bbox,
     get_product_name,
     get_region_of_interest,
-    validate_bursts
+    validate_bursts,
 )
 from hyp3_isce2.dem import download_dem_for_isce2
 from hyp3_isce2.logging import configure_root_logger

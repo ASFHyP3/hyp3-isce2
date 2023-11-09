@@ -9,8 +9,7 @@ from shutil import copyfile, make_archive
 from hyp3lib.aws import upload_file_to_s3
 from hyp3lib.get_orb import downloadSentinelOrbitFile
 
-from hyp3_isce2 import slc
-from hyp3_isce2 import topsapp
+from hyp3_isce2 import slc, topsapp
 from hyp3_isce2.dem import download_dem_for_isce2
 from hyp3_isce2.logging import configure_root_logger
 from hyp3_isce2.s1_auxcal import download_aux_cal
