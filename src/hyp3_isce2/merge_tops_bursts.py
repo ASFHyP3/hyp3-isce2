@@ -488,7 +488,7 @@ def spoof_isce2_setup(burst_products: Iterable[BurstProduct], s1_obj: Sentinel1B
             translate_image(in_path, out_path, product.n_samples, image_type)
 
 
-def getSwathList(indir: str) -> list:
+def get_swath_list(indir: str) -> list:
     """Get the list of swaths from a directory of burst products
 
     Args:
@@ -506,7 +506,7 @@ def getSwathList(indir: str) -> list:
     return swathList
 
 
-def loadProduct(xmlname: str) -> Sentinel1:
+def load_product(xmlname: str) -> Sentinel1:
     """Load an ISCE2 product from an xml file
 
     Args:
@@ -521,7 +521,7 @@ def loadProduct(xmlname: str) -> Sentinel1:
     return obj
 
 
-def getMergedOrbit(products: Iterable[Sentinel1]) -> Orbit:
+def get_merged_orbit(products: Iterable[Sentinel1]) -> Orbit:
     """Create a merged orbit from a set of ISCE2 Sentinel1 products
 
     Args:
@@ -620,9 +620,9 @@ def merge_bursts(azimuth_looks: int, range_looks: int, mergedir: str = 'merged')
     """
     frames = []
     burstIndex = []
-    swathList = getSwathList(BURST_IFG_DIR)
+    swathList = get_swath_list(BURST_IFG_DIR)
     for swath in swathList:
-        ifg = loadProduct(os.path.join(BURST_IFG_DIR, 'IW{0}_multilooked.xml'.format(swath)))
+        ifg = load_product(os.path.join(BURST_IFG_DIR, 'IW{0}_multilooked.xml'.format(swath)))
         minBurst = ifg.bursts[0].burstNumber - 1
         maxBurst = ifg.bursts[-1].burstNumber
         frames.append(ifg)
@@ -727,8 +727,8 @@ def snaphu_unwrap(
     img.load(wrap_name + '.xml')
     width = img.getWidth()
 
-    swath = getSwathList(BURST_IFG_DIR)[0]
-    ifg = loadProduct(os.path.join(BURST_IFG_DIR, 'IW{0}_multilooked.xml'.format(swath)))
+    swath = get_swath_list(BURST_IFG_DIR)[0]
+    ifg = load_product(os.path.join(BURST_IFG_DIR, 'IW{0}_multilooked.xml'.format(swath)))
     wavelength = ifg.bursts[0].radarWavelength
 
     # tmid
@@ -794,14 +794,14 @@ def geocode_products(
         to_be_geocoded: A list of products to geocode
     """
     to_be_geocoded = [str(Path(mergedir) / file) for file in to_be_geocoded]
-    swath_list = getSwathList(BURST_IFG_DIR)
+    swath_list = get_swath_list(BURST_IFG_DIR)
 
     frames = []
     for swath in swath_list:
-        reference_product = loadProduct(os.path.join(BURST_IFG_DIR, 'IW{0}.xml'.format(swath)))
+        reference_product = load_product(os.path.join(BURST_IFG_DIR, 'IW{0}.xml'.format(swath)))
         frames.append(reference_product)
 
-    orbit = getMergedOrbit(frames)
+    orbit = get_merged_orbit(frames)
 
     bboxes = []
     for frame in frames:
@@ -877,8 +877,8 @@ def get_product_name(product_directory: Path, pixel_size: int) -> str:
     """
     example_name_split = list(product_directory.glob('S1_??????_IW?_*'))[0].name.split('_')
 
-    swath_number = getSwathList(BURST_IFG_DIR)[0]
-    insar_product = loadProduct(os.path.join(BURST_IFG_DIR, 'IW{0}.xml'.format(swath_number)))
+    swath_number = get_swath_list(BURST_IFG_DIR)[0]
+    insar_product = load_product(os.path.join(BURST_IFG_DIR, 'IW{0}.xml'.format(swath_number)))
 
     platform = example_name_split[0]
     relative_orbit = f'{insar_product.bursts[0].trackNumber:03}'
@@ -937,8 +937,8 @@ def make_parameter_file(
     # TODO should we calculate this more accurately?
     baseline_perp = metas[0]['Baseline']
 
-    swath_number = getSwathList(BURST_IFG_DIR)[0]
-    insar_product = loadProduct(os.path.join(BURST_IFG_DIR, 'IW{0}.xml'.format(swath_number)))
+    swath_number = get_swath_list(BURST_IFG_DIR)[0]
+    insar_product = load_product(os.path.join(BURST_IFG_DIR, 'IW{0}.xml'.format(swath_number)))
 
     orbit_direction = insar_product.bursts[0].passDirection
     ref_heading = insar_product.orbit.getHeading()
