@@ -610,7 +610,7 @@ def create_image(
     return image
 
 
-def merge_bursts(azimuth_looks: int, range_looks: int, mergedir: str = 'merged') -> None:
+def merge_bursts(range_looks: int, azimuth_looks: int, mergedir: str = 'merged') -> None:
     """Merge burst products into a multi-swath product, and multilook
 
     Args:
@@ -699,8 +699,8 @@ def mask_coherence(out_name, mergedir='merged'):
 
 
 def snaphu_unwrap(
-    azimuth_looks: int,
     range_looks: int,
+    azimuth_looks: int,
     corrfile: str = None,
     mergedir='merged',
     cost_mode='DEFO',
@@ -782,7 +782,7 @@ def snaphu_unwrap(
 
 
 def geocode_products(
-    azimuth_looks: int, range_looks: int, dem_path, mergedir='merged', to_be_geocoded=GEOCODE_LIST
+    range_looks: int, azimuth_looks: int, dem_path, mergedir='merged', to_be_geocoded=GEOCODE_LIST
 ) -> None:
     """Geocode a set of ISCE2 products
 
@@ -907,9 +907,9 @@ def get_product_name(product_directory: Path, pixel_size: int) -> str:
 def make_parameter_file(
     out_path: Path,
     product_directory: Path,
+    range_looks: int,
     azimuth_looks: int,
     filter_strength: float,
-    range_looks: int,
     dem_name: str = 'GLO_30',
     dem_resolution: int = 30,
 ):
@@ -1076,11 +1076,11 @@ def get_product_multilook(product_dir: Path) -> Tuple:
     product_path = list(product_dir.glob('S1_??????_IW?_*'))[0]
     metadata_path = product_path / f'{product_path.name}.txt'
     meta = read_product_metadata(metadata_path)
-    return int(meta['Azimuthlooks']), int(meta['Rangelooks'])
+    return int(meta['Rangelooks']), int(meta['Azimuthlooks'])
 
 
 def run_isce2_workflow(
-    azimuth_looks: int, range_looks: int, mergedir='merged', filter_strength=0.5, apply_water_mask=False
+    range_looks: int, azimuth_looks: int, mergedir='merged', filter_strength=0.5, apply_water_mask=False
 ) -> None:
     """Run the ISCE2 workflow for burst merging, filtering, unwrapping, and geocoding
 
@@ -1092,7 +1092,7 @@ def run_isce2_workflow(
         apply_water_mask: Whether or not to apply a water body mask to the coherence file before unwrapping
     """
     Path(mergedir).mkdir(exist_ok=True)
-    merge_bursts(azimuth_looks, range_looks, mergedir=mergedir)
+    merge_bursts(range_looks, azimuth_looks, mergedir=mergedir)
     goldstein_werner_filter(filter_strength=filter_strength, mergedir=mergedir)
     if apply_water_mask:
         log.info('Water masking requested, downloading water mask')
@@ -1100,8 +1100,8 @@ def run_isce2_workflow(
         corrfile = os.path.join(mergedir, f'masked.{COH_NAME}')
     else:
         corrfile = os.path.join(mergedir, COH_NAME)
-    snaphu_unwrap(azimuth_looks, range_looks, corrfile=corrfile, mergedir=mergedir)
-    geocode_products(azimuth_looks, range_looks, dem_path='full_res.dem.wgs84', mergedir=mergedir)
+    snaphu_unwrap(range_looks, azimuth_looks, corrfile=corrfile, mergedir=mergedir)
+    geocode_products(range_looks, azimuth_looks, dem_path='full_res.dem.wgs84', mergedir=mergedir)
 
 
 def package_output(product_directory: Path, looks: str, filter_strength: float, archive=False) -> None:
@@ -1121,7 +1121,7 @@ def package_output(product_directory: Path, looks: str, filter_strength: float, 
     product_dir.mkdir(parents=True, exist_ok=True)
 
     make_parameter_file(
-        Path(f'{product_name}/{product_name}.txt'), product_directory, azimuth_looks, range_looks, filter_strength
+        Path(f'{product_name}/{product_name}.txt'), product_directory, range_looks, azimuth_looks, filter_strength
     )
     translate_outputs(product_name, pixel_size=pixel_size, include_radar=False)
     unwrapped_phase = f'{product_name}/{product_name}_unw_phase.tif'
@@ -1147,9 +1147,9 @@ def main():
     product_directory = Path(args.directory)
 
     prepare_products(product_directory)
-    azimuth_looks, range_looks = get_product_multilook(product_directory)
+    range_looks, azimuth_looks = get_product_multilook(product_directory)
     run_isce2_workflow(
-        azimuth_looks, range_looks, filter_strength=args.filter_strength, apply_water_mask=args.apply_water_mask
+        range_looks, azimuth_looks, filter_strength=args.filter_strength, apply_water_mask=args.apply_water_mask
     )
     package_output(product_directory, f'{range_looks}x{azimuth_looks}', args.filter_strength)
 
