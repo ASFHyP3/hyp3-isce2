@@ -6,6 +6,14 @@ The format is based on [Keep a Changelog](https://keepachangelog.com/en/1.0.0/),
 and this project adheres to [PEP 440](https://www.python.org/dev/peps/pep-0440/)
 and uses [Semantic Versioning](https://semver.org/spec/v2.0.0.html).
 
+## [0.8.3]
+
+### Added
+* Ruff configuration and github action for Ruff-based static analysis
+
+### Changed
+* Reformatted entire repository with the commands `ruff check --select I --fix .` and `ruff format .`
+
 ## [0.8.2]
 ### Changed
 * All the special ISCE2 environment variable, python path, and system path handling has been moved to `hyp3_isce2.__init__.py` to ensure it's always done before using any object in this package.
