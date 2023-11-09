@@ -37,7 +37,14 @@ from zerodop.geozero import createGeozero
 
 from hyp3_isce2.dem import download_dem_for_isce2
 import hyp3_isce2.burst as burst_utils
-from hyp3_isce2.utils import create_image, load_product, make_browse_image, image_math, resample_to_radar_io
+from hyp3_isce2.utils import (
+    create_image,
+    load_product,
+    make_browse_image,
+    image_math,
+    read_product_metadata,
+    resample_to_radar_io,
+)
 from hyp3_isce2.water_mask import create_water_mask
 
 log_format = '%(asctime)s - %(name)s - %(levelname)s - %(message)s'
@@ -57,13 +64,7 @@ LOS_NAME = 'los.rdr'
 LAT_NAME = 'lat.rdr'
 LON_NAME = 'lon.rdr'
 CCOM_NAME = 'filt_topophase.unw.conncomp'
-GEOCODE_LIST = [
-    UNW_IFG_NAME,
-    COH_NAME,
-    LOS_NAME,
-    FILT_WRP_IFG_NAME,
-    CCOM_NAME,
-]
+GEOCODE_LIST = [UNW_IFG_NAME, COH_NAME, LOS_NAME, FILT_WRP_IFG_NAME, CCOM_NAME]
 
 
 @dataclass
@@ -96,23 +97,6 @@ class BurstProduct:
     def to_burst_params(self):
         """Convert to a burst_utils.BurstParams object"""
         return burst_utils.BurstParams(self.granule, self.swath, self.polarization, self.burst_number)
-
-
-def read_product_metadata(meta_file_path: str) -> dict:
-    """Read the HyP3-generated metadata file for a HyP3 product
-
-    Args:
-        meta_file_path: The path to the metadata file
-    Returns:
-        A dictionary of metadata values
-    """
-    hyp3_meta = {}
-    with open(meta_file_path) as f:
-        for line in f:
-            key, *values = line.strip().replace(' ', '').split(':')
-            value = ':'.join(values)
-            hyp3_meta[key] = value
-    return hyp3_meta
 
 
 def get_burst_metadata(product_paths: Iterable[Path]) -> Iterable[BurstProduct]:

@@ -273,7 +273,11 @@ def write_isce2_image_from_obj(image_obj, array):
 
 
 def create_image(
-    out_path: str, width: Optional[int] = None, access_mode: str = 'read', image_subtype: str = 'default', action: str = 'create'
+    out_path: str,
+    width: Optional[int] = None,
+    access_mode: str = 'read',
+    image_subtype: str = 'default',
+    action: str = 'create',
 ) -> isceobj.Image.Image:
     """Create an ISCE2 image object from a set of parameters
 
@@ -320,3 +324,20 @@ def create_image(
         image.renderHdr()
 
     return image
+
+
+def read_product_metadata(meta_file_path: str) -> dict:
+    """Read the HyP3-generated metadata file for a HyP3 product
+
+    Args:
+        meta_file_path: The path to the metadata file
+    Returns:
+        A dictionary of metadata values
+    """
+    hyp3_meta = {}
+    with open(meta_file_path) as f:
+        for line in f:
+            key, *values = line.strip().replace(' ', '').split(':')
+            value = ':'.join(values)
+            hyp3_meta[key] = value
+    return hyp3_meta
