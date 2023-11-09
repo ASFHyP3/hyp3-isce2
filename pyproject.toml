@@ -69,3 +69,12 @@ where = ["src"]
 
 [tool.ruff]
 line-length = 120
+src = ["src", "tests"]
+
+[tool.ruff.format]
+indent-style = "space"
+quote-style = "single"
+
+[tool.ruff.lint.isort]
+case-sensitive = true
+lines-after-imports = 2
