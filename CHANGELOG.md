@@ -6,16 +6,13 @@ The format is based on [Keep a Changelog](https://keepachangelog.com/en/1.0.0/),
 and this project adheres to [PEP 440](https://www.python.org/dev/peps/pep-0440/)
 and uses [Semantic Versioning](https://semver.org/spec/v2.0.0.html).
 
-## [0.8.3]
 
+## [0.8.2]
 ### Added
 * Ruff configuration and GitHub Action for Ruff-based static analysis
 
 ### Changed
 * Reformatted the entire repository with the commands `ruff check --fix .` and `ruff format .` Linting issues that weren't automatically fixed were suppressed with `noqa` following [Ruff's recommendation](https://docs.astral.sh/ruff/tutorial/#adding-rules) when adding rules to an existing code base so that we can begin enforcing rules for new changes immediately.
-
-## [0.8.2]
-### Changed
 * All the special ISCE2 environment variable, python path, and system path handling has been moved to `hyp3_isce2.__init__.py` to ensure it's always done before using any object in this package.
 * All [subprocess](https://docs.python.org/3/library/subprocess.html#using-the-subprocess-module) calls use `subprocess.run`, as recommended.
 
