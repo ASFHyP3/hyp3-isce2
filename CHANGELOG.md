@@ -12,7 +12,7 @@ and uses [Semantic Versioning](https://semver.org/spec/v2.0.0.html).
 * Ruff configuration and GitHub Action for Ruff-based static analysis
 
 ### Changed
-* Reformatted entire repository with the commands `ruff check --select I --fix .` and `ruff format .`
+* Reformatted the entire repository with the commands `ruff check --fix .` and `ruff format .` Linting issues that weren't automatically fixed were suppressed with `noqa` following [Ruff's recommendation](https://docs.astral.sh/ruff/tutorial/#adding-rules) when adding rules to an existing code base so that we can begin enforcing rules for new changes immediately.
 
 ## [0.8.2]
 ### Changed
