@@ -206,7 +206,7 @@ def make_parameter_file(
         dem_name: Name of the DEM that is use
         dem_resolution: Resolution of the DEM
 
-    returns:
+    Returns:
         None
     """
     SPEED_OF_LIGHT = 299792458.0
@@ -298,7 +298,6 @@ def translate_outputs(isce_output_dir: Path, product_name: str, pixel_size: floa
         product_name: Name of the product
         pixel_size: Pixel size
     """
-
     src_ds = gdal.Open(str(isce_output_dir / 'filt_topophase.unw.geo'))
     src_geotransform = src_ds.GetGeoTransform()
     src_projection = src_ds.GetProjection()
@@ -433,7 +432,7 @@ def main():
     reference_scene, secondary_scene = oldest_granule_first(args.granules[0], args.granules[1])
     validate_bursts(reference_scene, secondary_scene)
     swath_number = int(reference_scene[12])
-    range_looks, azimuth_looks = [int(looks) for looks in args.looks.split('x')]
+    range_looks, azimuth_looks = (int(looks) for looks in args.looks.split('x'))
     apply_water_mask = args.apply_water_mask
 
     isce_output_dir = insar_tops_burst(

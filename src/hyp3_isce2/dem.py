@@ -60,6 +60,7 @@ def distance_meters_to_degrees(distance_meters, latitude):
     Args:
         distance_meters: Arc length in meters.
         latitude: The line of latitude at which the calculation takes place.
+
     Returns:
         The length in degrees for longitude and latitude, respectively.
     """
@@ -89,10 +90,11 @@ def download_dem_for_isce2(
         buffer: The extent buffer in degrees, by default .4, which is about 44 km at the equator
                 (or about 2.5 bursts at the equator).
         resample_20m: Whether or not the DEM should be resampled to 20 meters.
+
     Returns:
         The path to the downloaded DEM.
     """
-    dem_dir = dem_dir or Path('.')
+    dem_dir = dem_dir or Path.cwd()
     dem_dir.mkdir(exist_ok=True, parents=True)
 
     extent_buffered = buffer_extent(extent, buffer)

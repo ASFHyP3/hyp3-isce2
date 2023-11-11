@@ -1,5 +1,4 @@
-"""
-ISCE2 stripmap processing
+"""ISCE2 stripmap processing
 """
 
 import argparse
@@ -99,8 +98,7 @@ def get_product_file(product: asf_search.ASFProduct, file_prefix: str) -> str:
 
 
 def main():
-    """ Entrypoint for the stripmap workflow"""
-
+    """Entrypoint for the stripmap workflow"""
     parser = argparse.ArgumentParser(description=__doc__, formatter_class=argparse.ArgumentDefaultsHelpFormatter)
 
     parser.add_argument('--bucket', help='AWS S3 bucket HyP3 for upload the final product(s)')
