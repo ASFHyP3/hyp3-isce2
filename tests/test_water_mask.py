@@ -1,9 +1,41 @@
 import numpy as np
-from osgeo import gdal
+from osgeo import gdal, osr
 
 from hyp3_isce2 import water_mask
 
 gdal.UseExceptions()
+
+
+def test_get_envelope(tmp_path):
+    out_img_path = str(tmp_path / 'envelope.tif')
+
+    driver = gdal.GetDriverByName('GTiff')
+
+    spatref = osr.SpatialReference()
+    spatref.ImportFromEPSG(4326)
+    wkt = spatref.ExportToWkt()
+
+    xres = 0.01
+    yres = 0.01
+    xmin = 0
+    xmax = 10 
+    ymin = 40
+    ymax = 50
+
+    xsize = abs(int((xmax - xmin) / xres))
+    ysize = abs(int((ymax - ymin) / yres))
+
+    ds = driver.Create(out_img_path, xsize, ysize, options=['COMPRESS=LZW', 'TILED=YES'])
+    ds.SetProjection(wkt)
+    ds.SetGeoTransform([xmin, xres, 0, ymin, 0, yres])
+    ds.GetRasterBand(1).Fill(0)
+    ds.FlushCache()
+    ds = None
+
+    envelope, epsg = water_mask.get_envelope(out_img_path)
+
+    assert epsg == 4326
+    assert np.all(envelope.bounds.values == np.asarray([[0.0, 40.0, 10.0, 50.0]]))
 
 
 def test_create_water_mask_with_no_water(tmp_path, test_data_dir):
