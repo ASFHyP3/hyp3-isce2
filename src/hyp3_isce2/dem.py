@@ -73,6 +73,127 @@ def distance_meters_to_degrees(distance_meters, latitude):
     return np.round(distance_degrees_lon, 15), np.round(distance_degrees_lat, 15)
 
 
+def box2dict(bbox):
+    """
+
+    Args:
+        bbox: tuple(minlon,minlat,maxlon,maxlat)
+
+    Returns:
+        dict{{'type': 'Polygon', 'coordinates':
+
+    """
+
+    return {'type': 'Polygon',
+            'coordinates': [
+                [[bbox[0], bbox[3]],
+                 [bbox[0], bbox[1]],
+                 [bbox[2], bbox[1]],
+                 [bbox[2], bbox[3]],
+                 [bbox[0], bbox[3]]
+                 ]
+            ]
+            }
+
+
+def split_geometry_on_antimeridian(geometry: dict):
+    geometry_as_bytes = json.dumps(geometry).encode()
+    cmd = ['ogr2ogr', '-wrapdateline', '-datelineoffset', '20', '-f', 'GeoJSON', '/vsistdout/', '/vsistdin/']
+    geojson_str = subprocess.run(cmd, input=geometry_as_bytes, stdout=subprocess.PIPE, check=True).stdout
+    return json.loads(geojson_str)['features'][0]['geometry']
+
+
+def get_dem_for_extent(extent: list, dem_path: Path, resampple_20m: bool = False):
+    if resample_20m:
+        res_degrees = distance_meters_to_degrees(20.0, extent[1])
+        dem_array, dem_profile = dem_stitcher.stitch_dem(
+            extent,
+            dem_name,
+            dst_ellipsoidal_height=True,
+            dst_area_or_point='Point',
+            n_threads_downloading=5,
+            resample_20m=res_degrees
+            )
+    else:
+        dem_array, dem_profile = dem_stitcher.stitch_dem(
+            extent_buffered,
+            dem_name,
+            dst_ellipsoidal_height=True,
+            dst_area_or_point='Point',
+            n_threads_downloading=5,
+        )
+
+    dem_array[np.isnan(dem_array)] = 0.
+    dem_profile['nodata'] = None
+    dem_profile['driver'] = 'ISCE'
+
+    # remove keys that do not work with ISCE gdal format
+    for key in ['blockxsize', 'blockysize', 'compress', 'interleave', 'tiled']:
+        del dem_profile[key]
+
+    with rasterio.open(dem_path, 'w', **dem_profile) as ds:
+        ds.write(dem_array, 1)
+
+    return dem_path
+
+'''
+def download_dem_for_isce2_new(
+        extent: list,
+        dem_name: str = 'glo_30',
+        dem_dir: Path = None,
+        buffer: float = .4,
+        resample_20m: bool = False
+) -> Path:
+    """Download the given DEM for the given extent.
+
+    Args:
+        extent: A list [xmin, ymin, xmax, ymax] for epsg:4326 (i.e. (x, y) = (lon, lat)).
+        dem_name: One of the names from `dem_stitcher`.
+        dem_dir: The output directory.
+        buffer: The extent buffer in degrees, by default .4, which is about 44 km at the equator
+                (or about 2.5 bursts at the equator).
+        resample_20m: Whether or not the DEM should be resampled to 20 meters.
+    Returns:
+        The path to the downloaded DEM.
+    """
+    dem_dir = dem_dir or Path('.')
+    dem_dir.mkdir(exist_ok=True, parents=True)
+
+    extent_dict = bbox2dict(extent)
+    split_extent = split_geometry_on_antimeridian(extent_dict)
+
+    split_polys = geometry.shape(split_extent)
+
+    polys = [poly.buffer(buffer) for poly in split_polys.geoms]
+
+
+    # extent_buffered = buffer_extent(extent, buffer)
+    file_lst =[]
+    for i in range(len(polys)):
+        file_lst.append(get_dem_for_extent(extent, f'tmp_dem_{i}', resampple_20m = resample_20m))
+
+    # mosaic the tem_dem files in the file_lst
+   
+    if resample_20m:
+        dem_path = dem_dir / 'full_res_geocode.dem.wgs84'
+    else:
+        dem_path = dem_dir / 'full_res.dem.wgs84'
+
+    xml_path = tag_dem_xml_as_ellipsoidal(dem_path)
+    fix_image_xml(xml_path)
+
+    return dem_path
+'''
+
+
+def get_correct_extent(extent: list):
+    if abs(extent[0] - extent[2]) > 180.0 and extent[0] * extent[2] < 0.0:
+        # the extent crosses over antimeridian
+        tmp = extent[0] + 360.0
+        extent[0] = extent[2]
+        extent[2] = tmp
+    return extent
+
 def download_dem_for_isce2(
         extent: list,
         dem_name: str = 'glo_30',
@@ -95,7 +216,9 @@ def download_dem_for_isce2(
     dem_dir = dem_dir or Path('.')
     dem_dir.mkdir(exist_ok=True, parents=True)
 
-    extent_buffered = buffer_extent(extent, buffer)
+    correct_extent = get_correct_extent(extent)
+
+    extent_buffered = buffer_extent(correct_extent, buffer)
 
     if resample_20m:
         res_degrees = distance_meters_to_degrees(20.0, extent_buffered[1])
