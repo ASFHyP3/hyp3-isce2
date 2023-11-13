@@ -88,7 +88,7 @@ def insar_tops_burst(
     log.info(f'DEM ROI: {dem_roi}')
 
     dem_path = download_dem_for_isce2(
-        dem_roi,
+        list(dem_roi),
         dem_name='glo_30',
         dem_dir=dem_dir,
         buffer=0,
