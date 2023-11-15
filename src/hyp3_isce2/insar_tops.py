@@ -91,6 +91,8 @@ def main():
 
     parser.add_argument('--bucket', help='AWS S3 bucket HyP3 for upload the final product(s)')
     parser.add_argument('--bucket-prefix', default='', help='Add a bucket prefix to product(s)')
+    parser.add_argument('--esa-username', default=None, help="Username for ESA\'s Copernicus Data Space Ecosystem")
+    parser.add_argument('--esa-password', default=None, help="Password for ESA\'s Copernicus Data Space Ecosystem")
     parser.add_argument('--reference-scene', type=str, required=True)
     parser.add_argument('--secondary-scene', type=str, required=True)
     parser.add_argument('--polarization', type=str, default='VV')
@@ -115,6 +117,8 @@ def main():
         polarization=args.polarization,
         azimuth_looks=azimuth_looks,
         range_looks=range_looks,
+        esa_username=args.esa_username,
+        esa_password=args.esa_password,
     )
 
     log.info('ISCE2 TopsApp run completed successfully')

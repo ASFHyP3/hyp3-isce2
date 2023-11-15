@@ -412,6 +412,8 @@ def main():
 
     parser.add_argument('--bucket', help='AWS S3 bucket HyP3 for upload the final product(s)')
     parser.add_argument('--bucket-prefix', default='', help='Add a bucket prefix to product(s)')
+    parser.add_argument('--esa-username', default=None, help="Username for ESA\'s Copernicus Data Space Ecosystem")
+    parser.add_argument('--esa-password', default=None, help="Password for ESA\'s Copernicus Data Space Ecosystem")
     parser.add_argument(
         '--looks',
         choices=['20x4', '10x2', '5x1'],
@@ -452,7 +454,9 @@ def main():
         azimuth_looks=azimuth_looks,
         range_looks=range_looks,
         swath_number=swath_number,
-        apply_water_mask=apply_water_mask
+        apply_water_mask=apply_water_mask,
+        esa_username=args.esa_username,
+        esa_password=args.esa_password,
     )
 
     log.info('ISCE2 TopsApp run completed successfully')
