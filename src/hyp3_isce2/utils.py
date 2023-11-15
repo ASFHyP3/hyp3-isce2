@@ -15,6 +15,7 @@ gdal.UseExceptions()
 
 ESA_HOST = 'dataspace.copernicus.eu'
 
+
 class GDALConfigManager:
     """Context manager for setting GDAL config options temporarily"""
 
@@ -38,7 +39,7 @@ class GDALConfigManager:
             gdal.SetConfigOption(key, value)
 
 
-def get_esa_credentials() -> Tuple[str,str]:
+def get_esa_credentials() -> Tuple[str, str]:
     netrc_name = '_netrc' if system().lower() == 'windows' else '.netrc'
     netrc_file = Path.home() / netrc_name
 

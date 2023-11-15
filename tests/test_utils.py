@@ -1,18 +1,18 @@
 import os
 
 import numpy as np
-from osgeo import gdal
 import pytest
+from osgeo import gdal
 
 from hyp3_isce2.utils import (
     ESA_HOST,
     GDALConfigManager,
-    get_esa_credentials,
     extent_from_geotransform,
+    get_esa_credentials,
     make_browse_image,
     oldest_granule_first,
     resample_to_radar,
-    utm_from_lon_lat
+    utm_from_lon_lat,
 )
 
 gdal.UseExceptions()
@@ -112,8 +112,8 @@ def resample_with_different_case(resample_rows, resample_cols, mask_rows, mask_c
     lon = np.zeros((resample_rows, resample_cols))
     mask = np.zeros((mask_rows, mask_cols))
     np.fill_diagonal(mask, 1)
-    mask[0, mask_cols-1] = 1
-    mask[mask_rows-1, 0] = 1
+    mask[0, mask_cols - 1] = 1
+    mask[mask_rows - 1, 0] = 1
     outshape = (resample_rows, resample_cols)
     data_type = np.byte
     return check_correctness_of_resample(mask, lat, lon, geotransform, data_type, outshape)
