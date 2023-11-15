@@ -6,19 +6,15 @@ from hyp3_isce2 import water_mask
 gdal.UseExceptions()
 
 
-def test_get_envelope(tmp_path):
-    out_img_path = str(tmp_path / 'envelope.tif')
+def get_envelope_with_args(out_path, xres, yres, bounds):
+    out_img_path = str(out_path)
     driver = gdal.GetDriverByName('GTiff')
     spatref = osr.SpatialReference()
     spatref.ImportFromEPSG(4326)
     wkt = spatref.ExportToWkt()
 
-    xres = 0.01
-    yres = 0.01
-    xmin = 0
-    xmax = 10
-    ymin = 40
-    ymax = 50
+    xmin, ymin, xmax, ymax = bounds
+
     xsize = abs(int((xmax - xmin) / xres))
     ysize = abs(int((ymax - ymin) / yres))
 
@@ -29,10 +25,18 @@ def test_get_envelope(tmp_path):
     ds.FlushCache()
     ds = None
 
-    envelope, epsg = water_mask.get_envelope(out_img_path)
+    return water_mask.get_envelope(out_img_path)
 
-    assert epsg == 4326
-    assert np.all(envelope.bounds.values == np.asarray([[0.0, 40.0, 10.0, 50.0]]))
+
+def test_get_envelope(tmp_path):
+    out_path_1 = str(tmp_path / 'envelope1.tif')
+    out_path_2 = str(tmp_path / 'envelope2.tif')
+    envelope1, epsg1 = get_envelope_with_args(out_path_1, 0.01, 0.01, [0, 40, 10, 50])
+    envelope2, epsg2 = get_envelope_with_args(out_path_2, 0.01, 0.01, [-179, 40, 179, 50])
+    assert epsg1 == 4326
+    assert epsg2 == 4326
+    assert np.all(envelope1.bounds.values == np.asarray([[0.0, 40.0, 10.0, 50.0]]))
+    assert np.all(envelope2.bounds.values == np.asarray([[-179.0, 40.0, 179.0, 50.0]]))
 
 
 def test_create_water_mask_with_no_water(tmp_path, test_data_dir):
