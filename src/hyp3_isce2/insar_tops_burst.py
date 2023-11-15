@@ -9,6 +9,7 @@ from collections import namedtuple
 from datetime import datetime, timezone
 from pathlib import Path
 from shutil import copyfile, make_archive
+from typing import Optional
 
 import isce
 from hyp3lib.aws import upload_file_to_s3
@@ -34,6 +35,7 @@ from hyp3_isce2.dem import download_dem_for_isce2
 from hyp3_isce2.logging import configure_root_logger
 from hyp3_isce2.s1_auxcal import download_aux_cal
 from hyp3_isce2.utils import (
+    get_esa_credentials,
     image_math,
     isce2_copy,
     make_browse_image,
@@ -55,7 +57,10 @@ def insar_tops_burst(
         swath_number: int,
         azimuth_looks: int = 4,
         range_looks: int = 20,
-        apply_water_mask: bool = False) -> Path:
+        apply_water_mask: bool = False,
+        esa_username: Optional[str] = None,
+        esa_password: Optional[str] = None,
+    ) -> Path:
     """Create a burst interferogram
 
     Args:
@@ -65,10 +70,15 @@ def insar_tops_burst(
         azimuth_looks: Number of azimuth looks
         range_looks: Number of range looks
         apply_water_mask: Whether to apply a pre-unwrap water mask
+        esa_username: Username for ESA's Copernicus Data Space Ecosystem
+        esa_password: Password for ESA's Copernicus Data Space Ecosystem
 
     Returns:
         Path to results directory
     """
+    if (esa_username is None) or (esa_password is None):
+        esa_username, esa_password = get_esa_credentials()
+
     orbit_dir = Path('orbits')
     aux_cal_dir = Path('aux_cal')
     dem_dir = Path('dem')
@@ -109,7 +119,7 @@ def insar_tops_burst(
 
     orbit_dir.mkdir(exist_ok=True, parents=True)
     for granule in (ref_params.granule, sec_params.granule):
-        downloadSentinelOrbitFile(granule, str(orbit_dir))
+        downloadSentinelOrbitFile(granule, str(orbit_dir), esa_credentials=(esa_username, esa_password))
 
     config = topsapp.TopsappBurstConfig(
         reference_safe=f'{ref_params.granule}.SAFE',
