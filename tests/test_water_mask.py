@@ -8,9 +8,7 @@ gdal.UseExceptions()
 
 def test_get_envelope(tmp_path):
     out_img_path = str(tmp_path / 'envelope.tif')
-
     driver = gdal.GetDriverByName('GTiff')
-
     spatref = osr.SpatialReference()
     spatref.ImportFromEPSG(4326)
     wkt = spatref.ExportToWkt()
@@ -18,10 +16,9 @@ def test_get_envelope(tmp_path):
     xres = 0.01
     yres = 0.01
     xmin = 0
-    xmax = 10 
+    xmax = 10
     ymin = 40
     ymax = 50
-
     xsize = abs(int((xmax - xmin) / xres))
     ysize = abs(int((ymax - ymin) / yres))
 
