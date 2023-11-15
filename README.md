@@ -52,10 +52,11 @@ the visualization of the interferogram.
 
 ### Earthdata Login
 
-For all workflows the user will need to provide their Earthdata login credentials to download input data. 
-If you do not already have an account, you can sign up [here](https://urs.earthdata.nasa.gov/home). 
+For all workflows the user will need to provide their Earthdata login credentials, and an ESA Copernicus Data Space Ecosystem (CDSE) to download input data. 
+If you do not already have an Earthdata account, you can sign up [here](https://urs.earthdata.nasa.gov/home). 
+If you do not already have an CDSE account, you can sign up [here](https://dataspace.copernicus.eu). 
 Your credentials can either be passed to the workflows via environment variables 
-(`EARTHDATA_USERNAME` and `EARTHDATA_PASSWORD`), or via your `.netrc` file. If you haven't set up a `.netrc` file 
+(`EARTHDATA_USERNAME`, `EARTHDATA_PASSWORD`, `ESA_USERNAME`, and `ESA_PASSWORD`), or via your `.netrc` file. If you haven't set up a `.netrc` file 
 before, check out this [guide](https://harmony.earthdata.nasa.gov/docs#getting-started) to get started.
 
 ### Docker Container
@@ -65,6 +66,8 @@ deployment. To run the current version of the project's container, use this comm
 docker run -it --rm \
     -e EARTHDATA_USERNAME=[YOUR_USERNAME_HERE] \
     -e EARTHDATA_PASSWORD=[YOUR_PASSWORD_HERE] \
+    -e ESA_USERNAME=[YOUR_USERNAME_HERE] \
+    -e ESA_PASSWORD=[YOUR_PASSWORD_HERE] \
     ghcr.io/asfhyp3/hyp3-isce2:latest \
     ++process [WORKFLOW_NAME] \
     [WORKFLOW_ARGS]
