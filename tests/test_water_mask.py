@@ -6,18 +6,16 @@ from hyp3_isce2 import water_mask
 gdal.UseExceptions()
 
 
-def get_envelope_with_args(out_path, xres, yres, bounds):
+def get_envelope_with_args(out_path, xres, yres, bounds): 
+    xmin, ymin, xmax, ymax = bounds
+    xsize = abs(int((xmax - xmin) / xres))
+    ysize = abs(int((ymax - ymin) / yres))
+
     out_img_path = str(out_path)
     driver = gdal.GetDriverByName('GTiff')
     spatref = osr.SpatialReference()
     spatref.ImportFromEPSG(4326)
     wkt = spatref.ExportToWkt()
-
-    xmin, ymin, xmax, ymax = bounds
-
-    xsize = abs(int((xmax - xmin) / xres))
-    ysize = abs(int((ymax - ymin) / yres))
-
     ds = driver.Create(out_img_path, xsize, ysize, options=['COMPRESS=LZW', 'TILED=YES'])
     ds.SetProjection(wkt)
     ds.SetGeoTransform([xmin, xres, 0, ymin, 0, yres])
