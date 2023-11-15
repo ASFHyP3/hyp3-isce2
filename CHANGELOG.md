@@ -6,7 +6,14 @@ The format is based on [Keep a Changelog](https://keepachangelog.com/en/1.0.0/),
 and this project adheres to [PEP 440](https://www.python.org/dev/peps/pep-0440/)
 and uses [Semantic Versioning](https://semver.org/spec/v2.0.0.html).
 
-## [0.8.2]
+## [0.9.0]
+### Added
+* `check_esa_credentials` function to `__main__.py` to check for the existence of Dataspace credentials before processing begins.
+
+### Update
+* Updated workflows to hyp3lib v2.0.2, which uses the new Copernicus Dataspace Ecosystem API got download orbit files.
+* Calls to `downloadSentinelOrbitFile` to specify the `esa_credentials` argument.
+
 ### Changed
 * All the special ISCE2 environment variable, python path, and system path handling has been moved to `hyp3_isce2.__init__.py` to ensure it's always done before using any object in this package.
 * All [subprocess](https://docs.python.org/3/library/subprocess.html#using-the-subprocess-module) calls use `subprocess.run`, as recommended.
