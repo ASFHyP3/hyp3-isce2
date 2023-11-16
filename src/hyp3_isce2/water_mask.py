@@ -66,9 +66,10 @@ def create_water_mask(input_image: str, output_image: str, gdal_format='GTiff'):
 
     mask_location = '/vsicurl/https://asf-dem-west.s3.amazonaws.com/WATER_MASK/GSHHG/hyp3_water_mask_20220912.shp'
 
-    mask = gpd.read_file(mask_location, mask=envelope).to_crs(epsg)
+    mask = gpd.read_file(mask_location, mask=envelope)
 
-    mask = gpd.clip(mask, envelope)
+    # this probably does not work with antimeridian
+    mask = gpd.clip(mask, envelope.to_crs(mask.crs)).to_crs(envelope.crs)
 
     with TemporaryDirectory() as temp_dir:
         temp_file = str(Path(temp_dir) / 'mask.shp')
