@@ -475,10 +475,10 @@ def main():
 
     # convert water_mask.wgs84, water_mask.wgs84.aux.xml, water_mask.wgs84.xml to geotiff with the UTM
 
-    # convert_raster_from_isce2_gdal('water_mask.wgs84', water_mask, pixel_size=pixel_size)
+    convert_raster_from_isce2_gdal('water_mask.wgs84', water_mask, pixel_size=pixel_size)
 
     # do not apply water mask to the geotiff file, it has been done before
-
+    '''
     create_water_mask(wrapped_phase, water_mask)
     if apply_water_mask:
         for geotiff in [wrapped_phase, unwrapped_phase]:
@@ -492,7 +492,7 @@ def main():
                 '--creation-option TILED=YES --creation-option COMPRESS=LZW --creation-option NUM_THREADS=ALL_CPUS'
             )
             subprocess.run(cmd.split(' '), check=True)
-
+    '''
 
     make_browse_image(unwrapped_phase, f'{product_name}/{product_name}_unw_phase.png')
 
