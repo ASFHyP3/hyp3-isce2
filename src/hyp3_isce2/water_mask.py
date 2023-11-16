@@ -1,4 +1,6 @@
 """Create and apply a water body mask"""
+import subprocess
+import json
 from pathlib import Path
 from tempfile import TemporaryDirectory
 
@@ -13,21 +15,11 @@ from hyp3_isce2.utils import GDALConfigManager
 gdal.UseExceptions()
 
 
-def get_envelope(input_image: str):
-    """ Get the envelope of the input_image
-
-    Args:
-        input_image: Path for the input GDAL-compatible image
-
-    Returns:
-        (envelope, epsg): The envelope and epsg code of the GeoTIFF.
-    """
-    info = gdal.Info(input_image, format='json')
-    prj = CRS.from_wkt(info["coordinateSystem"]["wkt"])
-    epsg = prj.to_epsg()
-    extent = info['wgs84Extent']
-    extent_gdf = gpd.GeoDataFrame(index=[0], geometry=[geometry.shape(extent)], crs='EPSG:4326').to_crs(epsg)
-    return extent_gdf.envelope, epsg
+def split_geometry_on_antimeridian(geometry: dict):
+    geometry_as_bytes = json.dumps(geometry).encode()
+    cmd = ['ogr2ogr', '-wrapdateline', '-datelineoffset', '20', '-f', 'GeoJSON', '/vsistdout/', '/vsistdin/']
+    geojson_str = subprocess.run(cmd, input=geometry_as_bytes, stdout=subprocess.PIPE, check=True).stdout
+    return json.loads(geojson_str)['features'][0]['geometry']
 
 
 def create_water_mask(input_image: str, output_image: str, gdal_format='GTiff'):
@@ -62,19 +54,19 @@ def create_water_mask(input_image: str, output_image: str, gdal_format='GTiff'):
     dst_ds.SetProjection(src_ds.GetProjection())
     dst_ds.SetMetadataItem('AREA_OR_POINT', src_ds.GetMetadataItem('AREA_OR_POINT'))
 
-    envelope, epsg = get_envelope(input_image)
-
+    extent = gdal.Info(input_image, format='json')['wgs84Extent']
+    corrected_extent = split_geometry_on_antimeridian(extent)
+    extent_gdf = gpd.GeoDataFrame(index=[0], geometry=[geometry.shape(corrected_extent)], crs='EPSG:4326')
     mask_location = '/vsicurl/https://asf-dem-west.s3.amazonaws.com/WATER_MASK/GSHHG/hyp3_water_mask_20220912.shp'
 
-    mask = gpd.read_file(mask_location, mask=envelope)
+    mask = gpd.read_file(mask_location, mask=corrected_extent)
 
-    # this probably does not work with antimeridian
-    mask = gpd.clip(mask, envelope.to_crs(mask.crs)).to_crs(envelope.crs)
+    mask = mask.clip(extent_gdf)
 
     with TemporaryDirectory() as temp_dir:
-        temp_file = str(Path(temp_dir) / 'mask.shp')
+        temp_file = str('mask.shp')
         mask.to_file(temp_file, driver='ESRI Shapefile')
         with GDALConfigManager(OGR_ENABLE_PARTIAL_REPROJECTION='YES'):
-            gdal.Rasterize(dst_ds, temp_file, allTouched=True, burnValues=[1])
+            gdal.Rasterize(dst_ds, temp_file, allTouched=True, burnValues=[0])
 
     del src_ds, dst_ds
