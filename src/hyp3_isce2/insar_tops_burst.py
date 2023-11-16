@@ -396,6 +396,21 @@ def get_pixel_size(looks: str) -> float:
     return {'20x4': 80.0, '10x2': 40.0, '5x1': 20.0}[looks]
 
 
+def convert_raster_from_isce2_gdal(input_image, output_image, pixel_size):
+    info = gdal.Info(file, format='json')
+    geotransform = info['geoTransform']
+    epsg = utm_from_lon_lat(geotransform[0], geotransform[3])
+    gdal.Warp(
+        output_image,
+        input_image,
+        dstSRS=f'epsg:{epsg}',
+            creationOptions=['TILED=YES', 'COMPRESS=LZW', 'NUM_THREADS=ALL_CPUS'],
+            xRes=pixel_size,
+            yRes=pixel_size,
+            targetAlignedPixels=True
+        )
+
+
 def main():
     """HyP3 entrypoint for the burst TOPS workflow"""
     parser = argparse.ArgumentParser(description=__doc__, formatter_class=argparse.ArgumentDefaultsHelpFormatter)
@@ -457,8 +472,14 @@ def main():
     unwrapped_phase = f'{product_name}/{product_name}_unw_phase.tif'
     wrapped_phase = f'{product_name}/{product_name}_wrapped_phase.tif'
     water_mask = f'{product_name}/{product_name}_water_mask.tif'
-    create_water_mask(wrapped_phase, water_mask)
 
+    # convert water_mask.wgs84, water_mask.wgs84.aux.xml, water_mask.wgs84.xml to geotiff with the UTM
+
+    # convert_raster_from_isce2_gdal('water_mask.wgs84', water_mask, pixel_size=pixel_size)
+
+    # do not apply water mask to the geotiff file, it has been done before
+
+    create_water_mask(wrapped_phase, water_mask)
     if apply_water_mask:
         for geotiff in [wrapped_phase, unwrapped_phase]:
             cmd = (
@@ -471,6 +492,7 @@ def main():
                 '--creation-option TILED=YES --creation-option COMPRESS=LZW --creation-option NUM_THREADS=ALL_CPUS'
             )
             subprocess.run(cmd.split(' '), check=True)
+
 
     make_browse_image(unwrapped_phase, f'{product_name}/{product_name}_unw_phase.png')
 
