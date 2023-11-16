@@ -50,7 +50,7 @@ Note that ISCE2 currently only supports masking *after* phase unwrapping. As suc
 phase unwrapping errors that may occur over water, but simply removes distracting signals afterwards to improve 
 the visualization of the interferogram.
 
-### Earthdata Login
+### Earthdata Login and ESA Credentials
 
 For all workflows, the user must provide their Earthdata Login credentials and ESA Copernicus Data Space Ecosystem (CDSE) credentials in order to download input data.
 If you do not already have an Earthdata account, you can sign up [here](https://urs.earthdata.nasa.gov/home). 
