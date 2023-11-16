@@ -52,7 +52,7 @@ the visualization of the interferogram.
 
 ### Earthdata Login
 
-For all workflows the user will need to provide their Earthdata login credentials, and an ESA Copernicus Data Space Ecosystem (CDSE) to download input data. 
+For all workflows, the user must provide their Earthdata Login credentials and ESA Copernicus Data Space Ecosystem (CDSE) credentials in order to download input data.
 If you do not already have an Earthdata account, you can sign up [here](https://urs.earthdata.nasa.gov/home). 
 If you do not already have an CDSE account, you can sign up [here](https://dataspace.copernicus.eu). 
 Your credentials can either be passed to the workflows via environment variables 
