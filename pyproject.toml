@@ -33,7 +33,7 @@ dependencies = [
   "s3fs",
   "pyarrow",
   "hyp3lib>=2,<3",
-  # FIXME specifying either of the below dependencies causes the build to fail
+  # Conda-forge only dependencies are listed below
   # "opencv",
   # "isce2>=2.6.3",
 ]
