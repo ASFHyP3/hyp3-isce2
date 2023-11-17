@@ -6,18 +6,18 @@ dependencies:
   - python>=3.9
   - numpy
   - pip
-  - gdal
   - isce2>=2.6.3
-  - shapely
-  - geopandas
   - dem_stitcher>=2.4.0
   - rasterio
+  - shapely
   - jinja2
   - asf_search>=6.4.0
-  - hyp3lib>=2,<3
+  - geopandas
+  - gdal
   - opencv
   - s3fs
   - pyarrow
+  - hyp3lib>=2,<3
   # For packaging, and testing
   - flake8
   - flake8-import-order
