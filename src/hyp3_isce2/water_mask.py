@@ -64,9 +64,9 @@ def create_water_mask(input_image: str, output_image: str, gdal_format='GTiff'):
     mask = mask.clip(extent_gdf)
 
     with TemporaryDirectory() as temp_dir:
-        temp_file = str('mask.shp')
+        temp_file = str(Path(temp_dir) / 'mask.shp')
         mask.to_file(temp_file, driver='ESRI Shapefile')
         with GDALConfigManager(OGR_ENABLE_PARTIAL_REPROJECTION='YES'):
-            gdal.Rasterize(dst_ds, temp_file, allTouched=True, burnValues=[0])
+            gdal.Rasterize(dst_ds, temp_file, allTouched=True, burnValues=[1])
 
     del src_ds, dst_ds
