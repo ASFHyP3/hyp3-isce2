@@ -17,6 +17,7 @@ dependencies:
   - opencv
   - s3fs
   - pyarrow
+  - hyp3lib>=2,<3
   # For packaging, and testing
   - flake8
   - flake8-import-order
@@ -29,5 +30,3 @@ dependencies:
   - pytest-console-scripts
   - pytest-cov
   - pytest-mock
-  # For running
-  - hyp3lib>=2,<3
