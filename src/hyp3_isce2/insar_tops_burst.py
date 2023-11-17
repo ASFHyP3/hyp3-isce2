@@ -402,7 +402,7 @@ def convert_raster_from_isce2_gdal(input_image, ref_image, output_image):
 
     gt = ref_ds.GetGeoTransform()
 
-    pixel_size=gt[1]
+    pixel_size = gt[1]
 
     minx = gt[0]
     maxx = gt[0] + gt[1] * ref_ds.RasterXSize
@@ -418,11 +418,11 @@ def convert_raster_from_isce2_gdal(input_image, ref_image, output_image):
         output_image,
         input_image,
         dstSRS=f'epsg:{epsg}',
-            creationOptions=['TILED=YES', 'COMPRESS=LZW', 'NUM_THREADS=ALL_CPUS'],
-            outputBounds=[minx,miny,maxx,maxy],
-            xRes=pixel_size,
-            yRes=pixel_size,
-            targetAlignedPixels=True
+        creationOptions=['TILED=YES', 'COMPRESS=LZW', 'NUM_THREADS=ALL_CPUS'],
+        outputBounds=[minx, miny, maxx, maxy],
+        xRes=pixel_size,
+        yRes=pixel_size,
+        targetAlignedPixels=True
         )
 
 
@@ -485,7 +485,6 @@ def main():
     translate_outputs(isce_output_dir, product_name, pixel_size=pixel_size)
 
     unwrapped_phase = f'{product_name}/{product_name}_unw_phase.tif'
-    wrapped_phase = f'{product_name}/{product_name}_wrapped_phase.tif'
     water_mask = f'{product_name}/{product_name}_water_mask.tif'
 
     # convert water_mask.wgs84 and water_mask.wgs84.aux.xml to geotiff with the UTM

@@ -1,15 +1,13 @@
 """Create and apply a water body mask"""
-import subprocess
 import json
+import subprocess
 from pathlib import Path
 from tempfile import TemporaryDirectory
 
 import geopandas as gpd
 from osgeo import gdal
 from pyproj import CRS
-
 from shapely import geometry, to_geojson
-
 
 from hyp3_isce2.utils import GDALConfigManager
 
