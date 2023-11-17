@@ -7,7 +7,8 @@ from tempfile import TemporaryDirectory
 import geopandas as gpd
 from osgeo import gdal
 from pyproj import CRS
-from shapely import geometry
+
+from shapely import geometry, to_geojson
 
 
 from hyp3_isce2.utils import GDALConfigManager
@@ -44,12 +45,24 @@ def get_envelope_wgs84(input_image: str):
     prj = CRS.from_wkt(info["coordinateSystem"]["wkt"])
     epsg = prj.to_epsg()
     extent = info['wgs84Extent']
-    correct_extent = split_geometry_on_antimeridian(extent)
-    extent_polys = geometry.shape(correct_extent)
+    poly = geometry.shape(extent)
+    poly_gdf = gpd.GeoDataFrame(index=[0], geometry=[poly], crs='EPSG:4326')
+    envelope_gdf = poly_gdf.to_crs(epsg).envelope.to_crs(4326)
+    envelope_poly = envelope_gdf.geometry[0]
+    envelope = json.loads(to_geojson(envelope_poly))
+
+    correct_extent = split_geometry_on_antimeridian(envelope)
+    envelope_wgs84 = geometry.shape(correct_extent)
+    envelope_wgs84_gdf = gpd.GeoDataFrame(index=[0], geometry=[envelope_wgs84], crs='EPSG:4326')
+
+    '''
+    if type(extent_polys) == geometry.Polygon:
+        extent_polys = geometry.MultiPolygon([extent_polys])
     polys = [i for i in extent_polys.geoms]
-    extent_gdf = gpd.GeoDataFrame(index=[0, 1], geometry=[polys[0],polys[1]], crs='EPSG:4326').to_crs(epsg)
+    extent_gdf = gpd.GeoDataFrame(index= [i for i in range(2)], geometry=polys, crs='EPSG:4326').to_crs(epsg)
     envelope_gdf_wgs84 = extent_gdf.envelope.to_crs(4326)
-    return envelope_gdf_wgs84, epsg
+    '''
+    return envelope_wgs84_gdf
 
 
 def create_water_mask(input_image: str, output_image: str, gdal_format='GTiff'):
@@ -84,15 +97,13 @@ def create_water_mask(input_image: str, output_image: str, gdal_format='GTiff'):
     dst_ds.SetProjection(src_ds.GetProjection())
     dst_ds.SetMetadataItem('AREA_OR_POINT', src_ds.GetMetadataItem('AREA_OR_POINT'))
 
-    extent = gdal.Info(input_image, format='json')['wgs84Extent']
-    # corrected_extent = split_geometry_on_antimeridian(extent)
-    envelope_gdf_wgs84, epsg = get_envelope_wgs84(input_image)
-    # extent_gdf = gpd.GeoDataFrame(index=[0], geometry=[geometry.shape(corrected_extent)], crs='EPSG:4326')
+    envelope_wgs84_gdf = get_envelope_wgs84(input_image)
+
     mask_location = '/vsicurl/https://asf-dem-west.s3.amazonaws.com/WATER_MASK/GSHHG/hyp3_water_mask_20220912.shp'
 
-    mask = gpd.read_file(mask_location, mask=envelope_gdf_wgs84)
+    mask = gpd.read_file(mask_location, mask=envelope_wgs84_gdf)
 
-    mask = mask.clip(envelope_gdf_wgs84)
+    mask = mask.clip(envelope_wgs84_gdf)
 
     with TemporaryDirectory() as temp_dir:
         temp_file = str(Path(temp_dir) / 'mask.shp')
