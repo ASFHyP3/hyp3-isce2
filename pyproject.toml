@@ -30,12 +30,10 @@ dependencies = [
   "asf_search>=6.4.0",
   "geopandas",
   "gdal",
-  "s3fs",
-  "pyarrow",
   "hyp3lib>=2,<3",
   # Conda-forge only dependencies are listed below
-  # "opencv",
-  # "isce2>=2.6.3",
+  "opencv",
+  "isce2>=2.6.3",
 ]
 dynamic = ["version", "readme"]
 
