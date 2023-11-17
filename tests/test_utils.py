@@ -1,15 +1,18 @@
 import os
 
 import numpy as np
+import pytest
 from osgeo import gdal
 
 from hyp3_isce2.utils import (
+    ESA_HOST,
     GDALConfigManager,
     extent_from_geotransform,
+    get_esa_credentials,
     make_browse_image,
     oldest_granule_first,
     resample_to_radar,
-    utm_from_lon_lat
+    utm_from_lon_lat,
 )
 
 gdal.UseExceptions()
@@ -109,8 +112,8 @@ def resample_with_different_case(resample_rows, resample_cols, mask_rows, mask_c
     lon = np.zeros((resample_rows, resample_cols))
     mask = np.zeros((mask_rows, mask_cols))
     np.fill_diagonal(mask, 1)
-    mask[0, mask_cols-1] = 1
-    mask[mask_rows-1, 0] = 1
+    mask[0, mask_cols - 1] = 1
+    mask[mask_rows - 1, 0] = 1
     outshape = (resample_rows, resample_cols)
     data_type = np.byte
     return check_correctness_of_resample(mask, lat, lon, geotransform, data_type, outshape)
@@ -124,3 +127,47 @@ def test_resample_to_radar():
     resample_with_different_case(10, 20, 10, 10, geotransform)
     resample_with_different_case(20, 10, 10, 10, geotransform)
     resample_with_different_case(30, 10, 10, 10, geotransform)
+
+
+def test_get_esa_credentials_env(tmp_path, monkeypatch):
+    with monkeypatch.context() as m:
+        m.setenv('ESA_USERNAME', 'foo')
+        m.setenv('ESA_PASSWORD', 'bar')
+        m.setenv('HOME', str(tmp_path))
+        (tmp_path / '.netrc').write_text(f'machine {ESA_HOST} login netrc_username password netrc_password')
+
+        username, password = get_esa_credentials()
+        assert username == 'foo'
+        assert password == 'bar'
+
+
+def test_get_esa_credentials_netrc(tmp_path, monkeypatch):
+    with monkeypatch.context() as m:
+        m.delenv('ESA_USERNAME', raising=False)
+        m.delenv('ESA_PASSWORD', raising=False)
+        m.setenv('HOME', str(tmp_path))
+        (tmp_path / '.netrc').write_text(f'machine {ESA_HOST} login foo password bar')
+
+        username, password = get_esa_credentials()
+        assert username == 'foo'
+        assert password == 'bar'
+
+
+def test_get_esa_credentials_missing(tmp_path, monkeypatch):
+    with monkeypatch.context() as m:
+        m.delenv('ESA_USERNAME', raising=False)
+        m.setenv('ESA_PASSWORD', 'env_password')
+        m.setenv('HOME', str(tmp_path))
+        (tmp_path / '.netrc').write_text('')
+        msg = 'Please provide.*'
+        with pytest.raises(ValueError, match=msg):
+            get_esa_credentials()
+
+    with monkeypatch.context() as m:
+        m.setenv('ESA_USERNAME', 'env_username')
+        m.delenv('ESA_PASSWORD', raising=False)
+        m.setenv('HOME', str(tmp_path))
+        (tmp_path / '.netrc').write_text('')
+        msg = 'Please provide.*'
+        with pytest.raises(ValueError, match=msg):
+            get_esa_credentials()
