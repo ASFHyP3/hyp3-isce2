@@ -27,5 +27,3 @@ dependencies:
   - pytest-console-scripts
   - pytest-cov
   - pytest-mock
-  # For running
-  - hyp3lib>=1.6,<2
