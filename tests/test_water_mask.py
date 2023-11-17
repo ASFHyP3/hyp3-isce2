@@ -23,7 +23,7 @@ def get_envelope_with_args(out_path, xres, yres, bounds):
     ds.FlushCache()
     ds = None
 
-    return water_mask.get_envelope(out_img_path)
+    return water_mask.get_envelope_wgs84(out_img_path)
 
 
 def test_split_geometry_on_antimeridian():
@@ -72,15 +72,16 @@ def test_split_geometry_on_antimeridian():
     assert result == geometry
 
 
-def test_get_envelope(tmp_path):
+def test_get_envelope_wgs84(tmp_path):
     out_path_1 = str(tmp_path / 'envelope1.tif')
     out_path_2 = str(tmp_path / 'envelope2.tif')
-    envelope1, epsg1 = get_envelope_with_args(out_path_1, 0.01, 0.01, [0, 40, 10, 50])
-    envelope2, epsg2 = get_envelope_with_args(out_path_2, 0.01, 0.01, [-179, 40, 179, 50])
-    assert epsg1 == 4326
-    assert epsg2 == 4326
+    envelope1 = get_envelope_with_args(out_path_1, 0.01, 0.01, [0, 40, 10, 50])
+    # envelope2 = get_envelope_with_args(out_path_2, 0.01, 0.01, [-179, 40, 179, 50])
+    envelope2 = get_envelope_with_args(out_path_2, 0.01, 0.01, [-177, 40, 178, 50])
+    # assert epsg1 == 4326
+    # assert epsg2 == 4326
     assert np.all(envelope1.bounds.values == np.asarray([[0.0, 40.0, 10.0, 50.0]]))
-    assert np.all(envelope2.bounds.values == np.asarray([[-179.0, 40.0, 179.0, 50.0]]))
+    assert np.all(envelope2.bounds.values == np.asarray([[-180.0, 40.0, 180.0, 50.0]]))
 
 
 def test_create_water_mask_with_no_water(tmp_path, test_data_dir):

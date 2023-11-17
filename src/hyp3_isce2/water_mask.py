@@ -21,6 +21,7 @@ def split_geometry_on_antimeridian(geometry: dict):
     return json.loads(geojson_str)['features'][0]['geometry']
 
 
+'''
 def get_envelope(input_image: str):
     """ Get the envelope of the input_image
 
@@ -36,7 +37,7 @@ def get_envelope(input_image: str):
     extent = info['wgs84Extent']
     extent_gdf = gpd.GeoDataFrame(index=[0], geometry=[geometry.shape(extent)], crs='EPSG:4326').to_crs(epsg)
     return extent_gdf.envelope, epsg
-
+'''
 
 def get_envelope_wgs84(input_image: str):
     info = gdal.Info(input_image, format='json')
