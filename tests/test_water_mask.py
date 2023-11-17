@@ -6,7 +6,7 @@ from hyp3_isce2 import water_mask
 gdal.UseExceptions()
 
 
-def get_envelope_with_args(out_path, xres, yres, bounds): 
+def get_envelope_with_args(out_path, xres, yres, bounds):
     xmin, ymin, xmax, ymax = bounds
     xsize = abs(int((xmax - xmin) / xres))
     ysize = abs(int((ymax - ymin) / yres))
