@@ -6,14 +6,15 @@ dependencies:
   - python>=3.9
   - numpy
   - pip
+  - gdal
   - isce2>=2.6.3
+  - shapely
+  - geopandas
   - dem_stitcher>=2.4.0
   - rasterio
-  - shapely
   - jinja2
   - asf_search>=6.4.0
-  - geopandas
-  - gdal
+  - hyp3lib>=2,<3
   - opencv
   - s3fs
   - pyarrow
@@ -29,5 +30,3 @@ dependencies:
   - pytest-console-scripts
   - pytest-cov
   - pytest-mock
-  # For running
-  - hyp3lib>=2,<3

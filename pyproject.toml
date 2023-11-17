@@ -22,7 +22,20 @@ classifiers=[
     "Programming Language :: Python :: 3.11",
 ]
 dependencies = [
-    # insert python dependencies as list here
+  "numpy",
+  "pip",
+  "gdal",
+  "isce2>=2.6.3",
+  "shapely",
+  "geopandas",
+  "dem_stitcher>=2.4.0",
+  "rasterio",
+  "jinja2",
+  "asf_search>=6.4.0",
+  "hyp3lib>=2,<3",
+  "opencv",
+  "s3fs",
+  "pyarrow"
 ]
 dynamic = ["version", "readme"]
 
