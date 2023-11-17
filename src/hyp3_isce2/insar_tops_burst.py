@@ -18,6 +18,7 @@ from hyp3lib.util import string_is_true
 from isceobj.TopsProc.runMergeBursts import multilook
 from lxml import etree
 from osgeo import gdal
+from pyproj import CRS
 
 import hyp3_isce2
 import hyp3_isce2.metadata.util
@@ -396,15 +397,29 @@ def get_pixel_size(looks: str) -> float:
     return {'20x4': 80.0, '10x2': 40.0, '5x1': 20.0}[looks]
 
 
-def convert_raster_from_isce2_gdal(input_image, output_image, pixel_size):
-    info = gdal.Info(file, format='json')
-    geotransform = info['geoTransform']
-    epsg = utm_from_lon_lat(geotransform[0], geotransform[3])
+def convert_raster_from_isce2_gdal(input_image, ref_image, output_image):
+    ref_ds = gdal.Open(ref_image)
+
+    gt = ref_ds.GetGeoTransform()
+
+    pixel_size=gt[1]
+
+    minx = gt[0]
+    maxx = gt[0] + gt[1] * ref_ds.RasterXSize
+    maxy = gt[3]
+    miny = gt[3] + gt[5] * ref_ds.RasterYSize
+
+    crs = ref_ds.GetSpatialRef()
+    epsg = CRS.from_wkt(crs.ExportToWkt()).to_epsg()
+
+    del ref_ds
+
     gdal.Warp(
         output_image,
         input_image,
         dstSRS=f'epsg:{epsg}',
             creationOptions=['TILED=YES', 'COMPRESS=LZW', 'NUM_THREADS=ALL_CPUS'],
+            outputBounds=[minx,miny,maxx,maxy],
             xRes=pixel_size,
             yRes=pixel_size,
             targetAlignedPixels=True
@@ -473,26 +488,9 @@ def main():
     wrapped_phase = f'{product_name}/{product_name}_wrapped_phase.tif'
     water_mask = f'{product_name}/{product_name}_water_mask.tif'
 
-    # convert water_mask.wgs84, water_mask.wgs84.aux.xml, water_mask.wgs84.xml to geotiff with the UTM
-
-    convert_raster_from_isce2_gdal('water_mask.wgs84', water_mask, pixel_size=pixel_size)
-
-    # do not apply water mask to the geotiff file, it has been done before
-    '''
-    create_water_mask(wrapped_phase, water_mask)
+    # convert water_mask.wgs84 and water_mask.wgs84.aux.xml to geotiff with the UTM
     if apply_water_mask:
-        for geotiff in [wrapped_phase, unwrapped_phase]:
-            cmd = (
-                'gdal_calc.py '
-                f'--outfile {geotiff} '
-                f'-A {geotiff} -B {water_mask} '
-                '--calc A*B '
-                '--overwrite '
-                '--NoDataValue 0 '
-                '--creation-option TILED=YES --creation-option COMPRESS=LZW --creation-option NUM_THREADS=ALL_CPUS'
-            )
-            subprocess.run(cmd.split(' '), check=True)
-    '''
+        convert_raster_from_isce2_gdal('water_mask.wgs84', unwrapped_phase, water_mask)
 
     make_browse_image(unwrapped_phase, f'{product_name}/{product_name}_unw_phase.png')
 
