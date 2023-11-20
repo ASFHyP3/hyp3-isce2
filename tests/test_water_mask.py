@@ -76,7 +76,6 @@ def test_get_envelope_wgs84(tmp_path):
     out_path_1 = str(tmp_path / 'envelope1.tif')
     out_path_2 = str(tmp_path / 'envelope2.tif')
     envelope1 = get_envelope_with_args(out_path_1, 0.01, 0.01, [0, 40, 10, 50])
-    # envelope2 = get_envelope_with_args(out_path_2, 0.01, 0.01, [-179, 40, 179, 50])
     envelope2 = get_envelope_with_args(out_path_2, 0.01, 0.01, [-177, 40, 178, 50])
     assert np.all(envelope1.bounds.values == np.asarray([[0.0, 40.0, 10.0, 50.0]]))
     assert np.all(envelope2.bounds.values == np.asarray([[-180.0, 40.0, 180.0, 50.0]]))
