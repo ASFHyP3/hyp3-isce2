@@ -399,8 +399,8 @@ def get_pixel_size(looks: str) -> float:
 
 
 def convert_raster_from_isce2_gdal(input_image, ref_image, output_image):
-    """
-    Convert the water mask in WGS84 to be the same projection and extent of the output product
+    """Convert the water mask in WGS84 to be the same projection and extent of the output product.
+
     Args:
         input_image: dem file name
         ref_image: output geotiff file name
