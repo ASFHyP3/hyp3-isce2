@@ -406,7 +406,7 @@ def convert_raster_from_isce2_gdal(input_image, ref_image, output_image):
         ref_image: output geotiff file name
         output_image: water mask file name
     """
-    
+
     ref_ds = gdal.Open(ref_image)
 
     gt = ref_ds.GetGeoTransform()
