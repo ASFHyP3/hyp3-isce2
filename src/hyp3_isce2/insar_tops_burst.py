@@ -19,6 +19,7 @@ from hyp3lib.util import string_is_true
 from isceobj.TopsProc.runMergeBursts import multilook
 from lxml import etree
 from osgeo import gdal
+from pyproj import CRS
 
 import hyp3_isce2
 import hyp3_isce2.metadata.util
@@ -397,6 +398,43 @@ def get_pixel_size(looks: str) -> float:
     return {'20x4': 80.0, '10x2': 40.0, '5x1': 20.0}[looks]
 
 
+def convert_raster_from_isce2_gdal(input_image, ref_image, output_image):
+    """Convert the water mask in WGS84 to be the same projection and extent of the output product.
+
+    Args:
+        input_image: dem file name
+        ref_image: output geotiff file name
+        output_image: water mask file name
+    """
+
+    ref_ds = gdal.Open(ref_image)
+
+    gt = ref_ds.GetGeoTransform()
+
+    pixel_size = gt[1]
+
+    minx = gt[0]
+    maxx = gt[0] + gt[1] * ref_ds.RasterXSize
+    maxy = gt[3]
+    miny = gt[3] + gt[5] * ref_ds.RasterYSize
+
+    crs = ref_ds.GetSpatialRef()
+    epsg = CRS.from_wkt(crs.ExportToWkt()).to_epsg()
+
+    del ref_ds
+
+    gdal.Warp(
+        output_image,
+        input_image,
+        dstSRS=f'epsg:{epsg}',
+        creationOptions=['TILED=YES', 'COMPRESS=LZW', 'NUM_THREADS=ALL_CPUS'],
+        outputBounds=[minx, miny, maxx, maxy],
+        xRes=pixel_size,
+        yRes=pixel_size,
+        targetAlignedPixels=True
+        )
+
+
 def main():
     """HyP3 entrypoint for the burst TOPS workflow"""
     parser = argparse.ArgumentParser(description=__doc__, formatter_class=argparse.ArgumentDefaultsHelpFormatter)
@@ -457,22 +495,11 @@ def main():
     translate_outputs(isce_output_dir, product_name, pixel_size=pixel_size)
 
     unwrapped_phase = f'{product_name}/{product_name}_unw_phase.tif'
-    wrapped_phase = f'{product_name}/{product_name}_wrapped_phase.tif'
     water_mask = f'{product_name}/{product_name}_water_mask.tif'
-    create_water_mask(wrapped_phase, water_mask)
 
+    # convert water_mask.wgs84 and water_mask.wgs84.aux.xml to geotiff with the UTM
     if apply_water_mask:
-        for geotiff in [wrapped_phase, unwrapped_phase]:
-            cmd = (
-                'gdal_calc.py '
-                f'--outfile {geotiff} '
-                f'-A {geotiff} -B {water_mask} '
-                '--calc A*B '
-                '--overwrite '
-                '--NoDataValue 0 '
-                '--creation-option TILED=YES --creation-option COMPRESS=LZW --creation-option NUM_THREADS=ALL_CPUS'
-            )
-            subprocess.run(cmd.split(' '), check=True)
+        convert_raster_from_isce2_gdal('water_mask.wgs84', unwrapped_phase, water_mask)
 
     make_browse_image(unwrapped_phase, f'{product_name}/{product_name}_unw_phase.png')
 
