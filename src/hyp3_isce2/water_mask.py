@@ -23,7 +23,6 @@ def split_geometry_on_antimeridian(geometry: dict):
 
 def get_envelope_wgs84(input_image: str):
     """Get the envelope around a GeoTIFF.
-    
     Args:
         input_image: The path to the desired GeoTIFF, as a string.
         
