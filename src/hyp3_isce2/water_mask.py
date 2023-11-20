@@ -22,6 +22,14 @@ def split_geometry_on_antimeridian(geometry: dict):
 
 
 def get_envelope_wgs84(input_image: str):
+    """Get the envelope around a GeoTIFF.
+    
+    Args:
+        input_image: The path to the desired GeoTIFF, as a string.
+        
+    Returns:
+        envelope_wgs84_gdf: The WGS84 envelope around the GeoTIFF, as a GeoDataFrame.
+    """
     info = gdal.Info(input_image, format='json')
     prj = CRS.from_wkt(info["coordinateSystem"]["wkt"])
     epsg = prj.to_epsg()
