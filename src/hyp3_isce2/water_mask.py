@@ -7,7 +7,7 @@ from tempfile import TemporaryDirectory
 import geopandas as gpd
 from osgeo import gdal
 from pyproj import CRS
-from shapely import geometry, to_geojson
+from shapely import geometry
 
 from hyp3_isce2.utils import GDALConfigManager
 
