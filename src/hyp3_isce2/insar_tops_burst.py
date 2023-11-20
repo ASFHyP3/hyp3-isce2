@@ -497,9 +497,18 @@ def main():
     unwrapped_phase = f'{product_name}/{product_name}_unw_phase.tif'
     water_mask = f'{product_name}/{product_name}_water_mask.tif'
 
-    # convert water_mask.wgs84 and water_mask.wgs84.aux.xml to geotiff with the UTM
     if apply_water_mask:
         convert_raster_from_isce2_gdal('water_mask.wgs84', unwrapped_phase, water_mask)
+        cmd = (
+            'gdal_calc.py '
+            f'--outfile {unwrapped_phase} '
+            f'-A {unwrapped_phase} -B {water_mask} '
+            '--calc A*B '
+            '--overwrite '
+            '--NoDataValue 0 '
+            '--creation-option TILED=YES --creation-option COMPRESS=LZW --creation-option NUM_THREADS=ALL_CPUS'
+        )
+        subprocess.run(cmd.split(' '), check=True)
 
     make_browse_image(unwrapped_phase, f'{product_name}/{product_name}_unw_phase.png')
 
