@@ -30,19 +30,12 @@ def get_envelope_wgs84(input_image: str):
     poly_gdf = gpd.GeoDataFrame(index=[0], geometry=[poly], crs='EPSG:4326')
     envelope_gdf = poly_gdf.to_crs(epsg).envelope.to_crs(4326)
     envelope_poly = envelope_gdf.geometry[0]
-    envelope = json.loads(to_geojson(envelope_poly))
+    envelope = geometry.mapping(envelope_poly)
 
     correct_extent = split_geometry_on_antimeridian(envelope)
     envelope_wgs84 = geometry.shape(correct_extent)
     envelope_wgs84_gdf = gpd.GeoDataFrame(index=[0], geometry=[envelope_wgs84], crs='EPSG:4326')
 
-    '''
-    if type(extent_polys) == geometry.Polygon:
-        extent_polys = geometry.MultiPolygon([extent_polys])
-    polys = [i for i in extent_polys.geoms]
-    extent_gdf = gpd.GeoDataFrame(index= [i for i in range(2)], geometry=polys, crs='EPSG:4326').to_crs(epsg)
-    envelope_gdf_wgs84 = extent_gdf.envelope.to_crs(4326)
-    '''
     return envelope_wgs84_gdf
 
 
