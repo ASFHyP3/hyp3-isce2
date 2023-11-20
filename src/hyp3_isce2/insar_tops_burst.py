@@ -489,7 +489,6 @@ def main():
     unwrapped_phase = f'{product_name}/{product_name}_unw_phase.tif'
     water_mask = f'{product_name}/{product_name}_water_mask.tif'
 
-    # convert water_mask.wgs84 and water_mask.wgs84.aux.xml to geotiff with the UTM
     if apply_water_mask:
         convert_raster_from_isce2_gdal('water_mask.wgs84', unwrapped_phase, water_mask)
         cmd = (
