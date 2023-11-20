@@ -25,7 +25,6 @@ def get_envelope_wgs84(input_image: str):
     """Get the envelope around a GeoTIFF.
     Args:
         input_image: The path to the desired GeoTIFF, as a string.
-        
     Returns:
         envelope_wgs84_gdf: The WGS84 envelope around the GeoTIFF, as a GeoDataFrame.
     """
