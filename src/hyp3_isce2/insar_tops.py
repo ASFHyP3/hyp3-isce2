@@ -5,6 +5,7 @@ import logging
 import sys
 from pathlib import Path
 from shutil import copyfile, make_archive
+from typing import Optional
 
 from hyp3lib.aws import upload_file_to_s3
 from hyp3lib.get_orb import downloadSentinelOrbitFile
@@ -14,6 +15,7 @@ from hyp3_isce2 import topsapp
 from hyp3_isce2.dem import download_dem_for_isce2
 from hyp3_isce2.logging import configure_root_logger
 from hyp3_isce2.s1_auxcal import download_aux_cal
+from hyp3_isce2.utils import get_esa_credentials
 
 
 log = logging.getLogger(__name__)
@@ -26,6 +28,8 @@ def insar_tops(
     polarization: str = 'VV',
     azimuth_looks: int = 4,
     range_looks: int = 20,
+    esa_username: Optional[str] = None,
+    esa_password: Optional[str] = None,
 ) -> Path:
     """Create a full-SLC interferogram
 
@@ -36,10 +40,15 @@ def insar_tops(
         polarization: Polarization to use
         azimuth_looks: Number of azimuth looks
         range_looks: Number of range looks
+        esa_username: Username for ESA's Copernicus Data Space Ecosystem
+        esa_password: Password for ESA's Copernicus Data Space Ecosystem
 
     Returns:
         Path to the output files
     """
+    if (esa_username is None) or (esa_password is None):
+        esa_username, esa_password = get_esa_credentials()
+
     orbit_dir = Path('orbits')
     aux_cal_dir = Path('aux_cal')
     dem_dir = Path('dem')
@@ -54,7 +63,7 @@ def insar_tops(
 
     orbit_dir.mkdir(exist_ok=True, parents=True)
     for granule in (reference_scene, secondary_scene):
-        downloadSentinelOrbitFile(granule, str(orbit_dir))
+        downloadSentinelOrbitFile(granule, str(orbit_dir), esa_credentials=(esa_username, esa_password))
 
     config = topsapp.TopsappBurstConfig(
         reference_safe=f'{reference_scene}.SAFE',
@@ -83,6 +92,8 @@ def main():
 
     parser.add_argument('--bucket', help='AWS S3 bucket HyP3 for upload the final product(s)')
     parser.add_argument('--bucket-prefix', default='', help='Add a bucket prefix to product(s)')
+    parser.add_argument('--esa-username', default=None, help="Username for ESA\'s Copernicus Data Space Ecosystem")
+    parser.add_argument('--esa-password', default=None, help="Password for ESA\'s Copernicus Data Space Ecosystem")
     parser.add_argument('--reference-scene', type=str, required=True)
     parser.add_argument('--secondary-scene', type=str, required=True)
     parser.add_argument('--polarization', type=str, default='VV')
@@ -107,6 +118,8 @@ def main():
         polarization=args.polarization,
         azimuth_looks=azimuth_looks,
         range_looks=range_looks,
+        esa_username=args.esa_username,
+        esa_password=args.esa_password,
     )
 
     log.info('ISCE2 TopsApp run completed successfully')

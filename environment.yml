@@ -15,8 +15,6 @@ dependencies:
   - geopandas
   - gdal
   - opencv
-  - s3fs
-  - pyarrow
   # For packaging, and testing
   - flake8
   - flake8-import-order
@@ -30,4 +28,4 @@ dependencies:
   - pytest-cov
   - pytest-mock
   # For running
-  - hyp3lib>=1.6,<2
+  - hyp3lib>=2,<3
