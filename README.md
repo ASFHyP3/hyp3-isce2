@@ -27,7 +27,8 @@ This command will create a Sentinel-1 interferogram that contains a deformation 
 
 ### Product Merging Utility Usage
 **This feature is under active development and is subject to change!**
-Burst InSAR products created using the `insar_tops_burst` workflow can be merged together using the `merged_tops_burst` workflow. This can be useful when the deformation signal you'd like to observe spans multiple bursts. It can be called using the following syntax:
+
+Burst InSAR products created using the `insar_tops_burst` workflow can be merged together using the `merge_tops_burst` workflow. This can be useful when the deformation signal you'd like to observe spans multiple bursts. It can be called using the following syntax:
 ```
 python -m hyp3_isce2 ++process merge_tops_bursts \
   PATH_TO_UNZIPPED_PRODUCTS \
@@ -39,9 +40,10 @@ Where `PATH_TO_UNZIPPED_PRODUCTS` is the path to a directory containing unzipped
 1. Have the same multilooking
 1. Be from the same relative orbit
 1. Be contiguous
+
 The workflow should through an error if any of these conditions are not met.
 
-**Merging products require extra data that is not contained in the production HyP3 Burst InSAR products. Consequently, burst products must be created locally using a local installation from the `merge_bursts` branch of this package.**
+**Merging burst InSAR products requires extra data that is not contained in the production HyP3 Burst InSAR products. For the time being, to be merging eligible burst products must be created locally using your own installation of `hyp3-isce2` from the `merge_bursts` branch of this repository!**
 
 As mentioned above this feature is under active development, so we welcome any feedback you have!
 
