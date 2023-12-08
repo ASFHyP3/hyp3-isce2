@@ -12,7 +12,8 @@
 # WITHOUT WARRANTIES OR CONDITIONS OF ANY KIND, either express or implied.
 # See the License for the specific language governing permissions and
 # limitations under the License.
-
+import os
+import json
 import subprocess
 from pathlib import Path
 
@@ -20,7 +21,8 @@ import dem_stitcher
 import numpy as np
 import rasterio
 from lxml import etree
-from shapely.geometry import box
+from shapely import geometry
+from shapely.geometry import box, mapping, shape
 
 
 def tag_dem_xml_as_ellipsoidal(dem_path: Path) -> str:
@@ -103,11 +105,17 @@ def split_geometry_on_antimeridian(geometry: dict):
     return json.loads(geojson_str)['features'][0]['geometry']
 
 
-def get_dem_for_extent(extent: list, dem_path: Path, resampple_20m: bool = False):
+def get_dem_for_extent(
+        extent: list,
+        dem_name: str = 'glo_30',
+        dem_path: Path = None,
+        buffer: float = .4,
+        resample_20m: bool = False):
+    extent_buffered = buffer_extent(extent, buffer)
     if resample_20m:
         res_degrees = distance_meters_to_degrees(20.0, extent[1])
         dem_array, dem_profile = dem_stitcher.stitch_dem(
-            extent,
+            extent_buffered,
             dem_name,
             dst_ellipsoidal_height=True,
             dst_area_or_point='Point',
@@ -136,7 +144,7 @@ def get_dem_for_extent(extent: list, dem_path: Path, resampple_20m: bool = False
 
     return dem_path
 
-'''
+
 def download_dem_for_isce2_new(
         extent: list,
         dem_name: str = 'glo_30',
@@ -159,18 +167,18 @@ def download_dem_for_isce2_new(
     dem_dir = dem_dir or Path('.')
     dem_dir.mkdir(exist_ok=True, parents=True)
 
-    extent_dict = bbox2dict(extent)
+    extent_dict = box2dict(extent)
     split_extent = split_geometry_on_antimeridian(extent_dict)
 
     split_polys = geometry.shape(split_extent)
 
-    polys = [poly.buffer(buffer) for poly in split_polys.geoms]
-
+    polys = [poly for poly in split_polys.geoms]
 
     # extent_buffered = buffer_extent(extent, buffer)
     file_lst =[]
     for i in range(len(polys)):
-        file_lst.append(get_dem_for_extent(extent, f'tmp_dem_{i}', resampple_20m = resample_20m))
+        tmp_path = get_dem_for_extent(list(polys[i].bounds), dem_name=dem_name, dem_path=Path(f'tmp_dem_{i}'), buffer=buffer, resample_20m = resample_20m)
+        file_lst.append(tmp_path)
 
     # mosaic the tem_dem files in the file_lst
    
@@ -183,7 +191,6 @@ def download_dem_for_isce2_new(
     fix_image_xml(xml_path)
 
     return dem_path
-'''
 
 
 def get_correct_extent(extent: list):
@@ -193,6 +200,35 @@ def get_correct_extent(extent: list):
         extent[0] = extent[2]
         extent[2] = tmp
     return extent
+
+def get_correct_polygon(poly):
+    poly_mapped = mapping(poly)
+    poly_coordinates = poly_mapped['coordinates'][0]
+    lst = list(poly_coordinates)
+    xe = [x[0] for x in lst]
+    xe = np.array(xe)
+
+    ye = [y[1] for y in lst]
+    ye = np.array(ye)
+
+    xe_min = xe.min()
+    xe_max = xe.max()
+
+    correct_poly = poly
+
+    if abs( xe_min - xe_max) > 180.0 and xe_min * xe_max < 0.0:
+        # the extent crosses over antimeridian
+        lst=[]
+        for i in range(len(xe)):
+            if xe[i] < 0:
+                xe[i] = xe[i] + 360.
+            lst.append((xe[i],ye[i]))
+
+        poly_dict = {'type': 'Polygon', 'coordinates': ((tuple(lst)),)}
+        correct_poly = shape(poly_dict)
+
+    return correct_poly
+
 
 def download_dem_for_isce2(
         extent: list,
@@ -257,3 +293,34 @@ def download_dem_for_isce2(
     fix_image_xml(xml_path)
 
     return dem_path
+
+
+def shift_antimeridian_lon_rdr(lon_rdr: str):
+    os.system(f'cp {lon_rdr} {lon_rdr}_org')
+    os.system(f'cp {lon_rdr}.xml {lon_rdr}_org.xml')
+    with rasterio.open(lon_rdr) as src_ds:
+        profile = src_ds.profile
+        data  = src_ds.read(1)
+        xe_min = data.min()
+        xe_max = data.max()
+        if abs(xe_min - xe_max) > 180 and xe_min * xe_max < 0:
+            data[data < 0] = data[data < 0] + 360.
+
+    with rasterio.open(lon_rdr,'w',**profile) as dst_ds:
+        dst_ds.write(data,1)
+
+def convert_geotiff_2_isce(tiff_file, isce_file):
+    ds = rasterio.open(tiff_file)
+    data = ds.read()
+    profile =ds.profile
+
+    profile['driver'] = 'ISCE'
+
+    # remove keys that do not work with ISCE gdal format
+    for key in ['blockysize', 'interleave', 'tiled']:
+        del profile[key]
+
+    with rasterio.open(isce_file, 'w', **profile) as f:
+        f.write(data[0], 1)
+
+    return isce_file

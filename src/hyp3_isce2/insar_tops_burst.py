@@ -32,7 +32,8 @@ from hyp3_isce2.burst import (
     get_region_of_interest,
     validate_bursts,
 )
-from hyp3_isce2.dem import download_dem_for_isce2
+from hyp3_isce2.dem import download_dem_for_isce2, download_dem_for_isce2_new, get_correct_polygon, shift_antimeridian_lon_rdr
+from hyp3_isce2.dem import *
 from hyp3_isce2.logging import configure_root_logger
 from hyp3_isce2.s1_auxcal import download_aux_cal
 from hyp3_isce2.utils import (
@@ -45,7 +46,8 @@ from hyp3_isce2.utils import (
     utm_from_lon_lat,
 )
 from hyp3_isce2.water_mask import create_water_mask
-
+from hyp3_isce2.hyp3_gamma_dem import *
+from hyp3_isce2.hyp3_gamma_util import *
 
 gdal.UseExceptions()
 
@@ -90,6 +92,10 @@ def insar_tops_burst(
     ref_metadata, sec_metadata = download_bursts([ref_params, sec_params])
 
     is_ascending = ref_metadata.orbit_direction == 'ascending'
+
+    # ref_footprint = get_correct_polygon(get_isce2_burst_bbox(ref_params))
+    # sec_footprint = get_correct_polygon(get_isce2_burst_bbox(sec_params))
+
     ref_footprint = get_isce2_burst_bbox(ref_params)
     sec_footprint = get_isce2_burst_bbox(sec_params)
 
@@ -98,16 +104,31 @@ def insar_tops_burst(
     log.info(f'InSAR ROI: {insar_roi}')
     log.info(f'DEM ROI: {dem_roi}')
 
-    dem_path = download_dem_for_isce2(dem_roi, dem_name='glo_30', dem_dir=dem_dir, buffer=0, resample_20m=False)
+    # dem_path = download_dem_for_isce2(list(dem_roi), dem_name='glo_30', dem_dir=dem_dir, buffer=0., resample_20m=False)
+    # dem_path = download_dem_for_isce2_new(list(dem_roi), dem_name='glo_30', dem_dir=dem_dir, buffer=0., resample_20m=False)
+
+    extent_dict = box2dict(dem_roi)
+    split_extent = split_geometry_on_antimeridian(extent_dict)
+    geometry = ogr.CreateGeometryFromJson(json.dumps(split_extent))
+    dem_tif = dem_dir.joinpath("full_res.dem.wgs84.tif")
+
+    pixel_size = 20.0
+    prepare_dem_geotiff(str(dem_tif), geometry, pixel_size)
+
+    # convert geotiff to ISCE format files
+    dem_isce  = dem_tif.with_suffix('')
+    convert_geotiff_2_isce(dem_tif, dem_isce)
 
     download_aux_cal(aux_cal_dir)
 
     if range_looks == 5:
         geocode_dem_path = download_dem_for_isce2(
-            dem_roi, dem_name='glo_30', dem_dir=dem_dir, buffer=0, resample_20m=True
+            list(dem_roi), dem_name='glo_30', dem_dir=dem_dir, buffer=0, resample_20m=True
         )
     else:
         geocode_dem_path = dem_path
+
+    geocode_dem_path = dem_isce
 
     orbit_dir.mkdir(exist_ok=True, parents=True)
     for granule in (ref_params.granule, sec_params.granule):
@@ -129,6 +150,10 @@ def insar_tops_burst(
 
     topsapp.run_topsapp_burst(start='startup', end='preprocess', config_xml=config_path)
     topsapp.swap_burst_vrts()
+
+    # convert lon.rdr.full presented in [-180, 180] to [0, 360]
+    shift_antimeridian_lon_rdr(lon_rdr)
+
     if apply_water_mask:
         topsapp.run_topsapp_burst(start='computeBaselines', end='filter', config_xml=config_path)
         water_mask_path = 'water_mask.wgs84'
