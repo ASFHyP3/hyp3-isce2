@@ -7,6 +7,7 @@ def test_topsapp_burst_config(tmp_path):
     config = TopsappBurstConfig(
         reference_safe='S1A_IW_SLC__1SDV_20200604T022251_20200604T022318_032861_03CE65_7C85.SAFE',
         secondary_safe='S1A_IW_SLC__1SDV_20200616T022252_20200616T022319_033036_03D3A3_5D11.SAFE',
+        polarization='VV',
         orbit_directory='orbits',
         aux_cal_directory='aux_cal',
         roi=[-118.0, 37.0, -117.0, 38.0],
@@ -53,6 +54,7 @@ def test_run_topsapp_burst(tmp_path, monkeypatch):
     config = TopsappBurstConfig(
         reference_safe='',
         secondary_safe='',
+        polarization='',
         orbit_directory='',
         aux_cal_directory='',
         roi=[0, 1, 2, 3],
