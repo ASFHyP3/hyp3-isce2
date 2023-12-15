@@ -6,7 +6,7 @@
       <property name="auxiliary data directory">{{ aux_cal_directory }}</property>
       <property name="output directory">reference</property>
       <property name="safe">{{ reference_safe }}</property>
-      <property name="polarization">{{ polarization }}</property>
+      <property name="polarization">{{ polarization.lower() }}</property>
     </component>
     <component name="secondary">
       <property name="orbit directory">{{ orbit_directory }}</property>

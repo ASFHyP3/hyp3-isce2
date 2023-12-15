@@ -236,6 +236,7 @@ def get_isce2_burst_bbox(params: BurstParams, base_dir: Optional[Path] = None) -
 
     s1_obj = Sentinel1()
     s1_obj.configure()
+    s1_obj.polarization = params.polarization.lower()
     s1_obj.safe = [str(base_dir / f'{params.granule}.SAFE')]
     s1_obj.swathNumber = int(params.swath[-1])
     s1_obj.parse()
