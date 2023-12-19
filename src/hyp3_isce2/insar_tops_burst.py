@@ -95,6 +95,11 @@ def insar_tops_burst(
 
     insar_roi = get_region_of_interest(ref_footprint, sec_footprint, is_ascending=is_ascending)
     dem_roi = ref_footprint.intersection(sec_footprint).bounds
+
+    if abs(dem_roi[0] - dem_roi[2]) > 180.0 and dem_roi[0] * dem_roi[2] < 0.0:
+        log.info(f'Do not process the pair that crosses over anti-meridian.')
+        sys.exit(1)
+
     log.info(f'InSAR ROI: {insar_roi}')
     log.info(f'DEM ROI: {dem_roi}')
 
