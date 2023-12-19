@@ -97,8 +97,7 @@ def insar_tops_burst(
     dem_roi = ref_footprint.intersection(sec_footprint).bounds
 
     if abs(dem_roi[0] - dem_roi[2]) > 180.0 and dem_roi[0] * dem_roi[2] < 0.0:
-        log.info('Do not process the pair that crosses over anti-meridian.')
-        sys.exit(1)
+        return None
 
     log.info(f'InSAR ROI: {insar_roi}')
     log.info(f'DEM ROI: {dem_roi}')
@@ -490,6 +489,10 @@ def main():
         esa_password=args.esa_password,
     )
 
+    if not isce_output_dir:
+        log.info('Do not process pair that crosses over antimeridain')
+        sys.exit(1)
+
     log.info('ISCE2 TopsApp run completed successfully')
     pixel_size = get_pixel_size(args.looks)
     product_name = get_product_name(reference_scene, secondary_scene, pixel_spacing=int(pixel_size))
@@ -545,3 +548,5 @@ def main():
 
         for product_file in product_dir.iterdir():
             upload_file_to_s3(product_file, args.bucket, args.bucket_prefix)
+
+    sys.exit(0)
