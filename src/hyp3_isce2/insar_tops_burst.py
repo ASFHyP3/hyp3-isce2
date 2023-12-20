@@ -489,10 +489,6 @@ def main():
         esa_password=args.esa_password,
     )
 
-    if not isce_output_dir:
-        log.info('Do not process pair that crosses over antimeridain')
-        sys.exit(1)
-
     log.info('ISCE2 TopsApp run completed successfully')
     pixel_size = get_pixel_size(args.looks)
     product_name = get_product_name(reference_scene, secondary_scene, pixel_spacing=int(pixel_size))
