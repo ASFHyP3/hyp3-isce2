@@ -8,7 +8,7 @@ and uses [Semantic Versioning](https://semver.org/spec/v2.0.0.html).
 
 ## [0.9.1]
 ### Added
-* warning for not processing the pair that crosses over antimeridian.
+* a warning that processing products over the Anti-Meridian is not currently supported.
 
 ## [0.9.1]
 ### Fixed
