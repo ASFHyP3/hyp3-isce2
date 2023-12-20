@@ -97,7 +97,7 @@ def insar_tops_burst(
     dem_roi = ref_footprint.intersection(sec_footprint).bounds
 
     if abs(dem_roi[0] - dem_roi[2]) > 180.0 and dem_roi[0] * dem_roi[2] < 0.0:
-        return None
+        raise ValueError('Products that cross the anti-meridian are not currently supported.')
 
     log.info(f'InSAR ROI: {insar_roi}')
     log.info(f'DEM ROI: {dem_roi}')
