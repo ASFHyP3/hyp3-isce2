@@ -95,6 +95,10 @@ def insar_tops_burst(
 
     insar_roi = get_region_of_interest(ref_footprint, sec_footprint, is_ascending=is_ascending)
     dem_roi = ref_footprint.intersection(sec_footprint).bounds
+
+    if abs(dem_roi[0] - dem_roi[2]) > 180.0 and dem_roi[0] * dem_roi[2] < 0.0:
+        raise ValueError('Products that cross the anti-meridian are not currently supported.')
+
     log.info(f'InSAR ROI: {insar_roi}')
     log.info(f'DEM ROI: {dem_roi}')
 
@@ -115,6 +119,7 @@ def insar_tops_burst(
     config = topsapp.TopsappBurstConfig(
         reference_safe=f'{ref_params.granule}.SAFE',
         secondary_safe=f'{sec_params.granule}.SAFE',
+        polarization=ref_params.polarization,
         orbit_directory=str(orbit_dir),
         aux_cal_directory=str(aux_cal_dir),
         roi=insar_roi,
