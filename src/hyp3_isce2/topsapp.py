@@ -48,6 +48,7 @@ class TopsappBurstConfig:
         self,
         reference_safe: str,
         secondary_safe: str,
+        polarization: str,
         orbit_directory: str,
         aux_cal_directory: str,
         dem_filename: str,
@@ -60,6 +61,7 @@ class TopsappBurstConfig:
     ):
         self.reference_safe = reference_safe
         self.secondary_safe = secondary_safe
+        self.polarization = polarization
         self.orbit_directory = orbit_directory
         self.aux_cal_directory = aux_cal_directory
         self.roi = [roi[1], roi[3], roi[0], roi[2]]
