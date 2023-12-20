@@ -9,8 +9,6 @@ and uses [Semantic Versioning](https://semver.org/spec/v2.0.0.html).
 ## [0.9.2]
 ### Fixed
 * `No annotation xml file` error in `insar_tops_burst` when processing HH pairs. Fixes [#168](https://github.com/ASFHyP3/hyp3-isce2/issues/168).
-
-## [0.9.1]
 ### Added
 * a warning that processing products over the Anti-Meridian is not currently supported.
 
