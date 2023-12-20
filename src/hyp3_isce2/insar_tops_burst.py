@@ -544,4 +544,3 @@ def main():
 
         for product_file in product_dir.iterdir():
             upload_file_to_s3(product_file, args.bucket, args.bucket_prefix)
-
