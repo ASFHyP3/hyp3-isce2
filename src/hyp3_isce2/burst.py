@@ -30,6 +30,7 @@ class BurstParams:
     swath: str
     polarization: str
     burst_number: int
+    extent: List[int]
 
 
 class BurstMetadata:
@@ -248,7 +249,7 @@ def get_isce2_burst_bbox(params: BurstParams, base_dir: Optional[Path] = None) -
 
 
 def get_region_of_interest(
-    ref_bbox: geometry.Polygon, sec_bbox: geometry.Polygon, is_ascending: bool = True
+    ref_extent: geometry.Polygon, sec_extent: geometry.Polygon, is_ascending: bool = True
 ) -> Tuple[float]:
     """Get the region of interest for two bursts that will lead to single burst ISCE2 processing.
 
@@ -263,11 +264,10 @@ def get_region_of_interest(
     Returns:
         The region of interest as a tuple of (minx, miny, maxx, maxy).
     """
-    intersection = ref_bbox.intersection(sec_bbox)
-    bounds = intersection.bounds
-
-    x, y = (0, 1) if is_ascending else (2, 1)
-    roi = geometry.Point(bounds[x], bounds[y]).buffer(0.005)
+    intersection = ref_extent.intersection(sec_extent)
+    exterior_coords = intersection.exterior.coords[:]
+    idx = 5 if is_ascending else 3
+    roi = geometry.Point(exterior_coords[idx]).buffer(0.005)
     return roi.bounds
 
 
@@ -379,6 +379,7 @@ def get_burst_params(scene_name: str) -> BurstParams:
         swath=results[0].properties['burst']['subswath'],
         polarization=results[0].properties['polarization'],
         burst_number=results[0].properties['burst']['burstIndex'],
+        extent=results[0].geometry['coordinates'][0]
     )
 
 

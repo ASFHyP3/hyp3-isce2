@@ -20,6 +20,7 @@ from isceobj.TopsProc.runMergeBursts import multilook
 from lxml import etree
 from osgeo import gdal
 from pyproj import CRS
+from shapely.geometry import Polygon
 
 import hyp3_isce2
 import hyp3_isce2.metadata.util
@@ -92,8 +93,10 @@ def insar_tops_burst(
     is_ascending = ref_metadata.orbit_direction == 'ascending'
     ref_footprint = get_isce2_burst_bbox(ref_params)
     sec_footprint = get_isce2_burst_bbox(sec_params)
+    ref_extent = Polygon(ref_params.extent)
+    sec_extent = Polygon(sec_params.extent)
 
-    insar_roi = get_region_of_interest(ref_footprint, sec_footprint, is_ascending=is_ascending)
+    insar_roi = get_region_of_interest(ref_extent, sec_extent, is_ascending=is_ascending)
     dem_roi = ref_footprint.intersection(sec_footprint).bounds
     log.info(f'InSAR ROI: {insar_roi}')
     log.info(f'DEM ROI: {dem_roi}')
