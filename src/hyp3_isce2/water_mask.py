@@ -1,51 +1,91 @@
 """Create and apply a water body mask"""
-import json
-import subprocess
-from pathlib import Path
-from tempfile import TemporaryDirectory
+from os import system
 
-import geopandas as gpd
+import shapely
+import numpy as np
+
 from osgeo import gdal
-from pyproj import CRS
-from shapely import geometry
-
-from hyp3_isce2.utils import GDALConfigManager
+from rasterio import open as ropen
+from rasterio.mask import mask
 
 gdal.UseExceptions()
 
+def get_corners(filename):
 
-def split_geometry_on_antimeridian(geometry: dict):
-    geometry_as_bytes = json.dumps(geometry).encode()
-    cmd = ['ogr2ogr', '-wrapdateline', '-datelineoffset', '20', '-f', 'GeoJSON', '/vsistdout/', '/vsistdin/']
-    geojson_str = subprocess.run(cmd, input=geometry_as_bytes, stdout=subprocess.PIPE, check=True).stdout
-    return json.loads(geojson_str)['features'][0]['geometry']
+    ds = gdal.Warp('tmp.tif', filename, dstSRS='EPSG:4326')
+    geoTransform = ds.GetGeoTransform()
 
+    minx = geoTransform[0]
+    maxy = geoTransform[3]
+    maxx = minx + geoTransform[1] * ds.RasterXSize
+    miny = maxy + geoTransform[5] * ds.RasterYSize
 
-def get_envelope_wgs84(input_image: str):
-    """Get the envelope around a GeoTIFF.
-    Args:
-        input_image: The path to the desired GeoTIFF, as a string.
-    Returns:
-        envelope_wgs84_gdf: The WGS84 envelope around the GeoTIFF, as a GeoDataFrame.
-    """
-    info = gdal.Info(input_image, format='json')
-    prj = CRS.from_wkt(info["coordinateSystem"]["wkt"])
-    epsg = prj.to_epsg()
-    extent = info['wgs84Extent']
-    poly = geometry.shape(extent)
-    poly_gdf = gpd.GeoDataFrame(index=[0], geometry=[poly], crs='EPSG:4326')
-    envelope_gdf = poly_gdf.to_crs(epsg).envelope.to_crs(4326)
-    envelope_poly = envelope_gdf.geometry[0]
-    envelope = geometry.mapping(envelope_poly)
-
-    correct_extent = split_geometry_on_antimeridian(envelope)
-    envelope_wgs84 = geometry.shape(correct_extent)
-    envelope_wgs84_gdf = gpd.GeoDataFrame(index=[0], geometry=[envelope_wgs84], crs='EPSG:4326')
-
-    return envelope_wgs84_gdf
+    upper_left = [minx, maxy]
+    bottom_left = [minx, miny]
+    upper_right = [maxx, maxy]
+    bottom_right = [maxx, miny]
+    
+    return [upper_left, bottom_left, upper_right, bottom_right]
 
 
-def create_water_mask(input_image: str, output_image: str, gdal_format='GTiff'):
+def corner_to_tile(corner):
+    lat_part = ''
+    lon_part = ''
+    lat = corner[1]
+    lon = corner[0]
+    lat_rounded = np.floor(lat / 5) * 5
+    lon_rounded = np.floor(lon / 5) * 5
+    if lat_rounded >= 0:
+        lat_part = 'n' + str(int(lat_rounded)).zfill(2)
+    else:
+        lat_part = 's' + str(int(np.abs(lat_rounded))).zfill(2)
+    if lon_rounded >= 0:
+        lon_part = 'e' + str(int(lon_rounded)).zfill(3)
+    else:
+        lon_part = 'w' + str(int(np.abs(lon_rounded))).zfill(3)
+    return lat_part + lon_part + '.tif'
+
+
+def get_tiles(filename):
+    tiles = []
+    corners = get_corners(filename)
+    for corner in corners:
+            tile = corner_to_tile(corner)
+            if tile not in tiles:
+                tiles.append(tile)
+    return tiles
+
+
+def clip_water_mask(filepath, outfilepath):
+
+    src = gdal.Warp('tmp_to_4326.tif', filepath, dstSRS='EPSG:4326')
+    band = src.GetRasterBand(1)
+    arr = band.ReadAsArray()
+
+    ulx, xres, xskew, uly, yskew, yres  = src.GetGeoTransform()
+    lrx = ulx + (src.RasterXSize * xres)
+    lry = uly + (src.RasterYSize * yres)
+    geometry = [[ulx,lry], [ulx,uly], [lrx,uly], [lrx,lry]]
+    roi = [shapely.Polygon(geometry)]
+
+    ds = ropen('merged_warped.tif')
+    output = mask(ds, roi, crop = True)[0][0]
+
+    rows = src.RasterYSize
+    cols = src.RasterXSize
+    driver = src.GetDriver()
+    out_ds = driver.Create(outfilepath, cols, rows, 1, gdal.GDT_Byte)
+    out_ds.SetGeoTransform(src.GetGeoTransform())
+    out_ds.SetProjection(src.GetProjection())
+    out_band = out_ds.GetRasterBand(1)
+    out_band.WriteArray(output)
+
+    del out_ds, out_band
+
+    return output, arr
+
+
+def create_water_mask(input_image: str, output_image: str):
     """Create a water mask GeoTIFF with the same geometry as a given input GeoTIFF
 
     The water mask is assembled from GSHHG v2.3.7 Levels 1, 2, 3, and 5 at full resolution. To learn more, visit
@@ -59,36 +99,20 @@ def create_water_mask(input_image: str, output_image: str, gdal_format='GTiff'):
         output_image: Path for the output image
         gdal_format: GDAL format name to create output image as
     """
-    src_ds = gdal.Open(input_image)
+    tiles = get_tiles(input_image)
 
-    driver_options = []
-    if gdal_format == 'GTiff':
-        driver_options = ['COMPRESS=LZW', 'TILED=YES', 'NUM_THREADS=ALL_CPUS']
+    print(tiles)
 
-    dst_ds = gdal.GetDriverByName(gdal_format).Create(
-        output_image,
-        src_ds.RasterXSize,
-        src_ds.RasterYSize,
-        1,
-        gdal.GDT_Byte,
-        driver_options,
-    )
-    dst_ds.SetGeoTransform(src_ds.GetGeoTransform())
-    dst_ds.SetProjection(src_ds.GetProjection())
-    dst_ds.SetMetadataItem('AREA_OR_POINT', src_ds.GetMetadataItem('AREA_OR_POINT'))
+    pixel_size = gdal.Warp('tmp_px_size.tif', input_image, dstSRS='EPSG:4326').GetGeoTransform()[1]
 
-    envelope_wgs84_gdf = get_envelope_wgs84(input_image)
+    print(pixel_size)
+    
+    merge_command = ' '.join(['gdal_merge.py', '-o', 'merged.tif'] + tiles)
+    system(merge_command)
 
-    mask_location = '/vsicurl/https://asf-dem-west.s3.amazonaws.com/WATER_MASK/GSHHG/hyp3_water_mask_20220912.shp'
+    shapefile_command = ' '.join(['gdaltindex', 'tmp.shp', input_image])
+    system(shapefile_command)
 
-    mask = gpd.read_file(mask_location, mask=envelope_wgs84_gdf)
+    warped = gdal.Warp(output_image, 'merged.tif', cutlineDSName='tmp.shp', cropToCutline=True, xRes=pixel_size, yRes=pixel_size, targetAlignedPixels=True, dstSRS='EPSG:4326')
 
-    mask = mask.clip(envelope_wgs84_gdf)
-
-    with TemporaryDirectory() as temp_dir:
-        temp_file = str(Path(temp_dir) / 'mask.shp')
-        mask.to_file(temp_file, driver='ESRI Shapefile')
-        with GDALConfigManager(OGR_ENABLE_PARTIAL_REPROJECTION='YES'):
-            gdal.Rasterize(dst_ds, temp_file, allTouched=True, burnValues=[1])
-
-    del src_ds, dst_ds
+    print('Done.')
