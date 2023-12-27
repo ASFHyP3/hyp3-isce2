@@ -88,8 +88,7 @@ def clip_water_mask(filepath, outfilepath):
 def create_water_mask(input_image: str, output_image: str):
     """Create a water mask GeoTIFF with the same geometry as a given input GeoTIFF
 
-    The water mask is assembled from GSHHG v2.3.7 Levels 1, 2, 3, and 5 at full resolution. To learn more, visit
-    https://www.soest.hawaii.edu/pwessel/gshhg/
+    The water mask is assembled from OpenStreetMaps data.
 
     Shoreline data is unbuffered and pixel values of 1 indicate land touches the pixel and 0 indicates there is no
     land in the pixel.
