@@ -6,12 +6,14 @@
       <property name="auxiliary data directory">{{ aux_cal_directory }}</property>
       <property name="output directory">reference</property>
       <property name="safe">{{ reference_safe }}</property>
+      <property name="polarization">{{ polarization.lower() }}</property>
     </component>
     <component name="secondary">
       <property name="orbit directory">{{ orbit_directory }}</property>
       <property name="auxiliary data directory">{{ aux_cal_directory }}</property>
       <property name="output directory">secondary</property>
       <property name="safe">{{ secondary_safe }}</property>
+      <property name="polarization">{{ polarization.lower() }}</property>
     </component>
     <property name="swaths">{{ swaths }}</property>
     <property name="range looks">{{ range_looks }}</property>
