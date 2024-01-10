@@ -11,8 +11,8 @@ from secrets import token_hex
 from typing import Iterator, List, Optional, Tuple, Union
 
 import asf_search
-import requests
 import numpy as np
+import requests
 from isceobj.Sensor.TOPS.Sentinel1 import Sentinel1
 from isceobj.TopsProc.runMergeBursts import multilook
 from lxml import etree
@@ -506,7 +506,7 @@ def safely_multilook(in_file, position, rg_looks, az_looks, subset_to_valid=True
     if subset_to_valid:
         last_line = position.first_valid_line + position.n_valid_lines
         last_sample = position.first_valid_sample + position.n_valid_samples
-        mask[position.first_valid_line : last_line, position.first_valid_sample : last_sample] = identity_value
+        mask[position.first_valid_line: last_line, position.first_valid_sample: last_sample] = identity_value
     else:
         mask[:, :] = identity_value
 
