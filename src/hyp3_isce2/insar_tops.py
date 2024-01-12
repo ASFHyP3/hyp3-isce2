@@ -68,6 +68,7 @@ def insar_tops(
     config = topsapp.TopsappBurstConfig(
         reference_safe=f'{reference_scene}.SAFE',
         secondary_safe=f'{secondary_scene}.SAFE',
+        polarization=polarization,
         orbit_directory=str(orbit_dir),
         aux_cal_directory=str(aux_cal_dir),
         dem_filename=str(dem_path),
@@ -95,7 +96,7 @@ def main():
     parser.add_argument('--esa-password', default=None, help="Password for ESA\'s Copernicus Data Space Ecosystem")
     parser.add_argument('--reference-scene', type=str, required=True)
     parser.add_argument('--secondary-scene', type=str, required=True)
-    parser.add_argument('--polarization', type=str, default='VV')
+    parser.add_argument('--polarization', type=str, choices=['VV', 'HH'], default='VV')
     parser.add_argument(
         '--looks',
         choices=['20x4', '10x2', '5x1'],

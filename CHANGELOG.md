@@ -6,6 +6,19 @@ The format is based on [Keep a Changelog](https://keepachangelog.com/en/1.0.0/),
 and this project adheres to [PEP 440](https://www.python.org/dev/peps/pep-0440/)
 and uses [Semantic Versioning](https://semver.org/spec/v2.0.0.html).
 
+
+## [0.9.3]
+### Changed
+* Upgraded to `hyp3lib=>3,<4` from `>=2,<3`
+### Fixed
+* @scottyhq fixed excessively verbose logging due to ISCE2 setting the root logger to `DEBUG` in [#176](https://github.com/ASFHyP3/hyp3-isce2/issues/176)
+
+## [0.9.2]
+### Fixed
+* `No annotation xml file` error in `insar_tops_burst` when processing HH pairs. Fixes [#168](https://github.com/ASFHyP3/hyp3-isce2/issues/168).
+### Added
+* a warning that processing products over the Anti-Meridian is not currently supported.
+
 ## [0.9.1]
 ### Fixed
 * Water Masking now pulls the global shapefile and clips it, rather than pulling a partitioned parque, due to issues around the partition boundaries.
