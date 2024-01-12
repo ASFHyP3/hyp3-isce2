@@ -8,6 +8,8 @@ and uses [Semantic Versioning](https://semver.org/spec/v2.0.0.html).
 
 
 ## [0.9.3]
+### Changed
+* Upgraded to `hyp3lib=>3,<4` from `>=2,<3`
 ### Fixed
 * @scottyhq fixed excessively verbose logging due to ISCE2 setting the root logger to `DEBUG` in [#176](https://github.com/ASFHyP3/hyp3-isce2/issues/176)
 
