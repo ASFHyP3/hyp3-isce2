@@ -12,9 +12,6 @@ from shutil import copyfile, make_archive
 from typing import Optional
 
 import isce
-# https://github.com/isce-framework/isce2/issues/258
-root_logger = logging.getLogger()
-root_logger.setLevel('WARNING')
 from hyp3lib.aws import upload_file_to_s3
 from hyp3lib.get_orb import downloadSentinelOrbitFile
 from hyp3lib.image import create_thumbnail
