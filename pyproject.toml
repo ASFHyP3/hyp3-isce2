@@ -30,7 +30,7 @@ dependencies = [
   "asf_search>=6.4.0",
   "geopandas",
   "gdal",
-  "hyp3lib>=2,<3",
+  "hyp3lib>=3,<4",
   # Conda-forge only dependencies are listed below
   # "opencv",
   # "isce2>=2.6.3",
