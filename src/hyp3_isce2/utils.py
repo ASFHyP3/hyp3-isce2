@@ -306,7 +306,7 @@ def create_image(
     access_mode: str = 'read',
     image_subtype: str = 'default',
     action: str = 'create',
-) -> isceobj.Image.Image:
+) -> isceobj.Image:
     """Create an ISCE2 image object from a set of parameters
 
     Args:
