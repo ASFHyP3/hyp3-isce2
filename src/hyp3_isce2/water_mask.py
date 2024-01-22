@@ -10,6 +10,9 @@ from rasterio.mask import mask
 
 gdal.UseExceptions()
 
+TILE_PATH = '/Users/asplayer/data/planet-pbf/global_10m/merge_tiles/'
+
+
 def get_corners(filename):
 
     ds = gdal.Warp('tmp.tif', filename, dstSRS='EPSG:4326')
@@ -50,42 +53,13 @@ def get_tiles(filename):
     tiles = []
     corners = get_corners(filename)
     for corner in corners:
-            tile = corner_to_tile(corner)
+            tile = TILE_PATH + corner_to_tile(corner)
             if tile not in tiles:
                 tiles.append(tile)
     return tiles
 
 
-def clip_water_mask(filepath, outfilepath):
-
-    src = gdal.Warp('tmp_to_4326.tif', filepath, dstSRS='EPSG:4326')
-    band = src.GetRasterBand(1)
-    arr = band.ReadAsArray()
-
-    ulx, xres, xskew, uly, yskew, yres  = src.GetGeoTransform()
-    lrx = ulx + (src.RasterXSize * xres)
-    lry = uly + (src.RasterYSize * yres)
-    geometry = [[ulx,lry], [ulx,uly], [lrx,uly], [lrx,lry]]
-    roi = [shapely.Polygon(geometry)]
-
-    ds = ropen('merged_warped.tif')
-    output = mask(ds, roi, crop = True)[0][0]
-
-    rows = src.RasterYSize
-    cols = src.RasterXSize
-    driver = src.GetDriver()
-    out_ds = driver.Create(outfilepath, cols, rows, 1, gdal.GDT_Byte)
-    out_ds.SetGeoTransform(src.GetGeoTransform())
-    out_ds.SetProjection(src.GetProjection())
-    out_band = out_ds.GetRasterBand(1)
-    out_band.WriteArray(output)
-
-    del out_ds, out_band
-
-    return output, arr
-
-
-def create_water_mask(input_image: str, output_image: str):
+def create_water_mask(input_image: str, output_image: str, gdal_format = 'ISCE'):
     """Create a water mask GeoTIFF with the same geometry as a given input GeoTIFF
 
     The water mask is assembled from OpenStreetMaps data.
@@ -98,20 +72,49 @@ def create_water_mask(input_image: str, output_image: str):
         output_image: Path for the output image
         gdal_format: GDAL format name to create output image as
     """
+    
     tiles = get_tiles(input_image)
 
-    print(tiles)
+    if len(tiles) < 1:
+        raise Exception("No Water Mask Tiles Found")
 
     pixel_size = gdal.Warp('tmp_px_size.tif', input_image, dstSRS='EPSG:4326').GetGeoTransform()[1]
 
-    print(pixel_size)
-    
-    merge_command = ' '.join(['gdal_merge.py', '-o', 'merged.tif'] + tiles)
-    system(merge_command)
+    # This is WAY faster than using gdal_merge, because of course it is.
+    if len(tiles) > 1:
+        build_vrt_command = ' '.join(['gdalbuildvrt', 'merged.vrt'] + tiles)
+        system(build_vrt_command)
+        translate_command = ' '.join(['gdal_translate', 'merged.vrt', 'merged.tif'])
+        system(translate_command)
 
     shapefile_command = ' '.join(['gdaltindex', 'tmp.shp', input_image])
     system(shapefile_command)
 
-    warped = gdal.Warp(output_image, 'merged.tif', cutlineDSName='tmp.shp', cropToCutline=True, xRes=pixel_size, yRes=pixel_size, targetAlignedPixels=True, dstSRS='EPSG:4326')
+    warp_filename = 'merged.tif' if len(tiles) > 1 else tiles[0]
 
-    print('Done.')
+    gdal.Warp(
+        'merged_warped.tif',
+        warp_filename,
+        cutlineDSName='tmp.shp',
+        cropToCutline=True,
+        xRes=pixel_size,
+        yRes=pixel_size,
+        targetAlignedPixels=True,
+        dstSRS='EPSG:4326',
+        format=gdal_format
+    )
+
+    flip_values_command = ''.join([
+        'gdal_calc.py',
+        '-A',
+        'merged_warped.tif',
+        f'--outfile={output_image}',
+        '--calc="numpy.abs((A.astype(numpy.int16) + 1) - 2)"',
+        f'--format={gdal_format}'
+    ])
+    system(flip_values_command)
+
+    print('Water Mask Created...')
+
+    # flip_values_command = f'gdal_calc.py -A merged_warped.tif --outfile={output_image} --calc="numpy.abs((A.astype(numpy.int16) + 1) - 2)" --format={gdal_format}'
+    # insar_tops_burst --looks 5x1 --apply-water-mask True S1_078088_IW3_20230705T055038_VV_F183-BURST S1_078088_IW3_20230717T055039_VV_F821-BURST
