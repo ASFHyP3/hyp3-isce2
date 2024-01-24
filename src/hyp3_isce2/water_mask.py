@@ -1,7 +1,6 @@
 """Create and apply a water body mask"""
 from os import system
 
-import shapely
 import numpy as np
 
 from osgeo import gdal
@@ -10,34 +9,38 @@ from rasterio.mask import mask
 
 gdal.UseExceptions()
 
-TILE_PATH = '/Users/asplayer/data/planet-pbf/global_10m/merge_tiles/'
+TILE_PATH = '/vsicurl/https://asf-dem-west.s3.amazonaws.com/WATER_MASK/TILES/'
 
 
 def get_corners(filename):
-
-    ds = gdal.Warp('tmp.tif', filename, dstSRS='EPSG:4326')
-    geoTransform = ds.GetGeoTransform()
-
-    minx = geoTransform[0]
-    maxy = geoTransform[3]
-    maxx = minx + geoTransform[1] * ds.RasterXSize
-    miny = maxy + geoTransform[5] * ds.RasterYSize
-
-    upper_left = [minx, maxy]
-    bottom_left = [minx, miny]
-    upper_right = [maxx, maxy]
-    bottom_right = [maxx, miny]
+    """Get all four corners of the given image: [upper_left, bottom_left, upper_right, bottom_right].
     
+    Args:
+        filename: The path to the input image.
+    """
+    ds = gdal.Warp('tmp.tif', filename, dstSRS='EPSG:4326')
+    geotransform = ds.GetGeoTransform()
+    x_min = geotransform[0]
+    x_max = x_min + geotransform[1] * ds.RasterXSize
+    y_max = geotransform[3]
+    y_min = y_max + geotransform[5] * ds.RasterYSize
+    upper_left = [x_min, y_max]
+    bottom_left = [x_min, y_min]
+    upper_right = [x_max, y_max]
+    bottom_right = [x_max, y_min]
     return [upper_left, bottom_left, upper_right, bottom_right]
 
 
-def corner_to_tile(corner):
+def coord_to_tile(coord: tuple(float, float)) -> str:
+    """Get the filename of the tile which encloses the inputted coordinate.
+    
+    Args:
+        coord: The (lon, lat) tuple containing the desired coordinate.
+    """
     lat_part = ''
     lon_part = ''
-    lat = corner[1]
-    lon = corner[0]
-    lat_rounded = np.floor(lat / 5) * 5
-    lon_rounded = np.floor(lon / 5) * 5
+    lat_rounded = np.floor(coord[1] / 5) * 5
+    lon_rounded = np.floor(coord[0] / 5) * 5
     if lat_rounded >= 0:
         lat_part = 'n' + str(int(lat_rounded)).zfill(2)
     else:
@@ -49,11 +52,16 @@ def corner_to_tile(corner):
     return lat_part + lon_part + '.tif'
 
 
-def get_tiles(filename):
+def get_tiles(filename: str) -> None:
+    """Get the AWS vsicurl path's to the tiles necessary to cover the inputted file.
+    
+    Args:
+        filename: The path to the input file.
+    """
     tiles = []
     corners = get_corners(filename)
     for corner in corners:
-            tile = TILE_PATH + corner_to_tile(corner)
+            tile = TILE_PATH + coord_to_tile(corner)
             if tile not in tiles:
                 tiles.append(tile)
     return tiles
@@ -76,7 +84,7 @@ def create_water_mask(input_image: str, output_image: str, gdal_format = 'ISCE')
     tiles = get_tiles(input_image)
 
     if len(tiles) < 1:
-        raise Exception("No Water Mask Tiles Found")
+        raise ValueError(f'No water mask tiles found for {tiles}.')
 
     pixel_size = gdal.Warp('tmp_px_size.tif', input_image, dstSRS='EPSG:4326').GetGeoTransform()[1]
 
@@ -114,7 +122,3 @@ def create_water_mask(input_image: str, output_image: str, gdal_format = 'ISCE')
     ])
     system(flip_values_command)
 
-    print('Water Mask Created...')
-
-    # flip_values_command = f'gdal_calc.py -A merged_warped.tif --outfile={output_image} --calc="numpy.abs((A.astype(numpy.int16) + 1) - 2)" --format={gdal_format}'
-    # insar_tops_burst --looks 5x1 --apply-water-mask True S1_078088_IW3_20230705T055038_VV_F183-BURST S1_078088_IW3_20230717T055039_VV_F821-BURST

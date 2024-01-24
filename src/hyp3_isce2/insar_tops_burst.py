@@ -136,7 +136,7 @@ def insar_tops_burst(
     if apply_water_mask:
         topsapp.run_topsapp_burst(start='computeBaselines', end='filter', config_xml=config_path)
         water_mask_path = 'water_mask.wgs84'
-        create_water_mask(str(dem_path), water_mask_path, gdal_format='ISCE')
+        create_water_mask(str(dem_path), water_mask_path)
         multilook('merged/lon.rdr.full', outname='merged/lon.rdr', alks=azimuth_looks, rlks=range_looks)
         multilook('merged/lat.rdr.full', outname='merged/lat.rdr', alks=azimuth_looks, rlks=range_looks)
         resample_to_radar_io(water_mask_path, 'merged/lat.rdr', 'merged/lon.rdr', 'merged/water_mask.rdr')
