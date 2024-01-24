@@ -29,8 +29,6 @@ from hyp3_isce2.utils import (
 import isceobj
 
 
-import pdb
-
 gdal.UseExceptions()
 
 
