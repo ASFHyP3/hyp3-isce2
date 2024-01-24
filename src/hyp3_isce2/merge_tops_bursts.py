@@ -1,3 +1,4 @@
+"""A workflow for merging standard burst InSAR products."""
 import argparse
 import copy
 import datetime
@@ -333,7 +334,8 @@ def create_swath_objects(
             f"No annotation files for swath {swath} and polarization {polarization} found in annotation directory"
         )
     manifest_xmls = [str(path) for path in Path("manifest").glob("S1*.xml")]
-
+    
+    breakpoint()
     Path(outdir).mkdir(exist_ok=True)
     obj = Sentinel1BurstSelect()
     obj.configure()

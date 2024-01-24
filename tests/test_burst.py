@@ -1,13 +1,17 @@
+"""Tests for the single-burst specific functionality found in burst.py"""
+from collections import namedtuple
+from datetime import datetime
 from pathlib import Path
 from re import match
 from unittest.mock import patch
 
 import asf_search
+import numpy as np
 import pytest
 from lxml import etree
 from shapely import geometry
 
-from hyp3_isce2 import burst
+from hyp3_isce2 import burst, utils
 
 
 URL_BASE = 'https://datapool.asf.alaska.edu/SLC'
@@ -91,14 +95,14 @@ def test_get_region_of_interest(tmp_path, orbit):
 
 def test_get_product_name():
 
-    reference_name = "S1_136231_IW2_20200604T022312_VV_7C85-BURST"
-    secondary_name = "S1_136231_IW2_20200616T022313_VV_5D11-BURST"
+    reference_name = 'S1_136231_IW2_20200604T022312_VV_7C85-BURST'
+    secondary_name = 'S1_136231_IW2_20200616T022313_VV_5D11-BURST'
 
     name_20m = burst.get_product_name(reference_name, secondary_name, pixel_spacing=20.0)
     name_80m = burst.get_product_name(reference_name, secondary_name, pixel_spacing=80)
 
-    assert match("[A-F0-9]{4}", name_20m[-4:]) is not None
-    assert match("[A-F0-9]{4}", name_80m[-4:]) is not None
+    assert match('[A-F0-9]{4}', name_20m[-4:]) is not None
+    assert match('[A-F0-9]{4}', name_80m[-4:]) is not None
 
     assert name_20m.startswith('S1_136231_IW2_20200604_20200616_VV_INT20')
     assert name_80m.startswith('S1_136231_IW2_20200604_20200616_VV_INT80')
@@ -190,3 +194,83 @@ def test_validate_bursts():
             'S1_030349_IW1_20230808T171601_VH_4A37-BURST',
             'S1_030349_IW1_20230820T171602_VH_5AC3-BURST'
         )
+
+
+def test_load_burst_position(tmpdir):
+    product = namedtuple('product', ['bursts'])
+    bursts = namedtuple(
+        'bursts',
+        [
+            'numberOfLines',
+            'numberOfSamples',
+            'firstValidLine',
+            'numValidLines',
+            'firstValidSample',
+            'numValidSamples',
+            'azimuthTimeInterval',
+            'rangePixelSize',
+            'sensingStop',
+        ],
+    )
+
+    mock_product = product([bursts(100, 200, 10, 50, 20, 60, 0.1, 0.2, datetime(2020, 1, 1))])
+    with patch('hyp3_isce2.burst.load_product') as mock_load_product:
+        mock_load_product.return_value = mock_product
+        position = burst.load_burst_position('', 0)
+
+    assert position.n_lines == 100
+    assert position.n_samples == 200
+    assert position.first_valid_line == 10
+    assert position.n_valid_lines == 50
+    assert position.first_valid_sample == 20
+    assert position.n_valid_samples == 60
+    assert position.azimuth_time_interval == 0.1
+    assert position.range_pixel_size == 0.2
+    assert position.sensing_stop == datetime(2020, 1, 1)
+
+
+def test_evenly_subset_position():
+    input_pos = burst.BurstPosition(101, 101, 11, 20, 11, 20, 1, 1, datetime(2021, 1, 1, 0, 0, 0))
+    ml_params = burst.evenly_subset_position(input_pos, 2, 10)
+
+    assert ml_params.n_lines == 100
+    assert ml_params.n_samples == 100
+    assert ml_params.n_valid_lines == 10
+    assert ml_params.n_valid_samples == 18
+    assert ml_params.first_valid_line == 20
+    assert ml_params.first_valid_sample == 12
+    assert ml_params.azimuth_time_interval == input_pos.azimuth_time_interval
+    assert ml_params.range_pixel_size == input_pos.range_pixel_size
+    assert ml_params.sensing_stop == datetime(2020, 12, 31, 23, 59, 59)
+
+
+def test_multilook_position():
+    input_pos = burst.BurstPosition(100, 100, 20, 60, 20, 30, 1, 1, datetime(2021, 1, 1, 0, 0, 0))
+    output_pos = burst.multilook_position(input_pos, 10, 2)
+
+    assert output_pos.n_lines == 50
+    assert output_pos.n_samples == 10
+    assert output_pos.first_valid_line == 10
+    assert output_pos.n_valid_lines == 30
+    assert output_pos.first_valid_sample == 2
+    assert output_pos.n_valid_samples == 3
+    assert output_pos.azimuth_time_interval == input_pos.azimuth_time_interval * 2
+    assert output_pos.range_pixel_size == input_pos.range_pixel_size * 10
+    assert output_pos.sensing_stop == input_pos.sensing_stop
+
+
+def test_safely_multilook(tmpdir):
+    image_path = str(tmpdir / 'image')
+    test_array = np.zeros((100,100), dtype=np.float32)
+    test_array[10:90,10:90] = 5
+    img_obj = utils.create_image(image_path, test_array.shape[1], access_mode='write', action='create')
+    utils.write_isce2_image_from_obj(img_obj, test_array)
+    pos = burst.BurstPosition(100, 100, 20, 60, 20, 60, 0.1, 0.1, datetime(2021, 1, 1, 0, 0, 0))
+    burst.safely_multilook(image_path, pos, 5, 5)
+
+    _, multilooked_array = utils.load_isce2_image(f'{image_path}.multilooked')
+    assert multilooked_array.shape == (20, 20)
+
+    golden_array = np.zeros(multilooked_array.shape, dtype=np.float32)
+    golden_array[4:16,4:16] = 5
+    assert np.all(multilooked_array == golden_array)
