@@ -1,8 +1,10 @@
 import os
-
+from pathlib import Path
+import shutil
 import numpy as np
 import pytest
 from osgeo import gdal
+import filecmp
 
 from hyp3_isce2.utils import (
     ESA_HOST,
@@ -12,8 +14,22 @@ from hyp3_isce2.utils import (
     make_browse_image,
     oldest_granule_first,
     resample_to_radar,
+    resample_to_radar_io,
     utm_from_lon_lat,
+    create_image,
+    write_isce2_image,
+    write_isce2_image_from_obj,
+    load_isce2_image,
+    get_geotransform_from_dataset,
+    isce2_copy,
+    image_math,
+    load_product,
+    read_product_metadata,
 )
+import isceobj
+
+
+import pdb
 
 gdal.UseExceptions()
 
@@ -129,6 +145,21 @@ def test_resample_to_radar():
     resample_with_different_case(30, 10, 10, 10, geotransform)
 
 
+def test_resample_to_radar_io(tmp_path):
+    image_to_resample = 'tests/data/test_case/dem/down2_res.dem.wgs84'
+    latin = 'tests/data/test_case/geom_reference/IW2/down2_lat_01.rdr'
+    lonin = 'tests/data/test_case/geom_reference/IW2/down2_lon_01.rdr'
+    output = str(tmp_path / 'output')
+
+    latim, lat = load_isce2_image(latin)
+
+    resample_to_radar_io(image_to_resample, latin, lonin, output)
+
+    assert Path(output).is_file()
+
+    outputim, outputarray = load_isce2_image(output)
+    assert outputarray.shape == lat.shape
+
 def test_get_esa_credentials_env(tmp_path, monkeypatch):
     with monkeypatch.context() as m:
         m.setenv('ESA_USERNAME', 'foo')
@@ -171,3 +202,160 @@ def test_get_esa_credentials_missing(tmp_path, monkeypatch):
         msg = 'Please provide.*'
         with pytest.raises(ValueError, match=msg):
             get_esa_credentials()
+
+
+def test_create_image(tmp_path):
+    def _check_create_image(path: str, image_subtype: str = 'default'):
+        # test ifg in create, finalize, and load
+        path_c = path + '/img_c'
+        img_c = create_image(path_c, width=5, access_mode='write', image_subtype=image_subtype, action='create')
+        assert Path(img_c.getFilename()).is_file()
+
+        path_f = path + '/img_f'
+        img_f = create_image(path_f, width=5, access_mode='write', image_subtype=image_subtype, action='finalize')
+        assert Path(img_f.getFilename()).is_file()
+        assert Path(img_f.getFilename() + '.vrt').is_file()
+        assert Path(img_f.getFilename() + '.xml').is_file()
+
+        img_f = create_image(path_f, access_mode='write', image_subtype=image_subtype, action='load')
+        assert Path(img_f.getFilename()).is_file()
+
+    _check_create_image(str(tmp_path), image_subtype='ifg')
+    _check_create_image(str(tmp_path), image_subtype='cor')
+    _check_create_image(str(tmp_path), image_subtype='unw')
+    _check_create_image(str(tmp_path), image_subtype='conncomp')
+    _check_create_image(str(tmp_path), image_subtype='default')
+
+
+def test_write_isce2_image(tmp_path):
+    array = np.array(range(150), dtype=np.float32)
+    array = array.reshape(15, 10)
+    bands=1
+    length, width = array.shape
+    out_path = str(tmp_path / 'isce_image_2d')
+    write_isce2_image(out_path, array=array, bands=bands,length=length, width=width, mode='write', data_type='FLOAT')
+    assert Path(out_path).is_file()
+
+
+def test_write_isce2_image_from_obj(tmp_path):
+    def _check_write_isce2_image_from_obj(out_path, bands, length, width):
+        image = isceobj.createImage()
+        image.initImage(out_path, 'write', width, 'FLOAT', bands)
+        image.setLength(length)
+        image.setImageType('bil')
+        image.createImage()
+        write_isce2_image_from_obj(image, array=array)
+        assert Path(image.filename).is_file()
+        assert Path(image.filename + '.vrt').is_file()
+        assert Path(image.filename + '.xml').is_file()
+
+    # 1D array, it shape(width), band=1, length=1
+    array = np.array(range(150), dtype = np.float32)
+    bands = 1
+    length = 1
+    width = array.shape[0]
+    out_path = str(tmp_path / 'isce_image_1d')
+    _check_write_isce2_image_from_obj(out_path, bands, length, width)
+
+    # 2D array, is shape(length, width), band=1
+    array = np.array(range(150), dtype = np.float32)
+    array = array.reshape(15, 10)
+    bands = 1
+    length, width = array.shape
+    out_path = str(tmp_path / 'isce_image_2d')
+    _check_write_isce2_image_from_obj(out_path, bands, length, width)
+
+    # multi-D array, its shape(band,length, width)
+    array = np.array(range(150), dtype = np.float32)
+    array = array.reshape(3, 5, 10)
+    bands, length, width = array.shape
+    out_path = str(tmp_path / 'isce_image_md')
+    _check_write_isce2_image_from_obj(out_path, bands, length, width)
+
+
+def test_load_isce2_image(tmp_path):
+    in_path = str(tmp_path / 'isce_image_md')
+    arrayin = np.array(range(150), dtype = np.float32)
+    arrayin = arrayin.reshape(3, 5, 10)
+    bands, length, width = arrayin.shape
+    write_isce2_image(in_path, array=arrayin, bands=bands, length=length, width=width, mode='write', data_type='FLOAT')
+    image_obj, arrayout = load_isce2_image(in_path)
+    assert type(image_obj) == isceobj.Image.Image.Image
+    assert np.array_equal(arrayin, arrayout)
+
+    in_path = str(tmp_path / 'isce_image_2d')
+
+    arrayin = np.array(range(150), dtype =  np.float32)
+    arrayin = arrayin.reshape(15, 10)
+    bands = 1
+    length, width = arrayin.shape
+    write_isce2_image(in_path, array=arrayin, bands=bands, length=length, width=width, mode='write', data_type='FLOAT')
+    image_obj, arrayout = load_isce2_image(in_path)
+    assert type(image_obj) == isceobj.Image.Image.Image
+    assert np.array_equal(arrayin, arrayout)
+
+    in_path = str(tmp_path / 'isce_image_1d')
+    arrayin = np.array(range(150), dtype=np.float32)
+    arrayin = arrayin.reshape(1, 150)
+    bands = 1
+    length, width = arrayin.shape
+    write_isce2_image(in_path, array=arrayin, bands=bands, length=length, width=width, mode='write', data_type='FLOAT')
+    image_obj, arrayout = load_isce2_image(in_path)
+    assert type(image_obj) == isceobj.Image.Image.Image
+    assert np.array_equal(arrayin, arrayout)
+
+
+def test_get_geotransform_from_dataset():
+    in_path = 'tests/data/test_case/dem/down2_res.dem.wgs84'
+    image_obj, _ = load_isce2_image(in_path)
+    assert get_geotransform_from_dataset(image_obj) == (52.9999, 0.0277778, 0, 28.0001, 0, -0.0277778)
+
+
+def test_isce2_copy(tmp_path):
+    in_path = str(tmp_path / 'isce_image_2d')
+    arrayin = np.array(range(150), dtype=np.float32)
+    arrayin = arrayin.reshape(15, 10)
+    bands = 1
+    length, width = arrayin.shape
+    write_isce2_image(in_path, array=arrayin, bands=bands, length=length, width=width, mode='write', data_type='FLOAT')
+    out_path = str(tmp_path / 'isce_image_2d_copy')
+    isce2_copy(in_path, out_path)
+    assert filecmp.cmp(in_path, out_path)
+
+
+def test_image_math(tmp_path):
+    in_path1 = str(tmp_path / 'isce_image_2d_1')
+    array1 = np.array(range(150), dtype=np.float32)
+    array1 = array1.reshape(15, 10)
+    bands = 1
+    length, width = array1.shape
+    write_isce2_image(in_path1, array=array1, bands=bands, length=length, width=width, mode='write', data_type='FLOAT')
+
+    in_path2 = str(tmp_path / 'isce_image_2d_2')
+    array2 = np.array(range(3, 153), dtype=np.float32)
+    array2 = array2.reshape(15, 10)
+    bands = 1
+    length, width = array2.shape
+    write_isce2_image(in_path2, array=array2, bands=bands, length=length, width=width, mode='write', data_type='FLOAT')
+
+    out_path = str(tmp_path / 'isce_image_2d_out')
+    image_math(in_path1, in_path2, out_path, 'a + b')
+    image_obj_out, arrayout = load_isce2_image(out_path)
+    assert np.array_equal(array1 + array2, arrayout)
+
+''' suggest not test load_product 
+def test_load_product():
+    xmlname = 'tests/data/test_case/fine_interferogram/IW2.xml'
+    product = load_product(xmlname)
+    assert isinstance(product, isceobj.Sensor.TOPS.TOPSSwathSLCProduct.TOPSSwathSLCProduct)
+'''
+
+def test_read_product_metadata():
+    data_dir = Path('tests/data/test_case')
+    product_name = Path('S1_136232_IW2_20200604_20200616_VV_INT80_663F')
+    file = Path('S1_136232_IW2_20200604_20200616_VV_INT80_663F.txt')
+    metafile = str(data_dir / product_name / file)
+    metas = read_product_metadata(metafile)
+    assert metas['ReferenceGranule'] == 'S1_136232_IW2_20200604T022315_VV_7C85-BURST'
+    assert metas['SecondaryGranule'] == 'S1_136232_IW2_20200616T022316_VV_5D11-BURST'
+
