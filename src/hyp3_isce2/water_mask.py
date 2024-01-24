@@ -4,8 +4,6 @@ from os import system
 import numpy as np
 
 from osgeo import gdal
-from rasterio import open as ropen
-from rasterio.mask import mask
 
 gdal.UseExceptions()
 
@@ -14,7 +12,7 @@ TILE_PATH = '/vsicurl/https://asf-dem-west.s3.amazonaws.com/WATER_MASK/TILES/'
 
 def get_corners(filename):
     """Get all four corners of the given image: [upper_left, bottom_left, upper_right, bottom_right].
-    
+
     Args:
         filename: The path to the input image.
     """
@@ -33,7 +31,7 @@ def get_corners(filename):
 
 def coord_to_tile(coord: tuple(float, float)) -> str:
     """Get the filename of the tile which encloses the inputted coordinate.
-    
+
     Args:
         coord: The (lon, lat) tuple containing the desired coordinate.
     """
@@ -54,20 +52,20 @@ def coord_to_tile(coord: tuple(float, float)) -> str:
 
 def get_tiles(filename: str) -> None:
     """Get the AWS vsicurl path's to the tiles necessary to cover the inputted file.
-    
+
     Args:
         filename: The path to the input file.
     """
     tiles = []
     corners = get_corners(filename)
     for corner in corners:
-            tile = TILE_PATH + coord_to_tile(corner)
-            if tile not in tiles:
-                tiles.append(tile)
+        tile = TILE_PATH + coord_to_tile(corner)
+        if tile not in tiles:
+            tiles.append(tile)
     return tiles
 
 
-def create_water_mask(input_image: str, output_image: str, gdal_format = 'ISCE'):
+def create_water_mask(input_image: str, output_image: str, gdal_format='ISCE'):
     """Create a water mask GeoTIFF with the same geometry as a given input GeoTIFF
 
     The water mask is assembled from OpenStreetMaps data.
@@ -80,7 +78,7 @@ def create_water_mask(input_image: str, output_image: str, gdal_format = 'ISCE')
         output_image: Path for the output image
         gdal_format: GDAL format name to create output image as
     """
-    
+
     tiles = get_tiles(input_image)
 
     if len(tiles) < 1:
@@ -121,4 +119,3 @@ def create_water_mask(input_image: str, output_image: str, gdal_format = 'ISCE')
         f'--format={gdal_format}'
     ])
     system(flip_values_command)
-
