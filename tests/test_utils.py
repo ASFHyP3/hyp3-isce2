@@ -28,7 +28,6 @@ from hyp3_isce2.utils import (
 )
 import isceobj
 
-
 gdal.UseExceptions()
 
 
@@ -205,18 +204,23 @@ def test_get_esa_credentials_missing(tmp_path, monkeypatch):
 def test_create_image(tmp_path):
     def _check_create_image(path: str, image_subtype: str = 'default'):
         # test ifg in create, finalize, and load
-        path_c = path + '/img_c'
+        path_c = path + '/img_via_create'
         img_c = create_image(path_c, width=5, access_mode='write', image_subtype=image_subtype, action='create')
         assert Path(img_c.getFilename()).is_file()
 
-        path_f = path + '/img_f'
+        path_f = path + '/img_via_finalize'
         img_f = create_image(path_f, width=5, access_mode='write', image_subtype=image_subtype, action='finalize')
         assert Path(img_f.getFilename()).is_file()
         assert Path(img_f.getFilename() + '.vrt').is_file()
         assert Path(img_f.getFilename() + '.xml').is_file()
 
-        img_f = create_image(path_f, access_mode='write', image_subtype=image_subtype, action='load')
-        assert Path(img_f.getFilename()).is_file()
+        path_l = path + '/img_via_load'
+        shutil.copy(path_f, path_l)
+        shutil.copy(f'{path_f}.vrt', f'{path_l}.vrt')
+        shutil.copy(f'{path_f}.xml', f'{path_l}.xml')
+
+        img_l = create_image(path_l, access_mode='write', image_subtype=image_subtype, action='load')
+        assert Path(img_l.getFilename()).is_file()
 
     _check_create_image(str(tmp_path), image_subtype='ifg')
     _check_create_image(str(tmp_path), image_subtype='cor')
@@ -350,4 +354,6 @@ def test_read_product_metadata():
     metas = read_product_metadata(metafile)
     assert metas['ReferenceGranule'] == 'S1_136232_IW2_20200604T022315_VV_7C85-BURST'
     assert metas['SecondaryGranule'] == 'S1_136232_IW2_20200616T022316_VV_5D11-BURST'
-
+    assert float(metas['Baseline']) == -66.10716474087386
+    assert int(metas['ReferenceOrbitNumber']) == 32861
+    assert int(metas['SecondaryOrbitNumber']) == 33036
