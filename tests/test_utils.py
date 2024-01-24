@@ -228,7 +228,7 @@ def test_create_image(tmp_path):
 def test_write_isce2_image(tmp_path):
     array = np.array(range(150), dtype=np.float32)
     array = array.reshape(15, 10)
-    bands=1
+    bands = 1
     length, width = array.shape
     out_path = str(tmp_path / 'isce_image_2d')
     write_isce2_image(out_path, array=array, bands=bands,length=length, width=width, mode='write', data_type='FLOAT')
