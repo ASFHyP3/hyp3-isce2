@@ -341,12 +341,6 @@ def test_image_math(tmp_path):
     image_obj_out, arrayout = load_isce2_image(out_path)
     assert np.array_equal(array1 + array2, arrayout)
 
-''' suggest not test load_product 
-def test_load_product():
-    xmlname = 'tests/data/test_case/fine_interferogram/IW2.xml'
-    product = load_product(xmlname)
-    assert isinstance(product, isceobj.Sensor.TOPS.TOPSSwathSLCProduct.TOPSSwathSLCProduct)
-'''
 
 def test_read_product_metadata():
     data_dir = Path('tests/data/test_case')
