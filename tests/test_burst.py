@@ -8,9 +8,11 @@ from unittest.mock import patch
 import asf_search
 import numpy as np
 import pytest
-from hyp3_isce2 import burst, utils
 from lxml import etree
 from shapely import geometry
+
+from hyp3_isce2 import burst, utils
+
 
 URL_BASE = "https://datapool.asf.alaska.edu/SLC"
 REF_DESC = burst.BurstParams("S1A_IW_SLC__1SDV_20200604T022251_20200604T022318_032861_03CE65_7C85", "IW2", "VV", 3)

@@ -513,22 +513,6 @@ def evenly_subset_position(position: BurstPosition, rg_looks, az_looks) -> Burst
     n_lines_remove = position.n_lines - even_n_lines
     even_sensing_stop = position.sensing_stop - timedelta(seconds=position.azimuth_time_interval * (n_lines_remove))
 
-    # n_lines_remove = position.n_lines % az_looks
-    # even_n_lines = position.n_lines - n_lines_remove
-    # even_sensing_stop = position.sensing_stop - timedelta(seconds=position.azimuth_time_interval * (n_lines_remove))
-    #
-    # n_samples_remove = position.n_samples % rg_looks
-    # even_n_samples = position.n_samples - (n_samples_remove)
-    #
-    # line_offset = (az_looks - (position.first_valid_line % az_looks)) % az_looks
-    # sample_offset = (rg_looks - (position.first_valid_sample % rg_looks)) % rg_looks
-    #
-    # even_first_valid_line = position.first_valid_line + line_offset
-    # even_first_valid_sample = position.first_valid_sample + sample_offset
-    #
-    # even_n_valid_lines = (position.n_valid_lines - line_offset) - ((position.n_valid_lines - line_offset) % az_looks)
-    # even_n_valid_samples = (position.n_valid_samples - sample_offset) - ((position.n_valid_samples - sample_offset) % rg_looks)
-
     clip_position = BurstPosition(
         n_lines=even_n_lines,
         n_samples=even_n_samples,
@@ -587,7 +571,7 @@ def safely_multilook(
     if subset_to_valid:
         last_line = position.first_valid_line + position.n_valid_lines
         last_sample = position.first_valid_sample + position.n_valid_samples
-        mask[position.first_valid_line : last_line, position.first_valid_sample : last_sample] = identity_value
+        mask[position.first_valid_line: last_line, position.first_valid_sample: last_sample] = identity_value
     else:
         mask[:, :] = identity_value
 
