@@ -7,7 +7,6 @@ import numpy as np
 import pytest
 from osgeo import gdal
 
-import hyp3_isce2
 import isceobj
 from hyp3_isce2.utils import (
     ESA_HOST,
