@@ -9,13 +9,13 @@ gdal.UseExceptions()
 TILE_PATH = '/vsicurl/https://asf-dem-west.s3.amazonaws.com/WATER_MASK/TILES/'
 
 
-def get_corners(filename):
+def get_corners(filename, tmp_path: str = ''):
     """Get all four corners of the given image: [upper_left, bottom_left, upper_right, bottom_right].
 
     Args:
         filename: The path to the input image.
     """
-    ds = gdal.Warp('tmp.tif', filename, dstSRS='EPSG:4326')
+    ds = gdal.Warp(tmp_path+'tmp.tif', filename, dstSRS='EPSG:4326')
     geotransform = ds.GetGeoTransform()
     x_min = geotransform[0]
     x_max = x_min + geotransform[1] * ds.RasterXSize
@@ -28,7 +28,7 @@ def get_corners(filename):
     return [upper_left, bottom_left, upper_right, bottom_right]
 
 
-def coord_to_tile(coord: tuple(float, float)) -> str:
+def coord_to_tile(coord: tuple[float, float]) -> str:
     """Get the filename of the tile which encloses the inputted coordinate.
 
     Args:
@@ -49,14 +49,14 @@ def coord_to_tile(coord: tuple(float, float)) -> str:
     return lat_part + lon_part + '.tif'
 
 
-def get_tiles(filename: str) -> None:
+def get_tiles(filename: str, tmp_path: str = '') -> None:
     """Get the AWS vsicurl path's to the tiles necessary to cover the inputted file.
 
     Args:
         filename: The path to the input file.
     """
     tiles = []
-    corners = get_corners(filename)
+    corners = get_corners(filename, tmp_path=tmp_path)
     for corner in corners:
         tile = TILE_PATH + coord_to_tile(corner)
         if tile not in tiles:
@@ -64,7 +64,7 @@ def get_tiles(filename: str) -> None:
     return tiles
 
 
-def create_water_mask(input_image: str, output_image: str, gdal_format='ISCE'):
+def create_water_mask(input_image: str, output_image: str, gdal_format='ISCE', tmp_path: str = ''):
     """Create a water mask GeoTIFF with the same geometry as a given input GeoTIFF
 
     The water mask is assembled from OpenStreetMaps data.
@@ -78,41 +78,47 @@ def create_water_mask(input_image: str, output_image: str, gdal_format='ISCE'):
         gdal_format: GDAL format name to create output image as
     """
 
-    tiles = get_tiles(input_image)
+    tiles = get_tiles(input_image, tmp_path=tmp_path)
 
     if len(tiles) < 1:
         raise ValueError(f'No water mask tiles found for {tiles}.')
 
-    pixel_size = gdal.Warp('tmp_px_size.tif', input_image, dstSRS='EPSG:4326').GetGeoTransform()[1]
+    tmp_px_size_path = tmp_path + 'tmp_px_size.tif'
+    merged_tif_path = tmp_path + 'merged.tif'
+    merged_vrt_path = tmp_path + 'merged.vrt'
+    merged_warped_path = tmp_path + 'merged_warped.tif'
+    shape_path = tmp_path + 'tmp.shp'
+
+    pixel_size = gdal.Warp(tmp_px_size_path, input_image, dstSRS='EPSG:4326').GetGeoTransform()[1]
 
     # This is WAY faster than using gdal_merge, because of course it is.
     if len(tiles) > 1:
-        build_vrt_command = ' '.join(['gdalbuildvrt', 'merged.vrt'] + tiles)
+        build_vrt_command = ' '.join(['gdalbuildvrt', merged_vrt_path] + tiles)
         system(build_vrt_command)
-        translate_command = ' '.join(['gdal_translate', 'merged.vrt', 'merged.tif'])
+        translate_command = ' '.join(['gdal_translate', merged_vrt_path, merged_tif_path])
         system(translate_command)
 
-    shapefile_command = ' '.join(['gdaltindex', 'tmp.shp', input_image])
+    shapefile_command = ' '.join(['gdaltindex', shape_path, input_image])
     system(shapefile_command)
 
-    warp_filename = 'merged.tif' if len(tiles) > 1 else tiles[0]
+    warp_filename = merged_tif_path if len(tiles) > 1 else tiles[0]
 
     gdal.Warp(
-        'merged_warped.tif',
+        merged_warped_path,
         warp_filename,
-        cutlineDSName='tmp.shp',
+        cutlineDSName=shape_path,
         cropToCutline=True,
         xRes=pixel_size,
         yRes=pixel_size,
         targetAlignedPixels=True,
         dstSRS='EPSG:4326',
-        format=gdal_format
+        format='GTiff'
     )
 
-    flip_values_command = ''.join([
+    flip_values_command = ' '.join([
         'gdal_calc.py',
         '-A',
-        'merged_warped.tif',
+        merged_warped_path,
         f'--outfile={output_image}',
         '--calc="numpy.abs((A.astype(numpy.int16) + 1) - 2)"',
         f'--format={gdal_format}'
