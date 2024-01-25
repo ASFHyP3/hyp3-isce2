@@ -253,7 +253,14 @@ def resample_to_radar_io(image_to_resample: str, latin: str, lonin: str, output:
         outshape=(latim.coord2.coordSize, latim.coord1.coordSize),
     )
     length, width = cropped.shape
-    write_isce2_image(output, array=cropped, bands=1, length=length, width=width, mode='write', data_type=maskim.dataType)
+    write_isce2_image(output,
+                      array=cropped,
+                      bands=1,
+                      length=length,
+                      width=width,
+                      mode='write',
+                      data_type=maskim.dataType
+                      )
 
 
 def isce2_copy(in_path: str, out_path: str):
