@@ -7,6 +7,8 @@ import numpy as np
 import pytest
 from osgeo import gdal
 
+import hyp3_isce2
+import isceobj
 from hyp3_isce2.utils import (
     ESA_HOST,
     GDALConfigManager,
@@ -26,7 +28,7 @@ from hyp3_isce2.utils import (
     write_isce2_image,
     write_isce2_image_from_obj,
 )
-import isceobj
+
 
 gdal.UseExceptions()
 
