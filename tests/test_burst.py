@@ -27,6 +27,20 @@ def load_metadata(metadata):
     return xml
 
 
+def make_test_image(output_path, array=None):
+    parent = Path(output_path).parent
+    if not parent.exists():
+        parent.mkdir(parents=True, exist_ok=True)
+
+    if array is None:
+        array = np.zeros((100, 100), dtype=np.float32)
+        array[10:90, 10:90] = 1
+
+    array = array.astype(np.float32)
+    img_obj = utils.create_image(output_path, array.shape[1], access_mode="write", action="create")
+    utils.write_isce2_image_from_obj(img_obj, array)
+
+
 @pytest.mark.parametrize(
     'pattern',
     (
@@ -229,6 +243,21 @@ def test_load_burst_position(tmpdir):
     assert position.sensing_stop == datetime(2020, 1, 1)
 
 
+def test_evenize():
+    length, valid_start, valid_length = burst.evenize(101, 7, 57, 5)
+    assert length == 100
+    assert valid_start == 10
+    assert valid_length == 50
+
+    length, valid_start, valid_length = burst.evenize(100, 5, 55, 5)
+    assert length == 100
+    assert valid_start == 5
+    assert valid_length == 55
+
+    with pytest.raises(ValueError, match=r'.*valid data region.*'):
+        burst.evenize(20, 6, 20, 5)
+
+
 def test_evenly_subset_position():
     input_pos = burst.BurstPosition(101, 101, 11, 20, 11, 20, 1, 1, datetime(2021, 1, 1, 0, 0, 0))
     ml_params = burst.evenly_subset_position(input_pos, 2, 10)
@@ -261,16 +290,36 @@ def test_multilook_position():
 
 def test_safely_multilook(tmpdir):
     image_path = str(tmpdir / 'image')
-    test_array = np.zeros((100,100), dtype=np.float32)
-    test_array[10:90,10:90] = 5
-    img_obj = utils.create_image(image_path, test_array.shape[1], access_mode='write', action='create')
-    utils.write_isce2_image_from_obj(img_obj, test_array)
+    make_test_image(image_path)
     pos = burst.BurstPosition(100, 100, 20, 60, 20, 60, 0.1, 0.1, datetime(2021, 1, 1, 0, 0, 0))
     burst.safely_multilook(image_path, pos, 5, 5)
-
     _, multilooked_array = utils.load_isce2_image(f'{image_path}.multilooked')
     assert multilooked_array.shape == (20, 20)
 
     golden_array = np.zeros(multilooked_array.shape, dtype=np.float32)
-    golden_array[4:16,4:16] = 5
+    golden_array[4:16, 4:16] = 1
     assert np.all(multilooked_array == golden_array)
+
+
+def test_multilook_radar_merge_inputs(tmpdir):
+    paths = [
+        'fine_interferogram/IW1/burst_01.int',
+        'geom_reference/IW1/lat_01.rdr',
+        'geom_reference/IW1/lon_01.rdr',
+        'geom_reference/IW1/los_01.rdr',
+    ]
+    paths = [Path(tmpdir) / x for x in paths]
+    for path in paths:
+        make_test_image(str(path))
+
+    mock_position = burst.BurstPosition(100, 100, 20, 60, 20, 60, 0.1, 0.1, datetime(2021, 1, 1, 0, 0, 0))
+    with patch('hyp3_isce2.burst.load_burst_position') as mock_load_burst_position:
+        mock_load_burst_position.return_value = mock_position
+        output = burst.multilook_radar_merge_inputs(1, 5, 2, base_dir=tmpdir)
+
+    assert output.n_lines == 50
+    assert output.n_samples == 20
+    
+    multilooked = [x.parent / f'{x.stem}.multilooked{x.suffix}' for x in paths]
+    for file in multilooked:
+        assert file.exists()

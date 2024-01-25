@@ -335,7 +335,6 @@ def create_swath_objects(
         )
     manifest_xmls = [str(path) for path in Path("manifest").glob("S1*.xml")]
     
-    breakpoint()
     Path(outdir).mkdir(exist_ok=True)
     obj = Sentinel1BurstSelect()
     obj.configure()
