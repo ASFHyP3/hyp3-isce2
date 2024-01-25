@@ -5,9 +5,9 @@ from pathlib import Path
 
 import numpy as np
 import pytest
+import isceobj
 from osgeo import gdal
 
-import isceobj
 from hyp3_isce2.utils import (
     ESA_HOST,
     GDALConfigManager,

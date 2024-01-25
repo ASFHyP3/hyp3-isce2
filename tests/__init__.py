@@ -1,7 +1,6 @@
 """HyP3 plugin for ISCE2 processing"""
 import logging
 import os
-from importlib.metadata import version
 from pathlib import Path
 
 # Ensures all ISCE2 paths and environment variables are set when using this module, see:
@@ -19,8 +18,3 @@ ISCE_APPLICATIONS = str(Path(os.environ['ISCE_HOME']) / 'applications')
 if ISCE_APPLICATIONS not in (PATH := os.environ['PATH'].split(os.pathsep)):
     os.environ['PATH'] = os.pathsep.join([ISCE_APPLICATIONS] + PATH)
 
-#__version__ = version(__name__)
-#
-#__all__ = [
-#    '__version__',
-#]
