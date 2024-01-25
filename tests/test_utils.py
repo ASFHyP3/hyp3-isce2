@@ -257,7 +257,7 @@ def test_write_isce2_image_from_obj(tmp_path):
     bands = 1
     length = 1
     width = array.shape[0]
-    out_path = str(tmp_path/'isce_image_1d')
+    out_path = str(tmp_path / 'isce_image_1d')
     _check_write_isce2_image_from_obj(out_path, bands, length, width)
 
     # 2D array, is shape(length, width), band=1
@@ -265,14 +265,14 @@ def test_write_isce2_image_from_obj(tmp_path):
     array = array.reshape(15, 10)
     bands = 1
     length, width = array.shape
-    out_path = str(tmp_path/'isce_image_2d')
+    out_path = str(tmp_path / 'isce_image_2d')
     _check_write_isce2_image_from_obj(out_path, bands, length, width)
 
     # multi-D array, its shape(band,length, width)
     array = np.array(range(150), dtype = np.float32)
     array = array.reshape(3, 5, 10)
     bands, length, width = array.shape
-    out_path = str(tmp_path/'isce_image_md')
+    out_path = str(tmp_path / 'isce_image_md')
     _check_write_isce2_image_from_obj(out_path, bands, length, width)
 
 
@@ -288,13 +288,13 @@ def test_load_isce2_image(tmp_path):
 
     in_path = str(tmp_path/'isce_image_2d')
 
-    arrayin = np.array(range(150), dtype =  np.float32)
+    arrayin = np.array(range(150), dtype = np.float32)
     arrayin = arrayin.reshape(15, 10)
     bands = 1
     length, width = arrayin.shape
     write_isce2_image(in_path, array=arrayin, bands=bands, length=length, width=width, mode='write', data_type='FLOAT')
     image_obj, arrayout = load_isce2_image(in_path)
-    assert type(image_obj) == isceobj.Image.Image.Image
+    assert isinstance(image_obj, isceobj.Image.Image.Image)
     assert np.array_equal(arrayin, arrayout)
 
     in_path = str(tmp_path/'isce_image_1d')
