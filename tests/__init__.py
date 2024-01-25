@@ -17,4 +17,3 @@ root_logger.setLevel('WARNING')
 ISCE_APPLICATIONS = str(Path(os.environ['ISCE_HOME']) / 'applications')
 if ISCE_APPLICATIONS not in (PATH := os.environ['PATH'].split(os.pathsep)):
     os.environ['PATH'] = os.pathsep.join([ISCE_APPLICATIONS] + PATH)
-

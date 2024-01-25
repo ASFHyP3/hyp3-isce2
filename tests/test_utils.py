@@ -4,8 +4,8 @@ import shutil
 from pathlib import Path
 
 import numpy as np
-import pytest
 import isceobj
+import pytest
 from osgeo import gdal
 
 from hyp3_isce2.utils import (
