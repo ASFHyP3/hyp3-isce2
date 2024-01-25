@@ -1,8 +1,7 @@
 import os
-import shutil
 import filecmp
+import shutil
 from pathlib import Path
-
 
 import numpy as np
 import pytest
