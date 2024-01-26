@@ -1,9 +1,6 @@
-from os import system
-
-import numpy as np
-from osgeo import gdal, osr
-
 from hyp3_isce2 import water_mask
+from osgeo import gdal
+
 
 gdal.UseExceptions()
 
@@ -14,7 +11,7 @@ def test_get_corners(tmp_path):
     filepath_1 = 'tests/data/water_mask_input.tif'
     corners_1 = water_mask.get_corners(filepath_1, tmp_path=str(tmp_path))
     filepath_2 = 'tests/data/test_geotiff.tif'
-    corners_2 = water_mask.get_corners(filepath_2, tmp_path=str(tmp_path))  
+    corners_2 = water_mask.get_corners(filepath_2, tmp_path=str(tmp_path))
     assert corners_1 == [
         [-95.79788474283704, 15.873371301597947],
         [-95.79788474283704, 15.86602285408288],
@@ -44,7 +41,7 @@ def test_coord_to_tile():
 
 def test_get_tiles(tmp_path):
     case_1 = (
-        'tests/data/water_mask_input.tif', 
+        'tests/data/water_mask_input.tif',
         ['/vsicurl/https://asf-dem-west.s3.amazonaws.com/WATER_MASK/TILES/n15w100.tif']
     )
     case_2 = (
