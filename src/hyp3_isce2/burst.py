@@ -20,10 +20,11 @@ from shapely import geometry
 
 from hyp3_isce2.utils import load_isce2_image, load_product, write_isce2_image_from_obj
 
+
 log = logging.getLogger(__name__)
 
 
-URL = "https://sentinel1-burst.asf.alaska.edu"
+URL = 'https://sentinel1-burst.asf.alaska.edu'
 
 
 @dataclass
@@ -60,28 +61,28 @@ class BurstMetadata:
         self.polarization = burst_params.polarization
         self.burst_number = burst_params.burst_number
         self.manifest = metadata[0]
-        self.manifest_name = "manifest.safe"
+        self.manifest_name = 'manifest.safe'
         metadata = metadata[1]
 
-        names = [file.attrib["source_filename"] for file in metadata]
-        lengths = [len(name.split("-")) for name in names]
-        swaths = [name.split("-")[length - 8] for name, length in zip(names, lengths)]
+        names = [file.attrib['source_filename'] for file in metadata]
+        lengths = [len(name.split('-')) for name in names]
+        swaths = [name.split('-')[length - 8] for name, length in zip(names, lengths)]
         products = [x.tag for x in metadata]
         swaths_and_products = list(zip(swaths, products))
 
-        files = {"product": "annotation", "calibration": "calibration", "noise": "noise"}
+        files = {'product': 'annotation', 'calibration': 'calibration', 'noise': 'noise'}
         for name in files:
             elem = metadata[swaths_and_products.index((self.swath.lower(), name))]
-            content = copy.deepcopy(elem.find("content"))
-            content.tag = "product"
+            content = copy.deepcopy(elem.find('content'))
+            content.tag = 'product'
             setattr(self, files[name], content)
-            setattr(self, f"{files[name]}_name", elem.attrib["source_filename"])
+            setattr(self, f'{files[name]}_name', elem.attrib['source_filename'])
 
-        file_paths = [elements.attrib["href"] for elements in self.manifest.findall(".//fileLocation")]
-        pattern = f"^./measurement/s1.*{self.swath.lower()}.*{self.polarization.lower()}.*.tiff$"
+        file_paths = [elements.attrib['href'] for elements in self.manifest.findall('.//fileLocation')]
+        pattern = f'^./measurement/s1.*{self.swath.lower()}.*{self.polarization.lower()}.*.tiff$'
         self.measurement_name = [Path(path).name for path in file_paths if re.search(pattern, path)][0]
 
-        self.orbit_direction = self.manifest.findtext(".//{*}pass").lower()
+        self.orbit_direction = self.manifest.findtext('.//{*}pass').lower()
 
 
 def create_burst_request_url(params: BurstParams, content_type: str) -> str:
@@ -94,9 +95,9 @@ def create_burst_request_url(params: BurstParams, content_type: str) -> str:
     Returns:
         A URL to request a burst from the API.
     """
-    filetypes = {"metadata": "xml", "geotiff": "tiff"}
+    filetypes = {'metadata': 'xml', 'geotiff': 'tiff'}
     extension = filetypes[content_type]
-    url = f"{URL}/{params.granule}/{params.swath}/{params.polarization}/{params.burst_number}.{extension}"
+    url = f'{URL}/{params.granule}/{params.swath}/{params.polarization}/{params.burst_number}.{extension}'
     return url
 
 
@@ -130,8 +131,8 @@ def download_from_extractor(asf_session: requests.Session, burst_params: BurstPa
         The downloaded content.
     """
     burst_request = {
-        "url": create_burst_request_url(burst_params, content_type=content_type),
-        "cookies": {"asf-urs": asf_session.cookies["asf-urs"]},
+        'url': create_burst_request_url(burst_params, content_type=content_type),
+        'cookies': {'asf-urs': asf_session.cookies['asf-urs']},
     }
 
     for i in range(1, 11):
@@ -142,7 +143,7 @@ def download_from_extractor(asf_session: requests.Session, burst_params: BurstPa
             break
 
     if not downloaded:
-        raise RuntimeError("Download failed too many times")
+        raise RuntimeError('Download failed too many times')
 
     return response.content
 
@@ -160,13 +161,13 @@ def download_metadata(
     Returns:
         The metadata as an lxml.etree._Element object or the path to the saved metadata file.
     """
-    content = download_from_extractor(asf_session, burst_params, "metadata")
+    content = download_from_extractor(asf_session, burst_params, 'metadata')
     metadata = etree.fromstring(content)
 
     if not out_file:
         return metadata
 
-    with open(out_file, "wb") as f:
+    with open(out_file, 'wb') as f:
         f.write(content)
 
     return str(out_file)
@@ -183,20 +184,20 @@ def download_burst(asf_session: requests.Session, burst_params: BurstParams, out
     Returns:
         The path to the saved geotiff file.
     """
-    content = download_from_extractor(asf_session, burst_params, "geotiff")
+    content = download_from_extractor(asf_session, burst_params, 'geotiff')
 
     if not out_file:
         out_file = (
-            f"{burst_params.granule}_{burst_params.swath}_{burst_params.polarization}_{burst_params.burst_number}.tiff"
+            f'{burst_params.granule}_{burst_params.swath}_{burst_params.polarization}_{burst_params.burst_number}.tiff'
         ).lower()
 
-    with open(out_file, "wb") as f:
+    with open(out_file, 'wb') as f:
         f.write(content)
 
     return Path(out_file)
 
 
-def spoof_safe(burst: BurstMetadata, burst_tiff_path: Path, base_path: Path = Path(".")) -> Path:
+def spoof_safe(burst: BurstMetadata, burst_tiff_path: Path, base_path: Path = Path('.')) -> Path:
     """Spoof a Sentinel-1 SAFE file for a burst.
 
     The created SAFE file will be saved to the base_path directory. The SAFE will have the following structure:
@@ -218,20 +219,20 @@ def spoof_safe(burst: BurstMetadata, burst_tiff_path: Path, base_path: Path = Pa
     Returns:
         The path to the saved SAFE file.
     """
-    safe_path = base_path / f"{burst.safe_name}.SAFE"
-    annotation_path = safe_path / "annotation"
-    calibration_path = safe_path / "annotation" / "calibration"
-    measurement_path = safe_path / "measurement"
+    safe_path = base_path / f'{burst.safe_name}.SAFE'
+    annotation_path = safe_path / 'annotation'
+    calibration_path = safe_path / 'annotation' / 'calibration'
+    measurement_path = safe_path / 'measurement'
     paths = [annotation_path, calibration_path, measurement_path]
     for path in paths:
         path.mkdir(parents=True, exist_ok=True)
 
-    et_args = {"encoding": "UTF-8", "xml_declaration": True}
+    et_args = {'encoding': 'UTF-8', 'xml_declaration': True}
 
     etree.ElementTree(burst.annotation).write(annotation_path / burst.annotation_name, **et_args)
     etree.ElementTree(burst.calibration).write(calibration_path / burst.calibration_name, **et_args)
     etree.ElementTree(burst.noise).write(calibration_path / burst.noise_name, **et_args)
-    etree.ElementTree(burst.manifest).write(safe_path / "manifest.safe", **et_args)
+    etree.ElementTree(burst.manifest).write(safe_path / 'manifest.safe', **et_args)
 
     shutil.move(str(burst_tiff_path), str(measurement_path / burst.measurement_name))
 
@@ -256,7 +257,7 @@ def get_isce2_burst_bbox(params: BurstParams, base_dir: Optional[Path] = None) -
     s1_obj = Sentinel1()
     s1_obj.configure()
     s1_obj.polarization = params.polarization.lower()
-    s1_obj.safe = [str(base_dir / f"{params.granule}.SAFE")]
+    s1_obj.safe = [str(base_dir / f'{params.granule}.SAFE')]
     s1_obj.swathNumber = int(params.swath[-1])
     s1_obj.parse()
     snwe = s1_obj.product.bursts[params.burst_number].getBbox()
@@ -301,11 +302,11 @@ def get_asf_session() -> requests.Session:
     """
     session = requests.Session()
     payload = {
-        "response_type": "code",
-        "client_id": "BO_n7nTIlMljdvU6kRRB3g",
-        "redirect_uri": "https://auth.asf.alaska.edu/login",
+        'response_type': 'code',
+        'client_id': 'BO_n7nTIlMljdvU6kRRB3g',
+        'redirect_uri': 'https://auth.asf.alaska.edu/login',
     }
-    response = session.get("https://urs.earthdata.nasa.gov/oauth/authorize", params=payload)
+    response = session.get('https://urs.earthdata.nasa.gov/oauth/authorize', params=payload)
     response.raise_for_status()
     return session
 
@@ -339,7 +340,7 @@ def download_bursts(param_list: Iterator[BurstParams]) -> List[BurstMetadata]:
         burst = BurstMetadata(metadata_xml, params)
         spoof_safe(burst, burst_path)
         bursts.append(burst)
-    log.info("SAFEs created!")
+    log.info('SAFEs created!')
 
     return bursts
 
@@ -356,8 +357,8 @@ def get_product_name(reference_scene: str, secondary_scene: str, pixel_spacing: 
         The name of the interferogram product.
     """
 
-    reference_split = reference_scene.split("_")
-    secondary_split = secondary_scene.split("_")
+    reference_split = reference_scene.split('_')
+    secondary_split = secondary_scene.split('_')
 
     platform = reference_split[0]
     burst_id = reference_split[1]
@@ -365,11 +366,11 @@ def get_product_name(reference_scene: str, secondary_scene: str, pixel_spacing: 
     reference_date = reference_split[3][0:8]
     secondary_date = secondary_split[3][0:8]
     polarization = reference_split[4]
-    product_type = "INT"
+    product_type = 'INT'
     pixel_spacing = str(int(pixel_spacing))
     product_id = token_hex(2).upper()
 
-    return "_".join(
+    return '_'.join(
         [
             platform,
             burst_id,
@@ -387,15 +388,15 @@ def get_burst_params(scene_name: str) -> BurstParams:
     results = asf_search.search(product_list=[scene_name])
 
     if len(results) == 0:
-        raise ValueError(f"ASF Search failed to find {scene_name}.")
+        raise ValueError(f'ASF Search failed to find {scene_name}.')
     if len(results) > 1:
-        raise ValueError(f"ASF Search found multiple results for {scene_name}.")
+        raise ValueError(f'ASF Search found multiple results for {scene_name}.')
 
     return BurstParams(
-        granule=results[0].umm["InputGranules"][0].split("-")[0],
-        swath=results[0].properties["burst"]["subswath"],
-        polarization=results[0].properties["polarization"],
-        burst_number=results[0].properties["burst"]["burstIndex"],
+        granule=results[0].umm['InputGranules'][0].split('-')[0],
+        swath=results[0].properties['burst']['subswath'],
+        polarization=results[0].properties['polarization'],
+        burst_number=results[0].properties['burst']['burstIndex'],
     )
 
 
@@ -409,8 +410,8 @@ def validate_bursts(reference_scene: str, secondary_scene: str) -> None:
     Returns:
         None
     """
-    ref_split = reference_scene.split("_")
-    sec_split = secondary_scene.split("_")
+    ref_split = reference_scene.split('_')
+    sec_split = secondary_scene.split('_')
 
     ref_burst_id = ref_split[1]
     sec_burst_id = sec_split[1]
@@ -419,15 +420,15 @@ def validate_bursts(reference_scene: str, secondary_scene: str) -> None:
     sec_polarization = sec_split[4]
 
     if ref_burst_id != sec_burst_id:
-        raise ValueError(f"The reference and secondary burst IDs are not the same: {ref_burst_id} and {sec_burst_id}.")
+        raise ValueError(f'The reference and secondary burst IDs are not the same: {ref_burst_id} and {sec_burst_id}.')
 
     if ref_polarization != sec_polarization:
         raise ValueError(
-            f"The reference and secondary polarizations are not the same: {ref_polarization} and {sec_polarization}."
+            f'The reference and secondary polarizations are not the same: {ref_polarization} and {sec_polarization}.'
         )
 
-    if ref_polarization != "VV" and ref_polarization != "HH":
-        raise ValueError(f"{ref_polarization} polarization is not currently supported, only VV and HH.")
+    if ref_polarization != 'VV' and ref_polarization != 'HH':
+        raise ValueError(f'{ref_polarization} polarization is not currently supported, only VV and HH.')
 
 
 def load_burst_position(swath_xml_path: str, burst_number: int) -> BurstPosition:
@@ -485,7 +486,7 @@ def evenize(length: int, first_valid: int, valid_length: int, looks: int) -> Tup
     even_valid_length = new_valid_length - n_valid_length_remove
 
     if (even_first_valid + even_valid_length) > even_length:
-        raise ValueError("The computed valid data region extends beyond the image bounds.")
+        raise ValueError('The computed valid data region extends beyond the image bounds.')
 
     return even_length, even_first_valid, even_valid_length
 
@@ -571,7 +572,7 @@ def safely_multilook(
     if subset_to_valid:
         last_line = position.first_valid_line + position.n_valid_lines
         last_sample = position.first_valid_sample + position.n_valid_samples
-        mask[position.first_valid_line: last_line, position.first_valid_sample: last_sample] = identity_value
+        mask[position.first_valid_line : last_line, position.first_valid_sample : last_sample] = identity_value
     else:
         mask[:, :] = identity_value
 
@@ -584,8 +585,8 @@ def safely_multilook(
             array[band, :, :] *= mask
 
     original_path = Path(image_obj.filename)
-    clip_path = str(original_path.parent / f"{original_path.stem}.clip{original_path.suffix}")
-    multilook_path = str(original_path.parent / f"{original_path.stem}.multilooked{original_path.suffix}")
+    clip_path = str(original_path.parent / f'{original_path.stem}.clip{original_path.suffix}')
+    multilook_path = str(original_path.parent / f'{original_path.stem}.multilooked{original_path.suffix}')
 
     image_obj.setFilename(clip_path)
     image_obj.setWidth(position.n_samples)
@@ -608,15 +609,15 @@ def multilook_radar_merge_inputs(
     """
     if base_dir is None:
         base_dir = Path.cwd()
-    ifg_dir = base_dir / "fine_interferogram"
-    geom_dir = base_dir / "geom_reference"
+    ifg_dir = base_dir / 'fine_interferogram'
+    geom_dir = base_dir / 'geom_reference'
 
-    swath = f"IW{swath_number}"
-    position_params = load_burst_position(str(ifg_dir / f"{swath}.xml"), 0)
+    swath = f'IW{swath_number}'
+    position_params = load_burst_position(str(ifg_dir / f'{swath}.xml'), 0)
     even_position_params = evenly_subset_position(position_params, rg_looks, az_looks)
-    safely_multilook(str(ifg_dir / swath / "burst_01.int"), even_position_params, rg_looks, az_looks)
+    safely_multilook(str(ifg_dir / swath / 'burst_01.int'), even_position_params, rg_looks, az_looks)
 
-    for geom in ["lat_01.rdr", "lon_01.rdr", "los_01.rdr"]:
+    for geom in ['lat_01.rdr', 'lon_01.rdr', 'los_01.rdr']:
         geom_path = str(geom_dir / swath / geom)
         safely_multilook(geom_path, even_position_params, rg_looks, az_looks, subset_to_valid=False)
 
