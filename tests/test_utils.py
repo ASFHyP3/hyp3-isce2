@@ -205,24 +205,36 @@ def test_get_esa_credentials_missing(tmp_path, monkeypatch):
 
 def test_create_image(tmp_path):
     def _check_create_image(path: str, image_subtype: str = 'default'):
-        # test ifg in create, finalize, and load
+        # create an isce image (includes binary, .vrt, and .xml files)
+        array = np.array(range(150), dtype=np.float32)
+        array = array.reshape(15, 10)
+        bands = 1
+        length, width = array.shape
+        out_path = str(tmp_path / 'isce_image_2d')
+        write_isce2_image(out_path, array=array, bands=bands, length=length, width=width, mode='write',
+                          data_type='FLOAT')
+
+        # test ifg in create, finalize, and load modes
         path_c = path + '/img_via_create'
-        img_c = create_image(path_c, width=5, access_mode='write', image_subtype=image_subtype, action='create')
+        img_c = create_image(path_c, width=width, access_mode='write', image_subtype=image_subtype, action='create')
         assert Path(img_c.getFilename()).is_file()
 
         path_f = path + '/img_via_finalize'
-        img_f = create_image(path_f, width=5, access_mode='write', image_subtype=image_subtype, action='finalize')
+        shutil.copy(out_path, path_f)
+        img_f = create_image(path_f, width=width, access_mode='read', image_subtype=image_subtype, action='finalize')
         assert Path(img_f.getFilename()).is_file()
         assert Path(img_f.getFilename() + '.vrt').is_file()
         assert Path(img_f.getFilename() + '.xml').is_file()
 
         path_l = path + '/img_via_load'
-        shutil.copy(path_f, path_l)
-        shutil.copy(f'{path_f}.vrt', f'{path_l}.vrt')
-        shutil.copy(f'{path_f}.xml', f'{path_l}.xml')
+        shutil.copy(out_path, path_l)
+        shutil.copy(f'{out_path}.vrt', f'{path_l}.vrt')
+        shutil.copy(f'{out_path}.xml', f'{path_l}.xml')
 
-        img_l = create_image(path_l, access_mode='write', image_subtype=image_subtype, action='load')
+        img_l = create_image(path_l, access_mode='load', image_subtype=image_subtype, action='load')
         assert Path(img_l.getFilename()).is_file()
+        assert Path(img_f.getFilename() + '.vrt').is_file()
+        assert Path(img_f.getFilename() + '.xml').is_file()
 
     _check_create_image(str(tmp_path), image_subtype='ifg')
     _check_create_image(str(tmp_path), image_subtype='cor')

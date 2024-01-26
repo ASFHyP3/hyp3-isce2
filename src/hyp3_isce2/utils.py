@@ -164,27 +164,6 @@ def write_isce2_image(output_path, array=None, bands=1, length=1, width=None, mo
     write_isce2_image_from_obj(image_obj, array)
 
 
-def write_isce2_image_orig(output_path, array=None, width=None, mode='read', data_type='FLOAT') -> None:
-    """ Write an ISCE2 image file.
-
-    Args:
-        output_path: The path to the output image file.
-        array: The array to write to the file.
-        width: The width of the image.
-        mode: The mode to open the image in.
-        data_type: The data type of the image.
-    """
-    if array is not None:
-        array.tofile(output_path)
-        width = array.shape[1]
-    elif width is None:
-        raise ValueError('Either a width or an input array must be provided')
-
-    out_obj = isceobj.createImage()
-    out_obj.initImage(output_path, mode, width, data_type)
-    out_obj.renderHdr()
-
-
 def get_geotransform_from_dataset(dataset: isceobj.Image) -> tuple:
     """Get the geotransform from an ISCE2 image object.
 
@@ -330,7 +309,7 @@ def write_isce2_image_from_obj(image_obj, array):
 def create_image(
     out_path: str,
     width: Optional[int] = None,
-    access_mode: str = 'write',
+    access_mode: str = 'read',
     image_subtype: str = 'default',
     action: str = 'create',
 ) -> isceobj.Image:
@@ -343,8 +322,9 @@ def create_image(
         image_subtype: The type of image to create
         action: What action to take:
             'create': create a new image object, but don't write metadata files, access_mode='write'
-            'finalize': create a new image object, and write metadata files, access_mode='write'
-            'load': create an imge object by loading an existing metadata file, access_mode='write'
+            'finalize': create a new image object based on existed binary file, and write metadata files,
+             access_mode='read'
+            'load': create an image object by loading an existing metadata file, access_mode='read'
 
     Returns:
         The ISCE2 image object
@@ -361,7 +341,7 @@ def create_image(
     image = create_func()
     if action == 'load':
         image.load(out_path + '.xml')
-        image.setAccessMode('write')
+        image.setAccessMode('read')
         image.createImage()
         return image
 
@@ -373,10 +353,10 @@ def create_image(
     if action == 'create':
         image.createImage()
     elif action == 'finalize':
-        image.createImage()
         image.renderVRT()
-        image.renderHdr()
+        image.createImage()
         image.finalizeImage()
+        image.renderHdr()
     return image
 
 
