@@ -67,7 +67,7 @@ def get_tiles(filename: str, tmp_path: Optional[Path]) -> None:
     return tiles
 
 
-def create_water_mask(input_image: str, output_image: str, tmp_path: Optional[Path], gdal_format='ISCE'):
+def create_water_mask(input_image: str, output_image: str, gdal_format='ISCE', tmp_path: Optional[Path] = Path('.')):
     """Create a water mask GeoTIFF with the same geometry as a given input GeoTIFF
 
     The water mask is assembled from OpenStreetMaps data.
@@ -124,7 +124,7 @@ def create_water_mask(input_image: str, output_image: str, tmp_path: Optional[Pa
         '-A',
         merged_warped_path,
         f'--outfile={output_image}',
-        '--calc="numpy.abs((A.astype(numpy.int16) + 1) - 2)"', # Change 1's to 0's and 0's to 1's.
+        '--calc="numpy.abs((A.astype(numpy.int16) + 1) - 2)"',  # Change 1's to 0's and 0's to 1's.
         f'--format={gdal_format}'
     ])
     system(flip_values_command)
