@@ -572,7 +572,7 @@ def safely_multilook(
     if subset_to_valid:
         last_line = position.first_valid_line + position.n_valid_lines
         last_sample = position.first_valid_sample + position.n_valid_samples
-        mask[position.first_valid_line : last_line, position.first_valid_sample : last_sample] = identity_value
+        mask[position.first_valid_line: last_line, position.first_valid_sample: last_sample] = identity_value
     else:
         mask[:, :] = identity_value
 

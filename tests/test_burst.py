@@ -8,9 +8,10 @@ from unittest.mock import patch
 import asf_search
 import numpy as np
 import pytest
-from hyp3_isce2 import burst, utils
 from lxml import etree
 from shapely import geometry
+
+from hyp3_isce2 import burst, utils
 
 
 URL_BASE = 'https://datapool.asf.alaska.edu/SLC'
