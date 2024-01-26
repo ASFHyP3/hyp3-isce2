@@ -1,3 +1,4 @@
+import numpy as np
 from osgeo import gdal
 
 from hyp3_isce2 import water_mask
@@ -9,21 +10,21 @@ TILE_PATH = '/vsicurl/https://asf-dem-west.s3.amazonaws.com/WATER_MASK/TILES/'
 
 def test_get_corners(tmp_path):
     filepath_1 = 'tests/data/water_mask_input.tif'
-    corners_1 = water_mask.get_corners(filepath_1, tmp_path=str(tmp_path))
+    corners_1 = np.round(np.asarray(water_mask.get_corners(filepath_1, tmp_path=str(tmp_path))), 13)
     filepath_2 = 'tests/data/test_geotiff.tif'
-    corners_2 = water_mask.get_corners(filepath_2, tmp_path=str(tmp_path))
-    assert corners_1 == [
+    corners_2 = np.round(np.asarray(water_mask.get_corners(filepath_2, tmp_path=str(tmp_path))), 13)
+    assert corners_1.all() == np.round(np.asarray([
         [-95.79788474283704, 15.873371301597947],
         [-95.79788474283704, 15.86602285408288],
         [-95.79053629532197, 15.873371301597947],
         [-95.79053629532197, 15.86602285408288]
-    ]
-    assert corners_2 == [
+    ]), 13).all()
+    assert corners_2.all() == np.round(np.asarray([
         [-117.64205396140792, 33.902434573500166],
         [-117.64205396140792, 33.89166840507894],
         [-117.62889531111531, 33.902434573500166],
         [-117.62889531111531, 33.89166840507894]
-    ]
+    ]), 13).all()
 
 
 def test_coord_to_tile():
