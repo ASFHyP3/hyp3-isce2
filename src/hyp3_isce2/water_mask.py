@@ -34,8 +34,6 @@ def coord_to_tile(coord: tuple[float, float]) -> str:
     Args:
         coord: The (lon, lat) tuple containing the desired coordinate.
     """
-    lat_part = ''
-    lon_part = ''
     lat_rounded = np.floor(coord[1] / 5) * 5
     lon_rounded = np.floor(coord[0] / 5) * 5
     if lat_rounded >= 0:
