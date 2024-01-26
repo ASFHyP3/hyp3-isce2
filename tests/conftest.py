@@ -14,7 +14,9 @@ def test_data_dir():
 @pytest.fixture()
 def test_merge_dir(test_data_dir):
     merge_dir = test_data_dir / 'merge'
+
     if not merge_dir.exists():
+        print('Unzipping merge test data...')
         merge_zip = merge_dir.with_suffix('.zip')
 
         if not merge_zip.exists():
