@@ -1,5 +1,7 @@
 """Create and apply a water body mask"""
 from os import system
+from pathlib import Path
+from typing import Optional
 
 import numpy as np
 from osgeo import gdal
@@ -9,13 +11,15 @@ gdal.UseExceptions()
 TILE_PATH = '/vsicurl/https://asf-dem-west.s3.amazonaws.com/WATER_MASK/TILES/'
 
 
-def get_corners(filename, tmp_path: str = ''):
+def get_corners(filename, tmp_path: Optional[Path]):
     """Get all four corners of the given image: [upper_left, bottom_left, upper_right, bottom_right].
 
     Args:
         filename: The path to the input image.
+        tmp_path: An optional path to a temporary directory for temp files.
     """
-    ds = gdal.Warp(tmp_path+'tmp.tif', filename, dstSRS='EPSG:4326')
+    tmp_file = 'tmp.tif' if not tmp_path else str(tmp_path / Path('tmp.tif'))
+    ds = gdal.Warp(tmp_file, filename, dstSRS='EPSG:4326')
     geotransform = ds.GetGeoTransform()
     x_min = geotransform[0]
     x_max = x_min + geotransform[1] * ds.RasterXSize
@@ -47,11 +51,12 @@ def coord_to_tile(coord: tuple[float, float]) -> str:
     return lat_part + lon_part + '.tif'
 
 
-def get_tiles(filename: str, tmp_path: str = '') -> None:
+def get_tiles(filename: str, tmp_path: Optional[Path]) -> None:
     """Get the AWS vsicurl path's to the tiles necessary to cover the inputted file.
 
     Args:
         filename: The path to the input file.
+        tmp_path: An optional path to a temporary directory for temp files.
     """
     tiles = []
     corners = get_corners(filename, tmp_path=tmp_path)
@@ -62,7 +67,7 @@ def get_tiles(filename: str, tmp_path: str = '') -> None:
     return tiles
 
 
-def create_water_mask(input_image: str, output_image: str, gdal_format='ISCE', tmp_path: str = ''):
+def create_water_mask(input_image: str, output_image: str, tmp_path: Optional[Path], gdal_format='ISCE'):
     """Create a water mask GeoTIFF with the same geometry as a given input GeoTIFF
 
     The water mask is assembled from OpenStreetMaps data.
@@ -74,6 +79,7 @@ def create_water_mask(input_image: str, output_image: str, gdal_format='ISCE', t
         input_image: Path for the input GDAL-compatible image
         output_image: Path for the output image
         gdal_format: GDAL format name to create output image as
+        tmp_path: An optional path to a temporary directory for temp files.
     """
 
     tiles = get_tiles(input_image, tmp_path=tmp_path)
@@ -118,7 +124,7 @@ def create_water_mask(input_image: str, output_image: str, gdal_format='ISCE', t
         '-A',
         merged_warped_path,
         f'--outfile={output_image}',
-        '--calc="numpy.abs((A.astype(numpy.int16) + 1) - 2)"',
+        '--calc="numpy.abs((A.astype(numpy.int16) + 1) - 2)"', # Change 1's to 0's and 0's to 1's.
         f'--format={gdal_format}'
     ])
     system(flip_values_command)
