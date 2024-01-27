@@ -87,11 +87,11 @@ def create_water_mask(input_image: str, output_image: str, gdal_format='ISCE', t
     if len(tiles) < 1:
         raise ValueError(f'No water mask tiles found for {tiles}.')
 
-    tmp_px_size_path = tmp_path + 'tmp_px_size.tif'
-    merged_tif_path = tmp_path + 'merged.tif'
-    merged_vrt_path = tmp_path + 'merged.vrt'
-    merged_warped_path = tmp_path + 'merged_warped.tif'
-    shape_path = tmp_path + 'tmp.shp'
+    tmp_px_size_path = str(tmp_path / 'tmp_px_size.tif')
+    merged_tif_path = str(tmp_path / 'merged.tif')
+    merged_vrt_path = str(tmp_path / 'merged.vrt')
+    merged_warped_path = str(tmp_path / 'merged_warped.tif')
+    shape_path = str(tmp_path / 'tmp.shp')
 
     pixel_size = gdal.Warp(tmp_px_size_path, input_image, dstSRS='EPSG:4326').GetGeoTransform()[1]
 
