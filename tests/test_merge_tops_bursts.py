@@ -1,12 +1,16 @@
 """Tests for hyp3_isce2.merge_tops_bursts module, use single quotes"""
 from datetime import datetime
+from pathlib import Path
 from unittest.mock import patch
 
 import asf_search
+import lxml.etree as ET
+import numpy as np
 import pytest
 
 import hyp3_isce2.burst as burst_utils
 import hyp3_isce2.merge_tops_bursts as merge
+from hyp3_isce2 import utils
 
 
 # TODO combine with test_burst.py's version
@@ -70,3 +74,34 @@ def test_get_burst_metadata(test_merge_dir, burst_product):
         product = merge.get_burst_metadata([product_path])[0]
 
     assert product == burst_product
+
+
+def test_prep_metadata_dirs(tmp_path):
+    annotation_dir, manifest_dir = merge.prep_metadata_dirs(tmp_path)
+    assert annotation_dir.is_dir()
+    assert manifest_dir.is_dir()
+
+
+def test_download_annotation_xmls(monkeypatch, tmp_path, test_data_dir):
+    params = [burst_utils.BurstParams('foo', 'IW1', 'VV', 1), burst_utils.BurstParams('foo', 'IW2', 'VV', 0)]
+    sample_xml = ET.parse(test_data_dir / 'reference_descending.xml').getroot()
+
+    with patch('hyp3_isce2.merge_tops_bursts.burst_utils.download_metadata') as mock_download:
+        mock_download.return_value = sample_xml
+
+        merge.download_annotation_xmls(params, tmp_path)
+
+        assert mock_download.call_count == 1
+        base_swath_name = 's1a-XXX-slc-vv-20200604t022252-20200604t022317-032861-03ce65-004.xml'
+
+        assert (tmp_path / 'annotation' / base_swath_name.replace('XXX', 'iw1')).exists()
+        assert (tmp_path / 'annotation' / base_swath_name.replace('XXX', 'iw2')).exists()
+        assert (tmp_path / 'manifest' / 'foo.xml').exists()
+
+
+def test_get_scene_roi(tmp_path, test_data_dir):
+    s1_obj = utils.load_product(test_data_dir / 'isce2_s1_obj.xml')
+    bursts = s1_obj.bursts
+    roi = merge.get_scene_roi(bursts)
+    golden_roi = (53.045079513806, 27.325111859227817, 54.15684468161031, 27.847161580403135)
+    assert np.all(np.isclose(roi, golden_roi))
