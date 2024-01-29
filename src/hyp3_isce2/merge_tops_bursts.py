@@ -1,3 +1,4 @@
+"""A workflow for merging standard burst InSAR products."""
 import argparse
 import copy
 import datetime

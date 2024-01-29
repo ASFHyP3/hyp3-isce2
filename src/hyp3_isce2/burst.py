@@ -427,75 +427,141 @@ def validate_bursts(reference_scene: str, secondary_scene: str) -> None:
             f'The reference and secondary polarizations are not the same: {ref_polarization} and {sec_polarization}.'
         )
 
-    if ref_polarization != "VV" and ref_polarization != "HH":
+    if ref_polarization != 'VV' and ref_polarization != 'HH':
         raise ValueError(f'{ref_polarization} polarization is not currently supported, only VV and HH.')
 
 
-def get_multilook_parameters(swath_xml_path, rg_looks, az_looks) -> BurstPosition:
-    """Get the parameters necessary to multilook a burst using even dimensions.
-
-    Multilooking using the generated parameters ensures that there is a clear link
-    between pixel link between the full resolution and multilooked pixel positions.
+def load_burst_position(swath_xml_path: str, burst_number: int) -> BurstPosition:
+    """Get the tiff resolution and position parameters for a burst.
 
     Args:
         swath_xml_path: The path to the swath xml file.
+        burst_number: The burst number.
+
+    Returns:
+        A BurstPosition object describing the burst.
+    """
+
+    product = load_product(swath_xml_path)
+    burst_props = product.bursts[burst_number]
+
+    pos = BurstPosition(
+        n_lines=burst_props.numberOfLines,
+        n_samples=burst_props.numberOfSamples,
+        first_valid_line=burst_props.firstValidLine,
+        n_valid_lines=burst_props.numValidLines,
+        first_valid_sample=burst_props.firstValidSample,
+        n_valid_samples=burst_props.numValidSamples,
+        azimuth_time_interval=burst_props.azimuthTimeInterval,
+        range_pixel_size=burst_props.rangePixelSize,
+        sensing_stop=burst_props.sensingStop,
+    )
+    return pos
+
+
+def evenize(length: int, first_valid: int, valid_length: int, looks: int) -> Tuple[int]:
+    """Get dimensions for an image that are integer multiples of looks.
+    This applies to both the full image and the valid data region.
+    Works with either the image's lines or samples.
+
+    Args:
+        length: The length of the image.
+        first_valid: The first valid pixel of the image.
+        valid_length: The length of the valid data region.
+        looks: The number of looks.
+    """
+    # even_length must be a multiple of looks
+    n_remove = length % looks
+    even_length = length - n_remove
+
+    # even_first_valid is the first multiple of looks after first_valid
+    even_first_valid = int(np.ceil(first_valid / looks)) * looks
+
+    # account for the shift introduced by the shift of first_valid
+    n_first_valid_shift = even_first_valid - first_valid
+    new_valid_length = valid_length - n_first_valid_shift
+
+    # even_valid_length must be a multiple of looks
+    n_valid_length_remove = new_valid_length % looks
+    even_valid_length = new_valid_length - n_valid_length_remove
+
+    if (even_first_valid + even_valid_length) > even_length:
+        raise ValueError('The computed valid data region extends beyond the image bounds.')
+
+    return even_length, even_first_valid, even_valid_length
+
+
+def evenly_subset_position(position: BurstPosition, rg_looks, az_looks) -> BurstPosition:
+    """Get the parameters necessary to multilook a burst using even dimensions.
+
+    Multilooking using the generated parameters ensures that there is a clear link
+    between pixels in the full resolution and multilooked pixel positions.
+
+    Args:
+        position: The BurstPosition object describing the burst.
         rg_looks: The number of range looks.
         az_looks: The number of azimuth looks.
 
     Returns:
         A BurstPosition object describing the burst.
     """
-    product = load_product(swath_xml_path)
-    burst = product.bursts[0]
-
-    pos = BurstPosition(
-        n_lines=burst.numberOfLines,
-        n_samples=burst.numberOfSamples,
-        first_valid_line=burst.firstValidLine,
-        n_valid_lines=burst.numValidLines,
-        first_valid_sample=burst.firstValidSample,
-        n_valid_samples=burst.numValidSamples,
-        azimuth_time_interval=burst.azimuthTimeInterval,
-        range_pixel_size=burst.rangePixelSize,
-        sensing_stop=burst.sensingStop,
+    even_n_samples, even_first_valid_sample, even_n_valid_samples = evenize(
+        position.n_samples, position.first_valid_sample, position.n_valid_samples, rg_looks
     )
+    even_n_lines, even_first_valid_line, even_n_valid_lines = evenize(
+        position.n_lines, position.first_valid_line, position.n_valid_lines, az_looks
+    )
+    n_lines_remove = position.n_lines - even_n_lines
+    even_sensing_stop = position.sensing_stop - timedelta(seconds=position.azimuth_time_interval * (n_lines_remove))
 
-    even_n_lines = pos.n_lines - (pos.n_lines % az_looks)
-    even_sensing_stop = pos.sensing_stop - timedelta(seconds=pos.azimuth_time_interval * (pos.n_lines % az_looks))
-    even_n_samples = pos.n_samples - (pos.n_samples % rg_looks)
-
-    line_offset = (az_looks - (pos.first_valid_line % az_looks)) % az_looks
-    sample_offset = (rg_looks - (pos.first_valid_sample % rg_looks)) % rg_looks
-
-    even_first_valid_line = pos.first_valid_line + line_offset
-    even_first_valid_sample = pos.first_valid_sample + sample_offset
-
-    even_n_valid_lines = (pos.n_valid_lines - line_offset) - ((pos.n_valid_lines - line_offset) % az_looks)
-    even_n_valid_samples = (pos.n_valid_samples - sample_offset) - ((pos.n_valid_samples - sample_offset) % rg_looks)
-
-    clip_pos = BurstPosition(
+    clip_position = BurstPosition(
         n_lines=even_n_lines,
         n_samples=even_n_samples,
         first_valid_line=even_first_valid_line,
         n_valid_lines=even_n_valid_lines,
         first_valid_sample=even_first_valid_sample,
         n_valid_samples=even_n_valid_samples,
-        azimuth_time_interval=pos.azimuth_time_interval,
-        range_pixel_size=pos.range_pixel_size,
+        azimuth_time_interval=position.azimuth_time_interval,
+        range_pixel_size=position.range_pixel_size,
         sensing_stop=even_sensing_stop,
     )
-    return clip_pos
+    return clip_position
 
 
-def safely_multilook(in_file, position, rg_looks, az_looks, subset_to_valid=True) -> None:
-    """Multilook an image, but only over a subset of the data whose dimensions are
-    divisible by range/azimuth looks. Do the same for the valid data region.
+def multilook_position(position: BurstPosition, rg_looks: int, az_looks: int) -> BurstPosition:
+    """Multilook a BurstPosition object.
 
     Args:
-        in_file: The path to the input image.
+        position: The BurstPosition object to multilook.
+        rg_looks: The number of range looks.
+        az_looks: The number of azimuth looks.
+    """
+    multilook_position = BurstPosition(
+        n_lines=int(position.n_lines / az_looks),
+        n_samples=int(position.n_samples / rg_looks),
+        first_valid_line=int(position.first_valid_line / az_looks),
+        n_valid_lines=int(position.n_valid_lines / az_looks),
+        first_valid_sample=int(position.first_valid_sample / rg_looks),
+        n_valid_samples=int(position.n_valid_samples / rg_looks),
+        azimuth_time_interval=position.azimuth_time_interval * az_looks,
+        range_pixel_size=position.range_pixel_size * rg_looks,
+        sensing_stop=position.sensing_stop,
+    )
+    return multilook_position
+
+
+def safely_multilook(
+    in_file: str, position: BurstPosition, rg_looks: int, az_looks: int, subset_to_valid: bool = True
+) -> None:
+    """Multilook an image, but only over a subset of the data whose dimensions are
+    integer divisible by range/azimuth looks. Do the same for the valid data region.
+
+    Args:
+        in_file: The path to the input ISCE2-formatted image.
         position: The BurstPosition object describing the burst.
         rg_looks: The number of range looks.
         az_looks: The number of azimuth looks.
+        subset_to_valid: Whether to subset the image to the valid data region specified by position.
     """
     image_obj, array = load_isce2_image(in_file)
 
@@ -530,43 +596,30 @@ def safely_multilook(in_file, position, rg_looks, az_looks, subset_to_valid=True
     multilook(clip_path, multilook_path, alks=az_looks, rlks=rg_looks)
 
 
-def multilook_position(pos: BurstPosition, rg_looks: int, az_looks: int) -> BurstPosition:
-    """Multilook a BurstPosition object.
-
-    Args:
-        pos: The BurstPosition object to multilook.
-        rg_looks: The number of range looks.
-        az_looks: The number of azimuth looks.
-    """
-    multilook_pos = BurstPosition(
-        n_lines=int(pos.n_lines / az_looks),
-        n_samples=int(pos.n_samples / rg_looks),
-        first_valid_line=int(pos.first_valid_line / az_looks),
-        n_valid_lines=int(pos.n_valid_lines / az_looks),
-        first_valid_sample=int(pos.first_valid_sample / rg_looks),
-        n_valid_samples=int(pos.n_valid_samples / rg_looks),
-        azimuth_time_interval=pos.azimuth_time_interval * az_looks,
-        range_pixel_size=pos.range_pixel_size * rg_looks,
-        sensing_stop=pos.sensing_stop,
-    )
-    return multilook_pos
-
-
-def multilook_radar_merge_inputs(swath_number: int, rg_looks: int, az_looks: int) -> BurstPosition:
+def multilook_radar_merge_inputs(
+    swath_number: int, rg_looks: int, az_looks: int, base_dir: Optional[Path] = None
+) -> BurstPosition:
     """Multilook the radar datasets needed for post-generation product merging.
 
     Args:
         swath_number: The swath number.
         rg_looks: The number of range looks.
         az_looks: The number of azimuth looks.
+        base_dir: The working directory. If not set, defaults to the current working directory.
     """
+    if base_dir is None:
+        base_dir = Path.cwd()
+    ifg_dir = base_dir / 'fine_interferogram'
+    geom_dir = base_dir / 'geom_reference'
+
     swath = f'IW{swath_number}'
-    position_params = get_multilook_parameters(f'fine_interferogram/{swath}.xml', rg_looks, az_looks)
-    safely_multilook(f'fine_interferogram/{swath}/burst_01.int', position_params, rg_looks, az_looks)
+    position_params = load_burst_position(str(ifg_dir / f'{swath}.xml'), 0)
+    even_position_params = evenly_subset_position(position_params, rg_looks, az_looks)
+    safely_multilook(str(ifg_dir / swath / 'burst_01.int'), even_position_params, rg_looks, az_looks)
 
     for geom in ['lat_01.rdr', 'lon_01.rdr', 'los_01.rdr']:
-        geom_path = str(Path('geom_reference') / swath / geom)
-        safely_multilook(geom_path, position_params, rg_looks, az_looks, subset_to_valid=False)
+        geom_path = str(geom_dir / swath / geom)
+        safely_multilook(geom_path, even_position_params, rg_looks, az_looks, subset_to_valid=False)
 
-    multilooked_params = multilook_position(position_params, rg_looks, az_looks)
+    multilooked_params = multilook_position(even_position_params, rg_looks, az_looks)
     return multilooked_params
