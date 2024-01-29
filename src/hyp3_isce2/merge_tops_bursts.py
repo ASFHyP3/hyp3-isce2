@@ -333,9 +333,10 @@ def load_isce_s1_obj(swath: int, polarization: str, base_dir: Optional[Path] = N
     Returns:
         A modified ISCE2 Sentinel1 instance
     """
-
     if base_dir is None:
         base_dir = Path.cwd()
+    base_dir = Path(base_dir)
+
     annotation_dir = base_dir / 'annotation'
     manifest_dir = base_dir / 'manifest'
 
@@ -376,7 +377,7 @@ def create_burst_cropped_s1_obj(
     if len(swaths_in_products) > 1 or swaths_in_products[0] != swath:
         raise ValueError(f'Products provided are not all in swath {swath}')
 
-    obj = load_isce_s1_obj(swath, polarization, outdir)
+    obj = load_isce_s1_obj(swath, polarization)
 
     Path(outdir).mkdir(exist_ok=True)
     obj.output = os.path.join(outdir, 'IW{0}'.format(swath))
