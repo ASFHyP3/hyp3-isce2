@@ -38,7 +38,7 @@ def annotation_manifest_dirs(tmp_path, test_data_dir):
 
     et_args = {'encoding': 'UTF-8', 'xml_declaration': True}
     param = burst_utils.BurstParams(
-        'S1A_IW_SLC__1SDV_20200604T022251_20200604T022318_032861_03CE65_7C85', 'IW1', 'VV', 1
+        'S1A_IW_SLC__1SDV_20200604T022251_20200604T022318_032861_03CE65_7C85', 'IW2', 'VV', 1
     )
     burst_metadata = burst_utils.BurstMetadata(sample_xml, param)
     ET.ElementTree(burst_metadata.annotation).write(annotation_dir / burst_metadata.annotation_name, **et_args)

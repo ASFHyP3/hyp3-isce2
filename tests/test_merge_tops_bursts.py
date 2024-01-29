@@ -1,5 +1,4 @@
 """Tests for hyp3_isce2.merge_tops_bursts module, use single quotes"""
-from collections import namedtuple
 from copy import deepcopy
 from datetime import datetime
 from pathlib import Path
@@ -16,11 +15,6 @@ import hyp3_isce2.merge_tops_bursts as merge
 from hyp3_isce2 import utils
 
 
-Product = namedtuple(
-    'Product', ['start_utc', 'swath', 'first_valid_line', 'n_valid_lines', 'first_valid_sample', 'n_valid_samples']
-)
-
-
 # TODO combine with test_burst.py's version
 def mock_asf_search_results(
     slc_name: str, subswath: str, polarization: str, burst_index: int
@@ -32,7 +26,7 @@ def mock_asf_search_results(
             'burst': {'subswath': subswath, 'burstIndex': burst_index, 'relativeBurstID': burst_index - 1},
             'polarization': polarization,
             'url': 'https://foo.com/bar/baz.zip',
-            'startTime': '2020-01-01T00:00:00.0000Z',
+            'startTime': '2020-06-04T02:22:54.655908Z',
             'pathNumber': 1,
         }
     )
@@ -49,7 +43,7 @@ def burst_product(test_merge_dir):
         reference_date=datetime(2020, 6, 4, 2, 23, 15),
         secondary_date=datetime(2020, 6, 16, 2, 23, 16),
         burst_id=0,
-        swath='IW1',
+        swath='IW2',
         polarization='VV',
         burst_number=1,
         product_path=product_path,
@@ -63,7 +57,7 @@ def burst_product(test_merge_dir):
         n_valid_samples=1220,
         az_time_interval=0.008222225199999992,
         rg_pixel_size=46.59124229430646,
-        start_utc=datetime(2020, 1, 1, 0, 0),
+        start_utc=datetime(2020, 6, 4, 2, 22, 54, 655908),
         stop_utc=datetime(2020, 6, 4, 2, 23, 18, 795712),
         relative_orbit=1,
     )
@@ -80,7 +74,6 @@ def test_get_burst_metadata(test_merge_dir, burst_product):
     with patch('hyp3_isce2.merge_tops_bursts.asf_search.granule_search') as mock_search:
         mock_search.return_value = mock_asf_search_results('bar', 'IW2', 'VV', 1)
         product = merge.get_burst_metadata([product_path])[0]
-
     assert product == burst_product
 
 
@@ -116,50 +109,50 @@ def test_get_scene_roi(tmp_path, test_data_dir):
 
 def test_load_isce_s1_obj(annotation_manifest_dirs):
     annotation_dir, manifest_dir = annotation_manifest_dirs
-    s1_obj = merge.load_isce_s1_obj(1, 'VV', annotation_dir.parent)
+    s1_obj = merge.load_isce_s1_obj(2, 'VV', annotation_dir.parent)
 
     assert isinstance(s1_obj, merge.Sentinel1BurstSelect)
-    assert s1_obj.swath == 1
+    assert s1_obj.swath == 2
     assert s1_obj.polarization == 'vv'
     assert len(s1_obj.tiff) == 1
     assert s1_obj.tiff[0] == ''
 
 
-def test_Sentinel1BurstSelect(annotation_manifest_dirs, tmp_path):
+def test_Sentinel1BurstSelect(annotation_manifest_dirs, tmp_path, burst_product):
     annotation_dir, manifest_dir = annotation_manifest_dirs
-    s1_obj = merge.load_isce_s1_obj(1, 'VV', annotation_dir.parent)
+    s1_obj = merge.load_isce_s1_obj(2, 'VV', annotation_dir.parent)
 
     # Test select_bursts
     test1_obj = deepcopy(s1_obj)
-    test1_utc = [datetime(2020, 6, 4, 2, 23, 2, 98536)]
+    test1_utc = [burst_product.start_utc]
     test1_obj.select_bursts(test1_utc)
     assert len(test1_obj.product.bursts) == 1
     assert test1_obj.product.numberOfBursts == 1
     assert test1_obj.product.bursts[0].burstStartUTC == test1_utc[0]
 
     test2_obj = deepcopy(s1_obj)
-    test2_utc = [datetime(2020, 6, 4, 2, 23, 4, 856813), datetime(2020, 6, 4, 2, 23, 2, 98536)]
+    test2_utc = [datetime(2020, 6, 4, 2, 22, 57, 414185), datetime(2020, 6, 4, 2, 22, 54, 655908)]
     test2_obj.select_bursts(test2_utc)
     assert len(test2_obj.product.bursts) == 2
     assert test2_obj.product.bursts[0].burstStartUTC < test2_obj.product.bursts[1].burstStartUTC
 
     # Test update_burst_properties
     test3_obj = deepcopy(test1_obj)
-    test_product = Product(datetime(2020, 6, 4, 2, 23, 2, 98536), 'IW1', 1, 2, 3, 4)
     outpath = tmp_path / 'IW2'
     test3_obj.output = str(outpath)
-    test3_obj.update_burst_properties([test_product])
+    test3_obj.update_burst_properties([burst_product])
     assert test3_obj.product.bursts[0].burstNumber == 1
-    assert test3_obj.product.bursts[0].firstValidLine == 1
-    assert test3_obj.product.bursts[0].numValidLines == 2
-    assert test3_obj.product.bursts[0].firstValidSample == 3
-    assert test3_obj.product.bursts[0].numValidSamples == 4
+    assert test3_obj.product.bursts[0].firstValidLine == 8
+    assert test3_obj.product.bursts[0].numValidLines == 363
+    assert test3_obj.product.bursts[0].firstValidSample == 9
+    assert test3_obj.product.bursts[0].numValidSamples == 1220
     assert Path(test3_obj.product.bursts[0].image.filename).name == 'burst_01.slc'
 
     test4_obj = deepcopy(test1_obj)
-    test_product = Product(datetime(2020, 6, 4, 2, 23, 0, 98536), 'IW1', 0, 0, 0, 0)
+    bad_product = deepcopy(burst_product)
+    bad_product.start_utc = datetime(1999, 1, 1, 1, 0, 0, 0)
     with pytest.raises(ValueError, match='.*do not match.*'):
-        test4_obj.update_burst_properties([test_product])
+        test4_obj.update_burst_properties([bad_product])
 
     # Test write_xml
     test5_obj = deepcopy(test3_obj)
@@ -167,16 +160,19 @@ def test_Sentinel1BurstSelect(annotation_manifest_dirs, tmp_path):
     assert outpath.with_suffix('.xml').exists()
 
 
-def test_create_burst_cropped_s1_obj(annotation_manifest_dirs):
-    test_product = Product(datetime(2020, 6, 4, 2, 23, 2, 98536), 'IW1', 1, 2, 3, 4)
-    s1_obj = merge.create_burst_cropped_s1_obj(1, [test_product], 'VV', outdir=annotation_manifest_dirs[0].parent)
+def test_create_burst_cropped_s1_obj(annotation_manifest_dirs, burst_product):
+    s1_obj = merge.create_burst_cropped_s1_obj(2, [burst_product], 'VV', base_dir=annotation_manifest_dirs[0].parent)
     assert isinstance(s1_obj, merge.Sentinel1BurstSelect)
     assert Path(s1_obj.output).with_suffix('.xml').exists()
 
 
 def test_modify_for_multilook(annotation_manifest_dirs, burst_product):
-    base_dir = annotation_manifest_dirs[0].parent
-    s1_obj = merge.create_burst_cropped_s1_obj(1, [burst_product], base_dir=base_dir)
+    s1_obj = merge.create_burst_cropped_s1_obj(2, [burst_product], 'VV', base_dir=annotation_manifest_dirs[0].parent)
+
+    pre_burst = s1_obj.product.bursts[0]
+    assert not pre_burst.numberOfSamples == burst_product.n_samples
+    assert not pre_burst.numberOfLines == burst_product.n_lines
+
     burst_product.isce2_burst_number = s1_obj.product.bursts[0].burstNumber
     looked_obj = merge.modify_for_multilook([burst_product], s1_obj)
     burst = looked_obj.product.bursts[0]
@@ -189,8 +185,9 @@ def test_modify_for_multilook(annotation_manifest_dirs, burst_product):
     assert burst.sensingStop == burst_product.stop_utc
     assert burst.azimuthTimeInterval == burst_product.az_time_interval
     assert burst.rangePixelSize == burst_product.rg_pixel_size
+    assert looked_obj.output == 'fine_interferogram/IW2_multilooked'
 
     bad_product = deepcopy(burst_product)
-    bad_product.start_utc = datetime(1999, 0, 0, 0, 0, 0, 0)
+    bad_product.start_utc = datetime(1999, 1, 1, 1, 0, 0, 0)
     with pytest.raises(ValueError, match='.*do not match.*'):
-        looked_obj = merge.modify_for_multilook([burst_product], s1_obj, outdir='foo')
+        looked_obj = merge.modify_for_multilook([bad_product], s1_obj, outdir='foo')

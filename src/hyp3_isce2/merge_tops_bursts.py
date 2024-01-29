@@ -382,7 +382,7 @@ def create_burst_cropped_s1_obj(
 
     obj = load_isce_s1_obj(swath, polarization, base_dir=base_dir)
 
-    out_path = Path(BURST_IFG_DIR)
+    out_path = base_dir / BURST_IFG_DIR
     out_path.mkdir(exist_ok=True)
     obj.output = str(out_path / f'IW{swath}')
 
@@ -405,6 +405,7 @@ def modify_for_multilook(
     """
     multilook_swath_obj = copy.deepcopy(swath_obj)
     multilook_swath_obj.output = os.path.join(outdir, 'IW{0}_multilooked'.format(multilook_swath_obj.swath))
+    multilook_swath_obj.output = str(Path(outdir) / f'IW{multilook_swath_obj.swath}_multilooked')
     for new_metadata, burst_obj in zip(burst_products, multilook_swath_obj.product.bursts):
         if new_metadata.start_utc.replace(microsecond=0) != burst_obj.burstStartUTC.replace(microsecond=0):
             raise ValueError('Burst product and ISCE2 burst do not match (different start times).')
