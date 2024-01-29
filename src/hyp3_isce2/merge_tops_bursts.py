@@ -288,7 +288,7 @@ class Sentinel1BurstSelect(Sentinel1):
         for index, burst in enumerate(self.product.bursts):
             product = products[index]
             if product.start_utc.replace(microsecond=0) != burst.burstStartUTC.replace(microsecond=0):
-                raise ValueError('Burst product and ISCE2 burst do not match (different start times)')
+                raise ValueError('Burst product and ISCE2 burst do not match (different start times).')
 
             burst.firstValidLine = product.first_valid_line
             burst.numValidLines = product.n_valid_lines
@@ -359,7 +359,7 @@ def load_isce_s1_obj(swath: int, polarization: str, base_dir: Optional[Path] = N
 
 
 def create_burst_cropped_s1_obj(
-    swath: str, products: Iterable[BurstProduct], polarization: str = 'VV', outdir: str = BURST_IFG_DIR
+    swath: str, products: Iterable[BurstProduct], polarization: str = 'VV', base_dir: Optional[Path] = None
 ) -> Sentinel1BurstSelect:
     """Create an ISCE2 Sentinel1BurstSelect instance for a set of burst products, and write the xml.
     Also updates the BurstProduct objects with the ISCE2 burst number.
@@ -373,14 +373,18 @@ def create_burst_cropped_s1_obj(
     Returns:
         A tuple of the updated BurstProduct objects and the ISCE2 Sentinel1 instance
     """
+    if base_dir is None:
+        base_dir = Path.cwd()
+
     swaths_in_products = list(set([int(product.swath[2:3]) for product in products]))
     if len(swaths_in_products) > 1 or swaths_in_products[0] != swath:
         raise ValueError(f'Products provided are not all in swath {swath}')
 
-    obj = load_isce_s1_obj(swath, polarization)
+    obj = load_isce_s1_obj(swath, polarization, base_dir=base_dir)
 
-    Path(outdir).mkdir(exist_ok=True)
-    obj.output = os.path.join(outdir, 'IW{0}'.format(swath))
+    out_path = Path(BURST_IFG_DIR)
+    out_path.mkdir(exist_ok=True)
+    obj.output = str(out_path / f'IW{swath}')
 
     products = sorted(products, key=lambda x: x.start_utc)
     obj.select_bursts([b.start_utc for b in products])
@@ -402,6 +406,8 @@ def modify_for_multilook(
     multilook_swath_obj = copy.deepcopy(swath_obj)
     multilook_swath_obj.output = os.path.join(outdir, 'IW{0}_multilooked'.format(multilook_swath_obj.swath))
     for new_metadata, burst_obj in zip(burst_products, multilook_swath_obj.product.bursts):
+        if new_metadata.start_utc.replace(microsecond=0) != burst_obj.burstStartUTC.replace(microsecond=0):
+            raise ValueError('Burst product and ISCE2 burst do not match (different start times).')
         burst_obj.numberOfSamples = new_metadata.n_samples
         burst_obj.numberOfLines = new_metadata.n_lines
         burst_obj.firstValidSample = new_metadata.first_valid_sample
@@ -411,7 +417,8 @@ def modify_for_multilook(
         burst_obj.sensingStop = new_metadata.stop_utc
         burst_obj.azimuthTimeInterval = new_metadata.az_time_interval
         burst_obj.rangePixelSize = new_metadata.rg_pixel_size
-    multilook_swath_obj.write_xml()
+
+    return multilook_swath_obj
 
 
 def download_dem(s1_objs: Iterable[Sentinel1BurstSelect]):
@@ -1000,7 +1007,9 @@ def prepare_products(directory: Path) -> None:
         for product, burst_obj in zip(swath_products, swath_obj.product.bursts):
             product.isce2_burst_number = burst_obj.burstNumber
 
-        modify_for_multilook(swath_products, swath_obj)
+        multilooked_swath_obj = modify_for_multilook(swath_products, swath_obj)
+        multilooked_swath_obj.write_xml()
+
         spoof_isce2_setup(swath_products, swath_obj)
         swath_objs.append(copy.deepcopy(swath_obj))
         del swath_obj

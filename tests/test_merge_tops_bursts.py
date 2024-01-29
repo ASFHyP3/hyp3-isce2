@@ -49,7 +49,7 @@ def burst_product(test_merge_dir):
         reference_date=datetime(2020, 6, 4, 2, 23, 15),
         secondary_date=datetime(2020, 6, 16, 2, 23, 16),
         burst_id=0,
-        swath='IW2',
+        swath='IW1',
         polarization='VV',
         burst_number=1,
         product_path=product_path,
@@ -172,3 +172,25 @@ def test_create_burst_cropped_s1_obj(annotation_manifest_dirs):
     s1_obj = merge.create_burst_cropped_s1_obj(1, [test_product], 'VV', outdir=annotation_manifest_dirs[0].parent)
     assert isinstance(s1_obj, merge.Sentinel1BurstSelect)
     assert Path(s1_obj.output).with_suffix('.xml').exists()
+
+
+def test_modify_for_multilook(annotation_manifest_dirs, burst_product):
+    base_dir = annotation_manifest_dirs[0].parent
+    s1_obj = merge.create_burst_cropped_s1_obj(1, [burst_product], base_dir=base_dir)
+    burst_product.isce2_burst_number = s1_obj.product.bursts[0].burstNumber
+    looked_obj = merge.modify_for_multilook([burst_product], s1_obj)
+    burst = looked_obj.product.bursts[0]
+    assert burst.numberOfSamples == burst_product.n_samples
+    assert burst.numberOfLines == burst_product.n_lines
+    assert burst.firstValidSample == burst_product.first_valid_sample
+    assert burst.numValidSamples == burst_product.n_valid_samples
+    assert burst.firstValidLine == burst_product.first_valid_line
+    assert burst.numValidLines == burst_product.n_valid_lines
+    assert burst.sensingStop == burst_product.stop_utc
+    assert burst.azimuthTimeInterval == burst_product.az_time_interval
+    assert burst.rangePixelSize == burst_product.rg_pixel_size
+
+    bad_product = deepcopy(burst_product)
+    bad_product.start_utc = datetime(1999, 0, 0, 0, 0, 0, 0)
+    with pytest.raises(ValueError, match='.*do not match.*'):
+        looked_obj = merge.modify_for_multilook([burst_product], s1_obj, outdir='foo')
