@@ -186,7 +186,7 @@ def prep_metadata_dirs(base_path: Optional[Path] = None) -> Tuple[Path, Path]:
     return annotation_dir, manifest_dir
 
 
-def download_annotation_xmls(params: Iterable[burst_utils.BurstParams], base_dir: Optional[Path] = None) -> None:
+def download_metadata_xmls(params: Iterable[burst_utils.BurstParams], base_dir: Optional[Path] = None) -> None:
     """Download annotation xmls for a set of burst parameters to a directory
     named 'annotation' in the current working directory
 
@@ -322,26 +322,22 @@ class Sentinel1BurstSelect(Sentinel1):
         pm.dumpProduct(self.product, os.path.join(outxml + '.xml'))
 
 
-def load_isce_s1_obj(
-    swath: int, polarization: str, annotation_dir: Optional[Path] = None, manifest_dir: Optional[Path] = None
-) -> Sentinel1BurstSelect:
+def load_isce_s1_obj(swath: int, polarization: str, base_dir: Optional[Path] = None) -> Sentinel1BurstSelect:
     """Load a modified ISCE2 Sentinel1 instance for a swath and polarization given annotation and manifest directories
 
     Args:
         swath: The swath number
         polarization: The polarization
-        annotation_dir: The directory containing the annotation xmls, defaults to the current working directory
-        manifest_dir: The directory containing the manifest xmls, defaults to the current working directory
+        base_dir: The base directory containing the annotation and manifest directories. Defaults to the woking dir.
 
     Returns:
         A modified ISCE2 Sentinel1 instance
     """
 
-    if annotation_dir is None:
-        annotation_dir = Path.cwd() / 'annotation'
-
-    if manifest_dir is None:
-        manifest_dir = Path.cwd() / 'manifest'
+    if base_dir is None:
+        base_dir = Path.cwd()
+    annotation_dir = base_dir / 'annotation'
+    manifest_dir = base_dir / 'manifest'
 
     annotation_xmls = [str(path) for path in annotation_dir.glob(f's1?-??{swath}-slc-{polarization.lower()}*')]
     if len(annotation_xmls) == 0:
@@ -361,14 +357,14 @@ def load_isce_s1_obj(
     return obj
 
 
-def create_swath_objects(
-    swath: int, products: Iterable[BurstProduct], polarization: str = 'VV', outdir: str = BURST_IFG_DIR
-) -> Tuple[Iterable[BurstProduct], Sentinel1BurstSelect]:
-    """Create an ISCE2 Sentinel1 instance for a set of burst products, and write the xml.
+def create_burst_cropped_s1_obj(
+    swath: str, products: Iterable[BurstProduct], polarization: str = 'VV', outdir: str = BURST_IFG_DIR
+) -> Sentinel1BurstSelect:
+    """Create an ISCE2 Sentinel1BurstSelect instance for a set of burst products, and write the xml.
     Also updates the BurstProduct objects with the ISCE2 burst number.
 
     Args:
-        swath: The swath number of the burst products
+        swath: The swath id (e.g., IW1) of the burst products
         products: A list of BurstProduct objects to create the ISCE2 Sentinel1 instance for
         polarization: The polarization of the burst products
         outdir: The directory to write the xml to
@@ -380,7 +376,7 @@ def create_swath_objects(
     if len(swaths_in_products) > 1 or swaths_in_products[0] != swath:
         raise ValueError(f'Products provided are not all in swath {swath}')
 
-    obj = load_isce_s1_obj(swath, polarization)
+    obj = load_isce_s1_obj(swath, polarization, outdir)
 
     Path(outdir).mkdir(exist_ok=True)
     obj.output = os.path.join(outdir, 'IW{0}'.format(swath))
@@ -389,10 +385,7 @@ def create_swath_objects(
     obj.select_bursts([b.start_utc for b in products])
     obj.update_burst_properties(products)
     obj.write_xml()
-
-    for product, burst_obj in zip(products, obj.product.bursts):
-        product.isce2_burst_number = burst_obj.burstNumber
-    return products, obj
+    return obj
 
 
 def modify_for_multilook(
@@ -997,12 +990,15 @@ def prepare_products(directory: Path) -> None:
     product_paths = list(directory.glob('S1_??????_IW?_*'))
     products = get_burst_metadata(product_paths)
     check_burst_group_validity(products)
-    download_annotation_xmls([product.to_burst_params() for product in products])
+    download_metadata_xmls([product.to_burst_params() for product in products])
     swaths = list(set([int(product.swath[2:3]) for product in products]))
     swath_objs = []
     for swath in swaths:
         swath_products = [product for product in products if int(product.swath[2:3]) == swath]
-        swath_products, swath_obj = create_swath_objects(swath, swath_products)
+        swath_obj = create_burst_cropped_s1_obj(swath, swath_products)
+        for product, burst_obj in zip(swath_products, swath_obj.product.bursts):
+            product.isce2_burst_number = burst_obj.burstNumber
+
         modify_for_multilook(swath_products, swath_obj)
         spoof_isce2_setup(swath_products, swath_obj)
         swath_objs.append(copy.deepcopy(swath_obj))

@@ -9,10 +9,16 @@ import asf_search
 import lxml.etree as ET
 import numpy as np
 import pytest
+from requests import Session
 
 import hyp3_isce2.burst as burst_utils
 import hyp3_isce2.merge_tops_bursts as merge
 from hyp3_isce2 import utils
+
+
+Product = namedtuple(
+    'Product', ['start_utc', 'swath', 'first_valid_line', 'n_valid_lines', 'first_valid_sample', 'n_valid_samples']
+)
 
 
 # TODO combine with test_burst.py's version
@@ -84,21 +90,20 @@ def test_prep_metadata_dirs(tmp_path):
     assert manifest_dir.is_dir()
 
 
-def test_download_annotation_xmls(monkeypatch, tmp_path, test_data_dir):
+def test_download_metadata_xmls(monkeypatch, tmp_path, test_data_dir):
     params = [burst_utils.BurstParams('foo', 'IW1', 'VV', 1), burst_utils.BurstParams('foo', 'IW2', 'VV', 0)]
     sample_xml = ET.parse(test_data_dir / 'reference_descending.xml').getroot()
 
-    with patch('hyp3_isce2.merge_tops_bursts.burst_utils.download_metadata') as mock_download:
-        mock_download.return_value = sample_xml
+    with patch('hyp3_isce2.merge_tops_bursts.burst_utils.get_asf_session') as mock_session:
+        with patch('hyp3_isce2.merge_tops_bursts.burst_utils.download_metadata') as mock_download:
+            mock_session.return_value = Session()
+            mock_download.return_value = sample_xml
 
-        merge.download_annotation_xmls(params, tmp_path)
+            merge.download_metadata_xmls(params, tmp_path)
 
-        assert mock_download.call_count == 1
-        base_swath_name = 's1a-XXX-slc-vv-20200604t022252-20200604t022317-032861-03ce65-004.xml'
-
-        assert (tmp_path / 'annotation' / base_swath_name.replace('XXX', 'iw1')).exists()
-        assert (tmp_path / 'annotation' / base_swath_name.replace('XXX', 'iw2')).exists()
-        assert (tmp_path / 'manifest' / 'foo.xml').exists()
+            assert mock_download.call_count == 1
+            assert len(list((tmp_path / 'annotation').glob('*.xml'))) == 2
+            assert (tmp_path / 'manifest' / 'foo.xml').exists()
 
 
 def test_get_scene_roi(tmp_path, test_data_dir):
@@ -111,7 +116,7 @@ def test_get_scene_roi(tmp_path, test_data_dir):
 
 def test_load_isce_s1_obj(annotation_manifest_dirs):
     annotation_dir, manifest_dir = annotation_manifest_dirs
-    s1_obj = merge.load_isce_s1_obj(1, 'VV', annotation_dir, manifest_dir)
+    s1_obj = merge.load_isce_s1_obj(1, 'VV', annotation_dir.parent)
 
     assert isinstance(s1_obj, merge.Sentinel1BurstSelect)
     assert s1_obj.swath == 1
@@ -122,7 +127,7 @@ def test_load_isce_s1_obj(annotation_manifest_dirs):
 
 def test_Sentinel1BurstSelect(annotation_manifest_dirs, tmp_path):
     annotation_dir, manifest_dir = annotation_manifest_dirs
-    s1_obj = merge.load_isce_s1_obj(1, 'VV', annotation_dir, manifest_dir)
+    s1_obj = merge.load_isce_s1_obj(1, 'VV', annotation_dir.parent)
 
     # Test select_bursts
     test1_obj = deepcopy(s1_obj)
@@ -139,11 +144,8 @@ def test_Sentinel1BurstSelect(annotation_manifest_dirs, tmp_path):
     assert test2_obj.product.bursts[0].burstStartUTC < test2_obj.product.bursts[1].burstStartUTC
 
     # Test update_burst_properties
-    Product = namedtuple(
-        'Product', ['start_utc', 'first_valid_line', 'n_valid_lines', 'first_valid_sample', 'n_valid_samples']
-    )
     test3_obj = deepcopy(test1_obj)
-    test_product = Product(datetime(2020, 6, 4, 2, 23, 2, 98536), 1, 2, 3, 4)
+    test_product = Product(datetime(2020, 6, 4, 2, 23, 2, 98536), 'IW1', 1, 2, 3, 4)
     outpath = tmp_path / 'IW2'
     test3_obj.output = str(outpath)
     test3_obj.update_burst_properties([test_product])
@@ -155,7 +157,7 @@ def test_Sentinel1BurstSelect(annotation_manifest_dirs, tmp_path):
     assert Path(test3_obj.product.bursts[0].image.filename).name == 'burst_01.slc'
 
     test4_obj = deepcopy(test1_obj)
-    test_product = Product(datetime(2020, 6, 4, 2, 23, 0, 98536), 0, 0, 0, 0)
+    test_product = Product(datetime(2020, 6, 4, 2, 23, 0, 98536), 'IW1', 0, 0, 0, 0)
     with pytest.raises(ValueError, match='.*do not match.*'):
         test4_obj.update_burst_properties([test_product])
 
@@ -165,3 +167,8 @@ def test_Sentinel1BurstSelect(annotation_manifest_dirs, tmp_path):
     assert outpath.with_suffix('.xml').exists()
 
 
+def test_create_burst_cropped_s1_obj(annotation_manifest_dirs):
+    test_product = Product(datetime(2020, 6, 4, 2, 23, 2, 98536), 'IW1', 1, 2, 3, 4)
+    s1_obj = merge.create_burst_cropped_s1_obj(1, [test_product], 'VV', outdir=annotation_manifest_dirs[0].parent)
+    assert isinstance(s1_obj, merge.Sentinel1BurstSelect)
+    assert Path(s1_obj.output).with_suffix('.xml').exists()
