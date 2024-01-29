@@ -318,6 +318,45 @@ class Sentinel1BurstSelect(Sentinel1):
         pm.dumpProduct(self.product, os.path.join(outxml + '.xml'))
 
 
+def load_isce_s1_obj(
+    swath: int, polarization: str, annotation_dir: Optional[Path] = None, manifest_dir: Optional[Path] = None
+) -> Sentinel1BurstSelect:
+    """Load a modified ISCE2 Sentinel1 instance for a swath and polarization given annotation and manifest directories
+
+    Args:
+        swath: The swath number
+        polarization: The polarization
+        annotation_dir: The directory containing the annotation xmls, defaults to the current working directory
+        manifest_dir: The directory containing the manifest xmls, defaults to the current working directory
+
+    Returns:
+        A modified ISCE2 Sentinel1 instance
+    """
+
+    if annotation_dir is None:
+        annotation_dir = Path.cwd() / 'annotation'
+
+    if manifest_dir is None:
+        manifest_dir = Path.cwd() / 'manifest'
+
+    annotation_xmls = [str(path) for path in annotation_dir.glob(f's1?-??{swath}-slc-{polarization.lower()}*')]
+    if len(annotation_xmls) == 0:
+        raise ValueError(
+            f'No annotation files for swath {swath} and polarization {polarization} found in annotation directory'
+        )
+    manifest_xmls = [str(path) for path in manifest_dir.glob('S1*.xml')]
+
+    obj = Sentinel1BurstSelect()
+    obj.configure()
+    obj.xml = annotation_xmls
+    obj.tiff = ['' for _ in range(len(annotation_xmls))]
+    obj.manifest = manifest_xmls
+    obj.swath = swath
+    obj.polarization = polarization.lower()
+    obj.parse()
+    return obj
+
+
 def create_swath_objects(
     swath: int, products: Iterable[BurstProduct], polarization: str = 'VV', outdir: str = BURST_IFG_DIR
 ) -> Tuple[Iterable[BurstProduct], Sentinel1BurstSelect]:
@@ -337,23 +376,10 @@ def create_swath_objects(
     if len(swaths_in_products) > 1 or swaths_in_products[0] != swath:
         raise ValueError(f'Products provided are not all in swath {swath}')
 
-    annotation_xmls = [str(path) for path in Path('annotation').glob(f's1?-??{swath}-slc-{polarization.lower()}*')]
-    if len(annotation_xmls) == 0:
-        raise ValueError(
-            f'No annotation files for swath {swath} and polarization {polarization} found in annotation directory'
-        )
-    manifest_xmls = [str(path) for path in Path('manifest').glob('S1*.xml')]
+    obj = load_isce_s1_obj(swath, polarization)
 
     Path(outdir).mkdir(exist_ok=True)
-    obj = Sentinel1BurstSelect()
-    obj.configure()
-    obj.xml = annotation_xmls
-    obj.tiff = ['' for _ in range(len(annotation_xmls))]
-    obj.manifest = manifest_xmls
-    obj.swath = swath
-    obj.polarization = polarization.lower()
     obj.output = os.path.join(outdir, 'IW{0}'.format(swath))
-    obj.parse()
 
     products = sorted(products, key=lambda x: x.start_utc)
     obj.select_bursts([b.start_utc for b in products])

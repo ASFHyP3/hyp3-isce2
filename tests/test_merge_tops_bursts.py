@@ -105,3 +105,14 @@ def test_get_scene_roi(tmp_path, test_data_dir):
     roi = merge.get_scene_roi(bursts)
     golden_roi = (53.045079513806, 27.325111859227817, 54.15684468161031, 27.847161580403135)
     assert np.all(np.isclose(roi, golden_roi))
+
+
+def test_load_isce_s1_obj(annotation_manifest_dirs):
+    annotation_dir, manifest_dir = annotation_manifest_dirs
+    s1_obj = merge.load_isce_s1_obj(1, 'VV', annotation_dir, manifest_dir)
+
+    assert isinstance(s1_obj, merge.Sentinel1BurstSelect)
+    assert s1_obj.swath == 1
+    assert s1_obj.polarization == 'vv'
+    assert len(s1_obj.tiff) == 1
+    assert s1_obj.tiff[0] == ''
