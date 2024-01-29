@@ -243,6 +243,7 @@ class Sentinel1BurstSelect(Sentinel1):
         Args:
             start_utcs: A list of burst start times to subset the burst list to
         """
+        start_utcs = sorted(start_utcs)
         cropList = createTraitSeq('burst')
         tiffList = []
         eapList = []
@@ -286,6 +287,9 @@ class Sentinel1BurstSelect(Sentinel1):
 
         for index, burst in enumerate(self.product.bursts):
             product = products[index]
+            if product.start_utc.replace(microsecond=0) != burst.burstStartUTC.replace(microsecond=0):
+                raise ValueError('Burst product and ISCE2 burst do not match (different start times)')
+
             burst.firstValidLine = product.first_valid_line
             burst.numValidLines = product.n_valid_lines
             burst.firstValidSample = product.first_valid_sample

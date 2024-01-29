@@ -1,4 +1,6 @@
 """Tests for hyp3_isce2.merge_tops_bursts module, use single quotes"""
+from collections import namedtuple
+from copy import deepcopy
 from datetime import datetime
 from pathlib import Path
 from unittest.mock import patch
@@ -116,3 +118,50 @@ def test_load_isce_s1_obj(annotation_manifest_dirs):
     assert s1_obj.polarization == 'vv'
     assert len(s1_obj.tiff) == 1
     assert s1_obj.tiff[0] == ''
+
+
+def test_Sentinel1BurstSelect(annotation_manifest_dirs, tmp_path):
+    annotation_dir, manifest_dir = annotation_manifest_dirs
+    s1_obj = merge.load_isce_s1_obj(1, 'VV', annotation_dir, manifest_dir)
+
+    # Test select_bursts
+    test1_obj = deepcopy(s1_obj)
+    test1_utc = [datetime(2020, 6, 4, 2, 23, 2, 98536)]
+    test1_obj.select_bursts(test1_utc)
+    assert len(test1_obj.product.bursts) == 1
+    assert test1_obj.product.numberOfBursts == 1
+    assert test1_obj.product.bursts[0].burstStartUTC == test1_utc[0]
+
+    test2_obj = deepcopy(s1_obj)
+    test2_utc = [datetime(2020, 6, 4, 2, 23, 4, 856813), datetime(2020, 6, 4, 2, 23, 2, 98536)]
+    test2_obj.select_bursts(test2_utc)
+    assert len(test2_obj.product.bursts) == 2
+    assert test2_obj.product.bursts[0].burstStartUTC < test2_obj.product.bursts[1].burstStartUTC
+
+    # Test update_burst_properties
+    Product = namedtuple(
+        'Product', ['start_utc', 'first_valid_line', 'n_valid_lines', 'first_valid_sample', 'n_valid_samples']
+    )
+    test3_obj = deepcopy(test1_obj)
+    test_product = Product(datetime(2020, 6, 4, 2, 23, 2, 98536), 1, 2, 3, 4)
+    outpath = tmp_path / 'IW2'
+    test3_obj.output = str(outpath)
+    test3_obj.update_burst_properties([test_product])
+    assert test3_obj.product.bursts[0].burstNumber == 1
+    assert test3_obj.product.bursts[0].firstValidLine == 1
+    assert test3_obj.product.bursts[0].numValidLines == 2
+    assert test3_obj.product.bursts[0].firstValidSample == 3
+    assert test3_obj.product.bursts[0].numValidSamples == 4
+    assert Path(test3_obj.product.bursts[0].image.filename).name == 'burst_01.slc'
+
+    test4_obj = deepcopy(test1_obj)
+    test_product = Product(datetime(2020, 6, 4, 2, 23, 0, 98536), 0, 0, 0, 0)
+    with pytest.raises(ValueError, match='.*do not match.*'):
+        test4_obj.update_burst_properties([test_product])
+
+    # Test write_xml
+    test5_obj = deepcopy(test3_obj)
+    test5_obj.write_xml()
+    assert outpath.with_suffix('.xml').exists()
+
+
