@@ -194,7 +194,7 @@ def test_create_image(tmp_path):
         length, width = array.shape
         out_path = str(tmp_path / 'isce_image_2d')
         utils.write_isce2_image(out_path, array=array, bands=bands, length=length, width=width, mode='write',
-                          data_type='FLOAT')
+                                data_type='FLOAT')
 
         # test ifg in create, finalize, and load modes
         path_c = path + '/img_via_create'
