@@ -9,7 +9,7 @@ from osgeo import gdal
 
 import hyp3_isce2.utils as utils
 
-import isceobj
+import isceobj  # noqa: I100
 
 gdal.UseExceptions()
 
