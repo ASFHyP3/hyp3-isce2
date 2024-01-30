@@ -626,15 +626,14 @@ def merge_bursts(range_looks: int, azimuth_looks: int, merge_dir: str = 'merged'
             shutil.copy(out_tmp_path, out_path)
 
 
-def goldstein_werner_filter(
-    in_path: Path, out_path: Path, coh_path: Path, filter_strength: float = 0.6, mergedir: str = 'merged'
-) -> None:
+def goldstein_werner_filter(in_path: Path, out_path: Path, coh_path: Path, filter_strength: float = 0.6) -> None:
     """Apply the Goldstein-Werner filter to the merged interferogram.
     See https://doi.org/10.1029/1998GL900033 for method details.
 
     Args:
         in_path: The path to the input interferogram
         out_path: The path to the output filtered interferogram
+        coh_path: The path to the coherence file
         filter_strength: The filter strength (0,1]
     """
     ifg_image = create_image(str(in_path), image_subtype='ifg', action='load')
@@ -845,41 +844,30 @@ def geocode_products(
         geo_obj.geocode()
 
 
-def get_product_name(product_directory: Path, pixel_size: int) -> str:
+def get_product_name(product: BurstProduct, pixel_size: int) -> str:
     """Create a product name for a merged burst product. Follows the convention used by ASF burst products,
     but replaces the burst id with the relative orbit number, and removes the swath compenent with ''.
 
     Args:
-        product_directory: The path to the directory containing the ASF burst product directories
+        product: The BurstProduct object to create the name for. Can be any product in the merged product.
         pixel_size: The pixel size of the product
 
     Returns:
         The merged product name
     """
-    example_name_split = list(product_directory.glob('S1_??????_IW?_*'))[0].name.split('_')
-
-    swath_number = get_swath_list(BURST_IFG_DIR)[0]
-    insar_product = load_product(os.path.join(BURST_IFG_DIR, 'IW{0}.xml'.format(swath_number)))
-
-    platform = example_name_split[0]
-    relative_orbit = f'{insar_product.bursts[0].trackNumber:03}'
     swath_placeholder = ''
-    reference_date = example_name_split[3]
-    secondary_date = example_name_split[4]
-    polarization = example_name_split[5]
-    product_type = 'INT'
-    pixel_spacing = str(int(pixel_size))
+    reference_date = product.reference_date.strftime('%Y%m%d')
+    secondary_date = product.secondary_date.strftime('%Y%m%d')
     product_id = token_hex(2).upper()
-
     return '_'.join(
         [
-            platform,
-            relative_orbit,
+            'S1',
+            f'{product.relative_orbit:03d}',
             swath_placeholder,
             reference_date,
             secondary_date,
-            polarization,
-            product_type + pixel_spacing,
+            product.polarization.upper(),
+            f'INT{int(pixel_size)}',
             product_id,
         ]
     )
@@ -1106,7 +1094,9 @@ def package_output(product_directory: Path, looks: str, filter_strength: float, 
     pixel_size = get_pixel_size(looks)
     range_looks, azimuth_looks = [int(look) for look in looks.split('x')]
 
-    product_name = get_product_name(product_directory, pixel_size)
+    product_path = list(product_directory.glob('S1_??????_IW?_*'))[0]
+    example_metadata = get_burst_metadata([product_path])[0]
+    product_name = get_product_name(example_metadata, pixel_size)
     product_dir = Path(product_name)
     product_dir.mkdir(parents=True, exist_ok=True)
 
@@ -1136,11 +1126,11 @@ def main():
     args = parser.parse_args()
     product_directory = Path(args.directory)
 
-    prepare_products(product_directory)
     range_looks, azimuth_looks = get_product_multilook(product_directory)
-    run_isce2_workflow(
-        range_looks, azimuth_looks, filter_strength=args.filter_strength, apply_water_mask=args.apply_water_mask
-    )
+    # prepare_products(product_directory)
+    # run_isce2_workflow(
+    #     range_looks, azimuth_looks, filter_strength=args.filter_strength, apply_water_mask=args.apply_water_mask
+    # )
     package_output(product_directory, f'{range_looks}x{azimuth_looks}', args.filter_strength)
 
 

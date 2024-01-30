@@ -268,3 +268,9 @@ def test_goldstein_werner_filter(tmp_path):
     assert out_path.exists()
     assert (out_path.parent / f'{out_path.name}.xml').exists()
     assert (out_path.parent / f'{out_path.name}.vrt').exists()
+
+
+def test_get_product_name(burst_product1):
+    product_name = merge.get_product_name(burst_product1, 80)
+    assert len(product_name) == 39
+    assert product_name[:-4] == 'S1_064__20200604_20200616_VV_INT80_'
