@@ -37,35 +37,6 @@ def mock_asf_search_results(
     return results
 
 
-@pytest.fixture
-def burst_product(test_merge_dir):
-    product_path = list(test_merge_dir.glob('*'))[0]
-    product = merge.BurstProduct(
-        granule='bar',
-        reference_date=datetime(2020, 6, 4, 2, 23, 15),
-        secondary_date=datetime(2020, 6, 16, 2, 23, 16),
-        burst_id=0,
-        swath='IW2',
-        polarization='VV',
-        burst_number=1,
-        product_path=product_path,
-        n_lines=377,
-        n_samples=1272,
-        range_looks=20,
-        azimuth_looks=4,
-        first_valid_line=8,
-        n_valid_lines=363,
-        first_valid_sample=9,
-        n_valid_samples=1220,
-        az_time_interval=0.008222225199999992,
-        rg_pixel_size=46.59124229430646,
-        start_utc=datetime(2020, 6, 4, 2, 22, 54, 655908),
-        stop_utc=datetime(2020, 6, 4, 2, 23, 18, 795712),
-        relative_orbit=1,
-    )
-    return product
-
-
 def test_to_burst_params(burst_product):
     assert burst_product.to_burst_params() == burst_utils.BurstParams('bar', 'IW2', 'VV', 1)
 
@@ -272,3 +243,14 @@ def test_get_merged_orbit(test_data_dir):
     assert len(merged_orbit.stateVectors) == 17  # This number will change if the test data changes
 
 
+def test_get_frames_and_indexes(isce2_merge_setup):
+    frames, burst_index = merge.get_frames_and_indexes(isce2_merge_setup / 'fine_interferogram')
+    assert len(frames) == 1
+    assert isinstance(frames[0], isceobj.Sensor.TOPS.TOPSSwathSLCProduct.TOPSSwathSLCProduct)
+    assert burst_index[0] == [2, 0, 2]
+
+# FIX: test_merge_bursts doesn't work due to pathing issue.
+# def test_merge_bursts(isce2_merge_setup):
+#     import os
+#     os.chdir(isce2_merge_setup)
+#     merge.merge_bursts(20, 4)

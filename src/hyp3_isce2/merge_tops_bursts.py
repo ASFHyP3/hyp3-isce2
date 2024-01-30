@@ -572,23 +572,40 @@ def get_merged_orbit(products: Iterable[Sentinel1]) -> Orbit:
     return orb
 
 
-def merge_bursts(range_looks: int, azimuth_looks: int, mergedir: str = 'merged') -> None:
-    """Merge burst products into a multi-swath product, and multilook
+def get_frames_and_indexes(burst_ifg_dir: str | Path) -> Tuple:
+    """Get the frames and burst indexes from a directory of burst interferograms.
+
+    Args:
+        burst_ifg_dir: The directory containing the burst interferograms
+
+    Returns:
+        A tuple of the frames and burst indexes
+    """
+    frames = []
+    burst_index = []
+
+    swath_list = get_swath_list(burst_ifg_dir)
+    for swath in swath_list:
+        ifg = load_product(os.path.join(burst_ifg_dir, 'IW{0}_multilooked.xml'.format(swath)))
+        min_burst = ifg.bursts[0].burstNumber - 1
+        max_burst = ifg.bursts[-1].burstNumber
+        frames.append(ifg)
+        burst_index.append([int(swath), min_burst, max_burst])
+
+    return frames, burst_index
+
+
+def merge_bursts(range_looks: int, azimuth_looks: int, merge_dir: str = 'merged') -> None:
+    """Merge burst products into a multi-swath product, and multilook.
+    Note: Can't test this function without polluting home directory with ISCE2 files since
+            mergeBursts2 sets up pathing assuming it is in the working directory.
 
     Args:
         azimuth_looks: The number of azimuth looks
         range_looks: The number of range looks
         mergedir: The directory to write the merged product to
     """
-    frames = []
-    burstIndex = []
-    swathList = get_swath_list(BURST_IFG_DIR)
-    for swath in swathList:
-        ifg = load_product(os.path.join(BURST_IFG_DIR, 'IW{0}_multilooked.xml'.format(swath)))
-        minBurst = ifg.bursts[0].burstNumber - 1
-        maxBurst = ifg.bursts[-1].burstNumber
-        frames.append(ifg)
-        burstIndex.append([int(swath), minBurst, maxBurst])
+    frames, burstIndex = get_frames_and_indexes(BURST_IFG_DIR)
 
     box = mergeBox(frames)
     file_types = {
@@ -601,9 +618,8 @@ def merge_bursts(range_looks: int, azimuth_looks: int, mergedir: str = 'merged')
     for file_type in file_types:
         directory, file_pattern, name = file_types[file_type]
         burst_paths = os.path.join(directory, 'IW%d', file_pattern)
-        out_path = os.path.join(mergedir, name)
-        merged_path = out_path
-        mergeBursts2(frames, burst_paths, burstIndex, box, merged_path, virtual=True, validOnly=True)
+        out_path = os.path.join(merge_dir, name)
+        mergeBursts2(frames, burst_paths, burstIndex, box, out_path, virtual=True, validOnly=True)
         with TemporaryDirectory() as tmpdir:
             out_tmp_path = str(Path(tmpdir) / Path(out_path).name)
             gdal.Translate(out_tmp_path, out_path + '.vrt', format='ENVI', creationOptions=['INTERLEAVE=BIL'])
@@ -996,6 +1012,23 @@ def check_burst_group_validity(products) -> None:
             raise ValueError(f'Products from swaths {swath1} and {swath2} do not overlap')
 
 
+def get_product_multilook(product_dir: Path) -> Tuple:
+    """Get the multilook values for a set of ASF burst products.
+    You should have already checked that all products have the same multilook,
+    so you can just use the first product's values.
+
+    Args:
+        product_dir: The path to the directory containing the UNZIPPED ASF burst product directories
+
+    Returns:
+        The number of azimuth looks and range looks
+    """
+    product_path = list(product_dir.glob('S1_??????_IW?_*'))[0]
+    metadata_path = product_path / f'{product_path.name}.txt'
+    meta = read_product_metadata(metadata_path)
+    return int(meta['Rangelooks']), int(meta['Azimuthlooks'])
+
+
 def prepare_products(directory: Path) -> None:
     """Set up a directory for ISCE2-based burst merging using a set of ASF burst products.
     This includes:
@@ -1030,23 +1063,6 @@ def prepare_products(directory: Path) -> None:
     download_dem_for_multiple_bursts(swath_objs)
 
 
-def get_product_multilook(product_dir: Path) -> Tuple:
-    """Get the multilook values for a set of ASF burst products.
-    You should have already checked that all products have the same multilook,
-    so you can just use the first product's values.
-
-    Args:
-        product_dir: The path to the directory containing the UNZIPPED ASF burst product directories
-
-    Returns:
-        The number of azimuth looks and range looks
-    """
-    product_path = list(product_dir.glob('S1_??????_IW?_*'))[0]
-    metadata_path = product_path / f'{product_path.name}.txt'
-    meta = read_product_metadata(metadata_path)
-    return int(meta['Rangelooks']), int(meta['Azimuthlooks'])
-
-
 def run_isce2_workflow(
     range_looks: int, azimuth_looks: int, mergedir='merged', filter_strength=0.5, apply_water_mask=False
 ) -> None:
@@ -1060,7 +1076,7 @@ def run_isce2_workflow(
         apply_water_mask: Whether or not to apply a water body mask to the coherence file before unwrapping
     """
     Path(mergedir).mkdir(exist_ok=True)
-    merge_bursts(range_looks, azimuth_looks, mergedir=mergedir)
+    merge_bursts(range_looks, azimuth_looks, merge_dir=mergedir)
     goldstein_werner_filter(filter_strength=filter_strength, mergedir=mergedir)
     if apply_water_mask:
         log.info('Water masking requested, downloading water mask')
