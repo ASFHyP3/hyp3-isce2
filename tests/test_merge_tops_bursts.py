@@ -238,3 +238,19 @@ def test_translate_image(isce_type, dtype, n_bands, tmp_path):
     opts = {'float': np.float32, 'cfloat': np.complex64}
     image, array = utils.load_isce2_image(str(out_path))
     assert np.all(array == np.ones((10, 10), dtype=opts[dtype]))
+
+
+def test_spoof_isce2_setup(annotation_manifest_dirs, burst_product):
+    tmp_product = deepcopy(burst_product)
+    tmp_product.isce2_burst_number = 1
+    base_dir = annotation_manifest_dirs[0].parent
+    s1_obj = merge.create_burst_cropped_s1_obj(2, [tmp_product], 'VV', base_dir=base_dir)
+    merge.spoof_isce2_setup([tmp_product], s1_obj, base_dir=base_dir)
+
+    fine_ifg_dir = base_dir / 'fine_interferogram' / 'IW2'
+    assert fine_ifg_dir.is_dir()
+    assert len(list(fine_ifg_dir.glob('*'))) == 3
+
+    geom_ref_dir = base_dir / 'geom_reference' / 'IW2'
+    assert geom_ref_dir.is_dir()
+    assert len(list(geom_ref_dir.glob('*'))) == 9

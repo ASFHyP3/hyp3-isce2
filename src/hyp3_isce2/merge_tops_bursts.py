@@ -459,7 +459,6 @@ def translate_image(in_path: str, out_path: str, width: int, image_type: str) ->
     elif image_type == 'los':
         out_img = isceobj.createImage()
         n_bands = 2
-        # out_img.initImage(out_path, 'read', width, 'FLOAT', bands=n_bands, scheme='bil')
         out_img.initImage(out_path, 'read', width, 'DOUBLE', bands=n_bands, scheme='bil')
         out_img.imageType = 'bil'
     else:
@@ -478,7 +477,7 @@ def translate_image(in_path: str, out_path: str, width: int, image_type: str) ->
     out_img.renderHdr()
 
 
-def spoof_isce2_setup(burst_products: Iterable[BurstProduct], s1_obj: Sentinel1BurstSelect) -> None:
+def spoof_isce2_setup(burst_products: Iterable[BurstProduct], s1_obj: Sentinel1BurstSelect, base_dir: Optional[Path] = None) -> None:
     """For a set of ASF burst products, create spoofed geom_reference and fine_interferogram directories
     that are in the state they would be in after running topsApp.py from the 'startup' step to the 'burstifg' step.
 
@@ -486,10 +485,14 @@ def spoof_isce2_setup(burst_products: Iterable[BurstProduct], s1_obj: Sentinel1B
         burst_products: A list of BurstProduct objects
         s1_obj: An ISCE2 Sentinel1 instance representing the parent swath
     """
-    ifg_dir = Path('fine_interferogram')
+    if base_dir is None:
+        base_dir = Path.cwd()
+    base_dir = Path(base_dir)
+
+    ifg_dir = base_dir / 'fine_interferogram'
     ifg_dir.mkdir(exist_ok=True)
 
-    geom_dir = Path('geom_reference')
+    geom_dir = base_dir / 'geom_reference'
     geom_dir.mkdir(exist_ok=True)
 
     swaths = list(set([product.swath for product in burst_products]))
@@ -511,9 +514,6 @@ def spoof_isce2_setup(burst_products: Iterable[BurstProduct], s1_obj: Sentinel1B
             if image_type  == 'ifg':
                 img_dir = ifg_dir
                 name = f'burst_{product.isce2_burst_number:02}.int'
-            elif image_type == 'cor':
-                img_dir = ifg_dir
-                name = f'burst_{product.isce2_burst_number:02}.cor'
             else:
                 img_dir = geom_dir
                 name = f'{image_type}_{product.isce2_burst_number:02}.rdr'
