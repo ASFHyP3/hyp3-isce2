@@ -9,6 +9,8 @@ and uses [Semantic Versioning](https://semver.org/spec/v2.0.0.html).
 ## [0.10.0]
 ### Added
 * Support for a new water masking dataset based off of OpenStreetMaps and ESA WorldCover data.
+### Removed
+* Polygon processing functions: `split_geometry_on_antimeridian` and `get_envelope_wgs84` from `water_mask.py`.
 
 ## [0.9.3]
 ### Changed
