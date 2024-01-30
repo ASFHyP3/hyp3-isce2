@@ -1,3 +1,5 @@
+from pathlib import Path
+
 import numpy as np
 import pytest
 from osgeo import gdal
@@ -54,12 +56,12 @@ def test_get_tiles(tmp_path):
     assert water_mask.get_tiles(case_2[0], tmp_path=str(tmp_path)) == case_2[1]
 
 
-@pytest.mark('integration')
+@pytest.mark.integration
 def test_create_water_mask(tmp_path):
     input_image = 'tests/data/water_mask_input.tif'
     output_image = 'tests/data/water_mask_output.wgs84'
     validation_text = 'tests/data/water_mask_output_info.txt'
-    water_mask.create_water_mask(input_image, output_image, gdal_format='ISCE', tmp_path=str(tmp_path))
+    water_mask.create_water_mask(input_image, output_image, gdal_format='ISCE', tmp_path=tmp_path)
     info_from_img = gdal.Info(output_image)
     info_from_txt = open(validation_text).read()
     assert info_from_img == info_from_txt
