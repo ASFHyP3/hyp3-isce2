@@ -224,9 +224,7 @@ def create_test_geotiff(output_file, dtype='float32', n_bands=1):
     dataset = None
 
 
-@pytest.mark.parametrize(
-    'isce_type,dtype,n_bands', [['ifg', 'cfloat', 1], ['lat', 'float', 1], ['los', 'float', 2]]
-)
+@pytest.mark.parametrize('isce_type,dtype,n_bands', [['ifg', 'cfloat', 1], ['lat', 'float', 1], ['los', 'float', 2]])
 def test_translate_image(isce_type, dtype, n_bands, tmp_path):
     test_tiff = tmp_path / 'test.tif'
     create_test_geotiff(str(test_tiff), dtype, n_bands)
@@ -254,3 +252,13 @@ def test_spoof_isce2_setup(annotation_manifest_dirs, burst_product):
     geom_ref_dir = base_dir / 'geom_reference' / 'IW2'
     assert geom_ref_dir.is_dir()
     assert len(list(geom_ref_dir.glob('*'))) == 9
+
+
+def test_get_swath_list(tmp_path):
+    test_dir = tmp_path / 'test'
+    test_dir.mkdir()
+    assert merge.get_swath_list(str(test_dir)) == []
+
+    for x in [1, 2, 3]:
+        (test_dir / f'IW{x}').mkdir()
+    assert merge.get_swath_list(str(test_dir)) == [1, 2, 3]

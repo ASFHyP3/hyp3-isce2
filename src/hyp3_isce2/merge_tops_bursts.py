@@ -422,7 +422,7 @@ def modify_for_multilook(
     return multilook_swath_obj
 
 
-def download_dem_for_multiple_bursts(s1_objs: Iterable[Sentinel1BurstSelect], base_dir = None):
+def download_dem_for_multiple_bursts(s1_objs: Iterable[Sentinel1BurstSelect], base_dir=None):
     """Download the DEM for the region covered in a set of ISCE2 Sentinel1 instances
 
     Args:
@@ -477,7 +477,9 @@ def translate_image(in_path: str, out_path: str, width: int, image_type: str) ->
     out_img.renderHdr()
 
 
-def spoof_isce2_setup(burst_products: Iterable[BurstProduct], s1_obj: Sentinel1BurstSelect, base_dir: Optional[Path] = None) -> None:
+def spoof_isce2_setup(
+    burst_products: Iterable[BurstProduct], s1_obj: Sentinel1BurstSelect, base_dir: Optional[Path] = None
+) -> None:
     """For a set of ASF burst products, create spoofed geom_reference and fine_interferogram directories
     that are in the state they would be in after running topsApp.py from the 'startup' step to the 'burstifg' step.
 
@@ -511,7 +513,7 @@ def spoof_isce2_setup(burst_products: Iterable[BurstProduct], s1_obj: Sentinel1B
     }
     for product in burst_products:
         for image_type in file_types:
-            if image_type  == 'ifg':
+            if image_type == 'ifg':
                 img_dir = ifg_dir
                 name = f'burst_{product.isce2_burst_number:02}.int'
             else:
@@ -522,19 +524,19 @@ def spoof_isce2_setup(burst_products: Iterable[BurstProduct], s1_obj: Sentinel1B
             translate_image(in_path, out_path, product.n_samples, image_type)
 
 
-def get_swath_list(indir: str) -> list:
+def get_swath_list(base_dir: str | Path) -> list[str]:
     """Get the list of swaths from a directory of burst products
 
     Args:
-        indir: The directory containing the burst products
+        base_dir: The directory containing the burst products
 
     Returns:
         A list of swaths
     """
     swathList = []
     for x in [1, 2, 3]:
-        swath_paths = os.path.join(indir, 'IW{0}'.format(x))
-        if os.path.exists(swath_paths):
+        swath_path = Path(base_dir) / f'IW{x}'
+        if swath_path.exists():
             swathList.append(x)
 
     return swathList
