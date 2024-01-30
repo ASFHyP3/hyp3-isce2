@@ -8,6 +8,7 @@ import asf_search
 import lxml.etree as ET
 import numpy as np
 import pytest
+from osgeo import gdal, osr
 from requests import Session
 
 import hyp3_isce2.burst as burst_utils
@@ -190,4 +191,50 @@ def test_modify_for_multilook(annotation_manifest_dirs, burst_product):
     bad_product = deepcopy(burst_product)
     bad_product.start_utc = datetime(1999, 1, 1, 1, 0, 0, 0)
     with pytest.raises(ValueError, match='.*do not match.*'):
-        looked_obj = merge.modify_for_multilook([bad_product], s1_obj, outdir='foo')
+        looked_obj = merge.modify_for_multilook([bad_product], s1_obj)
+
+
+def test_download_dem_for_multiple_bursts(annotation_manifest_dirs, burst_product):
+    base_dir = annotation_manifest_dirs[0].parent
+    s1_obj = merge.create_burst_cropped_s1_obj(2, [burst_product], 'VV', base_dir=base_dir)
+    with patch('hyp3_isce2.merge_tops_bursts.download_dem_for_isce2') as mock_download:
+        mock_download.return_value = None
+        merge.download_dem_for_multiple_bursts([s1_obj])
+        assert mock_download.call_count == 1
+        assert isinstance(mock_download.call_args[0][0], tuple)
+        assert len(mock_download.call_args[0][0]) == 4
+        assert mock_download.call_args[1]['dem_name'] == 'glo_30'
+
+
+def create_test_geotiff(output_file, dtype='float32', n_bands=1):
+    """Create a test geotiff for testing"""
+    opts = {'float': (np.float64, gdal.GDT_Float64), 'cfloat': (np.complex64, gdal.GDT_CFloat32)}
+    np_dtype, gdal_dtype = opts[dtype]
+    data = np.ones((10, 10), dtype=np_dtype)
+    geotransform = [0.0, 1.0, 0.0, 0.0, 0.0, 1.0]
+    driver = gdal.GetDriverByName('GTiff')
+    dataset = driver.Create(output_file, 10, 10, n_bands, gdal_dtype)
+    dataset.SetGeoTransform(geotransform)
+    srs = osr.SpatialReference()
+    srs.ImportFromEPSG(4326)
+    dataset.SetProjection(srs.ExportToWkt())
+    for i in range(n_bands):
+        band = dataset.GetRasterBand(i + 1)
+        band.WriteArray(data)
+    dataset = None
+
+
+@pytest.mark.parametrize(
+    'isce_type,dtype,n_bands', [['ifg', 'cfloat', 1], ['lat', 'float', 1], ['los', 'float', 2]]
+)
+def test_translate_image(isce_type, dtype, n_bands, tmp_path):
+    test_tiff = tmp_path / 'test.tif'
+    create_test_geotiff(str(test_tiff), dtype, n_bands)
+    out_path = tmp_path / 'test.bin'
+    merge.translate_image(str(test_tiff), str(out_path), 10, isce_type)
+    for ext in ['.xml', '.vrt', '']:
+        assert (out_path.parent / (out_path.name + ext)).exists()
+
+    opts = {'float': np.float32, 'cfloat': np.complex64}
+    image, array = utils.load_isce2_image(str(out_path))
+    assert np.all(array == np.ones((10, 10), dtype=opts[dtype]))

@@ -422,17 +422,21 @@ def modify_for_multilook(
     return multilook_swath_obj
 
 
-def download_dem(s1_objs: Iterable[Sentinel1BurstSelect]):
+def download_dem_for_multiple_bursts(s1_objs: Iterable[Sentinel1BurstSelect], base_dir = None):
     """Download the DEM for the region covered in a set of ISCE2 Sentinel1 instances
 
     Args:
         s1_objs: A list of Sentinel1BurstSelect instances
     """
+    if base_dir is None:
+        base_dir = Path.cwd()
+    base_dir = Path(base_dir)
+
     burst_objs = []
     for s1_obj in s1_objs:
         burst_objs += s1_obj.product.bursts
     dem_roi = get_scene_roi(burst_objs)
-    download_dem_for_isce2(dem_roi, dem_name='glo_30', dem_dir=Path.cwd(), buffer=0, resample_20m=False)
+    download_dem_for_isce2(dem_roi, dem_name='glo_30', dem_dir=base_dir, buffer=0, resample_20m=False)
 
 
 def translate_image(in_path: str, out_path: str, width: int, image_type: str) -> None:
@@ -442,9 +446,9 @@ def translate_image(in_path: str, out_path: str, width: int, image_type: str) ->
         in_path: The path to the input image
         out_path: The path to the output image
         width: The width of the image
-        image_type: The type of image to translate can be one of 'int', 'los', 'lat', or 'lon'
+        image_type: The type of image to translate can be one of 'ifg', 'los', 'lat', or 'lon'
     """
-    if image_type in 'int':
+    if image_type in 'ifg':
         out_img = isceobj.createIntImage()
         n_bands = 1
         out_img.initImage(out_path, 'read', width, bands=n_bands)
@@ -455,7 +459,9 @@ def translate_image(in_path: str, out_path: str, width: int, image_type: str) ->
     elif image_type == 'los':
         out_img = isceobj.createImage()
         n_bands = 2
-        out_img.initImage(out_path, 'read', width, 'FLOAT', bands=n_bands, scheme='BIL')
+        # out_img.initImage(out_path, 'read', width, 'FLOAT', bands=n_bands, scheme='bil')
+        out_img.initImage(out_path, 'read', width, 'DOUBLE', bands=n_bands, scheme='bil')
+        out_img.imageType = 'bil'
     else:
         raise NotImplementedError(f'{image_type} is not a valid format')
 
@@ -495,16 +501,19 @@ def spoof_isce2_setup(burst_products: Iterable[BurstProduct], s1_obj: Sentinel1B
         geom_swath_path.mkdir(exist_ok=True)
 
     file_types = {
-        'int': 'wrapped_phase_rdr',
+        'ifg': 'wrapped_phase_rdr',
         'los': 'los_rdr',
         'lat': 'lat_rdr',
         'lon': 'lon_rdr',
     }
     for product in burst_products:
         for image_type in file_types:
-            if image_type in ['int', 'cor']:
+            if image_type  == 'ifg':
                 img_dir = ifg_dir
-                name = f'burst_{product.isce2_burst_number:02}.{image_type}'
+                name = f'burst_{product.isce2_burst_number:02}.int'
+            elif image_type == 'cor':
+                img_dir = ifg_dir
+                name = f'burst_{product.isce2_burst_number:02}.cor'
             else:
                 img_dir = geom_dir
                 name = f'{image_type}_{product.isce2_burst_number:02}.rdr'
@@ -1004,6 +1013,7 @@ def prepare_products(directory: Path) -> None:
     swath_objs = []
     for swath in swaths:
         swath_products = [product for product in products if int(product.swath[2:3]) == swath]
+        swath_products = sorted(swath_products, key=lambda x: x.start_utc)
         swath_obj = create_burst_cropped_s1_obj(swath, swath_products)
         for product, burst_obj in zip(swath_products, swath_obj.product.bursts):
             product.isce2_burst_number = burst_obj.burstNumber
@@ -1015,7 +1025,7 @@ def prepare_products(directory: Path) -> None:
         swath_objs.append(copy.deepcopy(swath_obj))
         del swath_obj
 
-    download_dem(swath_objs)
+    download_dem_for_multiple_bursts(swath_objs)
 
 
 def get_product_multilook(product_dir: Path) -> Tuple:
