@@ -249,8 +249,22 @@ def test_get_frames_and_indexes(isce2_merge_setup):
     assert isinstance(frames[0], isceobj.Sensor.TOPS.TOPSSwathSLCProduct.TOPSSwathSLCProduct)
     assert burst_index[0] == [2, 0, 2]
 
+
 # FIX: test_merge_bursts doesn't work due to pathing issue.
 # def test_merge_bursts(isce2_merge_setup):
 #     import os
 #     os.chdir(isce2_merge_setup)
 #     merge.merge_bursts(20, 4)
+
+
+def test_goldstein_werner_filter(tmp_path):
+    in_path = tmp_path / 'test.bin'
+    coh_path = tmp_path / 'coh.bin'
+    out_path = tmp_path / 'filtered.bin'
+    array = np.ones((10, 10), dtype=np.complex64)
+    utils.write_isce2_image(str(in_path), array)
+    utils.write_isce2_image(str(coh_path), array.astype(np.float32))
+    merge.goldstein_werner_filter(str(in_path), str(out_path), str(coh_path))
+    assert out_path.exists()
+    assert (out_path.parent / f'{out_path.name}.xml').exists()
+    assert (out_path.parent / f'{out_path.name}.vrt').exists()

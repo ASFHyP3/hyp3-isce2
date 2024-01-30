@@ -626,19 +626,22 @@ def merge_bursts(range_looks: int, azimuth_looks: int, merge_dir: str = 'merged'
             shutil.copy(out_tmp_path, out_path)
 
 
-def goldstein_werner_filter(filter_strength: float = 0.6, mergedir: str = 'merged') -> None:
+def goldstein_werner_filter(
+    in_path: Path, out_path: Path, coh_path: Path, filter_strength: float = 0.6, mergedir: str = 'merged'
+) -> None:
     """Apply the Goldstein-Werner filter to the merged interferogram.
     See https://doi.org/10.1029/1998GL900033 for method details.
 
     Args:
-        filter_strength: The filter strength
-        mergedir: The output directory containing the merged interferogram
+        in_path: The path to the input interferogram
+        out_path: The path to the output filtered interferogram
+        filter_strength: The filter strength (0,1]
     """
-    ifg_image = create_image(os.path.join(mergedir, WRP_IFG_NAME), image_subtype='ifg', action='load')
+    ifg_image = create_image(str(in_path), image_subtype='ifg', action='load')
     width_ifg = ifg_image.getWidth()
 
-    filt_ifg_filename = os.path.join(mergedir, FILT_WRP_IFG_NAME)
-    filt_image = create_image(filt_ifg_filename, width_ifg, 'write', image_subtype='ifg')
+    out_path = str(out_path)
+    filt_image = create_image(out_path, width_ifg, 'write', image_subtype='ifg')
 
     filter_obj = Filter()
     filter_obj.wireInputPort(name='interferogram', object=ifg_image)
@@ -649,8 +652,8 @@ def goldstein_werner_filter(filter_strength: float = 0.6, mergedir: str = 'merge
     filt_image.finalizeImage()
     del filt_image
 
-    filt_image = create_image(filt_ifg_filename, width_ifg, 'read', image_subtype='ifg')
-    phsigImage = create_image(os.path.join(mergedir, COH_NAME), width_ifg, 'write', image_subtype='cor')
+    filt_image = create_image(out_path, width_ifg, 'read', image_subtype='ifg')
+    phsigImage = create_image(str(coh_path), width_ifg, 'write', image_subtype='cor')
 
     icu_obj = Icu(name='topsapp_filter_icu')
     icu_obj.configure()
@@ -1075,17 +1078,20 @@ def run_isce2_workflow(
         filter_strength: The Goldstein-Werner filter strength
         apply_water_mask: Whether or not to apply a water body mask to the coherence file before unwrapping
     """
-    Path(mergedir).mkdir(exist_ok=True)
-    merge_bursts(range_looks, azimuth_looks, merge_dir=mergedir)
-    goldstein_werner_filter(filter_strength=filter_strength, mergedir=mergedir)
+    mergedir = Path(mergedir)
+    mergedir.mkdir(exist_ok=True)
+    merge_bursts(range_looks, azimuth_looks, merge_dir=str(mergedir))
+    goldstein_werner_filter(
+        mergedir / WRP_IFG_NAME, mergedir / FILT_WRP_IFG_NAME, mergedir / COH_NAME, filter_strength=filter_strength
+    )
     if apply_water_mask:
         log.info('Water masking requested, downloading water mask')
         mask_coherence(f'masked.{COH_NAME}')
-        corrfile = os.path.join(mergedir, f'masked.{COH_NAME}')
+        corrfile = os.path.join(str(mergedir), f'masked.{COH_NAME}')
     else:
-        corrfile = os.path.join(mergedir, COH_NAME)
-    snaphu_unwrap(range_looks, azimuth_looks, corrfile=corrfile, mergedir=mergedir)
-    geocode_products(range_looks, azimuth_looks, dem_path='full_res.dem.wgs84', mergedir=mergedir)
+        corrfile = os.path.join(str(mergedir), COH_NAME)
+    snaphu_unwrap(range_looks, azimuth_looks, corrfile=corrfile, mergedir=str(mergedir))
+    geocode_products(range_looks, azimuth_looks, dem_path='full_res.dem.wgs84', mergedir=str(mergedir))
 
 
 def package_output(product_directory: Path, looks: str, filter_strength: float, archive=False) -> None:
