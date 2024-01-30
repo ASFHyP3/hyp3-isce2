@@ -38,6 +38,7 @@ from hyp3_isce2.dem import download_dem_for_isce2
 from hyp3_isce2.logging import configure_root_logger
 from hyp3_isce2.s1_auxcal import download_aux_cal
 from hyp3_isce2.utils import (
+    ParameterFile,
     get_esa_credentials,
     image_math,
     isce2_copy,
@@ -264,49 +265,87 @@ def make_parameter_file(
     slant_range_center = (slant_range_near + slant_range_far) / 2
 
     s = ref_time.split('T')[1].split(':')
-    utc_time = (int(s[0]) * 60 + int(s[1]) * 60) + float(s[2])
+    utc_time = ((int(s[0]) * 60 + int(s[1])) * 60) + float(s[2])
 
-    output_strings = [
-        f'Reference Granule: {reference_scene}\n',
-        f'Secondary Granule: {secondary_scene}\n',
-        f'Reference Pass Direction: {ref_orbit_direction}\n',
-        f'Reference Orbit Number: {ref_orbit_number}\n',
-        f'Secondary Pass Direction: {sec_orbit_direction}\n',
-        f'Secondary Orbit Number: {sec_orbit_number}\n',
-        f'Baseline: {baseline_perp}\n',
-        f'UTC time: {utc_time}\n',
-        f'Heading: {ref_heading}\n',
-        f'Spacecraft height: {SPACECRAFT_HEIGHT}\n',
-        f'Earth radius at nadir: {EARTH_RADIUS}\n',
-        f'Slant range near: {slant_range_near}\n',
-        f'Slant range center: {slant_range_center}\n',
-        f'Slant range far: {slant_range_far}\n',
-        f'Range looks: {range_looks}\n',
-        f'Azimuth looks: {azimuth_looks}\n',
-        'INSAR phase filter: yes\n',
-        f'Phase filter parameter: {phase_filter_strength}\n',
-        'Range bandpass filter: no\n',
-        'Azimuth bandpass filter: no\n',
-        f'DEM source: {dem_name}\n',
-        f'DEM resolution (m): {dem_resolution}\n',
-        f'Unwrapping type: {unwrapper_type}\n',
-        'Speckle filter: yes\n',
-        f'Radar n lines: {multilook_position.n_lines}\n',
-        f'Radar n samples: {multilook_position.n_samples}\n',
-        f'Radar first valid line: {multilook_position.first_valid_line}\n',
-        f'Radar n valid lines: {multilook_position.n_valid_lines}\n',
-        f'Radar first valid sample: {multilook_position.first_valid_sample}\n',
-        f'Radar n valid samples: {multilook_position.n_valid_samples}\n',
-        f'Multilook azimuth time interval: {multilook_position.azimuth_time_interval}\n',
-        f'Multilook range pixel size: {multilook_position.range_pixel_size}\n',
-        f'Radar sensing stop: {datetime.strftime(multilook_position.sensing_stop, "%Y-%m-%dT%H:%M:%S.%f")}\n'
-        f'Water mask: {apply_water_mask}\n',
-    ]
+    parameter_file = ParameterFile(
+        reference_granule=reference_scene,
+        secondary_granule=secondary_scene,
+        reference_orbit_direction=ref_orbit_direction,
+        reference_orbit_number=ref_orbit_number,
+        secondary_orbit_direction=sec_orbit_direction,
+        secondary_orbit_number=sec_orbit_number,
+        baseline=float(baseline_perp),
+        utc_time=utc_time,
+        heading=ref_heading,
+        spacecraft_height=SPACECRAFT_HEIGHT,
+        earth_radius_at_nadir=EARTH_RADIUS,
+        slant_range_near=slant_range_near,
+        slant_range_center=slant_range_center,
+        slant_range_far=slant_range_far,
+        range_looks=int(range_looks),
+        azimuth_looks=int(azimuth_looks),
+        insar_phase_filter=True,
+        phase_filter_parameter=float(phase_filter_strength),
+        range_bandpass_filter=False,
+        azimuth_bandpass_filter=False,
+        dem_source=dem_name,
+        dem_resolution=dem_resolution,
+        unwrapping_type=unwrapper_type,
+        speckle_filter=True,
+        water_mask=apply_water_mask,
+        radar_n_lines=multilook_position.n_lines,
+        radar_n_samples=multilook_position.n_samples,
+        radar_first_valid_line=multilook_position.first_valid_line,
+        radar_n_valid_lines=multilook_position.n_valid_lines,
+        radar_first_valid_sample=multilook_position.first_valid_sample,
+        radar_n_valid_samples=multilook_position.n_valid_samples,
+        multilook_azimuth_time_interval=multilook_position.azimuth_time_interval,
+        multilook_range_pixel_size=multilook_position.range_pixel_size,
+        radar_sensing_stop=multilook_position.sensing_stop,
+    )
+    parameter_file.write(out_path)
 
-    output_string = ''.join(output_strings)
-
-    with open(out_path.__str__(), 'w') as outfile:
-        outfile.write(output_string)
+    # output_strings = [
+    #     f'Reference Granule: {reference_scene}\n',
+    #     f'Secondary Granule: {secondary_scene}\n',
+    #     f'Reference Pass Direction: {ref_orbit_direction}\n',
+    #     f'Reference Orbit Number: {ref_orbit_number}\n',
+    #     f'Secondary Pass Direction: {sec_orbit_direction}\n',
+    #     f'Secondary Orbit Number: {sec_orbit_number}\n',
+    #     f'Baseline: {baseline_perp}\n',
+    #     f'UTC time: {utc_time}\n',
+    #     f'Heading: {ref_heading}\n',
+    #     f'Spacecraft height: {SPACECRAFT_HEIGHT}\n',
+    #     f'Earth radius at nadir: {EARTH_RADIUS}\n',
+    #     f'Slant range near: {slant_range_near}\n',
+    #     f'Slant range center: {slant_range_center}\n',
+    #     f'Slant range far: {slant_range_far}\n',
+    #     f'Range looks: {range_looks}\n',
+    #     f'Azimuth looks: {azimuth_looks}\n',
+    #     'INSAR phase filter: yes\n',
+    #     f'Phase filter parameter: {phase_filter_strength}\n',
+    #     'Range bandpass filter: no\n',
+    #     'Azimuth bandpass filter: no\n',
+    #     f'DEM source: {dem_name}\n',
+    #     f'DEM resolution (m): {dem_resolution}\n',
+    #     f'Unwrapping type: {unwrapper_type}\n',
+    #     'Speckle filter: yes\n',
+    #     f'Radar n lines: {multilook_position.n_lines}\n',
+    #     f'Radar n samples: {multilook_position.n_samples}\n',
+    #     f'Radar first valid line: {multilook_position.first_valid_line}\n',
+    #     f'Radar n valid lines: {multilook_position.n_valid_lines}\n',
+    #     f'Radar first valid sample: {multilook_position.first_valid_sample}\n',
+    #     f'Radar n valid samples: {multilook_position.n_valid_samples}\n',
+    #     f'Multilook azimuth time interval: {multilook_position.azimuth_time_interval}\n',
+    #     f'Multilook range pixel size: {multilook_position.range_pixel_size}\n',
+    #     f'Radar sensing stop: {datetime.strftime(multilook_position.sensing_stop, "%Y-%m-%dT%H:%M:%S.%f")}\n'
+    #     f'Water mask: {apply_water_mask}\n',
+    # ]
+    #
+    # output_string = ''.join(output_strings)
+    #
+    # with open(out_path.__str__(), 'w') as outfile:
+    #     outfile.write(output_string)
 
 
 def find_product(pattern: str) -> str:
@@ -484,8 +523,8 @@ def main():
 
     parser.add_argument('--bucket', help='AWS S3 bucket HyP3 for upload the final product(s)')
     parser.add_argument('--bucket-prefix', default='', help='Add a bucket prefix to product(s)')
-    parser.add_argument('--esa-username', default=None, help="Username for ESA\'s Copernicus Data Space Ecosystem")
-    parser.add_argument('--esa-password', default=None, help="Password for ESA\'s Copernicus Data Space Ecosystem")
+    parser.add_argument('--esa-username', default=None, help="Username for ESA's Copernicus Data Space Ecosystem")
+    parser.add_argument('--esa-password', default=None, help="Password for ESA's Copernicus Data Space Ecosystem")
     parser.add_argument(
         '--looks', choices=['20x4', '10x2', '5x1'], default='20x4', help='Number of looks to take in range and azimuth'
     )

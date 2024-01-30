@@ -38,6 +38,7 @@ from zerodop.geozero import createGeozero
 import hyp3_isce2.burst as burst_utils
 from hyp3_isce2.dem import download_dem_for_isce2
 from hyp3_isce2.utils import (
+    ParameterFile,
     create_image,
     image_math,
     load_product,
@@ -879,6 +880,7 @@ def make_parameter_file(
     range_looks: int,
     azimuth_looks: int,
     filter_strength: float,
+    water_mask: bool,
     dem_name: str = 'GLO_30',
     dem_resolution: int = 30,
 ):
@@ -918,37 +920,34 @@ def make_parameter_file(
     slant_range_center = insar_product.midRange
     slant_range_far = insar_product.farRange
 
-    output_strings = [
-        f'Reference Granule: {", ".join(reference_scenes)}\n',
-        f'Secondary Granule: {", ".join(secondary_scenes)}\n',
-        f'Reference Pass Direction: {orbit_direction}\n',
-        f'Reference Orbit Number: {ref_orbit_number}\n',
-        f'Secondary Pass Direction: {orbit_direction}\n',
-        f'Secondary Orbit Number: {sec_orbit_number}\n',
-        f'Baseline: {baseline_perp}\n',
-        f'UTC time: {utc_time}\n',
-        f'Heading: {ref_heading}\n',
-        f'Spacecraft height: {SPACECRAFT_HEIGHT}\n',
-        f'Earth radius at nadir: {EARTH_RADIUS}\n',
-        f'Slant range near: {slant_range_near}\n',
-        f'Slant range center: {slant_range_center}\n',
-        f'Slant range far: {slant_range_far}\n',
-        f'Range looks: {range_looks}\n',
-        f'Azimuth looks: {azimuth_looks}\n',
-        'INSAR phase filter: yes\n',
-        f'Phase filter parameter: {filter_strength}\n',
-        'Range bandpass filter: no\n',
-        'Azimuth bandpass filter: no\n',
-        f'DEM source: {dem_name}\n',
-        f'DEM resolution (m): {dem_resolution}\n',
-        'Unwrapping type: snaphu_mcf\n',
-        'Speckle filter: yes\n',
-    ]
-
-    output_string = ''.join(output_strings)
-
-    with open(out_path.__str__(), 'w') as outfile:
-        outfile.write(output_string)
+    parameter_file = ParameterFile(
+        reference_granule=', '.join(reference_scenes),
+        secondary_granule=', '.join(secondary_scenes),
+        reference_orbit_direction=orbit_direction,
+        reference_orbit_number=ref_orbit_number,
+        secondary_orbit_direction=orbit_direction,
+        secondary_orbit_number=sec_orbit_number,
+        baseline=baseline_perp,
+        utc_time=utc_time,
+        heading=ref_heading,
+        spacecraft_height=SPACECRAFT_HEIGHT,
+        earth_radius_at_nadir=EARTH_RADIUS,
+        slant_range_near=slant_range_near,
+        slant_range_center=slant_range_center,
+        slant_range_far=slant_range_far,
+        range_looks=range_looks,
+        azimuth_looks=azimuth_looks,
+        insar_phase_filter=True,
+        phase_filter_parameter=filter_strength,
+        range_bandpass_filter=False,
+        azimuth_bandpass_filter=False,
+        dem_source=dem_name,
+        dem_resolution=dem_resolution,
+        unwrapping_type='snaphu_mcf',
+        speckle_filter=True,
+        water_mask=water_mask,
+    )
+    parameter_file.write(out_path)
 
 
 def check_burst_group_validity(products) -> None:
@@ -1082,7 +1081,9 @@ def run_isce2_workflow(
     geocode_products(range_looks, azimuth_looks, dem_path='full_res.dem.wgs84', mergedir=str(mergedir))
 
 
-def package_output(product_directory: Path, looks: str, filter_strength: float, archive=False) -> None:
+def package_output(
+    product_directory: Path, looks: str, filter_strength: float, water_mask: bool, archive=False
+) -> None:
     """Package the output of the ISCE2 workflow into a the standard ASF burst product format
 
     Args:
@@ -1101,7 +1102,12 @@ def package_output(product_directory: Path, looks: str, filter_strength: float, 
     product_dir.mkdir(parents=True, exist_ok=True)
 
     make_parameter_file(
-        Path(f'{product_name}/{product_name}.txt'), product_directory, range_looks, azimuth_looks, filter_strength
+        Path(f'{product_name}/{product_name}.txt'),
+        product_directory,
+        range_looks,
+        azimuth_looks,
+        filter_strength,
+        water_mask,
     )
     translate_outputs(product_name, pixel_size=pixel_size, include_radar=False)
     unwrapped_phase = f'{product_name}/{product_name}_unw_phase.tif'
@@ -1131,7 +1137,9 @@ def main():
     # run_isce2_workflow(
     #     range_looks, azimuth_looks, filter_strength=args.filter_strength, apply_water_mask=args.apply_water_mask
     # )
-    package_output(product_directory, f'{range_looks}x{azimuth_looks}', args.filter_strength)
+    package_output(
+        product_directory, f'{range_looks}x{azimuth_looks}', args.filter_strength, water_mask=args.apply_water_mask
+    )
 
 
 if __name__ == '__main__':
