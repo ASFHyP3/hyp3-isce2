@@ -5,6 +5,7 @@ from pathlib import Path
 from unittest.mock import patch
 
 import asf_search
+import isceobj  # noqa: F401
 import lxml.etree as ET
 import numpy as np
 import pytest
@@ -262,3 +263,12 @@ def test_get_swath_list(tmp_path):
     for x in [1, 2, 3]:
         (test_dir / f'IW{x}').mkdir()
     assert merge.get_swath_list(str(test_dir)) == [1, 2, 3]
+
+
+def test_get_merged_orbit(test_data_dir):
+    s1_obj = utils.load_product(test_data_dir / 'isce2_s1_obj.xml')
+    merged_orbit = merge.get_merged_orbit([s1_obj])
+    assert isinstance(merged_orbit, isceobj.Orbit.Orbit.Orbit)
+    assert len(merged_orbit.stateVectors) == 17  # This number will change if the test data changes
+
+
