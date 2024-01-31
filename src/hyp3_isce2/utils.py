@@ -236,25 +236,24 @@ def load_isce2_image(in_path) -> tuple[isceobj.Image, np.ndarray]:
     return image_obj, array
 
 
-def write_isce2_image(output_path, array=None, width=None, mode='read', data_type='FLOAT') -> None:
+def write_isce2_image(output_path, array=None, bands=1, length=1, width=None, mode='write', data_type='FLOAT') -> None:
     """Write an ISCE2 image file.
 
     Args:
         output_path: The path to the output image file.
         array: The array to write to the file.
+        bands: The bands of the iamge. Default bands=1.
+        length: The length of the iamge. image shape is (length, width).
         width: The width of the image.
-        mode: The mode to open the image in.
+        mode: The mode to open the image in. Default='write'.
         data_type: The data type of the image.
     """
-    if array is not None:
-        array.tofile(output_path)
-        width = array.shape[1]
-    elif width is None:
-        raise ValueError('Either a width or an input array must be provided')
-
-    out_obj = isceobj.createImage()
-    out_obj.initImage(output_path, mode, width, data_type)
-    out_obj.renderHdr()
+    image_obj = isceobj.createImage()
+    image_obj.initImage(output_path, mode, width, data_type, bands)
+    image_obj.setLength(length)
+    image_obj.setImageType('bil')
+    image_obj.createImage()
+    write_isce2_image_from_obj(image_obj, array)
 
 
 def get_geotransform_from_dataset(dataset: isceobj.Image) -> tuple:
@@ -324,8 +323,15 @@ def resample_to_radar_io(image_to_resample: str, latin: str, lonin: str, output:
         data_type=maskim.toNumpyDataType(),
         outshape=(latim.coord2.coordSize, latim.coord1.coordSize),
     )
-
-    write_isce2_image(output, array=cropped, data_type=maskim.dataType)
+    length, width = cropped.shape
+    write_isce2_image(output,
+                      array=cropped,
+                      bands=1,
+                      length=length,
+                      width=width,
+                      mode='write',
+                      data_type=maskim.dataType
+                      )
 
 
 def isce2_copy(in_path: str, out_path: str):
@@ -407,9 +413,10 @@ def create_image(
         access_mode: The access mode of the image (read or write)
         image_subtype: The type of image to create
         action: What action to take:
-            'create': create a new image object, but don't write metadata files
-            'finalize': create a new image object, and write metadata files
-            'load': create an imge object by loading an existing metadata file
+            'create': create a new image object, but don't write metadata files, access_mode='write'
+            'finalize': create a new image object based on existed binary file, and write metadata files,
+             access_mode='read'
+            'load': create an image object by loading an existing metadata file, access_mode='read'
 
     Returns:
         The ISCE2 image object
@@ -442,7 +449,6 @@ def create_image(
         image.createImage()
         image.finalizeImage()
         image.renderHdr()
-
     return image
 
 
