@@ -883,6 +883,7 @@ def make_parameter_file(
     water_mask: bool,
     dem_name: str = 'GLO_30',
     dem_resolution: int = 30,
+    base_dir: Optional[Path] = None,
 ):
     """Create a parameter file for the ASF merged burst product and write it to out_path
 
@@ -895,6 +896,10 @@ def make_parameter_file(
         dem_name: The name of the source DEM
         dem_resolution: The resolution of the source DEM
     """
+    if base_dir is None:
+        base_dir = Path.cwd()
+    base_dir = Path(base_dir)
+
     SPACECRAFT_HEIGHT = 693000.0
     EARTH_RADIUS = 6337286.638938101
 
@@ -905,11 +910,10 @@ def make_parameter_file(
     secondary_scenes = [meta['SecondaryGranule'] for meta in metas]
     ref_orbit_number = metas[0]['ReferenceOrbitNumber']
     sec_orbit_number = metas[0]['SecondaryOrbitNumber']
-    # TODO should we calculate this more accurately?
     baseline_perp = metas[0]['Baseline']
-
-    swath_number = get_swath_list(BURST_IFG_DIR)[0]
-    insar_product = load_product(os.path.join(BURST_IFG_DIR, 'IW{0}.xml'.format(swath_number)))
+    
+    burst_ifg_dir = base_dir / BURST_IFG_DIR
+    insar_product = load_product(burst_ifg_dir / f'IW{get_swath_list(burst_ifg_dir)[0]}.xml')
 
     orbit_direction = insar_product.bursts[0].passDirection
     ref_heading = insar_product.orbit.getHeading()

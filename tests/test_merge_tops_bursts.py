@@ -1,4 +1,5 @@
 """Tests for hyp3_isce2.merge_tops_bursts module, use single quotes"""
+import shutil
 from copy import deepcopy
 from datetime import datetime
 from pathlib import Path
@@ -274,3 +275,23 @@ def test_get_product_name(burst_product1):
     product_name = merge.get_product_name(burst_product1, 80)
     assert len(product_name) == 39
     assert product_name[:-4] == 'S1_064__20200604_20200616_VV_INT80_'
+
+
+def test_make_parameter_file(test_data_dir, test_merge_dir, tmp_path):
+    # Prep data
+    tmp_ifg_dir = tmp_path / 'fine_interferogram'
+    tmp_ifg_dir.mkdir()
+    (tmp_ifg_dir / 'IW2').mkdir()
+    shutil.copy(test_data_dir / 'isce2_s1_obj.xml', tmp_ifg_dir / 'IW2.xml')
+
+    out_file = tmp_path / 'test.txt'
+    merge.make_parameter_file(out_file, test_merge_dir, 20, 4, 0.6, True, base_dir=tmp_path)
+    assert out_file.exists()
+
+    meta = utils.read_product_metadata(out_file)
+    assert len(meta['ReferenceGranule'].split(',')) == 2
+    assert len(meta['SecondaryGranule'].split(',')) == 2
+    assert meta['Rangelooks'] == '20'
+    assert meta['Azimuthlooks'] == '4'
+    with pytest.raises(KeyError):
+        assert meta['Radarnlines']
