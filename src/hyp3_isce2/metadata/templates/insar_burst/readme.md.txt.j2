@@ -280,13 +280,9 @@ process caused by invalid coherence over water bodies. The water mask will also 
 in the output products. This product {{ "has" if apply_water_mask else "has not" }} 
 had the water mask applied.
 
-The water mask is generated using the Global Self-consistent, Hierarchical, High-resolution Geography Database (GSHHG)
-dataset (https://www.ngdc.noaa.gov/mgg/shorelines). To generate the global mask, we combined the full-resolution
-L1 and L5 datasets, and removed the L2 dataset minus the L3 dataset. The L1 dataset is the boundary between land
-and ocean, excluding Antarctica, and the L5 dataset is the boundary between Antarctic ice and ocean. The L2
-dataset is the boundary between lakes and land, and the L3 dataset is the boundary between islands and the
-lakes they are within. The GSHHG dataset was last updated in 2017, so there may be discrepancies where
-shorelines have changed.
+The water mask is generated using data from OpenStreetMaps and/or ESA WorldCover depeding on location. Areas within 
+Canada, Alaska, and Russia are primarily covered by ESA WorldCover data, while the rest of the world is covered
+by OpenStreetMaps data. Water masks were previously generated from the GSHHG dataset.
 
 *************
 # Burst InSAR Processing #
