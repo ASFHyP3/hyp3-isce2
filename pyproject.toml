@@ -28,7 +28,6 @@ dependencies = [
   "shapely",
   "jinja2",
   "asf_search>=6.4.0",
-  "geopandas",
   "gdal",
   "hyp3lib>=3,<4",
   # Conda-forge only dependencies are listed below
@@ -65,6 +64,7 @@ insar_stripmap = "hyp3_isce2.insar_stripmap:main"
 [tool.pytest.ini_options]
 testpaths = ["tests"]
 script_launch_mode = "subprocess"
+markers = "integration"
 
 [tool.setuptools]
 include-package-data = true
