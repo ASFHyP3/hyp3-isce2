@@ -67,6 +67,7 @@ merge_tops_bursts = "hyp3_isce2.merge_tops_bursts:main"
 [tool.pytest.ini_options]
 testpaths = ["tests"]
 script_launch_mode = "subprocess"
+markers = "integration"
 
 [tool.setuptools]
 include-package-data = true
