@@ -775,7 +775,11 @@ def snaphu_unwrap(
 
 
 def geocode_products(
-    range_looks: int, azimuth_looks: int, dem_path: str | Path, base_dir: Optional[str | Path] = None, to_be_geocoded=GEOCODE_LIST
+    range_looks: int,
+    azimuth_looks: int,
+    dem_path: str | Path,
+    base_dir: Optional[str | Path] = None,
+    to_be_geocoded=GEOCODE_LIST,
 ) -> None:
     """Geocode a set of ISCE2 products
 
@@ -1139,6 +1143,24 @@ def package_output(
         make_archive(base_name=product_name, format='zip', base_dir=product_name)
 
 
+def merge_tops_bursts(product_directory: Path, filter_strength: float, apply_water_mask: bool):
+    """Run the full ISCE2 workflow for TOPS burst merging
+
+    Args:
+        product_directory: The path to the directory containing the UNZIPPED ASF burst product directories
+        filter_strength: The Goldstein-Werner filter strength
+        apply_water_mask: Whether or not to apply a water body mask to the coherence file before unwrapping
+    """
+    range_looks, azimuth_looks = get_product_multilook(product_directory)
+    prepare_products(product_directory)
+    run_isce2_workflow(
+        range_looks, azimuth_looks, filter_strength=filter_strength, apply_water_mask=apply_water_mask
+    )
+    package_output(
+        product_directory, f'{range_looks}x{azimuth_looks}', filter_strength, water_mask=apply_water_mask
+    )
+
+
 def main():
     """HyP3 entrypoint for the TOPS burst merging workflow"""
     parser = argparse.ArgumentParser(description=__doc__, formatter_class=argparse.ArgumentDefaultsHelpFormatter)
@@ -1154,15 +1176,7 @@ def main():
     )
     args = parser.parse_args()
     product_directory = Path(args.directory)
-
-    range_looks, azimuth_looks = get_product_multilook(product_directory)
-    prepare_products(product_directory)
-    run_isce2_workflow(
-        range_looks, azimuth_looks, filter_strength=args.filter_strength, apply_water_mask=args.apply_water_mask
-    )
-    package_output(
-        product_directory, f'{range_looks}x{azimuth_looks}', args.filter_strength, water_mask=args.apply_water_mask
-    )
+    merge_tops_bursts(product_directory, args.filter_strength, args.apply_water_mask)
 
 
 if __name__ == '__main__':
