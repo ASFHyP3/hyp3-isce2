@@ -771,7 +771,7 @@ def snaphu_unwrap(
         raise RuntimeError('SNAPHU did not create connected components file')
 
     create_image(str(unwrap_name) + '.conncomp', width, 'read', image_subtype='conncomp', action='finalize')
-    maskUnwrap(str(unwrap_name), wrap_name)
+    maskUnwrap(str(unwrap_name), str(wrap_name))
 
 
 def geocode_products(
