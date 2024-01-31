@@ -682,8 +682,8 @@ def mask_coherence(out_name, mergedir='merged'):
 def snaphu_unwrap(
     range_looks: int,
     azimuth_looks: int,
-    corrfile: str = None,
-    mergedir='merged',
+    corrfile: Optional[str | Path] = None,
+    base_dir: Optional[str | Path] = None,
     cost_mode='DEFO',
     init_method='MST',
     defomax=4.0,
@@ -699,17 +699,22 @@ def snaphu_unwrap(
         init_method: The initialization method to use for SNAPHU
         defomax: The maximum deformation allowed for SNAPHU
     """
+    if base_dir is None:
+        base_dir = Path.cwd() / 'merged'
+    base_dir = Path(base_dir)
+    
+    burst_ifg_dir = base_dir.parent / BURST_IFG_DIR
     if not corrfile:
-        corrfile = os.path.join(mergedir, COH_NAME)
-    wrap_name = os.path.join(mergedir, FILT_WRP_IFG_NAME)
-    unwrap_name = os.path.join(mergedir, UNW_IFG_NAME)
+        corrfile = base_dir / COH_NAME
+    wrap_name = base_dir / FILT_WRP_IFG_NAME
+    unwrap_name = base_dir / UNW_IFG_NAME
 
     img = isceobj.createImage()
-    img.load(wrap_name + '.xml')
+    img.load(str(wrap_name) + '.xml')
     width = img.getWidth()
 
-    swath = get_swath_list(BURST_IFG_DIR)[0]
-    ifg = load_product(os.path.join(BURST_IFG_DIR, 'IW{0}_multilooked.xml'.format(swath)))
+    swath = get_swath_list(str(burst_ifg_dir))[0]
+    ifg = load_product(str(burst_ifg_dir / f'IW{swath}_multilooked.xml'))
     wavelength = ifg.bursts[0].radarWavelength
 
     # tmid
@@ -736,14 +741,14 @@ def snaphu_unwrap(
 
     snp = Snaphu()
     snp.setInitOnly(False)
-    snp.setInput(wrap_name)
-    snp.setOutput(unwrap_name)
+    snp.setInput(str(wrap_name))
+    snp.setOutput(str(unwrap_name))
     snp.setWidth(width)
     snp.setCostMode(cost_mode)
     snp.setEarthRadius(earth_radius)
     snp.setWavelength(wavelength)
     snp.setAltitude(altitude)
-    snp.setCorrfile(corrfile)
+    snp.setCorrfile(str(corrfile))
     snp.setInitMethod(init_method)
     snp.setCorrLooks(corrLooks)
     snp.setMaxComponents(maxComponents)
@@ -755,11 +760,14 @@ def snaphu_unwrap(
     snp.unwrap()
 
     # Render XML
-    create_image(unwrap_name, width, 'read', image_subtype='unw', action='finalize')
+    create_image(str(unwrap_name), width, 'read', image_subtype='unw', action='finalize')
+
     # Check if connected components was created
-    if snp.dumpConnectedComponents:
-        create_image(unwrap_name + '.conncomp', width, 'read', image_subtype='conncomp', action='finalize')
-        maskUnwrap(unwrap_name, wrap_name)
+    if not snp.dumpConnectedComponents:
+        raise RuntimeError('SNAPHU did not create connected components file')
+
+    create_image(str(unwrap_name) + '.conncomp', width, 'read', image_subtype='conncomp', action='finalize')
+    maskUnwrap(str(unwrap_name), wrap_name)
 
 
 def geocode_products(
@@ -911,7 +919,7 @@ def make_parameter_file(
     ref_orbit_number = metas[0]['ReferenceOrbitNumber']
     sec_orbit_number = metas[0]['SecondaryOrbitNumber']
     baseline_perp = metas[0]['Baseline']
-    
+
     burst_ifg_dir = base_dir / BURST_IFG_DIR
     insar_product = load_product(burst_ifg_dir / f'IW{get_swath_list(burst_ifg_dir)[0]}.xml')
 
@@ -1081,7 +1089,7 @@ def run_isce2_workflow(
         corrfile = os.path.join(str(mergedir), f'masked.{COH_NAME}')
     else:
         corrfile = os.path.join(str(mergedir), COH_NAME)
-    snaphu_unwrap(range_looks, azimuth_looks, corrfile=corrfile, mergedir=str(mergedir))
+    snaphu_unwrap(range_looks, azimuth_looks, corrfile=corrfile, base_dir=str(mergedir))
     geocode_products(range_looks, azimuth_looks, dem_path='full_res.dem.wgs84', mergedir=str(mergedir))
 
 
@@ -1137,10 +1145,10 @@ def main():
     product_directory = Path(args.directory)
 
     range_looks, azimuth_looks = get_product_multilook(product_directory)
-    # prepare_products(product_directory)
-    # run_isce2_workflow(
-    #     range_looks, azimuth_looks, filter_strength=args.filter_strength, apply_water_mask=args.apply_water_mask
-    # )
+    prepare_products(product_directory)
+    run_isce2_workflow(
+        range_looks, azimuth_looks, filter_strength=args.filter_strength, apply_water_mask=args.apply_water_mask
+    )
     package_output(
         product_directory, f'{range_looks}x{azimuth_looks}', args.filter_strength, water_mask=args.apply_water_mask
     )

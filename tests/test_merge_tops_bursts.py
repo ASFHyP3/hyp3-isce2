@@ -295,3 +295,22 @@ def test_make_parameter_file(test_data_dir, test_merge_dir, tmp_path):
     assert meta['Azimuthlooks'] == '4'
     with pytest.raises(KeyError):
         assert meta['Radarnlines']
+
+
+def test_snaphu_unwrap(test_data_dir, tmp_path):
+    merge_dir = tmp_path / 'merged'
+    merge_dir.mkdir()
+    ifg_dir = tmp_path / 'fine_interferogram' / 'IW2'
+    ifg_dir.mkdir(parents=True, exist_ok=True)
+    shutil.copy(test_data_dir / 'isce2_s1_obj.xml', ifg_dir.parent / 'IW2_multilooked.xml')
+
+    filt_path = merge_dir / 'filt_topophase.flat'
+    coh_path = merge_dir / 'coh.bin'
+    array = np.ones((100, 100), dtype=np.complex64)
+    utils.write_isce2_image(str(filt_path), array, data_type='CFLOAT')
+    utils.write_isce2_image(str(coh_path), array.astype(np.float32), data_type='FLOAT')
+    merge.snaphu_unwrap(2, 2, str(coh_path), base_dir=merge_dir)
+
+    assert (merge_dir / 'filt_topophase.unw').exists()
+    assert (merge_dir / 'filt_topophase.unw.xml').exists()
+    assert (merge_dir / 'filt_topophase.unw.vrt').exists()
