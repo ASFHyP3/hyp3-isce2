@@ -7,7 +7,6 @@ from pathlib import Path
 from unittest.mock import patch
 
 import asf_search
-import isceobj  # noqa: F401
 import lxml.etree as ET
 import numpy as np
 import pytest
@@ -17,6 +16,8 @@ from requests import Session
 import hyp3_isce2.burst as burst_utils
 import hyp3_isce2.merge_tops_bursts as merge
 from hyp3_isce2 import utils
+
+import isceobj  # noqa: F401
 
 
 # TODO combine with test_burst.py's version
@@ -406,7 +407,7 @@ def test_check_burst_group_validity():
         Product(datetime(2020, 2, 1), datetime(2020, 1, 1), 'VV', 1, 1, 111117, 20, 4),
     ]
     merge.check_burst_group_validity(good_products)
-    
+
     # Bad polarization
     bad_pol = deepcopy(good_products)
     bad_pol[0].polarization = 'HH'
@@ -436,7 +437,7 @@ def test_check_burst_group_validity():
     bad_range_looks[1].range_looks = 10
     with pytest.raises(ValueError, match='All products.*looks.*'):
         merge.check_burst_group_validity(bad_range_looks)
-    
+
     # Non-contiguous bursts
     non_contiguous_swath_products = [
         Product(datetime(2020, 2, 1), datetime(2020, 1, 1), 'VV', 1, 1, 111115, 20, 4),
@@ -456,3 +457,16 @@ def test_check_burst_group_validity():
     ]
     with pytest.raises(ValueError, match='Products.*swaths 1 and 2.*overlap'):
         merge.check_burst_group_validity(non_contiguous_swath_products)
+
+
+def test_get_product_multilook(tmp_path):
+    product_dir = tmp_path / 'test'
+    product_dir.mkdir()
+    product1 = product_dir / 'S1_111111_IW1_VV_01'
+    product1.mkdir()
+    metadata1 = product1 / 'S1_111111_IW1_VV_01.txt'
+
+    metadata1.write_text('Rangelooks: 20\nAzimuthlooks: 4\n')
+    range_looks, azimuth_looks = merge.get_product_multilook(product_dir)
+    assert range_looks == 20
+    assert azimuth_looks == 4
