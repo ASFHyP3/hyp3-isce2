@@ -702,7 +702,7 @@ def snaphu_unwrap(
     if base_dir is None:
         base_dir = Path.cwd() / 'merged'
     base_dir = Path(base_dir)
-    
+
     burst_ifg_dir = base_dir.parent / BURST_IFG_DIR
     if not corrfile:
         corrfile = base_dir / COH_NAME
@@ -771,7 +771,7 @@ def snaphu_unwrap(
 
 
 def geocode_products(
-    range_looks: int, azimuth_looks: int, dem_path, mergedir='merged', to_be_geocoded=GEOCODE_LIST
+    range_looks: int, azimuth_looks: int, dem_path: str | Path, base_dir: Optional[str | Path] = None, to_be_geocoded=GEOCODE_LIST
 ) -> None:
     """Geocode a set of ISCE2 products
 
@@ -779,15 +779,20 @@ def geocode_products(
         azimuth_looks: The number of azimuth looks
         range_looks: The number of range looks
         dem_path: The path to the DEM
-        mergedir: The output directory containing the merged interferogram
+        base_dir: The output directory containing the merged interferogram
         to_be_geocoded: A list of products to geocode
     """
-    to_be_geocoded = [str(Path(mergedir) / file) for file in to_be_geocoded]
-    swath_list = get_swath_list(BURST_IFG_DIR)
+    if base_dir is None:
+        base_dir = Path.cwd() / 'merged'
+    base_dir = Path(base_dir)
+    burst_ifg_dir = base_dir.parent / BURST_IFG_DIR
+
+    to_be_geocoded = [str(base_dir / file) for file in to_be_geocoded]
+    swath_list = get_swath_list(str(burst_ifg_dir))
 
     frames = []
     for swath in swath_list:
-        reference_product = load_product(os.path.join(BURST_IFG_DIR, 'IW{0}.xml'.format(swath)))
+        reference_product = load_product(str(burst_ifg_dir / f'IW{swath}.xml'))
         frames.append(reference_product)
 
     orbit = get_merged_orbit(frames)
@@ -827,10 +832,10 @@ def geocode_products(
         geo_obj.configure()
 
         geo_obj.snwe = snwe
-        geo_obj.demCropFilename = os.path.join(mergedir, 'dem.crop')
+        geo_obj.demCropFilename = os.path.join(base_dir, 'dem.crop')
         geo_obj.numberRangeLooks = range_looks
         geo_obj.numberAzimuthLooks = azimuth_looks
-        geo_obj.lookSide = -1  # S1A is currently right looking only
+        geo_obj.lookSide = -1
 
         # create the instance of the input image and the appropriate geocode method
         inImage, method = ge.create(prod)
@@ -1090,7 +1095,7 @@ def run_isce2_workflow(
     else:
         corrfile = os.path.join(str(mergedir), COH_NAME)
     snaphu_unwrap(range_looks, azimuth_looks, corrfile=corrfile, base_dir=str(mergedir))
-    geocode_products(range_looks, azimuth_looks, dem_path='full_res.dem.wgs84', mergedir=str(mergedir))
+    geocode_products(range_looks, azimuth_looks, dem_path='full_res.dem.wgs84', base_dir=str(mergedir))
 
 
 def package_output(

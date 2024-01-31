@@ -1,6 +1,7 @@
 """Tests for hyp3_isce2.merge_tops_bursts module, use single quotes"""
 import shutil
 from copy import deepcopy
+from dataclasses import dataclass
 from datetime import datetime
 from pathlib import Path
 from unittest.mock import patch
@@ -314,3 +315,144 @@ def test_snaphu_unwrap(test_data_dir, tmp_path):
     assert (merge_dir / 'filt_topophase.unw').exists()
     assert (merge_dir / 'filt_topophase.unw.xml').exists()
     assert (merge_dir / 'filt_topophase.unw.vrt').exists()
+
+
+def test_geocode_products(test_data_dir, tmp_path):
+    merge_dir = tmp_path / 'merged'
+    merge_dir.mkdir()
+    ifg_dir = tmp_path / 'fine_interferogram' / 'IW2'
+    ifg_dir.mkdir(parents=True, exist_ok=True)
+    shutil.copy(test_data_dir / 'isce2_s1_obj.xml', ifg_dir.parent / 'IW2.xml')
+
+    unw_path = merge_dir / 'filt_topophase.unw'
+    dem_path = merge_dir / 'dem.bin'
+    array = np.ones((377, 1272), dtype=np.float32)
+    utils.write_isce2_image(str(unw_path), array, data_type='FLOAT')
+    utils.write_isce2_image(str(dem_path), array, data_type='FLOAT')
+    merge.geocode_products(1, 1, str(dem_path), base_dir=merge_dir, to_be_geocoded=[str(unw_path)])
+
+    assert (merge_dir / 'filt_topophase.unw.geo').exists()
+    assert (merge_dir / 'filt_topophase.unw.geo.xml').exists()
+    assert (merge_dir / 'filt_topophase.unw.geo.vrt').exists()
+
+
+# def check_burst_group_validity(products) -> None:
+#     """Check that a set of burst products are valid for merging. This includes:
+#     All products have the same:
+#         - date
+#         - relative orbit
+#         - polarization
+#         - multilook
+#     All products must also be contiguous. This means:
+#         - A given swath has a continuous series of bursts
+#         - Neighboring swaths have at at most one burst separation
+#
+#     This function will raise a ValueError if any of these conditions are not met.
+#
+#     Args:
+#         products: A list of BurstProduct objects
+#     """
+#     reference_dates = set([product.reference_date.date() for product in products])
+#     secondary_dates = set([product.secondary_date.date() for product in products])
+#     polarizations = set([product.polarization for product in products])
+#     relative_orbits = set([product.relative_orbit for product in products])
+#     range_looks = [product.range_looks for product in products]
+#     azimuth_looks = [product.azimuth_looks for product in products]
+#     looks = set([f'{rgl}x{azl}' for rgl, azl in zip(range_looks, azimuth_looks)])
+#
+#     sets = {
+#         'reference_date': reference_dates,
+#         'secondary_date': secondary_dates,
+#         'polarization': polarizations,
+#         'relative_orbit': relative_orbits,
+#         'looks': looks,
+#     }
+#     for key, value in sets.items():
+#         if len(value) > 1:
+#             key_name = key.replace('_', ' ')
+#             value_names = ', '.join([str(v) for v in value])
+#             raise ValueError(f'All products must have the same {key_name}. Found {value_names}.')
+#
+#     swath_ids = {}
+#     for swath in set([product.swath for product in products]):
+#         swath_products = [product for product in products if product.swath == swath]
+#         swath_products.sort(key=lambda x: x.burst_id)
+#         ids = np.array([p.burst_id for p in swath_products])
+#         if not np.all(ids - ids.min() == np.arange(len(ids))):
+#             raise ValueError(f'Products for swath {swath} are not contiguous')
+#         swath_ids[swath] = ids
+#
+#     for swath1, swath2 in combinations(swath_ids.keys(), 2):
+#         separations = np.concatenate([swath_ids[swath1] - elem for elem in swath_ids[swath2]])
+#         if separations.min() > 1:
+#             raise ValueError(f'Products from swaths {swath1} and {swath2} do not overlap')
+
+
+def test_check_burst_group_validity():
+    @dataclass
+    class Product:
+        reference_date: datetime
+        secondary_date: datetime
+        polarization: str
+        relative_orbit: int
+        swath: int
+        burst_id: int
+        range_looks: int
+        azimuth_looks: int
+
+    # Test valid products
+    good_products = [
+        Product(datetime(2020, 2, 1), datetime(2020, 1, 1), 'VV', 1, 1, 111116, 20, 4),
+        Product(datetime(2020, 2, 1), datetime(2020, 1, 1), 'VV', 1, 1, 111117, 20, 4),
+    ]
+    merge.check_burst_group_validity(good_products)
+    
+    # Bad polarization
+    bad_pol = deepcopy(good_products)
+    bad_pol[0].polarization = 'HH'
+    with pytest.raises(ValueError, match='All products.*polarization.*'):
+        merge.check_burst_group_validity(bad_pol)
+
+    # Bad reference date
+    bad_ref_date = deepcopy(good_products)
+    bad_ref_date[1].reference_date = datetime(2020, 2, 2)
+    with pytest.raises(ValueError, match='All products.*reference date.*'):
+        merge.check_burst_group_validity(bad_ref_date)
+
+    # Bad reference date
+    bad_sec_date = deepcopy(good_products)
+    bad_sec_date[1].secondary_date = datetime(2020, 2, 2)
+    with pytest.raises(ValueError, match='All products.*secondary date.*'):
+        merge.check_burst_group_validity(bad_sec_date)
+
+    # Bad relative orbit
+    bad_rel_orbit = deepcopy(good_products)
+    bad_rel_orbit[0].relative_orbit = 2
+    with pytest.raises(ValueError, match='All products.*relative orbit.*'):
+        merge.check_burst_group_validity(bad_rel_orbit)
+
+    # Bad looks
+    bad_range_looks = deepcopy(good_products)
+    bad_range_looks[1].range_looks = 10
+    with pytest.raises(ValueError, match='All products.*looks.*'):
+        merge.check_burst_group_validity(bad_range_looks)
+    
+    # Non-contiguous bursts
+    non_contiguous_swath_products = [
+        Product(datetime(2020, 2, 1), datetime(2020, 1, 1), 'VV', 1, 1, 111115, 20, 4),
+        Product(datetime(2020, 2, 1), datetime(2020, 1, 1), 'VV', 1, 1, 111117, 20, 4),
+        Product(datetime(2020, 2, 1), datetime(2020, 1, 1), 'VV', 1, 2, 111115, 20, 4),
+        Product(datetime(2020, 2, 1), datetime(2020, 1, 1), 'VV', 1, 2, 111116, 20, 4),
+    ]
+    with pytest.raises(ValueError, match='Products.*swath 1.*contiguous'):
+        merge.check_burst_group_validity(non_contiguous_swath_products)
+
+    # Non-contiguous swath bursts
+    non_contiguous_swath_products = [
+        Product(datetime(2020, 2, 1), datetime(2020, 1, 1), 'VV', 1, 1, 111116, 20, 4),
+        Product(datetime(2020, 2, 1), datetime(2020, 1, 1), 'VV', 1, 1, 111117, 20, 4),
+        Product(datetime(2020, 2, 1), datetime(2020, 1, 1), 'VV', 1, 2, 111114, 20, 4),
+        Product(datetime(2020, 2, 1), datetime(2020, 1, 1), 'VV', 1, 2, 111113, 20, 4),
+    ]
+    with pytest.raises(ValueError, match='Products.*swaths 1 and 2.*overlap'):
+        merge.check_burst_group_validity(non_contiguous_swath_products)
