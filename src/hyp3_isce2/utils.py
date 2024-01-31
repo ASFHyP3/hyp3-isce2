@@ -145,7 +145,7 @@ def load_isce2_image(in_path) -> tuple[isceobj.Image, np.ndarray]:
 
 
 def write_isce2_image(output_path: str, array: np.ndarray) -> None:
-    """Write an ISCE2 image file.
+    """Write a numpy array as an ISCE2 image file.
 
     Args:
         output_path: The path to the output image file.
