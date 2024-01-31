@@ -17,7 +17,7 @@ import hyp3_isce2.burst as burst_utils
 import hyp3_isce2.merge_tops_bursts as merge
 from hyp3_isce2 import utils
 
-import isceobj  # noqa: F401
+import isceobj  # noqa: I100
 
 
 # TODO combine with test_burst.py's version

@@ -146,7 +146,7 @@ def isce2_merge_setup(annotation_manifest_dirs, burst_products):
     s1_obj = merge.create_burst_cropped_s1_obj(2, burst_products, 'VV', base_dir=base_dir)
     for product, burst_obj in zip(burst_products, s1_obj.product.bursts):
         product.isce2_burst_number = burst_obj.burstNumber
-    
+
     save_dir = str(base_dir / 'fine_interferogram')
     multilooked_swath_obj = merge.modify_for_multilook(burst_products, s1_obj, save_dir)
     multilooked_swath_obj.write_xml()
