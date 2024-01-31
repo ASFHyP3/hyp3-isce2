@@ -193,6 +193,7 @@ def download_metadata_xmls(params: Iterable[burst_utils.BurstParams], base_dir: 
 
     Args:
         params: A list of burst_utils.BurstParams objects
+        base_dir: The base directory to download the metadata to. Defaults to the current working directory.
     """
     if base_dir is None:
         base_dir = Path.cwd()
@@ -369,7 +370,7 @@ def create_burst_cropped_s1_obj(
         swath: The swath id (e.g., IW1) of the burst products
         products: A list of BurstProduct objects to create the ISCE2 Sentinel1 instance for
         polarization: The polarization of the burst products
-        outdir: The directory to write the xml to
+        base_dir: The base directory to write the xml to. Defaults to the current working directory.
 
     Returns:
         A tuple of the updated BurstProduct objects and the ISCE2 Sentinel1 instance
@@ -428,6 +429,7 @@ def download_dem_for_multiple_bursts(s1_objs: Iterable[Sentinel1BurstSelect], ba
 
     Args:
         s1_objs: A list of Sentinel1BurstSelect instances
+        base_dir: The base directory to download the DEM to. Defaults to the current working directory.
     """
     if base_dir is None:
         base_dir = Path.cwd()
@@ -487,6 +489,7 @@ def spoof_isce2_setup(
     Args:
         burst_products: A list of BurstProduct objects
         s1_obj: An ISCE2 Sentinel1 instance representing the parent swath
+        base_dir: The base directory to write the spoofed directories to. Defaults to the current working directory.
     """
     if base_dir is None:
         base_dir = Path.cwd()
@@ -604,7 +607,7 @@ def merge_bursts(range_looks: int, azimuth_looks: int, merge_dir: str = 'merged'
     Args:
         azimuth_looks: The number of azimuth looks
         range_looks: The number of range looks
-        mergedir: The directory to write the merged product to
+        merge_dir: The directory to write the merged product to
     """
     frames, burstIndex = get_frames_and_indexes(BURST_IFG_DIR)
 
@@ -666,14 +669,15 @@ def goldstein_werner_filter(in_path: Path, out_path: Path, coh_path: Path, filte
     phsigImage.renderHdr()
 
 
-def mask_coherence(out_name, mergedir='merged'):
+def mask_coherence(out_name: str, merge_dir: str | Path = 'merged') -> None:
     """Mask the coherence image with a water mask that has been resampled to radar coordinates
 
     Args:
+        out_name: The name of the output masked coherence file
         mergedir: The output directory containing the merged interferogram
     """
     input_files = ('water_mask', LAT_NAME, LON_NAME, 'water_mask.rdr', COH_NAME, out_name)
-    mask_geo, lat, lon, mask_rdr, coh, masked_coh = [str(Path(mergedir) / name) for name in input_files]
+    mask_geo, lat, lon, mask_rdr, coh, masked_coh = [str(Path(merge_dir) / name) for name in input_files]
     create_water_mask(input_image='full_res.dem.wgs84', output_image=mask_geo, gdal_format='ISCE')
     resample_to_radar_io(mask_geo, lat, lon, mask_rdr)
     image_math(coh, mask_rdr, masked_coh, 'a*b')
@@ -906,8 +910,10 @@ def make_parameter_file(
         azimuth_looks: The number of azimuth looks
         filter_strength: The Goldstein-Werner filter strength
         range_looks: The number of range looks
+        water_mask: Whether or not to use a water mask
         dem_name: The name of the source DEM
         dem_resolution: The resolution of the source DEM
+        base_dir: The base directory to write the parameter file to. Defaults to the current working directory.
     """
     if base_dir is None:
         base_dir = Path.cwd()
