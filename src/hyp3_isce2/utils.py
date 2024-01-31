@@ -150,11 +150,6 @@ def write_isce2_image(output_path: str, array: np.ndarray) -> None:
     Args:
         output_path: The path to the output image file.
         array: The array to write to the file.
-        bands: The bands of the iamge. Default bands=1.
-        length: The length of the iamge. image shape is (length, width).
-        width: The width of the image.
-        mode: The mode to open the image in. Default='write'.
-        data_type: The data type of the image.
     """
     data_type_dic = {'float32': 'FLOAT',
                      'float64': 'DOUBLE',
