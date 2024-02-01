@@ -5,11 +5,11 @@ import logging
 import os
 import subprocess
 import sys
-from collections import namedtuple
+from dataclasses import dataclass
 from datetime import datetime, timezone
 from pathlib import Path
 from shutil import copyfile, make_archive
-from typing import Optional
+from typing import Iterable, Optional
 
 import isce
 from hyp3lib.aws import upload_file_to_s3
@@ -18,7 +18,7 @@ from hyp3lib.image import create_thumbnail
 from hyp3lib.util import string_is_true
 from isceobj.TopsProc.runMergeBursts import multilook
 from lxml import etree
-from osgeo import gdal
+from osgeo import gdal, gdalconst
 from pyproj import CRS
 
 import hyp3_isce2
@@ -53,6 +53,14 @@ from hyp3_isce2.water_mask import create_water_mask
 gdal.UseExceptions()
 
 log = logging.getLogger(__name__)
+
+
+@dataclass
+class ISCE2Dataset:
+    name: str
+    suffix: str
+    band: Iterable[int]
+    dtype: Optional[int] = gdalconst.GDT_Float32
 
 
 def insar_tops_burst(
@@ -305,48 +313,6 @@ def make_parameter_file(
     )
     parameter_file.write(out_path)
 
-    # output_strings = [
-    #     f'Reference Granule: {reference_scene}\n',
-    #     f'Secondary Granule: {secondary_scene}\n',
-    #     f'Reference Pass Direction: {ref_orbit_direction}\n',
-    #     f'Reference Orbit Number: {ref_orbit_number}\n',
-    #     f'Secondary Pass Direction: {sec_orbit_direction}\n',
-    #     f'Secondary Orbit Number: {sec_orbit_number}\n',
-    #     f'Baseline: {baseline_perp}\n',
-    #     f'UTC time: {utc_time}\n',
-    #     f'Heading: {ref_heading}\n',
-    #     f'Spacecraft height: {SPACECRAFT_HEIGHT}\n',
-    #     f'Earth radius at nadir: {EARTH_RADIUS}\n',
-    #     f'Slant range near: {slant_range_near}\n',
-    #     f'Slant range center: {slant_range_center}\n',
-    #     f'Slant range far: {slant_range_far}\n',
-    #     f'Range looks: {range_looks}\n',
-    #     f'Azimuth looks: {azimuth_looks}\n',
-    #     'INSAR phase filter: yes\n',
-    #     f'Phase filter parameter: {phase_filter_strength}\n',
-    #     'Range bandpass filter: no\n',
-    #     'Azimuth bandpass filter: no\n',
-    #     f'DEM source: {dem_name}\n',
-    #     f'DEM resolution (m): {dem_resolution}\n',
-    #     f'Unwrapping type: {unwrapper_type}\n',
-    #     'Speckle filter: yes\n',
-    #     f'Radar n lines: {multilook_position.n_lines}\n',
-    #     f'Radar n samples: {multilook_position.n_samples}\n',
-    #     f'Radar first valid line: {multilook_position.first_valid_line}\n',
-    #     f'Radar n valid lines: {multilook_position.n_valid_lines}\n',
-    #     f'Radar first valid sample: {multilook_position.first_valid_sample}\n',
-    #     f'Radar n valid samples: {multilook_position.n_valid_samples}\n',
-    #     f'Multilook azimuth time interval: {multilook_position.azimuth_time_interval}\n',
-    #     f'Multilook range pixel size: {multilook_position.range_pixel_size}\n',
-    #     f'Radar sensing stop: {datetime.strftime(multilook_position.sensing_stop, "%Y-%m-%dT%H:%M:%S.%f")}\n'
-    #     f'Water mask: {apply_water_mask}\n',
-    # ]
-    #
-    # output_string = ''.join(output_strings)
-    #
-    # with open(out_path.__str__(), 'w') as outfile:
-    #     outfile.write(output_string)
-
 
 def find_product(pattern: str) -> str:
     """Find a single file within the working directory's structure
@@ -382,7 +348,6 @@ def translate_outputs(product_name: str, pixel_size: float, include_radar: bool 
 
     del src_ds, target_ds
 
-    ISCE2Dataset = namedtuple('ISCE2Dataset', ['name', 'suffix', 'band'])
     datasets = [
         ISCE2Dataset('merged/filt_topophase.unw.geo', 'unw_phase', [2]),
         ISCE2Dataset('merged/phsig.cor.geo', 'corr', [1]),
@@ -410,6 +375,7 @@ def translate_outputs(product_name: str, pixel_size: float, include_radar: bool 
             srcDS=dataset.name,
             bandList=dataset.band,
             format='GTiff',
+            outputType=dataset.dtype,
             noData=0,
             creationOptions=['TILED=YES', 'COMPRESS=LZW', 'NUM_THREADS=ALL_CPUS'],
         )
@@ -556,16 +522,16 @@ def main():
     range_looks, azimuth_looks = [int(looks) for looks in args.looks.split('x')]
     apply_water_mask = args.apply_water_mask
 
-    insar_tops_burst(
-        reference_scene=reference_scene,
-        secondary_scene=secondary_scene,
-        azimuth_looks=azimuth_looks,
-        range_looks=range_looks,
-        swath_number=swath_number,
-        apply_water_mask=apply_water_mask,
-        esa_username=args.esa_username,
-        esa_password=args.esa_password,
-    )
+    # insar_tops_burst(
+    #     reference_scene=reference_scene,
+    #     secondary_scene=secondary_scene,
+    #     azimuth_looks=azimuth_looks,
+    #     range_looks=range_looks,
+    #     swath_number=swath_number,
+    #     apply_water_mask=apply_water_mask,
+    #     esa_username=args.esa_username,
+    #     esa_password=args.esa_password,
+    # )
 
     log.info('ISCE2 TopsApp run completed successfully')
 
