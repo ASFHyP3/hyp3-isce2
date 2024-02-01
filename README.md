@@ -65,12 +65,7 @@ those with 5x1 looks have a pixel spacing of 20 m.
 
 #### Water Mask Option
 There is always a water mask geotiff file included in the product package, but setting the **apply-water-mask** 
-(`--apply-water-mask`) option to True will apply the mask to the interferograms (both wrapped and unwrapped phase) 
-and browse image. 
-
-Note that ISCE2 currently only supports masking *after* phase unwrapping. As such, the masking does _not_ mitigate 
-phase unwrapping errors that may occur over water, but simply removes distracting signals afterwards to improve 
-the visualization of the interferogram.
+(`--apply-water-mask`) option to True will apply the mask to the wrapped interferogram prior to phase unwrapping.
 
 ### Earthdata Login and ESA Credentials
 
