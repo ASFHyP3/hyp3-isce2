@@ -243,3 +243,4 @@ tags
 
 # Test data
 tests/data/merge/*
+tests/data/water_mask_output.*

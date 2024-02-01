@@ -264,8 +264,8 @@ def test_goldstein_werner_filter(tmp_path):
     coh_path = tmp_path / 'coh.bin'
     out_path = tmp_path / 'filtered.bin'
     array = np.ones((10, 10), dtype=np.complex64)
-    utils.write_isce2_image(str(in_path), array, width=array.shape[1])
-    utils.write_isce2_image(str(coh_path), array.astype(np.float32), width=array.shape[1])
+    utils.write_isce2_image(str(in_path), array)
+    utils.write_isce2_image(str(coh_path), array.astype(np.float32))
     merge.goldstein_werner_filter(str(in_path), str(out_path), str(coh_path))
     assert out_path.exists()
     assert (out_path.parent / f'{out_path.name}.xml').exists()
@@ -298,7 +298,6 @@ def test_make_parameter_file(test_data_dir, test_merge_dir, tmp_path):
         assert meta['Radarnlines']
 
 
-@pytest.mark.xfail(reason='This test is failing due to a bug in write_isce2_image')
 def test_snaphu_unwrap(test_data_dir, tmp_path):
     merge_dir = tmp_path / 'merged'
     merge_dir.mkdir()
@@ -309,8 +308,8 @@ def test_snaphu_unwrap(test_data_dir, tmp_path):
     filt_path = merge_dir / 'filt_topophase.flat'
     coh_path = merge_dir / 'coh.bin'
     array = np.ones((100, 100), dtype=np.complex64)
-    utils.write_isce2_image(str(filt_path), array, width=array.shape[1], data_type='CFLOAT')
-    utils.write_isce2_image(str(coh_path), array.astype(np.float32), width=array.shape[1], data_type='FLOAT')
+    utils.write_isce2_image(str(filt_path), array)
+    utils.write_isce2_image(str(coh_path), array.astype(np.float32))
     merge.snaphu_unwrap(2, 2, str(coh_path), base_dir=merge_dir)
 
     assert (merge_dir / 'filt_topophase.unw').exists()
@@ -328,8 +327,8 @@ def test_geocode_products(test_data_dir, tmp_path):
     unw_path = merge_dir / 'filt_topophase.unw'
     dem_path = merge_dir / 'dem.bin'
     array = np.ones((377, 1272), dtype=np.float32)
-    utils.write_isce2_image(str(unw_path), array, width=array.shape[1], data_type='FLOAT')
-    utils.write_isce2_image(str(dem_path), array, width=array.shape[1], data_type='FLOAT')
+    utils.write_isce2_image(str(unw_path), array)
+    utils.write_isce2_image(str(dem_path), array)
     merge.geocode_products(1, 1, str(dem_path), base_dir=merge_dir, to_be_geocoded=[str(unw_path)])
 
     assert (merge_dir / 'filt_topophase.unw.geo').exists()
