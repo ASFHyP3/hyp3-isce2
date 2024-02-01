@@ -190,11 +190,9 @@ def test_create_image(tmp_path):
         # create an isce image (includes binary, .vrt, and .xml files)
         array = np.array(range(150), dtype=np.float32)
         array = array.reshape(15, 10)
-        bands = 1
         length, width = array.shape
         out_path = str(tmp_path / 'isce_image_2d')
-        utils.write_isce2_image(out_path, array=array, bands=bands, length=length, width=width, mode='write',
-                                data_type='FLOAT')
+        utils.write_isce2_image(out_path, array=array)
 
         # test ifg in create, finalize, and load modes
         path_c = path + '/img_via_create'
@@ -230,11 +228,8 @@ def test_create_image(tmp_path):
 def test_write_isce2_image(tmp_path):
     array = np.array(range(150), dtype=np.float32)
     array = array.reshape(15, 10)
-    bands = 1
-    length, width = array.shape
     out_path = str(tmp_path / 'isce_image_2d')
-    utils.write_isce2_image(out_path, array=array, bands=bands, length=length, width=width, mode='write',
-                            data_type='FLOAT')
+    utils.write_isce2_image(out_path, array=array)
     assert Path(out_path).is_file()
 
 
@@ -278,9 +273,7 @@ def test_load_isce2_image(tmp_path):
     in_path = str(tmp_path / 'isce_image_md')
     arrayin = np.array(range(150), dtype=np.float32)
     arrayin = arrayin.reshape(3, 5, 10)
-    bands, length, width = arrayin.shape
-    utils.write_isce2_image(in_path, array=arrayin, bands=bands, length=length, width=width, mode='write',
-                            data_type='FLOAT')
+    utils.write_isce2_image(in_path, array=arrayin)
     image_obj, arrayout = utils.load_isce2_image(in_path)
     assert isinstance(image_obj, isceobj.Image.Image.Image)
     assert np.array_equal(arrayin, arrayout)
@@ -289,10 +282,7 @@ def test_load_isce2_image(tmp_path):
 
     arrayin = np.array(range(150), dtype=np.float32)
     arrayin = arrayin.reshape(15, 10)
-    bands = 1
-    length, width = arrayin.shape
-    utils.write_isce2_image(in_path, array=arrayin, bands=bands, length=length, width=width, mode='write',
-                            data_type='FLOAT')
+    utils.write_isce2_image(in_path, array=arrayin)
     image_obj, arrayout = utils.load_isce2_image(in_path)
     assert isinstance(image_obj, isceobj.Image.Image.Image)
     assert np.array_equal(arrayin, arrayout)
@@ -300,10 +290,7 @@ def test_load_isce2_image(tmp_path):
     in_path = str(tmp_path / 'isce_image_1d')
     arrayin = np.array(range(150), dtype=np.float32)
     arrayin = arrayin.reshape(1, 150)
-    bands = 1
-    length, width = arrayin.shape
-    utils.write_isce2_image(in_path, array=arrayin, bands=bands, length=length, width=width, mode='write',
-                            data_type='FLOAT')
+    utils.write_isce2_image(in_path, array=arrayin)
     image_obj, arrayout = utils.load_isce2_image(in_path)
     assert isinstance(image_obj, isceobj.Image.Image.Image)
     assert np.array_equal(arrayin, arrayout)
@@ -319,10 +306,7 @@ def test_isce2_copy(tmp_path):
     in_path = str(tmp_path / 'isce_image_2d')
     arrayin = np.array(range(150), dtype=np.float32)
     arrayin = arrayin.reshape(15, 10)
-    bands = 1
-    length, width = arrayin.shape
-    utils.write_isce2_image(in_path, array=arrayin, bands=bands, length=length, width=width, mode='write',
-                            data_type='FLOAT')
+    utils.write_isce2_image(in_path, array=arrayin)
     out_path = str(tmp_path / 'isce_image_2d_copy')
     utils.isce2_copy(in_path, out_path)
     assert filecmp.cmp(in_path, out_path)
@@ -332,18 +316,12 @@ def test_image_math(tmp_path):
     in_path1 = str(tmp_path / 'isce_image_2d_1')
     array1 = np.array(range(150), dtype=np.float32)
     array1 = array1.reshape(15, 10)
-    bands = 1
-    length, width = array1.shape
-    utils.write_isce2_image(in_path1, array=array1, bands=bands, length=length, width=width, mode='write',
-                            data_type='FLOAT')
+    utils.write_isce2_image(in_path1, array=array1)
 
     in_path2 = str(tmp_path / 'isce_image_2d_2')
     array2 = np.array(range(3, 153), dtype=np.float32)
     array2 = array2.reshape(15, 10)
-    bands = 1
-    length, width = array2.shape
-    utils.write_isce2_image(in_path2, array=array2, bands=bands, length=length, width=width, mode='write',
-                            data_type='FLOAT')
+    utils.write_isce2_image(in_path2, array=array2)
 
     out_path = str(tmp_path / 'isce_image_2d_out')
     utils.image_math(in_path1, in_path2, out_path, 'a + b')

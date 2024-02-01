@@ -144,20 +144,36 @@ def load_isce2_image(in_path) -> tuple[isceobj.Image, np.ndarray]:
     return image_obj, array
 
 
-def write_isce2_image(output_path, array=None, bands=1, length=1, width=None, mode='write', data_type='FLOAT') -> None:
-    """Write an ISCE2 image file.
+def write_isce2_image(output_path: str, array: np.ndarray) -> None:
+    """Write a numpy array as an ISCE2 image file.
 
     Args:
         output_path: The path to the output image file.
         array: The array to write to the file.
-        bands: The bands of the iamge. Default bands=1.
-        length: The length of the iamge. image shape is (length, width).
-        width: The width of the image.
-        mode: The mode to open the image in. Default='write'.
-        data_type: The data type of the image.
     """
+    data_type_dic = {'float32': 'FLOAT',
+                     'float64': 'DOUBLE',
+                     'int32': 'INT',
+                     'complex64': 'CFLOAT',
+                     'int8': 'BYTE'
+                     }
+
+    data_type = data_type_dic[str(array.dtype)]
+
+    if array.ndim == 1:
+        bands = 1
+        length = 1
+        width = array.shape[0]
+    elif array.ndim == 2:
+        bands = 1
+        length, width = array.shape
+    elif array.ndim == 3:
+        bands, length, width = array.shape
+    else:
+        raise NotImplementedError('array with dimension larger than 3 is not implemented')
+
     image_obj = isceobj.createImage()
-    image_obj.initImage(output_path, mode, width, data_type, bands)
+    image_obj.initImage(output_path, 'write', width, data_type, bands)
     image_obj.setLength(length)
     image_obj.setImageType('bil')
     image_obj.createImage()
@@ -231,15 +247,8 @@ def resample_to_radar_io(image_to_resample: str, latin: str, lonin: str, output:
         data_type=maskim.toNumpyDataType(),
         outshape=(latim.coord2.coordSize, latim.coord1.coordSize),
     )
-    length, width = cropped.shape
-    write_isce2_image(output,
-                      array=cropped,
-                      bands=1,
-                      length=length,
-                      width=width,
-                      mode='write',
-                      data_type=maskim.dataType
-                      )
+
+    write_isce2_image(output, array=cropped)
 
 
 def isce2_copy(in_path: str, out_path: str):
