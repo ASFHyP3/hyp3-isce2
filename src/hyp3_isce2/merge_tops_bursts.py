@@ -528,7 +528,7 @@ def spoof_isce2_setup(
             translate_image(in_path, out_path, product.n_samples, image_type)
 
 
-def get_swath_list(base_dir: str | Path) -> list[str]:
+def get_swath_list(base_dir: Path) -> list[str]:
     """Get the list of swaths from a directory of burst products
 
     Args:
@@ -576,7 +576,7 @@ def get_merged_orbit(products: Iterable[Sentinel1]) -> Orbit:
     return orb
 
 
-def get_frames_and_indexes(burst_ifg_dir: str | Path) -> Tuple:
+def get_frames_and_indexes(burst_ifg_dir: Path) -> Tuple:
     """Get the frames and burst indexes from a directory of burst interferograms.
 
     Args:
@@ -669,13 +669,17 @@ def goldstein_werner_filter(in_path: Path, out_path: Path, coh_path: Path, filte
     phsigImage.renderHdr()
 
 
-def mask_coherence(out_name: str, merge_dir: str | Path = 'merged') -> None:
+def mask_coherence(out_name: str, merge_dir: Path = Optional[Path]) -> None:
     """Mask the coherence image with a water mask that has been resampled to radar coordinates
 
     Args:
         out_name: The name of the output masked coherence file
         mergedir: The output directory containing the merged interferogram
     """
+    if merge_dir is None:
+        merge_dir = Path.cwd() / 'merged'
+    merge_dir = Path(merge_dir)
+
     input_files = ('water_mask', LAT_NAME, LON_NAME, 'water_mask.rdr', COH_NAME, out_name)
     mask_geo, lat, lon, mask_rdr, coh, masked_coh = [str(Path(merge_dir) / name) for name in input_files]
     create_water_mask(input_image='full_res.dem.wgs84', output_image=mask_geo, gdal_format='ISCE')
@@ -686,8 +690,8 @@ def mask_coherence(out_name: str, merge_dir: str | Path = 'merged') -> None:
 def snaphu_unwrap(
     range_looks: int,
     azimuth_looks: int,
-    corrfile: Optional[str | Path] = None,
-    base_dir: Optional[str | Path] = None,
+    corrfile: Optional[Path] = None,
+    base_dir: Optional[Path] = None,
     cost_mode='DEFO',
     init_method='MST',
     defomax=4.0,
@@ -777,8 +781,8 @@ def snaphu_unwrap(
 def geocode_products(
     range_looks: int,
     azimuth_looks: int,
-    dem_path: str | Path,
-    base_dir: Optional[str | Path] = None,
+    dem_path: Path,
+    base_dir: Optional[Path] = None,
     to_be_geocoded=GEOCODE_LIST,
 ) -> None:
     """Geocode a set of ISCE2 products
