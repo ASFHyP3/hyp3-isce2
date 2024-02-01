@@ -527,16 +527,16 @@ def main():
     range_looks, azimuth_looks = [int(looks) for looks in args.looks.split('x')]
     apply_water_mask = args.apply_water_mask
 
-    # insar_tops_burst(
-    #     reference_scene=reference_scene,
-    #     secondary_scene=secondary_scene,
-    #     azimuth_looks=azimuth_looks,
-    #     range_looks=range_looks,
-    #     swath_number=swath_number,
-    #     apply_water_mask=apply_water_mask,
-    #     esa_username=args.esa_username,
-    #     esa_password=args.esa_password,
-    # )
+    insar_tops_burst(
+        reference_scene=reference_scene,
+        secondary_scene=secondary_scene,
+        azimuth_looks=azimuth_looks,
+        range_looks=range_looks,
+        swath_number=swath_number,
+        apply_water_mask=apply_water_mask,
+        esa_username=args.esa_username,
+        esa_password=args.esa_password,
+    )
 
     log.info('ISCE2 TopsApp run completed successfully')
 
