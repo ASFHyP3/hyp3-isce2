@@ -6,6 +6,17 @@ The format is based on [Keep a Changelog](https://keepachangelog.com/en/1.0.0/),
 and this project adheres to [PEP 440](https://www.python.org/dev/peps/pep-0440/)
 and uses [Semantic Versioning](https://semver.org/spec/v2.0.0.html).
 
+## [1.0.0]
+### Added
+* `merge_tops_bursts.py` file and workflow for merge burst products created using insar_tops_bursts.
+* `merge_tops_bursts` entrypoint
+* several classes and functions to `burst.py` and `utils.py` to support `merge_tops_burst`.
+* tests for the added functionality.
+* example data for testing under the `tests/data` directory.
+
+### Changed
+* `insar_tops_burst.py` to add four radar coordinate datasets to burst InSAR products (wrapped phase, lat, lon, los).
+
 ## [0.10.0]
 ### Added
 * Support for a new water masking dataset based off of OpenStreetMaps and ESA WorldCover data.
