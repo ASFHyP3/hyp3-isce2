@@ -104,7 +104,7 @@ def test_download_metadata_xmls(monkeypatch, tmp_path, test_data_dir):
 def test_get_scene_roi(test_s1_obj):
     bursts = test_s1_obj.product.bursts
     roi = merge.get_scene_roi(bursts)
-    golden_roi = (53.045079513806, 27.325111859227817, 54.15684468161031, 27.847161580403135) 
+    golden_roi = (53.045079513806, 27.325111859227817, 54.15684468161031, 27.847161580403135)
     assert np.all(np.isclose(roi, golden_roi))
 
 
@@ -260,7 +260,7 @@ def test_get_frames_and_indexes(isce2_merge_setup):
     assert burst_index[0] == [2, 0, 2]
 
 
-# FIXME: test_merge_bursts doesn't work due to pathing issue.
+# FIX: test_merge_bursts doesn't work due to pathing issue.
 # def test_merge_bursts(isce2_merge_setup):
 #     import os
 #     os.chdir(isce2_merge_setup)
