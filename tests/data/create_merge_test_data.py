@@ -52,7 +52,6 @@ def create_test_products():
     value = (1 + 0j)
     for ifg in ifgs:
         value += (0 + 1j) * np.pi / 2
-        print(value)
         replace_geotiff_data(str(ifg), value)
 
     shutil.make_archive(base_name=out_dir.name, format='zip', base_dir=out_dir.name)
