@@ -7,31 +7,35 @@ from pathlib import Path
 from unittest.mock import patch
 
 import asf_search
+import hyp3_isce2.burst as burst_utils
+import hyp3_isce2.merge_tops_bursts as merge
 import isceobj  # noqa: I100
 import lxml.etree as ET
 import numpy as np
 import pytest
+from hyp3_isce2 import utils
 from osgeo import gdal, osr
 from requests import Session
-
-import hyp3_isce2.burst as burst_utils
-import hyp3_isce2.merge_tops_bursts as merge
-from hyp3_isce2 import utils
 
 
 # TODO combine with test_burst.py's version
 def mock_asf_search_results(
-    slc_name: str, subswath: str, polarization: str, burst_index: int
+    slc_name: str,
+    subswath: str,
+    polarization: str,
+    burst_index: int,
+    burst_id: int,
+    path_number: int,
 ) -> asf_search.ASFSearchResults:
     product = asf_search.ASFProduct()
     product.umm = {'InputGranules': [slc_name]}
     product.properties.update(
         {
-            'burst': {'subswath': subswath, 'burstIndex': burst_index, 'relativeBurstID': burst_index - 1},
+            'burst': {'subswath': subswath, 'burstIndex': burst_index, 'relativeBurstID': burst_id},
             'polarization': polarization,
-            'url': 'https://foo.com/bar/baz.zip',
-            'startTime': '2020-06-04T02:22:54.655908Z',
-            'pathNumber': 1,
+            'url': f'https://foo.com/{slc_name}/baz.zip',
+            'startTime': '2020-06-04T02:23:13.963847Z',
+            'pathNumber': path_number,
         }
     )
     results = asf_search.ASFSearchResults([product])
@@ -39,17 +43,22 @@ def mock_asf_search_results(
     return results
 
 
-def test_to_burst_params(burst_product):
-    assert burst_product.to_burst_params() == burst_utils.BurstParams('bar', 'IW2', 'VV', 1)
+def test_to_burst_params(burst_product1):
+    assert burst_product1.to_burst_params() == burst_utils.BurstParams(
+        'S1A_IW_SLC__1SDV_20200604T022251_20200604T022318_032861_03CE65_7C85', 'IW2', 'VV', 7
+    )
 
 
-def test_get_burst_metadata(test_merge_dir, burst_product):
-    product_path = list(test_merge_dir.glob('*'))[0]
+def test_get_burst_metadata(test_merge_dir, burst_product1):
+    product_path = list(test_merge_dir.glob('S1_136231*'))[0]
 
     with patch('hyp3_isce2.merge_tops_bursts.asf_search.granule_search') as mock_search:
-        mock_search.return_value = mock_asf_search_results('bar', 'IW2', 'VV', 1)
+        mock_search.return_value = mock_asf_search_results(
+            'S1A_IW_SLC__1SDV_20200604T022251_20200604T022318_032861_03CE65_7C85', 'IW2', 'VV', 7, 136231, 64
+        )
         product = merge.get_burst_metadata([product_path])[0]
-    assert product == burst_product
+
+    assert product == burst_product1
 
 
 def test_prep_metadata_dirs(tmp_path):
@@ -93,13 +102,13 @@ def test_load_isce_s1_obj(annotation_manifest_dirs):
     assert s1_obj.tiff[0] == ''
 
 
-def test_Sentinel1BurstSelect(annotation_manifest_dirs, tmp_path, burst_product):
+def test_Sentinel1BurstSelect(annotation_manifest_dirs, tmp_path, burst_product1):
     annotation_dir, manifest_dir = annotation_manifest_dirs
     s1_obj = merge.load_isce_s1_obj(2, 'VV', annotation_dir.parent)
 
     # Test select_bursts
     test1_obj = deepcopy(s1_obj)
-    test1_utc = [burst_product.start_utc]
+    test1_utc = [burst_product1.start_utc]
     test1_obj.select_bursts(test1_utc)
     assert len(test1_obj.product.bursts) == 1
     assert test1_obj.product.numberOfBursts == 1
@@ -115,7 +124,7 @@ def test_Sentinel1BurstSelect(annotation_manifest_dirs, tmp_path, burst_product)
     test3_obj = deepcopy(test1_obj)
     outpath = tmp_path / 'IW2'
     test3_obj.output = str(outpath)
-    test3_obj.update_burst_properties([burst_product])
+    test3_obj.update_burst_properties([burst_product1])
     assert test3_obj.product.bursts[0].burstNumber == 1
     assert test3_obj.product.bursts[0].firstValidLine == 8
     assert test3_obj.product.bursts[0].numValidLines == 363
@@ -124,7 +133,7 @@ def test_Sentinel1BurstSelect(annotation_manifest_dirs, tmp_path, burst_product)
     assert Path(test3_obj.product.bursts[0].image.filename).name == 'burst_01.slc'
 
     test4_obj = deepcopy(test1_obj)
-    bad_product = deepcopy(burst_product)
+    bad_product = deepcopy(burst_product1)
     bad_product.start_utc = datetime(1999, 1, 1, 1, 0, 0, 0)
     with pytest.raises(ValueError, match='.*do not match.*'):
         test4_obj.update_burst_properties([bad_product])
@@ -135,13 +144,14 @@ def test_Sentinel1BurstSelect(annotation_manifest_dirs, tmp_path, burst_product)
     assert outpath.with_suffix('.xml').exists()
 
 
-def test_create_burst_cropped_s1_obj(annotation_manifest_dirs, burst_product):
-    s1_obj = merge.create_burst_cropped_s1_obj(2, [burst_product], 'VV', base_dir=annotation_manifest_dirs[0].parent)
+def test_create_burst_cropped_s1_obj(annotation_manifest_dirs, burst_product1):
+    s1_obj = merge.create_burst_cropped_s1_obj(2, [burst_product1], 'VV', base_dir=annotation_manifest_dirs[0].parent)
     assert isinstance(s1_obj, merge.Sentinel1BurstSelect)
     assert Path(s1_obj.output).with_suffix('.xml').exists()
 
 
-def test_modify_for_multilook(annotation_manifest_dirs, burst_product):
+def test_modify_for_multilook(annotation_manifest_dirs, burst_product1):
+    burst_product = burst_product1
     s1_obj = merge.create_burst_cropped_s1_obj(2, [burst_product], 'VV', base_dir=annotation_manifest_dirs[0].parent)
 
     pre_burst = s1_obj.product.bursts[0]
@@ -168,9 +178,9 @@ def test_modify_for_multilook(annotation_manifest_dirs, burst_product):
         looked_obj = merge.modify_for_multilook([bad_product], s1_obj)
 
 
-def test_download_dem_for_multiple_bursts(annotation_manifest_dirs, burst_product):
+def test_download_dem_for_multiple_bursts(annotation_manifest_dirs, burst_product1):
     base_dir = annotation_manifest_dirs[0].parent
-    s1_obj = merge.create_burst_cropped_s1_obj(2, [burst_product], 'VV', base_dir=base_dir)
+    s1_obj = merge.create_burst_cropped_s1_obj(2, [burst_product1], 'VV', base_dir=base_dir)
     with patch('hyp3_isce2.merge_tops_bursts.download_dem_for_isce2') as mock_download:
         mock_download.return_value = None
         merge.download_dem_for_multiple_bursts([s1_obj])
@@ -212,8 +222,8 @@ def test_translate_image(isce_type, dtype, n_bands, tmp_path):
     assert np.all(array == np.ones((10, 10), dtype=opts[dtype]))
 
 
-def test_spoof_isce2_setup(annotation_manifest_dirs, burst_product):
-    tmp_product = deepcopy(burst_product)
+def test_spoof_isce2_setup(annotation_manifest_dirs, burst_product1):
+    tmp_product = deepcopy(burst_product1)
     tmp_product.isce2_burst_number = 1
     base_dir = annotation_manifest_dirs[0].parent
     s1_obj = merge.create_burst_cropped_s1_obj(2, [tmp_product], 'VV', base_dir=base_dir)
