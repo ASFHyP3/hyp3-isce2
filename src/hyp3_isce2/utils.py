@@ -14,6 +14,7 @@ from isceobj.Util.ImageUtil.ImageLib import loadImage
 from iscesys.Component.ProductManager import ProductManager
 from osgeo import gdal
 
+
 gdal.UseExceptions()
 
 ESA_HOST = 'dataspace.copernicus.eu'
@@ -136,9 +137,9 @@ def get_esa_credentials() -> Tuple[str, str]:
     netrc_name = '_netrc' if system().lower() == 'windows' else '.netrc'
     netrc_file = Path.home() / netrc_name
 
-    if "ESA_USERNAME" in os.environ and "ESA_PASSWORD" in os.environ:
-        username = os.environ["ESA_USERNAME"]
-        password = os.environ["ESA_PASSWORD"]
+    if 'ESA_USERNAME' in os.environ and 'ESA_PASSWORD' in os.environ:
+        username = os.environ['ESA_USERNAME']
+        password = os.environ['ESA_PASSWORD']
         return username, password
 
     if netrc_file.exists():
@@ -149,8 +150,8 @@ def get_esa_credentials() -> Tuple[str, str]:
             return username, password
 
     raise ValueError(
-        "Please provide Copernicus Data Space Ecosystem (CDSE) credentials via the "
-        "ESA_USERNAME and ESA_PASSWORD environment variables, or your netrc file."
+        'Please provide Copernicus Data Space Ecosystem (CDSE) credentials via the '
+        'ESA_USERNAME and ESA_PASSWORD environment variables, or your netrc file.'
     )
 
 
@@ -229,7 +230,7 @@ def load_isce2_image(in_path) -> tuple[isceobj.Image, np.ndarray]:
             shape = (image_obj.bands, image_obj.length, image_obj.width)
             new_array = np.zeros(shape, dtype=image_obj.toNumpyDataType())
             for i in range(image_obj.bands):
-                new_array[i, :, :] = array[i::image_obj.bands]
+                new_array[i, :, :] = array[i:: image_obj.bands]
             array = new_array.copy()
         else:
             raise NotImplementedError('Non-BIL reading is not implemented')
@@ -243,12 +244,7 @@ def write_isce2_image(output_path: str, array: np.ndarray) -> None:
         output_path: The path to the output image file.
         array: The array to write to the file.
     """
-    data_type_dic = {'float32': 'FLOAT',
-                     'float64': 'DOUBLE',
-                     'int32': 'INT',
-                     'complex64': 'CFLOAT',
-                     'int8': 'BYTE'
-                     }
+    data_type_dic = {'float32': 'FLOAT', 'float64': 'DOUBLE', 'int32': 'INT', 'complex64': 'CFLOAT', 'int8': 'BYTE'}
 
     data_type = data_type_dic[str(array.dtype)]
 
@@ -399,7 +395,7 @@ def write_isce2_image_from_obj(image_obj, array):
             shape = (image_obj.length * image_obj.bands, image_obj.width)
             new_array = np.zeros(shape, dtype=image_obj.toNumpyDataType())
             for i in range(image_obj.bands):
-                new_array[i::image_obj.bands] = array[i, :, :]
+                new_array[i:: image_obj.bands] = array[i, :, :]
             array = new_array.copy()
         else:
             raise NotImplementedError('Non-BIL writing is not implemented')

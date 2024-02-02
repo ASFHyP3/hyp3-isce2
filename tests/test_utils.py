@@ -2,6 +2,7 @@ import filecmp
 import os
 import shutil
 from pathlib import Path
+from unittest.mock import patch
 
 import numpy as np
 import pytest
@@ -9,7 +10,8 @@ from osgeo import gdal
 
 import hyp3_isce2.utils as utils
 
-import isceobj  # noqa: I100
+import isceobj  # noqa
+
 
 gdal.UseExceptions()
 
@@ -54,17 +56,17 @@ def test_gdal_config_manager():
 
 
 def test_oldest_granule_first():
-    oldest = "S1_249434_IW1_20230511T170732_VV_07DE-BURST"
-    latest = "S1_249434_IW1_20230523T170733_VV_8850-BURST"
+    oldest = 'S1_249434_IW1_20230511T170732_VV_07DE-BURST'
+    latest = 'S1_249434_IW1_20230523T170733_VV_8850-BURST'
     assert utils.oldest_granule_first(oldest, latest) == (oldest, latest)
     assert utils.oldest_granule_first(latest, oldest) == (oldest, latest)
 
 
 def test_make_browse_image():
-    input_tif = "tests/data/test_geotiff.tif"
-    output_png = "tests/data/test_browse_image2.png"
+    input_tif = 'tests/data/test_geotiff.tif'
+    output_png = 'tests/data/test_browse_image2.png'
     utils.make_browse_image(input_tif, output_png)
-    assert open(output_png, "rb").read() == open("tests/data/test_browse_image.png", "rb").read()
+    assert open(output_png, 'rb').read() == open('tests/data/test_browse_image.png', 'rb').read()
     os.remove(output_png)
 
 
@@ -125,20 +127,29 @@ def test_resample_to_radar():
     resample_with_different_case(30, 10, 10, 10, geotransform)
 
 
-def test_resample_to_radar_io(tmp_path):
-    image_to_resample = 'tests/data/test_case/dem/down2_res.dem.wgs84'
-    latin = 'tests/data/test_case/geom_reference/IW2/down2_lat_01.rdr'
-    lonin = 'tests/data/test_case/geom_reference/IW2/down2_lon_01.rdr'
+def test_resample_to_radar_io(tmp_path, test_merge_dir):
+    out_paths = []
+    array = np.ones((10, 10), dtype=np.float32)
+    for image_name in ['input', 'lat', 'lon']:
+        out_path = str(tmp_path / image_name)
+        image = utils.create_image(str(out_path), 10, access_mode='write')
+        image.coord1.coordSize = 10
+        image.coord2.coordSize = 10
+        utils.write_isce2_image_from_obj(image, array)
+        out_paths.append(out_path)
+
+    image_to_resample, latin, lonin = out_paths
     output = str(tmp_path / 'output')
 
-    latim, lat = utils.load_isce2_image(latin)
-
-    utils.resample_to_radar_io(image_to_resample, latin, lonin, output)
+    with patch('hyp3_isce2.utils.resample_to_radar') as mock_resample:
+        mock_resample.return_value = array
+        utils.resample_to_radar_io(image_to_resample, latin, lonin, output)
 
     assert Path(output).is_file()
 
+    latim, lat = utils.load_isce2_image(latin)
     outputim, outputarray = utils.load_isce2_image(output)
-    assert outputarray.shape == lat.shape
+    assert np.all(outputarray == array)
 
 
 def test_get_esa_credentials_env(tmp_path, monkeypatch):
@@ -196,14 +207,16 @@ def test_create_image(tmp_path):
 
         # test ifg in create, finalize, and load modes
         path_c = path + '/img_via_create'
-        img_c = utils.create_image(path_c, width=width, access_mode='write', image_subtype=image_subtype,
-                                   action='create')
+        img_c = utils.create_image(
+            path_c, width=width, access_mode='write', image_subtype=image_subtype, action='create'
+        )
         assert Path(img_c.getFilename()).is_file()
 
         path_f = path + '/img_via_finalize'
         shutil.copy(out_path, path_f)
-        img_f = utils.create_image(path_f, width=width, access_mode='read', image_subtype=image_subtype,
-                                   action='finalize')
+        img_f = utils.create_image(
+            path_f, width=width, access_mode='read', image_subtype=image_subtype, action='finalize'
+        )
         assert Path(img_f.getFilename()).is_file()
         assert Path(img_f.getFilename() + '.vrt').is_file()
         assert Path(img_f.getFilename() + '.xml').is_file()
@@ -296,10 +309,15 @@ def test_load_isce2_image(tmp_path):
     assert np.array_equal(arrayin, arrayout)
 
 
-def test_get_geotransform_from_dataset():
-    in_path = 'tests/data/test_case/dem/down2_res.dem.wgs84'
-    image_obj, _ = utils.load_isce2_image(in_path)
-    assert utils.get_geotransform_from_dataset(image_obj) == (52.9999, 0.0277778, 0, 28.0001, 0, -0.0277778)
+def test_get_geotransform_from_dataset(tmp_path):
+    image_path = tmp_path / 'test'
+    image = utils.create_image(str(image_path), 100, access_mode='write')
+
+    image.coord1.coordStart = 1
+    image.coord1.coordDelta = 10
+    image.coord2.coordStart = 11
+    image.coord2.coordDelta = 100
+    assert utils.get_geotransform_from_dataset(image) == (1, 10, 0, 11, 0, 100)
 
 
 def test_isce2_copy(tmp_path):
@@ -329,14 +347,11 @@ def test_image_math(tmp_path):
     assert np.array_equal(array1 + array2, arrayout)
 
 
-def test_read_product_metadata():
-    data_dir = Path('tests/data/test_case')
-    product_name = Path('S1_136232_IW2_20200604_20200616_VV_INT80_663F')
-    file = Path('S1_136232_IW2_20200604_20200616_VV_INT80_663F.txt')
-    metafile = str(data_dir/product_name/file)
+def test_read_product_metadata(test_merge_dir):
+    metafile = list(test_merge_dir.glob('S1_136232*/*.txt'))[0]
     metas = utils.read_product_metadata(metafile)
     assert metas['ReferenceGranule'] == 'S1_136232_IW2_20200604T022315_VV_7C85-BURST'
     assert metas['SecondaryGranule'] == 'S1_136232_IW2_20200616T022316_VV_5D11-BURST'
-    assert float(metas['Baseline']) == -66.10716474087386
+    assert np.isclose(float(metas['Baseline']), -66.10716474087386)
     assert int(metas['ReferenceOrbitNumber']) == 32861
     assert int(metas['SecondaryOrbitNumber']) == 33036

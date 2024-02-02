@@ -3,10 +3,11 @@ import shutil
 from datetime import datetime
 from pathlib import Path
 
-import hyp3_isce2.burst as burst_utils
-import hyp3_isce2.merge_tops_bursts as merge
 import lxml.etree as ET
 import pytest
+
+import hyp3_isce2.burst as burst_utils
+import hyp3_isce2.merge_tops_bursts as merge
 
 
 @pytest.fixture()

@@ -7,15 +7,17 @@ from pathlib import Path
 from unittest.mock import patch
 
 import asf_search
-import hyp3_isce2.burst as burst_utils
-import hyp3_isce2.merge_tops_bursts as merge
-import isceobj  # noqa: I100
 import lxml.etree as ET
 import numpy as np
 import pytest
-from hyp3_isce2 import utils
 from osgeo import gdal, osr
 from requests import Session
+
+import hyp3_isce2.burst as burst_utils
+import hyp3_isce2.merge_tops_bursts as merge
+from hyp3_isce2 import utils
+
+import isceobj  # noqa: I100
 
 
 # TODO combine with test_burst.py's version
@@ -41,6 +43,24 @@ def mock_asf_search_results(
     results = asf_search.ASFSearchResults([product])
     results.searchComplete = True
     return results
+
+
+def create_test_geotiff(output_file, dtype='float32', n_bands=1):
+    """Create a test geotiff for testing"""
+    opts = {'float': (np.float64, gdal.GDT_Float64), 'cfloat': (np.complex64, gdal.GDT_CFloat32)}
+    np_dtype, gdal_dtype = opts[dtype]
+    data = np.ones((10, 10), dtype=np_dtype)
+    geotransform = [0.0, 1.0, 0.0, 0.0, 0.0, 1.0]
+    driver = gdal.GetDriverByName('GTiff')
+    dataset = driver.Create(output_file, 10, 10, n_bands, gdal_dtype)
+    dataset.SetGeoTransform(geotransform)
+    srs = osr.SpatialReference()
+    srs.ImportFromEPSG(4326)
+    dataset.SetProjection(srs.ExportToWkt())
+    for i in range(n_bands):
+        band = dataset.GetRasterBand(i + 1)
+        band.WriteArray(data)
+    dataset = None
 
 
 def test_to_burst_params(burst_product1):
@@ -190,30 +210,12 @@ def test_download_dem_for_multiple_bursts(annotation_manifest_dirs, burst_produc
         assert mock_download.call_args[1]['dem_name'] == 'glo_30'
 
 
-def create_test_geotiff(output_file, dtype='float32', n_bands=1):
-    """Create a test geotiff for testing"""
-    opts = {'float': (np.float64, gdal.GDT_Float64), 'cfloat': (np.complex64, gdal.GDT_CFloat32)}
-    np_dtype, gdal_dtype = opts[dtype]
-    data = np.ones((10, 10), dtype=np_dtype)
-    geotransform = [0.0, 1.0, 0.0, 0.0, 0.0, 1.0]
-    driver = gdal.GetDriverByName('GTiff')
-    dataset = driver.Create(output_file, 10, 10, n_bands, gdal_dtype)
-    dataset.SetGeoTransform(geotransform)
-    srs = osr.SpatialReference()
-    srs.ImportFromEPSG(4326)
-    dataset.SetProjection(srs.ExportToWkt())
-    for i in range(n_bands):
-        band = dataset.GetRasterBand(i + 1)
-        band.WriteArray(data)
-    dataset = None
-
-
 @pytest.mark.parametrize('isce_type,dtype,n_bands', [['ifg', 'cfloat', 1], ['lat', 'float', 1], ['los', 'float', 2]])
 def test_translate_image(isce_type, dtype, n_bands, tmp_path):
     test_tiff = tmp_path / 'test.tif'
     create_test_geotiff(str(test_tiff), dtype, n_bands)
     out_path = tmp_path / 'test.bin'
-    merge.translate_image(str(test_tiff), str(out_path), 10, isce_type)
+    merge.translate_image(str(test_tiff), str(out_path), isce_type)
     for ext in ['.xml', '.vrt', '']:
         assert (out_path.parent / (out_path.name + ext)).exists()
 

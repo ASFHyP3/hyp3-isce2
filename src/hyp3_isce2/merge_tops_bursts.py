@@ -442,15 +442,16 @@ def download_dem_for_multiple_bursts(s1_objs: Iterable[Sentinel1BurstSelect], ba
     download_dem_for_isce2(dem_roi, dem_name='glo_30', dem_dir=base_dir, buffer=0, resample_20m=False)
 
 
-def translate_image(in_path: str, out_path: str, width: int, image_type: str) -> None:
+def translate_image(in_path: str, out_path: str, image_type: str) -> None:
     """Translate a HyP3 burst product image to an ISCE2 compatible image
 
     Args:
         in_path: The path to the input image
         out_path: The path to the output image
-        width: The width of the image
         image_type: The type of image to translate can be one of 'ifg', 'los', 'lat', or 'lon'
     """
+    info = gdal.Info(in_path, format='json')
+    width = info['size'][0]
     if image_type in 'ifg':
         out_img = isceobj.createIntImage()
         n_bands = 1
@@ -525,7 +526,8 @@ def spoof_isce2_setup(
                 name = f'{image_type}_{product.isce2_burst_number:02}.rdr'
             in_path = str(product.product_path / f'{product.product_path.stem}_{file_types[image_type]}.tif')
             out_path = str(img_dir / product.swath / name)
-            translate_image(in_path, out_path, product.n_samples, image_type)
+            # translate_image(in_path, out_path, product.n_samples, image_type)
+            translate_image(in_path, out_path, image_type)
 
 
 def get_swath_list(base_dir: Path) -> list[str]:
