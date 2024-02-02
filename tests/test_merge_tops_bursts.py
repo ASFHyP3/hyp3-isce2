@@ -1,5 +1,4 @@
 """Tests for hyp3_isce2.merge_tops_bursts module, use single quotes"""
-import shutil
 from copy import deepcopy
 from dataclasses import dataclass
 from datetime import datetime
@@ -20,7 +19,6 @@ from hyp3_isce2 import utils
 import isceobj  # noqa: I100
 
 
-# TODO combine with test_burst.py's version
 def mock_asf_search_results(
     slc_name: str,
     subswath: str,
@@ -103,11 +101,10 @@ def test_download_metadata_xmls(monkeypatch, tmp_path, test_data_dir):
             assert (tmp_path / 'manifest' / 'foo.xml').exists()
 
 
-def test_get_scene_roi(tmp_path, test_data_dir):
-    s1_obj = utils.load_product(test_data_dir / 'isce2_s1_obj.xml')
-    bursts = s1_obj.bursts
+def test_get_scene_roi(test_s1_obj):
+    bursts = test_s1_obj.product.bursts
     roi = merge.get_scene_roi(bursts)
-    golden_roi = (53.045079513806, 27.325111859227817, 54.15684468161031, 27.847161580403135)
+    golden_roi = (53.045079513806, 27.325111859227817, 54.15684468161031, 27.847161580403135) 
     assert np.all(np.isclose(roi, golden_roi))
 
 
@@ -250,9 +247,8 @@ def test_get_swath_list(tmp_path):
     assert merge.get_swath_list(str(test_dir)) == [1, 2, 3]
 
 
-def test_get_merged_orbit(test_data_dir):
-    s1_obj = utils.load_product(test_data_dir / 'isce2_s1_obj.xml')
-    merged_orbit = merge.get_merged_orbit([s1_obj])
+def test_get_merged_orbit(test_s1_obj):
+    merged_orbit = merge.get_merged_orbit([test_s1_obj.product])
     assert isinstance(merged_orbit, isceobj.Orbit.Orbit.Orbit)
     assert len(merged_orbit.stateVectors) == 17  # This number will change if the test data changes
 
@@ -264,7 +260,7 @@ def test_get_frames_and_indexes(isce2_merge_setup):
     assert burst_index[0] == [2, 0, 2]
 
 
-# FIX: test_merge_bursts doesn't work due to pathing issue.
+# FIXME: test_merge_bursts doesn't work due to pathing issue.
 # def test_merge_bursts(isce2_merge_setup):
 #     import os
 #     os.chdir(isce2_merge_setup)
@@ -290,12 +286,11 @@ def test_get_product_name(burst_product1):
     assert product_name[:-4] == 'S1_064__20200604_20200616_VV_INT80_'
 
 
-def test_make_parameter_file(test_data_dir, test_merge_dir, tmp_path):
-    # Prep data
-    tmp_ifg_dir = tmp_path / 'fine_interferogram'
-    tmp_ifg_dir.mkdir()
-    (tmp_ifg_dir / 'IW2').mkdir()
-    shutil.copy(test_data_dir / 'isce2_s1_obj.xml', tmp_ifg_dir / 'IW2.xml')
+def test_make_parameter_file(test_data_dir, test_merge_dir, test_s1_obj, tmp_path):
+    ifg_dir = tmp_path / 'fine_interferogram' / 'IW2'
+    ifg_dir.mkdir(parents=True)
+    test_s1_obj.output = str(ifg_dir.parent / 'IW2')
+    test_s1_obj.write_xml()
 
     out_file = tmp_path / 'test.txt'
     merge.make_parameter_file(out_file, test_merge_dir, 20, 4, 0.6, True, base_dir=tmp_path)
@@ -310,12 +305,13 @@ def test_make_parameter_file(test_data_dir, test_merge_dir, tmp_path):
         assert meta['Radarnlines']
 
 
-def test_snaphu_unwrap(test_data_dir, tmp_path):
+def test_snaphu_unwrap(test_s1_obj, test_data_dir, tmp_path):
     merge_dir = tmp_path / 'merged'
     merge_dir.mkdir()
     ifg_dir = tmp_path / 'fine_interferogram' / 'IW2'
     ifg_dir.mkdir(parents=True, exist_ok=True)
-    shutil.copy(test_data_dir / 'isce2_s1_obj.xml', ifg_dir.parent / 'IW2_multilooked.xml')
+    test_s1_obj.output = str(ifg_dir.parent / 'IW2_multilooked')
+    test_s1_obj.write_xml()
 
     filt_path = merge_dir / 'filt_topophase.flat'
     coh_path = merge_dir / 'coh.bin'
@@ -329,12 +325,13 @@ def test_snaphu_unwrap(test_data_dir, tmp_path):
     assert (merge_dir / 'filt_topophase.unw.vrt').exists()
 
 
-def test_geocode_products(test_data_dir, tmp_path):
+def test_geocode_products(test_data_dir, tmp_path, test_s1_obj):
     merge_dir = tmp_path / 'merged'
     merge_dir.mkdir()
     ifg_dir = tmp_path / 'fine_interferogram' / 'IW2'
     ifg_dir.mkdir(parents=True, exist_ok=True)
-    shutil.copy(test_data_dir / 'isce2_s1_obj.xml', ifg_dir.parent / 'IW2.xml')
+    test_s1_obj.output = str(ifg_dir.parent / 'IW2')
+    test_s1_obj.write_xml()
 
     unw_path = merge_dir / 'filt_topophase.unw'
     dem_path = merge_dir / 'dem.bin'

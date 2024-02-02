@@ -112,6 +112,16 @@ def burst_products(burst_product1, burst_product2):
 
 
 @pytest.fixture
+def test_s1_obj(annotation_manifest_dirs, burst_products):
+    annotation_dir, manifest_dir = annotation_manifest_dirs
+    s1_obj = merge.load_isce_s1_obj(2, 'VV', annotation_dir.parent)
+    s1_obj.output = str(annotation_dir.parent / burst_products[0].swath)
+    s1_obj.select_bursts([x.start_utc for x in burst_products])
+    s1_obj.update_burst_properties(burst_products)
+    return s1_obj
+
+
+@pytest.fixture
 def isce2_merge_setup(annotation_manifest_dirs, burst_products):
     base_dir = annotation_manifest_dirs[0].parent
     s1_obj = merge.create_burst_cropped_s1_obj(2, burst_products, 'VV', base_dir=base_dir)
