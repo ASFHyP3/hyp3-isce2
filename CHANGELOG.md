@@ -12,7 +12,8 @@ and uses [Semantic Versioning](https://semver.org/spec/v2.0.0.html).
 * `merge_tops_bursts` entrypoint
 * several classes and functions to `burst.py` and `utils.py` to support `merge_tops_burst`.
 * tests for the added functionality.
-* example data for testing under the `tests/data` directory.
+* `tests/data/merge.zip` example data for testing merge workflow.
+* `tests/data/create_merge_test_data.py` for generating merge workflow test data.
 
 ### Changed
 * `insar_tops_burst.py` to add four radar coordinate datasets to burst InSAR products (wrapped phase, lat, lon, los).
