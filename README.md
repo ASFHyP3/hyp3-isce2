@@ -34,7 +34,13 @@ python -m hyp3_isce2 ++process merge_tops_bursts \
   PATH_TO_UNZIPPED_PRODUCTS \
   --apply-water-mask True
 ```
-Where `PATH_TO_UNZIPPED_PRODUCTS` is the path to a directory containing unzipped burst InSAR products. In order to be merging eligible burst products must:
+Where `PATH_TO_UNZIPPED_PRODUCTS` is the path to a directory containing unzipped burst InSAR products. For example:
+```bash
+PATH_TO_UNZIPPED_PRODUCTS/
+├─ S1_136232_IW2_20200604_20200616_VV_INT80_663F/
+├─ S1_136231_IW2_20200604_20200616_VV_INT80_529D/
+```
+In order to be merging eligible, all burst products must:
 1. Have the same reference and secondary dates
 1. Have the same polarization
 1. Have the same multilooking
