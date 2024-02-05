@@ -671,7 +671,7 @@ def goldstein_werner_filter(in_path: Path, out_path: Path, coh_path: Path, filte
     phsigImage.renderHdr()
 
 
-def mask_coherence(out_name: str, merge_dir: Path = Optional[Path]) -> None:
+def mask_coherence(out_name: str, merge_dir: Optional[Path] = None) -> None:
     """Mask the coherence image with a water mask that has been resampled to radar coordinates
 
     Args:
