@@ -55,11 +55,13 @@ Documentation = "https://hyp3-docs.asf.alaska.edu"
 insar_tops_burst = "hyp3_isce2.insar_tops_burst:main"
 insar_tops = "hyp3_isce2.insar_tops:main"
 insar_stripmap = "hyp3_isce2.insar_stripmap:main"
+merge_tops_bursts = "hyp3_isce2.merge_tops_bursts:main"
 
 [project.entry-points.hyp3]
 insar_tops_burst = "hyp3_isce2.insar_tops_burst:main"
 insar_tops = "hyp3_isce2.insar_tops:main"
 insar_stripmap = "hyp3_isce2.insar_stripmap:main"
+merge_tops_bursts = "hyp3_isce2.merge_tops_bursts:main"
 
 [tool.pytest.ini_options]
 testpaths = ["tests"]
@@ -77,6 +79,3 @@ readme = {file = ["README.md"], content-type = "text/markdown"}
 where = ["src"]
 
 [tool.setuptools_scm]
-
-[tool.ruff]
-line-length = 120
