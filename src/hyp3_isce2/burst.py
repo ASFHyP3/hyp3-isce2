@@ -5,14 +5,20 @@ import shutil
 import time
 from concurrent.futures import ThreadPoolExecutor
 from dataclasses import dataclass
+from datetime import datetime, timedelta
 from pathlib import Path
+from secrets import token_hex
 from typing import Iterator, List, Optional, Tuple, Union
 
-import isce  # noqa: F401
+import asf_search
+import numpy as np
 import requests
 from isceobj.Sensor.TOPS.Sentinel1 import Sentinel1
+from isceobj.TopsProc.runMergeBursts import multilook
 from lxml import etree
 from shapely import geometry
+
+from hyp3_isce2.utils import load_isce2_image, load_product, write_isce2_image_from_obj
 
 
 log = logging.getLogger(__name__)
@@ -29,6 +35,21 @@ class BurstParams:
     swath: str
     polarization: str
     burst_number: int
+
+
+@dataclass
+class BurstPosition:
+    """Parameters describing the position of a burst and its valid data."""
+
+    n_lines: int
+    n_samples: int
+    first_valid_line: int
+    n_valid_lines: int
+    first_valid_sample: int
+    n_valid_samples: int
+    azimuth_time_interval: float
+    range_pixel_size: float
+    sensing_stop: datetime
 
 
 class BurstMetadata:
@@ -91,7 +112,7 @@ def wait_for_extractor(response: requests.Response, sleep_time: int = 15) -> boo
         True if the burst was successfully downloaded, False otherwise.
     """
     if response.status_code == 202:
-        time.sleep(15)
+        time.sleep(sleep_time)
         return False
 
     response.raise_for_status()
@@ -235,6 +256,7 @@ def get_isce2_burst_bbox(params: BurstParams, base_dir: Optional[Path] = None) -
 
     s1_obj = Sentinel1()
     s1_obj.configure()
+    s1_obj.polarization = params.polarization.lower()
     s1_obj.safe = [str(base_dir / f'{params.granule}.SAFE')]
     s1_obj.swathNumber = int(params.swath[-1])
     s1_obj.parse()
@@ -323,17 +345,281 @@ def download_bursts(param_list: Iterator[BurstParams]) -> List[BurstMetadata]:
     return bursts
 
 
-def get_product_name(
-    reference_scene: str,
-    secondary_scene: str,
-) -> str:
+def get_product_name(reference_scene: str, secondary_scene: str, pixel_spacing: int) -> str:
     """Get the name of the interferogram product.
+
+    Args:
+        reference_scene: The reference burst name.
+        secondary_scene: The secondary burst name.
+        pixel_spacing: The spacing of the pixels in the output image.
+
+    Returns:
+        The name of the interferogram product.
+    """
+
+    reference_split = reference_scene.split('_')
+    secondary_split = secondary_scene.split('_')
+
+    platform = reference_split[0]
+    burst_id = reference_split[1]
+    image_plus_swath = reference_split[2]
+    reference_date = reference_split[3][0:8]
+    secondary_date = secondary_split[3][0:8]
+    polarization = reference_split[4]
+    product_type = 'INT'
+    pixel_spacing = str(int(pixel_spacing))
+    product_id = token_hex(2).upper()
+
+    return '_'.join(
+        [
+            platform,
+            burst_id,
+            image_plus_swath,
+            reference_date,
+            secondary_date,
+            polarization,
+            product_type + pixel_spacing,
+            product_id,
+        ]
+    )
+
+
+def get_burst_params(scene_name: str) -> BurstParams:
+    results = asf_search.search(product_list=[scene_name])
+
+    if len(results) == 0:
+        raise ValueError(f'ASF Search failed to find {scene_name}.')
+    if len(results) > 1:
+        raise ValueError(f'ASF Search found multiple results for {scene_name}.')
+
+    return BurstParams(
+        granule=results[0].umm['InputGranules'][0].split('-')[0],
+        swath=results[0].properties['burst']['subswath'],
+        polarization=results[0].properties['polarization'],
+        burst_number=results[0].properties['burst']['burstIndex'],
+    )
+
+
+def validate_bursts(reference_scene: str, secondary_scene: str) -> None:
+    """Check whether the reference and secondary bursts are valid.
 
     Args:
         reference_scene: The reference burst name.
         secondary_scene: The secondary burst name.
 
     Returns:
-        The name of the interferogram product.
+        None
     """
-    return f'{reference_scene}x{secondary_scene}'
+    ref_split = reference_scene.split('_')
+    sec_split = secondary_scene.split('_')
+
+    ref_burst_id = ref_split[1]
+    sec_burst_id = sec_split[1]
+
+    ref_polarization = ref_split[4]
+    sec_polarization = sec_split[4]
+
+    if ref_burst_id != sec_burst_id:
+        raise ValueError(f'The reference and secondary burst IDs are not the same: {ref_burst_id} and {sec_burst_id}.')
+
+    if ref_polarization != sec_polarization:
+        raise ValueError(
+            f'The reference and secondary polarizations are not the same: {ref_polarization} and {sec_polarization}.'
+        )
+
+    if ref_polarization != 'VV' and ref_polarization != 'HH':
+        raise ValueError(f'{ref_polarization} polarization is not currently supported, only VV and HH.')
+
+
+def load_burst_position(swath_xml_path: str, burst_number: int) -> BurstPosition:
+    """Get the tiff resolution and position parameters for a burst.
+
+    Args:
+        swath_xml_path: The path to the swath xml file.
+        burst_number: The burst number.
+
+    Returns:
+        A BurstPosition object describing the burst.
+    """
+
+    product = load_product(swath_xml_path)
+    burst_props = product.bursts[burst_number]
+
+    pos = BurstPosition(
+        n_lines=burst_props.numberOfLines,
+        n_samples=burst_props.numberOfSamples,
+        first_valid_line=burst_props.firstValidLine,
+        n_valid_lines=burst_props.numValidLines,
+        first_valid_sample=burst_props.firstValidSample,
+        n_valid_samples=burst_props.numValidSamples,
+        azimuth_time_interval=burst_props.azimuthTimeInterval,
+        range_pixel_size=burst_props.rangePixelSize,
+        sensing_stop=burst_props.sensingStop,
+    )
+    return pos
+
+
+def evenize(length: int, first_valid: int, valid_length: int, looks: int) -> Tuple[int]:
+    """Get dimensions for an image that are integer multiples of looks.
+    This applies to both the full image and the valid data region.
+    Works with either the image's lines or samples.
+
+    Args:
+        length: The length of the image.
+        first_valid: The first valid pixel of the image.
+        valid_length: The length of the valid data region.
+        looks: The number of looks.
+    """
+    # even_length must be a multiple of looks
+    n_remove = length % looks
+    even_length = length - n_remove
+
+    # even_first_valid is the first multiple of looks after first_valid
+    even_first_valid = int(np.ceil(first_valid / looks)) * looks
+
+    # account for the shift introduced by the shift of first_valid
+    n_first_valid_shift = even_first_valid - first_valid
+    new_valid_length = valid_length - n_first_valid_shift
+
+    # even_valid_length must be a multiple of looks
+    n_valid_length_remove = new_valid_length % looks
+    even_valid_length = new_valid_length - n_valid_length_remove
+
+    if (even_first_valid + even_valid_length) > even_length:
+        raise ValueError('The computed valid data region extends beyond the image bounds.')
+
+    return even_length, even_first_valid, even_valid_length
+
+
+def evenly_subset_position(position: BurstPosition, rg_looks, az_looks) -> BurstPosition:
+    """Get the parameters necessary to multilook a burst using even dimensions.
+
+    Multilooking using the generated parameters ensures that there is a clear link
+    between pixels in the full resolution and multilooked pixel positions.
+
+    Args:
+        position: The BurstPosition object describing the burst.
+        rg_looks: The number of range looks.
+        az_looks: The number of azimuth looks.
+
+    Returns:
+        A BurstPosition object describing the burst.
+    """
+    even_n_samples, even_first_valid_sample, even_n_valid_samples = evenize(
+        position.n_samples, position.first_valid_sample, position.n_valid_samples, rg_looks
+    )
+    even_n_lines, even_first_valid_line, even_n_valid_lines = evenize(
+        position.n_lines, position.first_valid_line, position.n_valid_lines, az_looks
+    )
+    n_lines_remove = position.n_lines - even_n_lines
+    even_sensing_stop = position.sensing_stop - timedelta(seconds=position.azimuth_time_interval * (n_lines_remove))
+
+    clip_position = BurstPosition(
+        n_lines=even_n_lines,
+        n_samples=even_n_samples,
+        first_valid_line=even_first_valid_line,
+        n_valid_lines=even_n_valid_lines,
+        first_valid_sample=even_first_valid_sample,
+        n_valid_samples=even_n_valid_samples,
+        azimuth_time_interval=position.azimuth_time_interval,
+        range_pixel_size=position.range_pixel_size,
+        sensing_stop=even_sensing_stop,
+    )
+    return clip_position
+
+
+def multilook_position(position: BurstPosition, rg_looks: int, az_looks: int) -> BurstPosition:
+    """Multilook a BurstPosition object.
+
+    Args:
+        position: The BurstPosition object to multilook.
+        rg_looks: The number of range looks.
+        az_looks: The number of azimuth looks.
+    """
+    multilook_position = BurstPosition(
+        n_lines=int(position.n_lines / az_looks),
+        n_samples=int(position.n_samples / rg_looks),
+        first_valid_line=int(position.first_valid_line / az_looks),
+        n_valid_lines=int(position.n_valid_lines / az_looks),
+        first_valid_sample=int(position.first_valid_sample / rg_looks),
+        n_valid_samples=int(position.n_valid_samples / rg_looks),
+        azimuth_time_interval=position.azimuth_time_interval * az_looks,
+        range_pixel_size=position.range_pixel_size * rg_looks,
+        sensing_stop=position.sensing_stop,
+    )
+    return multilook_position
+
+
+def safely_multilook(
+    in_file: str, position: BurstPosition, rg_looks: int, az_looks: int, subset_to_valid: bool = True
+) -> None:
+    """Multilook an image, but only over a subset of the data whose dimensions are
+    integer divisible by range/azimuth looks. Do the same for the valid data region.
+
+    Args:
+        in_file: The path to the input ISCE2-formatted image.
+        position: The BurstPosition object describing the burst.
+        rg_looks: The number of range looks.
+        az_looks: The number of azimuth looks.
+        subset_to_valid: Whether to subset the image to the valid data region specified by position.
+    """
+    image_obj, array = load_isce2_image(in_file)
+
+    dtype = image_obj.toNumpyDataType()
+    identity_value = np.identity(1, dtype=dtype)
+    mask = np.zeros((position.n_lines, position.n_samples), dtype=dtype)
+
+    if subset_to_valid:
+        last_line = position.first_valid_line + position.n_valid_lines
+        last_sample = position.first_valid_sample + position.n_valid_samples
+        mask[position.first_valid_line: last_line, position.first_valid_sample: last_sample] = identity_value
+    else:
+        mask[:, :] = identity_value
+
+    if len(array.shape) == 2:
+        array = array[: position.n_lines, : position.n_samples].copy()
+        array *= mask
+    else:
+        array = array[:, : position.n_lines, : position.n_samples].copy()
+        for band in range(array.shape[0]):
+            array[band, :, :] *= mask
+
+    original_path = Path(image_obj.filename)
+    clip_path = str(original_path.parent / f'{original_path.stem}.clip{original_path.suffix}')
+    multilook_path = str(original_path.parent / f'{original_path.stem}.multilooked{original_path.suffix}')
+
+    image_obj.setFilename(clip_path)
+    image_obj.setWidth(position.n_samples)
+    image_obj.setLength(position.n_lines)
+    write_isce2_image_from_obj(image_obj, array)
+
+    multilook(clip_path, multilook_path, alks=az_looks, rlks=rg_looks)
+
+
+def multilook_radar_merge_inputs(
+    swath_number: int, rg_looks: int, az_looks: int, base_dir: Optional[Path] = None
+) -> BurstPosition:
+    """Multilook the radar datasets needed for post-generation product merging.
+
+    Args:
+        swath_number: The swath number.
+        rg_looks: The number of range looks.
+        az_looks: The number of azimuth looks.
+        base_dir: The working directory. If not set, defaults to the current working directory.
+    """
+    if base_dir is None:
+        base_dir = Path.cwd()
+    ifg_dir = base_dir / 'fine_interferogram'
+    geom_dir = base_dir / 'geom_reference'
+
+    swath = f'IW{swath_number}'
+    position_params = load_burst_position(str(ifg_dir / f'{swath}.xml'), 0)
+    even_position_params = evenly_subset_position(position_params, rg_looks, az_looks)
+    safely_multilook(str(ifg_dir / swath / 'burst_01.int'), even_position_params, rg_looks, az_looks)
+
+    for geom in ['lat_01.rdr', 'lon_01.rdr', 'los_01.rdr']:
+        geom_path = str(geom_dir / swath / geom)
+        safely_multilook(geom_path, even_position_params, rg_looks, az_looks, subset_to_valid=False)
+
+    multilooked_params = multilook_position(even_position_params, rg_looks, az_looks)
+    return multilooked_params

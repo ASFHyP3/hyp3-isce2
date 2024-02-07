@@ -3,46 +3,64 @@
 import argparse
 import logging
 import os
-import site
 import subprocess
 import sys
-from collections import namedtuple
+from dataclasses import dataclass
 from datetime import datetime, timezone
 from pathlib import Path
 from shutil import copyfile, make_archive
+from typing import Iterable, Optional
 
-import asf_search
+import isce
 from hyp3lib.aws import upload_file_to_s3
 from hyp3lib.get_orb import downloadSentinelOrbitFile
 from hyp3lib.image import create_thumbnail
+from hyp3lib.util import string_is_true
+from isceobj.TopsProc.runMergeBursts import multilook
 from lxml import etree
-from osgeo import gdal
+from osgeo import gdal, gdalconst
+from pyproj import CRS
 
 import hyp3_isce2
+import hyp3_isce2.metadata.util
 from hyp3_isce2 import topsapp
 from hyp3_isce2.burst import (
-    BurstParams,
+    BurstPosition,
     download_bursts,
+    get_burst_params,
     get_isce2_burst_bbox,
     get_product_name,
     get_region_of_interest,
+    multilook_radar_merge_inputs,
+    validate_bursts,
 )
 from hyp3_isce2.dem import download_dem_for_isce2
 from hyp3_isce2.logging import configure_root_logger
-from hyp3_isce2.metadata import util
 from hyp3_isce2.s1_auxcal import download_aux_cal
-from hyp3_isce2.utils import make_browse_image, oldest_granule_first, utm_from_lon_lat
+from hyp3_isce2.utils import (
+    ParameterFile,
+    get_esa_credentials,
+    image_math,
+    isce2_copy,
+    make_browse_image,
+    oldest_granule_first,
+    resample_to_radar_io,
+    utm_from_lon_lat,
+)
+from hyp3_isce2.water_mask import create_water_mask
 
 
 gdal.UseExceptions()
 
 log = logging.getLogger(__name__)
 
-# ISCE needs its applications to be on the system path.
-# See https://github.com/isce-framework/isce2#setup-your-environment
-ISCE_APPLICATIONS = Path(site.getsitepackages()[0]) / 'isce' / 'applications'
-if str(ISCE_APPLICATIONS) not in os.environ['PATH'].split(os.pathsep):
-    os.environ['PATH'] = str(ISCE_APPLICATIONS) + os.pathsep + os.environ['PATH']
+
+@dataclass
+class ISCE2Dataset:
+    name: str
+    suffix: str
+    band: Iterable[int]
+    dtype: Optional[int] = gdalconst.GDT_Float32
 
 
 def insar_tops_burst(
@@ -51,6 +69,9 @@ def insar_tops_burst(
     swath_number: int,
     azimuth_looks: int = 4,
     range_looks: int = 20,
+    apply_water_mask: bool = False,
+    esa_username: Optional[str] = None,
+    esa_password: Optional[str] = None,
 ) -> Path:
     """Create a burst interferogram
 
@@ -60,43 +81,23 @@ def insar_tops_burst(
         swath_number: Number of swath to grab bursts from (1, 2, or 3) for IW
         azimuth_looks: Number of azimuth looks
         range_looks: Number of range looks
+        apply_water_mask: Whether to apply a pre-unwrap water mask
+        esa_username: Username for ESA's Copernicus Data Space Ecosystem
+        esa_password: Password for ESA's Copernicus Data Space Ecosystem
 
     Returns:
-        Path to the output files
+        Path to results directory
     """
+    if (esa_username is None) or (esa_password is None):
+        esa_username, esa_password = get_esa_credentials()
+
     orbit_dir = Path('orbits')
     aux_cal_dir = Path('aux_cal')
     dem_dir = Path('dem')
 
-    opts = asf_search.ASFSearchOptions(
-        host='cmr.uat.earthdata.nasa.gov',
-        granule_list=[reference_scene, secondary_scene],
-    )
-    results = asf_search.search(opts=opts)
+    ref_params = get_burst_params(reference_scene)
+    sec_params = get_burst_params(secondary_scene)
 
-    fileIDs = [feature['properties']['fileID'] for feature in results.geojson()['features']]
-
-    ref_not_found = reference_scene not in fileIDs
-    sec_not_found = secondary_scene not in fileIDs
-    if ref_not_found and sec_not_found:
-        raise ValueError(f'ASF Search failed to find both {reference_scene} and {secondary_scene}.')
-    elif ref_not_found:
-        raise ValueError(f'ASF Search failed to find {reference_scene}.')
-    elif sec_not_found:
-        raise ValueError(f'ASF Search failed to find {secondary_scene}.')
-
-    ref_params = BurstParams(
-        results[0].umm['InputGranules'][0].split('-')[0],
-        results[0].properties['burst']['subswath'],
-        results[0].properties['polarization'],
-        results[0].properties['burst']['burstIndex'],
-    )
-    sec_params = BurstParams(
-        results[1].umm['InputGranules'][0].split('-')[0],
-        results[1].properties['burst']['subswath'],
-        results[1].properties['polarization'],
-        results[1].properties['burst']['burstIndex'],
-    )
     ref_metadata, sec_metadata = download_bursts([ref_params, sec_params])
 
     is_ascending = ref_metadata.orbit_direction == 'ascending'
@@ -105,23 +106,36 @@ def insar_tops_burst(
 
     insar_roi = get_region_of_interest(ref_footprint, sec_footprint, is_ascending=is_ascending)
     dem_roi = ref_footprint.intersection(sec_footprint).bounds
+
+    if abs(dem_roi[0] - dem_roi[2]) > 180.0 and dem_roi[0] * dem_roi[2] < 0.0:
+        raise ValueError('Products that cross the anti-meridian are not currently supported.')
+
     log.info(f'InSAR ROI: {insar_roi}')
     log.info(f'DEM ROI: {dem_roi}')
 
-    dem_path = download_dem_for_isce2(dem_roi, dem_name='glo_30', dem_dir=dem_dir, buffer=0)
+    dem_path = download_dem_for_isce2(dem_roi, dem_name='glo_30', dem_dir=dem_dir, buffer=0, resample_20m=False)
     download_aux_cal(aux_cal_dir)
+
+    if range_looks == 5:
+        geocode_dem_path = download_dem_for_isce2(
+            dem_roi, dem_name='glo_30', dem_dir=dem_dir, buffer=0, resample_20m=True
+        )
+    else:
+        geocode_dem_path = dem_path
 
     orbit_dir.mkdir(exist_ok=True, parents=True)
     for granule in (ref_params.granule, sec_params.granule):
-        downloadSentinelOrbitFile(granule, str(orbit_dir))
+        downloadSentinelOrbitFile(granule, str(orbit_dir), esa_credentials=(esa_username, esa_password))
 
     config = topsapp.TopsappBurstConfig(
         reference_safe=f'{ref_params.granule}.SAFE',
         secondary_safe=f'{sec_params.granule}.SAFE',
+        polarization=ref_params.polarization,
         orbit_directory=str(orbit_dir),
         aux_cal_directory=str(aux_cal_dir),
         roi=insar_roi,
         dem_filename=str(dem_path),
+        geocode_dem_filename=str(geocode_dem_path),
         swaths=swath_number,
         azimuth_looks=azimuth_looks,
         range_looks=range_looks,
@@ -130,11 +144,61 @@ def insar_tops_burst(
 
     topsapp.run_topsapp_burst(start='startup', end='preprocess', config_xml=config_path)
     topsapp.swap_burst_vrts()
-    topsapp.run_topsapp_burst(start='computeBaselines', end='unwrap2stage', config_xml=config_path)
+    if apply_water_mask:
+        topsapp.run_topsapp_burst(start='computeBaselines', end='filter', config_xml=config_path)
+        water_mask_path = 'water_mask.wgs84'
+        create_water_mask(str(dem_path), water_mask_path)
+        multilook('merged/lon.rdr.full', outname='merged/lon.rdr', alks=azimuth_looks, rlks=range_looks)
+        multilook('merged/lat.rdr.full', outname='merged/lat.rdr', alks=azimuth_looks, rlks=range_looks)
+        resample_to_radar_io(water_mask_path, 'merged/lat.rdr', 'merged/lon.rdr', 'merged/water_mask.rdr')
+        isce2_copy('merged/phsig.cor', 'merged/unmasked.phsig.cor')
+        image_math('merged/unmasked.phsig.cor', 'merged/water_mask.rdr', 'merged/phsig.cor', 'a*b')
+        topsapp.run_topsapp_burst(start='unwrap', end='unwrap2stage', config_xml=config_path)
+        isce2_copy('merged/unmasked.phsig.cor', 'merged/phsig.cor')
+    else:
+        topsapp.run_topsapp_burst(start='computeBaselines', end='unwrap2stage', config_xml=config_path)
     copyfile('merged/z.rdr.full.xml', 'merged/z.rdr.full.vrt.xml')
     topsapp.run_topsapp_burst(start='geocode', end='geocode', config_xml=config_path)
 
     return Path('merged')
+
+
+def make_readme(
+    product_dir: Path,
+    product_name: str,
+    reference_scene: str,
+    secondary_scene: str,
+    range_looks: int,
+    azimuth_looks: int,
+    apply_water_mask: bool,
+) -> None:
+    wrapped_phase_path = product_dir / f'{product_name}_wrapped_phase.tif'
+    info = gdal.Info(str(wrapped_phase_path), format='json')
+    secondary_granule_datetime_str = secondary_scene.split('_')[3]
+
+    payload = {
+        'processing_date': datetime.now(timezone.utc),
+        'plugin_name': hyp3_isce2.__name__,
+        'plugin_version': hyp3_isce2.__version__,
+        'processor_name': isce.__name__.upper(),
+        'processor_version': isce.__version__,
+        'projection': hyp3_isce2.metadata.util.get_projection(info['coordinateSystem']['wkt']),
+        'pixel_spacing': info['geoTransform'][1],
+        'product_name': product_name,
+        'reference_burst_name': reference_scene,
+        'secondary_burst_name': secondary_scene,
+        'range_looks': range_looks,
+        'azimuth_looks': azimuth_looks,
+        'secondary_granule_date': datetime.strptime(secondary_granule_datetime_str, '%Y%m%dT%H%M%S'),
+        'dem_name': 'GLO-30',
+        'dem_pixel_spacing': '30 m',
+        'apply_water_mask': apply_water_mask,
+    }
+    content = hyp3_isce2.metadata.util.render_template('insar_burst/readme.md.txt.j2', payload)
+
+    output_file = product_dir / f'{product_name}_README.md.txt'
+    with open(output_file, 'w') as f:
+        f.write(content)
 
 
 def make_parameter_file(
@@ -144,8 +208,10 @@ def make_parameter_file(
     swath_number: int,
     azimuth_looks: int,
     range_looks: int,
+    multilook_position: BurstPosition,
+    apply_water_mask: bool,
     dem_name: str = 'GLO_30',
-    dem_resolution: int = 30
+    dem_resolution: int = 30,
 ) -> None:
     """Create a parameter file for the output product
 
@@ -162,7 +228,6 @@ def make_parameter_file(
     returns:
         None
     """
-
     SPEED_OF_LIGHT = 299792458.0
     SPACECRAFT_HEIGHT = 693000.0
     EARTH_RADIUS = 6337286.638938101
@@ -208,65 +273,114 @@ def make_parameter_file(
     slant_range_center = (slant_range_near + slant_range_far) / 2
 
     s = ref_time.split('T')[1].split(':')
-    utc_time = (int(s[0]) * 60 + int(s[1]) * 60) + float(s[2])
+    utc_time = ((int(s[0]) * 60 + int(s[1])) * 60) + float(s[2])
 
-    output_strings = [
-        f'Reference Granule: {reference_scene}\n',
-        f'Secondary Granule: {secondary_scene}\n',
-        f'Reference Pass Direction: {ref_orbit_direction}\n',
-        f'Reference Orbit Number: {ref_orbit_number}\n',
-        f'Secondary Pass Direction: {sec_orbit_direction}\n',
-        f'Secondary Orbit Number: {sec_orbit_number}\n',
-        f'Baseline: {baseline_perp}\n',
-        f'UTC time: {utc_time}\n',
-        f'Heading: {ref_heading}\n',
-        f'Spacecraft height: {SPACECRAFT_HEIGHT}\n',
-        f'Earth radius at nadir: {EARTH_RADIUS}\n',
-        f'Slant range near: {slant_range_near}\n',
-        f'Slant range center: {slant_range_center}\n',
-        f'Slant range far: {slant_range_far}\n',
-        f'Range looks: {range_looks}\n',
-        f'Azimuth looks: {azimuth_looks}\n',
-        'INSAR phase filter: yes\n',
-        f'Phase filter parameter: {phase_filter_strength}\n',
-        'Range bandpass filter: no\n',
-        'Azimuth bandpass filter: no\n',
-        f'DEM source: {dem_name}\n',
-        f'DEM resolution (m): {dem_resolution}\n',
-        f'Unwrapping type: {unwrapper_type}\n',
-        'Speckle filter: yes\n'
-    ]
+    parameter_file = ParameterFile(
+        reference_granule=reference_scene,
+        secondary_granule=secondary_scene,
+        reference_orbit_direction=ref_orbit_direction,
+        reference_orbit_number=ref_orbit_number,
+        secondary_orbit_direction=sec_orbit_direction,
+        secondary_orbit_number=sec_orbit_number,
+        baseline=float(baseline_perp),
+        utc_time=utc_time,
+        heading=ref_heading,
+        spacecraft_height=SPACECRAFT_HEIGHT,
+        earth_radius_at_nadir=EARTH_RADIUS,
+        slant_range_near=slant_range_near,
+        slant_range_center=slant_range_center,
+        slant_range_far=slant_range_far,
+        range_looks=int(range_looks),
+        azimuth_looks=int(azimuth_looks),
+        insar_phase_filter=True,
+        phase_filter_parameter=float(phase_filter_strength),
+        range_bandpass_filter=False,
+        azimuth_bandpass_filter=False,
+        dem_source=dem_name,
+        dem_resolution=dem_resolution,
+        unwrapping_type=unwrapper_type,
+        speckle_filter=True,
+        water_mask=apply_water_mask,
+        radar_n_lines=multilook_position.n_lines,
+        radar_n_samples=multilook_position.n_samples,
+        radar_first_valid_line=multilook_position.first_valid_line,
+        radar_n_valid_lines=multilook_position.n_valid_lines,
+        radar_first_valid_sample=multilook_position.first_valid_sample,
+        radar_n_valid_samples=multilook_position.n_valid_samples,
+        multilook_azimuth_time_interval=multilook_position.azimuth_time_interval,
+        multilook_range_pixel_size=multilook_position.range_pixel_size,
+        radar_sensing_stop=multilook_position.sensing_stop,
+    )
+    parameter_file.write(out_path)
 
-    output_string = "".join(output_strings)
 
-    with open(out_path.__str__(), 'w') as outfile:
-        outfile.write(output_string)
-
-
-def translate_outputs(isce_output_dir: Path, product_name: str):
-    """Translate ISCE outputs to a standard GTiff format with a UTM projection
+def find_product(pattern: str) -> str:
+    """Find a single file within the working directory's structure
 
     Args:
-        isce_output_dir: Path to the ISCE output directory
-        product_name: Name of the product
+        pattern: Glob pattern for file
+
+    Returns
+        Path to file
     """
-    ISCE2Dataset = namedtuple('ISCE2Dataset', ['name', 'suffix', 'band'])
+    search = Path.cwd().glob(pattern)
+    product = str(list(search)[0])
+    return product
+
+
+def translate_outputs(product_name: str, pixel_size: float, include_radar: bool = False, use_multilooked=False) -> None:
+    """Translate ISCE outputs to a standard GTiff format with a UTM projection.
+    Assume you are in the top level of an ISCE run directory
+
+    Args:
+        product_name: Name of the product
+        pixel_size: Pixel size
+        include_radar: Flag to include the full resolution radar geometry products in the output
+    """
+
+    src_ds = gdal.Open('merged/filt_topophase.unw.geo')
+    src_geotransform = src_ds.GetGeoTransform()
+    src_projection = src_ds.GetProjection()
+
+    target_ds = gdal.Open('merged/dem.crop', gdal.GA_Update)
+    target_ds.SetGeoTransform(src_geotransform)
+    target_ds.SetProjection(src_projection)
+
+    del src_ds, target_ds
+
     datasets = [
-        ISCE2Dataset('filt_topophase.unw.geo', 'unw_phase', 2),
-        ISCE2Dataset('phsig.cor.geo', 'corr', 1),
-        ISCE2Dataset('z.rdr.full.geo', 'dem', 1),
-        ISCE2Dataset('filt_topophase.unw.conncomp.geo', 'conncomp', 1),
+        ISCE2Dataset('merged/filt_topophase.unw.geo', 'unw_phase', [2]),
+        ISCE2Dataset('merged/phsig.cor.geo', 'corr', [1]),
+        ISCE2Dataset('merged/dem.crop', 'dem', [1]),
+        ISCE2Dataset('merged/filt_topophase.unw.conncomp.geo', 'conncomp', [1]),
     ]
+
+    suffix = '01'
+    if use_multilooked:
+        suffix += '.multilooked'
+
+    rdr_datasets = [
+        ISCE2Dataset(
+            find_product(f'fine_interferogram/IW*/burst_{suffix}.int.vrt'),
+            'wrapped_phase_rdr',
+            [1],
+            gdalconst.GDT_CFloat32,
+        ),
+        ISCE2Dataset(find_product(f'geom_reference/IW*/lat_{suffix}.rdr.vrt'), 'lat_rdr', [1]),
+        ISCE2Dataset(find_product(f'geom_reference/IW*/lon_{suffix}.rdr.vrt'), 'lon_rdr', [1]),
+        ISCE2Dataset(find_product(f'geom_reference/IW*/los_{suffix}.rdr.vrt'), 'los_rdr', [1, 2]),
+    ]
+    if include_radar:
+        datasets += rdr_datasets
 
     for dataset in datasets:
         out_file = str(Path(product_name) / f'{product_name}_{dataset.suffix}.tif')
-        in_file = str(isce_output_dir / dataset.name)
-
         gdal.Translate(
             destName=out_file,
-            srcDS=in_file,
-            bandList=[dataset.band],
+            srcDS=dataset.name,
+            bandList=dataset.band,
             format='GTiff',
+            outputType=dataset.dtype,
             noData=0,
             creationOptions=['TILED=YES', 'COMPRESS=LZW', 'NUM_THREADS=ALL_CPUS'],
         )
@@ -276,13 +390,13 @@ def translate_outputs(isce_output_dir: Path, product_name: str):
     cmd = (
         'gdal_calc.py '
         f'--outfile {product_name}/{product_name}_{wrapped_phase.suffix}.tif '
-        f'-A {isce_output_dir / wrapped_phase.name} --A_band={wrapped_phase.band} '
+        f'-A merged/{wrapped_phase.name} --A_band={wrapped_phase.band} '
         '--calc angle(A) --type Float32 --format GTiff --NoDataValue=0 '
         '--creation-option TILED=YES --creation-option COMPRESS=LZW --creation-option NUM_THREADS=ALL_CPUS'
     )
-    subprocess.check_call(cmd.split(' '))
+    subprocess.run(cmd.split(' '), check=True)
 
-    ds = gdal.Open(str(isce_output_dir / 'los.rdr.geo'), gdal.GA_Update)
+    ds = gdal.Open('merged/los.rdr.geo', gdal.GA_Update)
     ds.GetRasterBand(1).SetNoDataValue(0)
     ds.GetRasterBand(2).SetNoDataValue(0)
     del ds
@@ -295,11 +409,11 @@ def translate_outputs(isce_output_dir: Path, product_name: str):
     cmd = (
         'gdal_calc.py '
         f'--outfile {product_name}/{product_name}_{incidence_angle.suffix}.tif '
-        f'-A {isce_output_dir / incidence_angle.name} --A_band={incidence_angle.band} '
+        f'-A merged/{incidence_angle.name} --A_band={incidence_angle.band} '
         '--calc (90-A)*pi/180 --type Float32 --format GTiff --NoDataValue=0 '
         '--creation-option TILED=YES --creation-option COMPRESS=LZW --creation-option NUM_THREADS=ALL_CPUS'
     )
-    subprocess.check_call(cmd.split(' '))
+    subprocess.run(cmd.split(' '), check=True)
 
     # Performs the inverse of the operation performed by MintPy:
     # https://github.com/insarlab/MintPy/blob/df96e0b73f13cc7e2b6bfa57d380963f140e3159/src/mintpy/objects/stackDict.py#L739-L745
@@ -309,27 +423,69 @@ def translate_outputs(isce_output_dir: Path, product_name: str):
     cmd = (
         'gdal_calc.py '
         f'--outfile {product_name}/{product_name}_{azimuth_angle.suffix}.tif '
-        f'-A {isce_output_dir / azimuth_angle.name} --A_band={azimuth_angle.band} '
+        f'-A merged/{azimuth_angle.name} --A_band={azimuth_angle.band} '
         '--calc (90+A)*pi/180 --type Float32 --format GTiff --NoDataValue=0 '
         '--creation-option TILED=YES --creation-option COMPRESS=LZW --creation-option NUM_THREADS=ALL_CPUS'
     )
-    subprocess.check_call(cmd.split(' '))
+    subprocess.run(cmd.split(' '), check=True)
 
-    ds = gdal.Open(str(isce_output_dir / 'filt_topophase.unw.geo'))
+    ds = gdal.Open('merged/filt_topophase.unw.geo')
     geotransform = ds.GetGeoTransform()
     del ds
 
     epsg = utm_from_lon_lat(geotransform[0], geotransform[3])
-    files = [str(path) for path in Path(product_name).glob('*.tif')]
+    files = [str(path) for path in Path(product_name).glob('*.tif') if not path.name.endswith('rdr.tif')]
     for file in files:
         gdal.Warp(
             file,
             file,
             dstSRS=f'epsg:{epsg}',
             creationOptions=['TILED=YES', 'COMPRESS=LZW', 'NUM_THREADS=ALL_CPUS'],
+            xRes=pixel_size,
+            yRes=pixel_size,
+            targetAlignedPixels=True,
         )
 
-    make_browse_image(f'{product_name}/{product_name}_unw_phase.tif', f'{product_name}/{product_name}_unw_phase.png')
+
+def get_pixel_size(looks: str) -> float:
+    return {'20x4': 80.0, '10x2': 40.0, '5x1': 20.0}[looks]
+
+
+def convert_raster_from_isce2_gdal(input_image, ref_image, output_image):
+    """Convert the water mask in WGS84 to be the same projection and extent of the output product.
+
+    Args:
+        input_image: dem file name
+        ref_image: output geotiff file name
+        output_image: water mask file name
+    """
+
+    ref_ds = gdal.Open(ref_image)
+
+    gt = ref_ds.GetGeoTransform()
+
+    pixel_size = gt[1]
+
+    minx = gt[0]
+    maxx = gt[0] + gt[1] * ref_ds.RasterXSize
+    maxy = gt[3]
+    miny = gt[3] + gt[5] * ref_ds.RasterYSize
+
+    crs = ref_ds.GetSpatialRef()
+    epsg = CRS.from_wkt(crs.ExportToWkt()).to_epsg()
+
+    del ref_ds
+
+    gdal.Warp(
+        output_image,
+        input_image,
+        dstSRS=f'epsg:{epsg}',
+        creationOptions=['TILED=YES', 'COMPRESS=LZW', 'NUM_THREADS=ALL_CPUS'],
+        outputBounds=[minx, miny, maxx, maxy],
+        xRes=pixel_size,
+        yRes=pixel_size,
+        targetAlignedPixels=True,
+    )
 
 
 def main():
@@ -338,11 +494,16 @@ def main():
 
     parser.add_argument('--bucket', help='AWS S3 bucket HyP3 for upload the final product(s)')
     parser.add_argument('--bucket-prefix', default='', help='Add a bucket prefix to product(s)')
+    parser.add_argument('--esa-username', default=None, help="Username for ESA's Copernicus Data Space Ecosystem")
+    parser.add_argument('--esa-password', default=None, help="Password for ESA's Copernicus Data Space Ecosystem")
     parser.add_argument(
-        '--looks',
-        choices=['20x4', '10x2', '5x1'],
-        default='20x4',
-        help='Number of looks to take in range and azimuth'
+        '--looks', choices=['20x4', '10x2', '5x1'], default='20x4', help='Number of looks to take in range and azimuth'
+    )
+    parser.add_argument(
+        '--apply-water-mask',
+        type=string_is_true,
+        default=False,
+        help='Apply a water body mask before unwrapping.',
     )
     # Allows granules to be given as a space-delimited list of strings (e.g. foo bar) or as a single
     # quoted string that contains spaces (e.g. "foo bar"). AWS Batch uses the latter format when
@@ -361,64 +522,70 @@ def main():
     log.info('Begin ISCE2 TopsApp run')
 
     reference_scene, secondary_scene = oldest_granule_first(args.granules[0], args.granules[1])
+    validate_bursts(reference_scene, secondary_scene)
     swath_number = int(reference_scene[12])
     range_looks, azimuth_looks = [int(looks) for looks in args.looks.split('x')]
+    apply_water_mask = args.apply_water_mask
 
-    isce_output_dir = insar_tops_burst(
+    insar_tops_burst(
         reference_scene=reference_scene,
         secondary_scene=secondary_scene,
         azimuth_looks=azimuth_looks,
         range_looks=range_looks,
-        swath_number=swath_number
+        swath_number=swath_number,
+        apply_water_mask=apply_water_mask,
+        esa_username=args.esa_username,
+        esa_password=args.esa_password,
     )
 
     log.info('ISCE2 TopsApp run completed successfully')
 
-    product_name = get_product_name(reference_scene, secondary_scene)
+    multilook_position = multilook_radar_merge_inputs(swath_number, rg_looks=range_looks, az_looks=azimuth_looks)
+
+    pixel_size = get_pixel_size(args.looks)
+    product_name = get_product_name(reference_scene, secondary_scene, pixel_spacing=int(pixel_size))
 
     product_dir = Path(product_name)
     product_dir.mkdir(parents=True, exist_ok=True)
 
-    translate_outputs(isce_output_dir, product_name)
+    translate_outputs(product_name, pixel_size=pixel_size, include_radar=True, use_multilooked=True)
 
-    payload = {}
-    payload['product_dir'] = Path(product_name)
-    payload['reference_granule_name'] = args.reference_scene
-    payload['secondary_granule_name'] = args.secondary_scene
-    payload['swath_number'] = args.swath_number
-    payload['polarization'] = args.polarization
-    payload['reference_burst_number'] = args.reference_burst_number
-    payload['secondary_burst_number'] = args.secondary_burst_number
-    payload['processing_date'] = datetime.now(timezone.utc)
-    payload['range_looks'] = args.range_looks
-    payload['azimuth_looks'] = args.azimuth_looks
-    payload['dem_name'] = 'GLO-30'
-    payload['dem_pixel_spacing'] = '30 m'
-    payload['plugin_name'] = hyp3_isce2.__name__
-    payload['plugin_version'] = hyp3_isce2.__version__
-    payload['processor_name'] = 'ISCE2'
-    payload['processor_version'] = 'TODO'
+    unwrapped_phase = f'{product_name}/{product_name}_unw_phase.tif'
+    water_mask = f'{product_name}/{product_name}_water_mask.tif'
 
-    reference_file = product_dir / f'{product_name}_wrapped_phase.tif'
+    if apply_water_mask:
+        convert_raster_from_isce2_gdal('water_mask.wgs84', unwrapped_phase, water_mask)
+        cmd = (
+            'gdal_calc.py '
+            f'--outfile {unwrapped_phase} '
+            f'-A {unwrapped_phase} -B {water_mask} '
+            '--calc A*B '
+            '--overwrite '
+            '--NoDataValue 0 '
+            '--creation-option TILED=YES --creation-option COMPRESS=LZW --creation-option NUM_THREADS=ALL_CPUS'
+        )
+        subprocess.run(cmd.split(' '), check=True)
 
-    info = gdal.Info(str(reference_file), format='json')
-    payload['reference_file'] = reference_file.name
-    payload['pixel_spacing'] = info['geoTransform'][1]
-    payload['projection'] = util.get_projection(info['coordinateSystem']['wkt'])
+    make_browse_image(unwrapped_phase, f'{product_name}/{product_name}_unw_phase.png')
 
-    content = util.render_template('insar_burst/readme.md.txt.j2', payload)
-
-    output_file = product_dir / f'{product_dir}_README.md.txt'
-    with open(output_file, 'w') as f:
-        f.write(content)
-
+    make_readme(
+        product_dir=product_dir,
+        product_name=product_name,
+        reference_scene=reference_scene,
+        secondary_scene=secondary_scene,
+        range_looks=range_looks,
+        azimuth_looks=azimuth_looks,
+        apply_water_mask=apply_water_mask,
+    )
     make_parameter_file(
         Path(f'{product_name}/{product_name}.txt'),
         reference_scene=reference_scene,
         secondary_scene=secondary_scene,
         azimuth_looks=azimuth_looks,
         range_looks=range_looks,
-        swath_number=swath_number
+        swath_number=swath_number,
+        multilook_position=multilook_position,
+        apply_water_mask=apply_water_mask,
     )
     output_zip = make_archive(base_name=product_name, format='zip', base_dir=product_name)
 

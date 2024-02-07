@@ -12,6 +12,8 @@ dependencies:
   - shapely
   - jinja2
   - asf_search>=6.4.0
+  - gdal
+  - opencv
   # For packaging, and testing
   - flake8
   - flake8-import-order
@@ -25,4 +27,4 @@ dependencies:
   - pytest-cov
   - pytest-mock
   # For running
-  - hyp3lib>=1.6,<2
+  - hyp3lib>=3,<4

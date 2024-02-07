@@ -1,5 +1,5 @@
 from pathlib import Path
-from typing import Iterable, Union
+from typing import Iterable, Sequence, Union
 
 from isce.applications.topsApp import TopsInSAR
 from jinja2 import Template
@@ -35,7 +35,6 @@ TOPSAPP_GEOCODE_LIST = [
     'merged/phsig.cor',
     'merged/filt_topophase.unw',
     'merged/los.rdr',
-    'merged/z.rdr.full.vrt',
     'merged/filt_topophase.flat',
     'merged/topophase.cor',
     'merged/filt_topophase.unw.conncomp',
@@ -49,22 +48,25 @@ class TopsappBurstConfig:
         self,
         reference_safe: str,
         secondary_safe: str,
+        polarization: str,
         orbit_directory: str,
         aux_cal_directory: str,
         dem_filename: str,
-        roi: Iterable[float],
-        swaths: int or Iterable[int] = [1, 2, 3],
+        geocode_dem_filename: str,
+        roi: Sequence[float],
+        swaths: Union[int, Iterable[int]] = (1, 2, 3),
         azimuth_looks: int = 4,
         range_looks: int = 20,
         do_unwrap: bool = True,
     ):
         self.reference_safe = reference_safe
         self.secondary_safe = secondary_safe
+        self.polarization = polarization
         self.orbit_directory = orbit_directory
         self.aux_cal_directory = aux_cal_directory
         self.roi = [roi[1], roi[3], roi[0], roi[2]]
         self.dem_filename = dem_filename
-        self.geocode_dem_filename = dem_filename
+        self.geocode_dem_filename = geocode_dem_filename
         self.azimuth_looks = azimuth_looks
         self.range_looks = range_looks
         self.do_unwrap = do_unwrap
@@ -139,7 +141,7 @@ def run_topsapp_burst(dostep: str = '', start: str = '', end: str = '', config_x
     Args:
         dostep: The step to run
         start: The step to start at
-        stop: The step to stop at
+        end: The step to stop at
         config_xml: The config file to use
 
     Raises:
