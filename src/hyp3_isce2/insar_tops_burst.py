@@ -194,7 +194,7 @@ def make_readme(
         'dem_pixel_spacing': '30 m',
         'apply_water_mask': apply_water_mask,
     }
-    content = hyp3_isce2.metadata.util.render_template('insar_burst/readme.md.txt.j2', payload)
+    content = hyp3_isce2.metadata.util.render_template('insar_burst/insar_burst_readme.md.txt.j2', payload)
 
     output_file = product_dir / f'{product_name}_README.md.txt'
     with open(output_file, 'w') as f:
