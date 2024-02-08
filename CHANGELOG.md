@@ -17,6 +17,7 @@ and uses [Semantic Versioning](https://semver.org/spec/v2.0.0.html).
 
 ### Changed
 * `insar_tops_burst.py` to add four radar coordinate datasets to burst InSAR products (wrapped phase, lat, lon, los).
+* README files generated in `insar_tops_burst.py` are now use blocks and extends the `insar_burst_base.md.txt.j2` jinja template.
 
 ## [0.10.0]
 ### Added
