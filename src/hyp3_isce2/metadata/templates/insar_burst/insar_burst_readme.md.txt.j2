@@ -1,5 +1,9 @@
 {% extends "insar_burst/insar_burst_base.md.txt.j2" %}
 
+Note to reader: This readme file includes text blocks to extend the insar burst base file.
+Only text included in blocks called in the base file will be included in the output readme.
+We have simple placeholders for readability in this file to indicate where the base file will have its own sections.
+
 {% block header %}
 ASF Sentinel-1 Burst InSAR Data Package (ISCE2)
 ===============================================
@@ -56,13 +60,13 @@ cccc: 4-character unique product identifier.
 Files contained in the product directory are named using the directory name followed by a tag indicating the file type.
 {% endblock %}
 ----------------
-(Pixel Spacing Section)
+(This is where the base file has the Pixel Spacing section)
 
 ----------------
-(Using This Data)
+(This is where the base file has the Using This Data section)
 
 ***************
-(Product Contents)
+(This is where the base file has parts 1-8 of the Product Contents)
 
 *************
 {% block burst_insar_processing %}
@@ -155,3 +159,7 @@ These steps are run using these calls within hyp3-isce2:
  - make_archive: Zip the output files
  - upload_file_to_s3: Upload the files in the product directory to the s3 bucket
  {% endblock %}
+
+ -----------
+ (This is where the base file has a S1 Mission section)
+ (This is where the base file has a footer)
