@@ -16,6 +16,7 @@ from tempfile import TemporaryDirectory
 from typing import Iterable, Optional, Tuple
 
 import asf_search
+import isce
 import isceobj
 import lxml.etree as ET
 import numpy as np
@@ -35,6 +36,7 @@ from shapely import geometry
 from stdproc.rectify.geocode.Geocodable import Geocodable
 from zerodop.geozero import createGeozero
 
+import hyp3_isce2
 import hyp3_isce2.burst as burst_utils
 from hyp3_isce2.dem import download_dem_for_isce2
 from hyp3_isce2.utils import (
@@ -983,6 +985,44 @@ def make_parameter_file(
     parameter_file.write(out_path)
 
 
+def make_readme(
+    product_dir: Path,
+    product_name: str,
+    reference_scenes: Iterable[str],
+    secondary_scenes: Iterable[str],
+    range_looks: int,
+    azimuth_looks: int,
+    apply_water_mask: bool,
+) -> None:
+    wrapped_phase_path = product_dir / f'{product_name}_wrapped_phase.tif'
+    info = gdal.Info(str(wrapped_phase_path), format='json')
+    secondary_granule_datetime_str = secondary_scenes[0].split('_')[3]
+
+    payload = {
+        'processing_date': datetime.datetime.now(datetime.timezone.utc),
+        'plugin_name': hyp3_isce2.__name__,
+        'plugin_version': hyp3_isce2.__version__,
+        'processor_name': isce.__name__.upper(),  # noqa
+        'processor_version': isce.__version__,  # noqa
+        'projection': hyp3_isce2.metadata.util.get_projection(info['coordinateSystem']['wkt']),
+        'pixel_spacing': info['geoTransform'][1],
+        'product_name': product_name,
+        'reference_burst_name': ', '.join(reference_scenes),
+        'secondary_burst_name': ', '.join(secondary_scenes),
+        'range_looks': range_looks,
+        'azimuth_looks': azimuth_looks,
+        'secondary_granule_date': datetime.datetime.strptime(secondary_granule_datetime_str, '%Y%m%dT%H%M%S'),
+        'dem_name': 'GLO-30',
+        'dem_pixel_spacing': '30 m',
+        'apply_water_mask': apply_water_mask,
+    }
+    content = hyp3_isce2.metadata.util.render_template('insar_burst/insar_burst_merge_readme.md.txt.j2', payload)
+
+    output_file = product_dir / f'{product_name}_README.md.txt'
+    with open(output_file, 'w') as f:
+        f.write(content)
+
+
 def check_burst_group_validity(products) -> None:
     """Check that a set of burst products are valid for merging. This includes:
     All products have the same:
@@ -1159,12 +1199,8 @@ def merge_tops_bursts(product_directory: Path, filter_strength: float, apply_wat
     """
     range_looks, azimuth_looks = get_product_multilook(product_directory)
     prepare_products(product_directory)
-    run_isce2_workflow(
-        range_looks, azimuth_looks, filter_strength=filter_strength, apply_water_mask=apply_water_mask
-    )
-    package_output(
-        product_directory, f'{range_looks}x{azimuth_looks}', filter_strength, water_mask=apply_water_mask
-    )
+    run_isce2_workflow(range_looks, azimuth_looks, filter_strength=filter_strength, apply_water_mask=apply_water_mask)
+    package_output(product_directory, f'{range_looks}x{azimuth_looks}', filter_strength, water_mask=apply_water_mask)
 
 
 def main():
