@@ -71,7 +71,7 @@ The basic steps in Sentinel-1 Burst InSAR processing are as follows:
 
 *Pre-Processing*
 1. Check that the input burst InSAR products are capable of being merged
-2. Recreate the directory the post-interferogram generation ISCE2 directory structure
+2. Recreate the ISCE2 post-interferogram generation directory structure
 3. Reformat range-doppler burst InSAR product datasets to an ISCE2-compatible format
 4. Create ISCE2 Sentinel-1 objects with the correct burst/multilook information
 
@@ -97,7 +97,6 @@ The prepare-processing and InSAR processing are combined in the insar_tps_burst 
  - merge_tops_bursts.create_burst_cropped_s1_obj: Create ISCE2 `Sentinel1` objects for the swaths/bursts present
  - merge_tops_bursts.spoof_isce2_setup: Recreate an ISCE2 setup post-`burstifg`
  - merge_tops_bursts.download_dem_for_multiple_bursts: Download DEM for merge run
-
 
 ## InSAR processing ##
 The ISCE2 InSAR processing this product uses includes the following ISCE2 topsApp steps:
