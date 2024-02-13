@@ -6,15 +6,16 @@ from pathlib import Path
 from unittest.mock import patch
 
 import asf_search
-import hyp3_isce2.burst as burst_utils
-import hyp3_isce2.merge_tops_bursts as merge
 import isceobj  # noqa: I100
 import lxml.etree as ET
 import numpy as np
 import pytest
-from hyp3_isce2 import utils
 from osgeo import gdal, osr
 from requests import Session
+
+import hyp3_isce2.burst as burst_utils
+import hyp3_isce2.merge_tops_bursts as merge
+from hyp3_isce2 import utils
 
 
 def mock_asf_search_results(
