@@ -10,6 +10,7 @@ and uses [Semantic Versioning](https://semver.org/spec/v2.0.0.html).
 ### Added
 * `merge_tops_bursts.py` file and workflow for merge burst products created using insar_tops_bursts.
 * `merge_tops_bursts` entrypoint
+* `merge_tops_bursts` README template and creation functionality
 * several classes and functions to `burst.py` and `utils.py` to support `merge_tops_burst`.
 * tests for the added functionality.
 * `tests/data/merge.zip` example data for testing merge workflow.
