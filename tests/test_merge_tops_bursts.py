@@ -6,6 +6,7 @@ from pathlib import Path
 from unittest.mock import patch
 
 import asf_search
+import isceobj  # noqa: I100
 import lxml.etree as ET
 import numpy as np
 import pytest
@@ -15,8 +16,6 @@ from requests import Session
 import hyp3_isce2.burst as burst_utils
 import hyp3_isce2.merge_tops_bursts as merge
 from hyp3_isce2 import utils
-
-import isceobj  # noqa: I100
 
 
 def mock_asf_search_results(
@@ -43,7 +42,7 @@ def mock_asf_search_results(
     return results
 
 
-def create_test_geotiff(output_file, dtype='float32', n_bands=1):
+def create_test_geotiff(output_file, dtype='float', n_bands=1):
     """Create a test geotiff for testing"""
     opts = {'float': (np.float64, gdal.GDT_Float64), 'cfloat': (np.complex64, gdal.GDT_CFloat32)}
     np_dtype, gdal_dtype = opts[dtype]
@@ -292,8 +291,10 @@ def test_make_parameter_file(test_data_dir, test_merge_dir, test_s1_obj, tmp_pat
     test_s1_obj.output = str(ifg_dir.parent / 'IW2')
     test_s1_obj.write_xml()
 
+    metas = merge.get_product_metadata_info(test_merge_dir)
+
     out_file = tmp_path / 'test.txt'
-    merge.make_parameter_file(out_file, test_merge_dir, 20, 4, 0.6, True, base_dir=tmp_path)
+    merge.make_parameter_file(out_file, metas, 20, 4, 0.6, True, base_dir=tmp_path)
     assert out_file.exists()
 
     meta = utils.read_product_metadata(out_file)
@@ -426,3 +427,16 @@ def test_get_product_multilook(tmp_path):
     range_looks, azimuth_looks = merge.get_product_multilook(product_dir)
     assert range_looks == 20
     assert azimuth_looks == 4
+
+
+def test_make_readme(tmp_path):
+    prod_name = 'foo'
+    tmp_prod_dir = tmp_path / prod_name
+    tmp_prod_dir.mkdir(exist_ok=True)
+    create_test_geotiff(str(tmp_prod_dir / f'{prod_name}_wrapped_phase.tif'))
+    reference_scenes = ['a_a_a_20200101T000000_a', 'b_b_b_20200101T000000_b']
+    secondary_scenes = ['c_c_c_20210101T000000_c', 'd_d_d_20210101T000000_d']
+
+    merge.make_readme(tmp_prod_dir, reference_scenes, secondary_scenes, 2, 10, True)
+    out_path = tmp_prod_dir / f'{prod_name}_README.md.txt'
+    assert out_path.exists()

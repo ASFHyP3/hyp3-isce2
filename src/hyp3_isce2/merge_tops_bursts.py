@@ -13,9 +13,10 @@ from pathlib import Path
 from secrets import token_hex
 from shutil import make_archive
 from tempfile import TemporaryDirectory
-from typing import Iterable, Optional, Tuple
+from typing import Iterable, List, Optional, Tuple
 
 import asf_search
+import isce
 import isceobj
 import lxml.etree as ET
 import numpy as np
@@ -35,6 +36,7 @@ from shapely import geometry
 from stdproc.rectify.geocode.Geocodable import Geocodable
 from zerodop.geozero import createGeozero
 
+import hyp3_isce2
 import hyp3_isce2.burst as burst_utils
 from hyp3_isce2.dem import download_dem_for_isce2
 from hyp3_isce2.utils import (
@@ -901,9 +903,24 @@ def get_product_name(product: BurstProduct, pixel_size: int) -> str:
     )
 
 
+def get_product_metadata_info(base_dir: Path) -> List:
+    """Get the metadata for a set of ASF burst products
+
+    Args:
+        base_dir: The directory containing UNZIPPED ASF burst products
+
+    Returns:
+        A list of metadata dictionaries
+    """
+    product_paths = list(Path(base_dir).glob('S1_??????_IW?_*'))
+    meta_file_paths = [path / f'{path.name}.txt' for path in product_paths]
+    metas = [read_product_metadata(path) for path in meta_file_paths]
+    return metas
+
+
 def make_parameter_file(
     out_path: Path,
-    product_directory: Path,
+    metas: List,
     range_looks: int,
     azimuth_looks: int,
     filter_strength: float,
@@ -916,10 +933,10 @@ def make_parameter_file(
 
     Args:
         out_path: The path to write the parameter file to
-        product_directory: The path to the directory containing the ASF burst product directories
+        metas: A list of metadata dictionaries for the burst products
+        range_looks: The number of range looks
         azimuth_looks: The number of azimuth looks
         filter_strength: The Goldstein-Werner filter strength
-        range_looks: The number of range looks
         water_mask: Whether or not to use a water mask
         dem_name: The name of the source DEM
         dem_resolution: The resolution of the source DEM
@@ -932,9 +949,6 @@ def make_parameter_file(
     SPACECRAFT_HEIGHT = 693000.0
     EARTH_RADIUS = 6337286.638938101
 
-    product_paths = list(product_directory.glob('S1_??????_IW?_*'))
-    meta_file_paths = [path / f'{path.name}.txt' for path in product_paths]
-    metas = [read_product_metadata(path) for path in meta_file_paths]
     reference_scenes = [meta['ReferenceGranule'] for meta in metas]
     secondary_scenes = [meta['SecondaryGranule'] for meta in metas]
     ref_orbit_number = metas[0]['ReferenceOrbitNumber']
@@ -981,6 +995,55 @@ def make_parameter_file(
         water_mask=water_mask,
     )
     parameter_file.write(out_path)
+
+
+def make_readme(
+    product_dir: Path,
+    reference_scenes: Iterable,
+    secondary_scenes: Iterable,
+    range_looks: int,
+    azimuth_looks: int,
+    apply_water_mask: bool,
+) -> None:
+    """Create a README file for the merged burst product and write it to product_dir
+
+    Args:
+        product_dir: The path to the directory containing the merged burst product,
+            the directory name should be the product name
+        reference_scenes: A list of reference scenes
+        secondary_scenes: A list of secondary scenes
+        range_looks: The number of range looks
+        azimuth_looks: The number of azimuth looks
+        apply_water_mask: Whether or not a water mask was applied
+    """
+    product_name = product_dir.name
+    wrapped_phase_path = product_dir / f'{product_name}_wrapped_phase.tif'
+    info = gdal.Info(str(wrapped_phase_path), format='json')
+    secondary_granule_datetime_str = secondary_scenes[0].split('_')[3]
+
+    payload = {
+        'processing_date': datetime.datetime.now(datetime.timezone.utc),
+        'plugin_name': hyp3_isce2.__name__,
+        'plugin_version': hyp3_isce2.__version__,
+        'processor_name': isce.__name__.upper(),  # noqa
+        'processor_version': isce.__version__,  # noqa
+        'projection': hyp3_isce2.metadata.util.get_projection(info['coordinateSystem']['wkt']),
+        'pixel_spacing': info['geoTransform'][1],
+        'product_name': product_name,
+        'reference_burst_name': ', '.join(reference_scenes),
+        'secondary_burst_name': ', '.join(secondary_scenes),
+        'range_looks': range_looks,
+        'azimuth_looks': azimuth_looks,
+        'secondary_granule_date': datetime.datetime.strptime(secondary_granule_datetime_str, '%Y%m%dT%H%M%S'),
+        'dem_name': 'GLO-30',
+        'dem_pixel_spacing': '30 m',
+        'apply_water_mask': apply_water_mask,
+    }
+    content = hyp3_isce2.metadata.util.render_template('insar_burst/insar_burst_merge_readme.md.txt.j2', payload)
+
+    output_file = product_dir / f'{product_name}_README.md.txt'
+    with open(output_file, 'w') as f:
+        f.write(content)
 
 
 def check_burst_group_validity(products) -> None:
@@ -1131,18 +1194,23 @@ def package_output(
     product_path = list(product_directory.glob('S1_??????_IW?_*'))[0]
     example_metadata = get_burst_metadata([product_path])[0]
     product_name = get_product_name(example_metadata, pixel_size)
-    product_dir = Path(product_name)
-    product_dir.mkdir(parents=True, exist_ok=True)
+    out_product_dir = Path(product_name)
+    out_product_dir.mkdir(parents=True, exist_ok=True)
 
+    metas = get_product_metadata_info(product_directory)
     make_parameter_file(
         Path(f'{product_name}/{product_name}.txt'),
-        product_directory,
+        metas,
         range_looks,
         azimuth_looks,
         filter_strength,
         water_mask,
     )
+
     translate_outputs(product_name, pixel_size=pixel_size, include_radar=False)
+    reference_scenes = [meta['ReferenceGranule'] for meta in metas]
+    secondary_scenes = [meta['SecondaryGranule'] for meta in metas]
+    make_readme(out_product_dir, reference_scenes, secondary_scenes, range_looks, azimuth_looks, water_mask)
     unwrapped_phase = f'{product_name}/{product_name}_unw_phase.tif'
     make_browse_image(unwrapped_phase, f'{product_name}/{product_name}_unw_phase.png')
     if archive:
@@ -1159,12 +1227,8 @@ def merge_tops_bursts(product_directory: Path, filter_strength: float, apply_wat
     """
     range_looks, azimuth_looks = get_product_multilook(product_directory)
     prepare_products(product_directory)
-    run_isce2_workflow(
-        range_looks, azimuth_looks, filter_strength=filter_strength, apply_water_mask=apply_water_mask
-    )
-    package_output(
-        product_directory, f'{range_looks}x{azimuth_looks}', filter_strength, water_mask=apply_water_mask
-    )
+    run_isce2_workflow(range_looks, azimuth_looks, filter_strength=filter_strength, apply_water_mask=apply_water_mask)
+    package_output(product_directory, f'{range_looks}x{azimuth_looks}', filter_strength, water_mask=apply_water_mask)
 
 
 def main():
