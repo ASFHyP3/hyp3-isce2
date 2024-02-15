@@ -71,7 +71,8 @@ those with 5x1 looks have a pixel spacing of 20 m.
 
 #### Water Mask Option
 There is always a water mask geotiff file included in the product package, but setting the **apply-water-mask** 
-(`--apply-water-mask`) option to True will apply the mask to the wrapped interferogram prior to phase unwrapping.
+(`--apply-water-mask`) option to True will apply the mask to the wrapped interferogram prior to phase unwrapping. The water mask is generated using data from OpenStreetMaps and/or ESA WorldCover depending on location. Areas within Canada, Alaska, and Russia are primarily covered by ESA WorldCover data, while the rest of the world is covered by OpenStreetMaps data. Water masks were previously generated from the GSHHG dataset.
+
 
 ### Earthdata Login and ESA Credentials
 
