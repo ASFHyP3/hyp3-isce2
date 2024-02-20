@@ -25,6 +25,34 @@ python -m hyp3_isce2 ++process insar_tops_burst \
 This command will create a Sentinel-1 interferogram that contains a deformation signal related to a 
 2020 Iranian earthquake. 
 
+### Product Merging Utility Usage
+**This feature is under active development and is subject to change!**
+
+Burst InSAR products created using the `insar_tops_burst` workflow can be merged together using the `merge_tops_burst` workflow. This can be useful when the deformation signal you'd like to observe spans multiple bursts. It can be called using the following syntax:
+```
+python -m hyp3_isce2 ++process merge_tops_bursts \
+  PATH_TO_UNZIPPED_PRODUCTS \
+  --apply-water-mask True
+```
+Where `PATH_TO_UNZIPPED_PRODUCTS` is the path to a directory containing unzipped burst InSAR products. For example:
+```bash
+PATH_TO_UNZIPPED_PRODUCTS/
+├─ S1_136232_IW2_20200604_20200616_VV_INT80_663F/
+├─ S1_136231_IW2_20200604_20200616_VV_INT80_529D/
+```
+In order to be merging eligible, all burst products must:
+1. Have the same reference and secondary dates
+1. Have the same polarization
+1. Have the same multilooking
+1. Be from the same relative orbit
+1. Be contiguous
+
+The workflow should through an error if any of these conditions are not met.
+
+**Merging burst InSAR products requires extra data that is not contained in the production HyP3 Burst InSAR products. For the time being, to be merging eligible burst products must be created locally using your own installation of `hyp3-isce2` from the `merge_bursts` branch of this repository!**
+
+As mentioned above this feature is under active development, so we welcome any feedback you have!
+
 ### Options
 To learn about the arguments for each workflow, look at the help documentation 
 (`python -m hyp3_isce2 ++process [WORKFLOW_NAME] --help`).
@@ -43,12 +71,7 @@ those with 5x1 looks have a pixel spacing of 20 m.
 
 #### Water Mask Option
 There is always a water mask geotiff file included in the product package, but setting the **apply-water-mask** 
-(`--apply-water-mask`) option to True will apply the mask to the interferograms (both wrapped and unwrapped phase) 
-and browse image. 
-
-Note that ISCE2 currently only supports masking *after* phase unwrapping. As such, the masking does _not_ mitigate 
-phase unwrapping errors that may occur over water, but simply removes distracting signals afterwards to improve 
-the visualization of the interferogram.
+(`--apply-water-mask`) option to True will apply the mask to the wrapped interferogram prior to phase unwrapping.
 
 ### Earthdata Login and ESA Credentials
 
