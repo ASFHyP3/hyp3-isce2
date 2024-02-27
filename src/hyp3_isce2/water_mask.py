@@ -70,7 +70,7 @@ def get_tiles(filename: str, tmp_path: Optional[Path]) -> None:
 def create_water_mask(input_image: str, output_image: str, gdal_format='ISCE', tmp_path: Optional[Path] = Path('.')):
     """Create a water mask GeoTIFF with the same geometry as a given input GeoTIFF
 
-    The water mask is assembled from OpenStreetMaps data.
+    The water mask is assembled from OpenStreetMap data.
 
     Shoreline data is unbuffered and pixel values of 1 indicate land touches the pixel and 0 indicates there is no
     land in the pixel.
