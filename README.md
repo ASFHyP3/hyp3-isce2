@@ -103,7 +103,7 @@ docker run -it --rm \
       --bucket-prefix "test-run"
 ```
 
-Tip: you might can use [Docker `--env-file`](https://docs.docker.com/engine/reference/commandline/run/#env) to capture all the necessary environment variabes in a single file.
+Tip: you can use [`docker run --env-file`](https://docs.docker.com/reference/cli/docker/container/run/#env) to capture all the necessary environment variables in a single file.
 
 
 ## Developer Setup
