@@ -6,6 +6,37 @@ The format is based on [Keep a Changelog](https://keepachangelog.com/en/1.0.0/),
 and this project adheres to [PEP 440](https://www.python.org/dev/peps/pep-0440/)
 and uses [Semantic Versioning](https://semver.org/spec/v2.0.0.html).
 
+
+## [1.0.1]
+### Changed
+* Updated the water mask description in the product metadata templates
+
+## [1.0.0]
+### Added
+* `merge_tops_bursts.py` file and workflow for merge burst products created using insar_tops_bursts.
+* `merge_tops_bursts` entrypoint
+* `merge_tops_bursts` README template and creation functionality
+* several classes and functions to `burst.py` and `utils.py` to support `merge_tops_burst`.
+* tests for the added functionality.
+* `tests/data/merge.zip` example data for testing merge workflow.
+* `tests/data/create_merge_test_data.py` for generating merge workflow test data.
+
+### Changed
+* `insar_tops_burst.py` to add four radar coordinate datasets to burst InSAR products (wrapped phase, lat, lon, los).
+* README files generated in `insar_tops_burst.py` are now use blocks and extends the `insar_burst_base.md.txt.j2` jinja template.
+
+## [0.10.0]
+### Added
+* Support for a new water masking dataset based off of OpenStreetMap and ESA WorldCover data.
+### Removed
+* Polygon processing functions: `split_geometry_on_antimeridian` and `get_envelope_wgs84` from `water_mask.py`.
+
+## [0.9.3]
+### Changed
+* Upgraded to `hyp3lib=>3,<4` from `>=2,<3`
+### Fixed
+* @scottyhq fixed excessively verbose logging due to ISCE2 setting the root logger to `DEBUG` in [#176](https://github.com/ASFHyP3/hyp3-isce2/issues/176)
+
 ## [0.9.2]
 ### Fixed
 * `No annotation xml file` error in `insar_tops_burst` when processing HH pairs. Fixes [#168](https://github.com/ASFHyP3/hyp3-isce2/issues/168).

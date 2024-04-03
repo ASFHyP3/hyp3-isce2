@@ -12,7 +12,6 @@ dependencies:
   - shapely
   - jinja2
   - asf_search>=6.4.0
-  - geopandas
   - gdal
   - opencv
   # For packaging, and testing
@@ -28,4 +27,4 @@ dependencies:
   - pytest-cov
   - pytest-mock
   # For running
-  - hyp3lib>=2,<3
+  - hyp3lib>=3,<4
