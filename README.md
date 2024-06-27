@@ -98,6 +98,37 @@ docker run -it --rm \
 
 **NOTE** Each workflow can also be accessed via an alternative CLI with the format (`[WORKFLOW_NAME] [WORKFLOW_ARGS]`)
 
+#### Docker Outputs
+
+To retain hyp3_isce2 output files running via Docker there are two recommended approaches:
+
+1. Use a volume mount
+
+Add the `-w /tmp -v [localdir]:/tmp` flags after docker run. `-w` changes the working directory of the container to `/tmp` and `-v` will mount whichever local directory you choose so that such that hyp3_isce3 outputs are preserved locally.
+
+1. Copy outputs to remote object storage
+
+Append the `--bucket` and `--bucket-prefix` to [WORKFLOW_ARGS]. *Only the final output files and zipped archive of those files is uploaded.* This also requires that AWS credentials to write to the bucket are available to the running container. For example, to write outputs to a hypothetical bucket `s3://hypothetical-bucket/test-run/`:
+
+```
+docker run -it --rm \
+    -e AWS_ACCESS_KEY_ID=[YOUR_KEY] \
+    -e AWS_SECRET_ACCESS_KEY=[YOUR_SECRET] \ 
+    -e AWS_SESSION_TOKEN=[YOUR_TOKEN] \ 
+    -e EARTHDATA_USERNAME=[YOUR_USERNAME_HERE] \
+    -e EARTHDATA_PASSWORD=[YOUR_PASSWORD_HERE] \
+    -e ESA_USERNAME=[YOUR_USERNAME_HERE] \
+    -e ESA_PASSWORD=[YOUR_PASSWORD_HERE] \
+    ghcr.io/asfhyp3/hyp3-isce2:latest \
+      ++process [WORKFLOW_NAME] \
+      [WORKFLOW_ARGS] \
+      --bucket "hypothetical-bucket" \
+      --bucket-prefix "test-run"
+```
+
+Tip: you can use [`docker run --env-file`](https://docs.docker.com/reference/cli/docker/container/run/#env) to capture all the necessary environment variables in a single file.
+
+
 ## Developer Setup
 1. Ensure that conda is installed on your system (we recommend using [mambaforge](https://github.com/conda-forge/miniforge#mambaforge) to reduce setup times).
 2. Download a local version of the `hyp3-isce2` repository (`git clone https://github.com/ASFHyP3/hyp3-isce2.git`)
