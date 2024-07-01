@@ -1,0 +1,3 @@
+[flake8]
+per-file-ignores =
+    src/hyp3_isce2/logging.py:A005
