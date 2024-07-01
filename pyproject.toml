@@ -21,7 +21,7 @@ classifiers=[
 ]
 dependencies = [
   "numpy",
-  "dem_stitcher>=2.4.0",
+  "dem_stitcher>=2.5.6",
   "rasterio",
   "shapely",
   "jinja2",
