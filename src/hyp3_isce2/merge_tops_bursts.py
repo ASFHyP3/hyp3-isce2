@@ -130,6 +130,7 @@ def get_burst_metadata(product_paths: Iterable[Path]) -> Iterable[BurstProduct]:
     start_utc = [
         datetime.datetime.strptime(result.properties['startTime'], '%Y-%m-%dT%H:%M:%SZ') for result in results
     ]
+    relative_orbits = [result.properties['pathNumber'] for result in results]
     n_lines = [int(meta['Radarnlines']) for meta in metas]
     n_samples = [int(meta['Radarnsamples']) for meta in metas]
     range_looks = [int(meta['Rangelooks']) for meta in metas]
