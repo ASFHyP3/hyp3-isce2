@@ -7,7 +7,7 @@ dependencies:
   - numpy
   - pip
   - isce2>=2.6.3
-  - dem_stitcher>=2.4.0
+  - dem_stitcher>=2.5.6
   - rasterio
   - shapely
   - jinja2
