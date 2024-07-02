@@ -36,7 +36,6 @@ def mock_asf_search_results(
             'burst': {'subswath': subswath, 'burstIndex': burst_index, 'relativeBurstID': burst_id},
             'polarization': polarization,
             'url': f'https://foo.com/{slc_name}/baz.zip',
-            # 'startTime': '2020-06-04T02:23:13.963847Z',
             'pathNumber': path_number,
         }
     )
