@@ -127,9 +127,9 @@ def get_burst_metadata(product_paths: Iterable[Path]) -> Iterable[BurstProduct]:
     burst_ids = [result.properties['burst']['relativeBurstID'] for result in results]
     burst_indexes = [result.properties['burst']['burstIndex'] for result in results]
     polarization = [result.properties['polarization'] for result in results]
-    start_utc = [
-        datetime.datetime.strptime(result.properties['startTime'], '%Y-%m-%dT%H:%M:%S.%fZ') for result in results
-    ]
+
+    start_utc_strs = [result.umm['TemporalExtent']['RangeDateTime']['BeginningDateTime'] for result in results]
+    start_utc = [datetime.datetime.strptime(utc, '%Y-%m-%dT%H:%M:%S.%fZ') for utc in start_utc_strs]
     relative_orbits = [result.properties['pathNumber'] for result in results]
     n_lines = [int(meta['Radarnlines']) for meta in metas]
     n_samples = [int(meta['Radarnsamples']) for meta in metas]

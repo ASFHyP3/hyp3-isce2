@@ -9,6 +9,7 @@ and uses [Semantic Versioning](https://semver.org/spec/v2.0.0.html).
 ## [1.1.2]
 ### Fixed
 * Renamed `hyp3_isce2.logging` to `hyp3_isce2.logger` to avoid shadowing built-in.
+* Source of product start times in `merge_tops_bursts` to use the `asf_search` umm record.
 
 ## [1.1.1]
 ### Fixed
