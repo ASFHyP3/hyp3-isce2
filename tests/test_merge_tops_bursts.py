@@ -27,13 +27,16 @@ def mock_asf_search_results(
     path_number: int,
 ) -> asf_search.ASFSearchResults:
     product = asf_search.ASFProduct()
-    product.umm = {'InputGranules': [slc_name]}
+    product.umm = {
+        'InputGranules': [slc_name],
+        'TemporalExtent': {'RangeDateTime': {'BeginningDateTime': '2020-06-04T02:23:13.963847Z'}},
+    }
     product.properties.update(
         {
             'burst': {'subswath': subswath, 'burstIndex': burst_index, 'relativeBurstID': burst_id},
             'polarization': polarization,
             'url': f'https://foo.com/{slc_name}/baz.zip',
-            'startTime': '2020-06-04T02:23:13.963847Z',
+            # 'startTime': '2020-06-04T02:23:13.963847Z',
             'pathNumber': path_number,
         }
     )
