@@ -125,6 +125,7 @@ def create_water_mask(input_image: str, output_image: str, gdal_format='ISCE', t
         merged_warped_path,
         f'--outfile={output_image}',
         '--calc="numpy.abs((A.astype(numpy.int16) + 1) - 2)"',  # Change 1's to 0's and 0's to 1's.
-        f'--format={gdal_format}'
+        f'--format={gdal_format}',
+        '--overwrite',
     ]
     subprocess.run(flip_values_command, check=True)

@@ -6,6 +6,11 @@ The format is based on [Keep a Changelog](https://keepachangelog.com/en/1.0.0/),
 and this project adheres to [PEP 440](https://www.python.org/dev/peps/pep-0440/)
 and uses [Semantic Versioning](https://semver.org/spec/v2.0.0.html).
 
+## [1.1.2]
+### Fixed
+* Renamed `hyp3_isce2.logging` to `hyp3_isce2.logger` to avoid shadowing built-in.
+* Source of product start times in `merge_tops_bursts` to use the `asf_search` umm record.
+
 ## [1.1.1]
 ### Fixed
 * Upgraded to `dem_sticher>=2.5.6` to resolve geoid download errors. Fixes [#215](https://github.com/ASFHyP3/hyp3-isce2/issues/215)
