@@ -13,7 +13,7 @@ from hyp3lib.get_orb import downloadSentinelOrbitFile
 from hyp3_isce2 import slc
 from hyp3_isce2 import topsapp
 from hyp3_isce2.dem import download_dem_for_isce2
-from hyp3_isce2.logging import configure_root_logger
+from hyp3_isce2.logger import configure_root_logger
 from hyp3_isce2.s1_auxcal import download_aux_cal
 from hyp3_isce2.utils import get_esa_credentials
 
