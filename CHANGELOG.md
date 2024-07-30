@@ -8,7 +8,7 @@ and uses [Semantic Versioning](https://semver.org/spec/v2.0.0.html).
 
 ## [1.1.3]
 ### Fixed
-* Upgrade to `dem_stitcher>=2.5.8` to resolve geooid download errors. See [dem-stitcher #96](https://github.com/ACCESS-Cloud-Based-InSAR/dem-stitcher/issues/96).
+* Upgrade to `dem_stitcher>=2.5.8` to resolve geoid download errors. See [dem-stitcher #96](https://github.com/ACCESS-Cloud-Based-InSAR/dem-stitcher/issues/96).
 
 ## [1.1.2]
 ### Fixed
