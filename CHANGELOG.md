@@ -6,6 +6,10 @@ The format is based on [Keep a Changelog](https://keepachangelog.com/en/1.0.0/),
 and this project adheres to [PEP 440](https://www.python.org/dev/peps/pep-0440/)
 and uses [Semantic Versioning](https://semver.org/spec/v2.0.0.html).
 
+## [1.1.3]
+### Fixed
+* Upgrade to `dem_stitcher>=2.5.8` to resolve geoid download errors. See [dem-stitcher #96](https://github.com/ACCESS-Cloud-Based-InSAR/dem-stitcher/issues/96).
+
 ## [1.1.2]
 ### Fixed
 * Renamed `hyp3_isce2.logging` to `hyp3_isce2.logger` to avoid shadowing built-in.
