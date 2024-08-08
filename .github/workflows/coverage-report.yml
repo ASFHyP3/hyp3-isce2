@@ -19,6 +19,7 @@ jobs:
       - name: Generate Coverage Report and Badge
         shell: bash -l {0}
         run: |
+          python -m pip install --no-deps .
           python -m pip install coverage-badge
           pytest --junitxml=pytest.xml --cov-report=term-missing:skip-covered --cov=hyp3_isce2 tests/ | tee pytest-coverage.txt
           coverage-badge -fo images/coverage.svg

@@ -38,12 +38,11 @@ WORKDIR /home/conda/
 
 COPY --chown=${CONDA_UID}:${CONDA_GID} . /hyp3-isce2/
 
-ARG PIP_NO_CACHE_DIR=1
-
 RUN mamba env create -f /hyp3-isce2/environment.yml && \
     conda clean -afy && \
     conda activate hyp3-isce2 && \
-    sed -i 's/conda activate base/conda activate hyp3-isce2/g' /home/conda/.profile
+    sed -i 's/conda activate base/conda activate hyp3-isce2/g' /home/conda/.profile && \
+    python -m pip install --no-cache-dir /hyp3-isce2
 
 ENTRYPOINT ["/hyp3-isce2/src/hyp3_isce2/etc/entrypoint.sh"]
 CMD ["-h"]

@@ -128,6 +128,7 @@ Tip: you can use [`docker run --env-file`](https://docs.docker.com/reference/cli
 1. Ensure that conda is installed on your system (we recommend using [mambaforge](https://github.com/conda-forge/miniforge#mambaforge) to reduce setup times).
 2. Download a local version of the `hyp3-isce2` repository (`git clone https://github.com/ASFHyP3/hyp3-isce2.git`)
 3. In the base directory for this project call `mamba env create -f environment.yml` to create your Python environment, then activate it (`mamba activate hyp3-isce2`)
+4. Finally, install a development version of the package (`python -m pip install -e .`)
 
 To run all commands in sequence use:
 ```bash
@@ -135,6 +136,7 @@ git clone https://github.com/ASFHyP3/hyp3-isce2.git
 cd hyp3-isce2
 mamba env create -f environment.yml
 mamba activate hyp3-isce2
+python -m pip install -e .
 ```
 
 ## Background
