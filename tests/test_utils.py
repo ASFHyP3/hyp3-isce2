@@ -152,50 +152,6 @@ def test_resample_to_radar_io(tmp_path, test_merge_dir):
     assert np.all(outputarray == array)
 
 
-def test_get_esa_credentials_env(tmp_path, monkeypatch):
-    with monkeypatch.context() as m:
-        m.setenv('ESA_USERNAME', 'foo')
-        m.setenv('ESA_PASSWORD', 'bar')
-        m.setenv('HOME', str(tmp_path))
-        (tmp_path / '.netrc').write_text(f'machine {utils.ESA_HOST} login netrc_username password netrc_password')
-
-        username, password = utils.get_esa_credentials()
-        assert username == 'foo'
-        assert password == 'bar'
-
-
-def test_get_esa_credentials_netrc(tmp_path, monkeypatch):
-    with monkeypatch.context() as m:
-        m.delenv('ESA_USERNAME', raising=False)
-        m.delenv('ESA_PASSWORD', raising=False)
-        m.setenv('HOME', str(tmp_path))
-        (tmp_path / '.netrc').write_text(f'machine {utils.ESA_HOST} login foo password bar')
-
-        username, password = utils.get_esa_credentials()
-        assert username == 'foo'
-        assert password == 'bar'
-
-
-def test_get_esa_credentials_missing(tmp_path, monkeypatch):
-    with monkeypatch.context() as m:
-        m.delenv('ESA_USERNAME', raising=False)
-        m.setenv('ESA_PASSWORD', 'env_password')
-        m.setenv('HOME', str(tmp_path))
-        (tmp_path / '.netrc').write_text('')
-        msg = 'Please provide.*'
-        with pytest.raises(ValueError, match=msg):
-            utils.get_esa_credentials()
-
-    with monkeypatch.context() as m:
-        m.setenv('ESA_USERNAME', 'env_username')
-        m.delenv('ESA_PASSWORD', raising=False)
-        m.setenv('HOME', str(tmp_path))
-        (tmp_path / '.netrc').write_text('')
-        msg = 'Please provide.*'
-        with pytest.raises(ValueError, match=msg):
-            utils.get_esa_credentials()
-
-
 def test_create_image(tmp_path):
     def _check_create_image(path: str, image_subtype: str = 'default'):
         # create an isce image (includes binary, .vrt, and .xml files)

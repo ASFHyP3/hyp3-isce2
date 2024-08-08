@@ -13,13 +13,13 @@ from typing import Iterable, Optional
 
 import isce
 from hyp3lib.aws import upload_file_to_s3
-from hyp3lib.get_orb import downloadSentinelOrbitFile
 from hyp3lib.image import create_thumbnail
 from hyp3lib.util import string_is_true
 from isceobj.TopsProc.runMergeBursts import multilook
 from lxml import etree
 from osgeo import gdal, gdalconst
 from pyproj import CRS
+from s1_orbits import fetch_for_scene
 
 import hyp3_isce2
 import hyp3_isce2.metadata.util
@@ -39,7 +39,6 @@ from hyp3_isce2.logger import configure_root_logger
 from hyp3_isce2.s1_auxcal import download_aux_cal
 from hyp3_isce2.utils import (
     ParameterFile,
-    get_esa_credentials,
     image_math,
     isce2_copy,
     make_browse_image,
@@ -70,8 +69,6 @@ def insar_tops_burst(
     azimuth_looks: int = 4,
     range_looks: int = 20,
     apply_water_mask: bool = False,
-    esa_username: Optional[str] = None,
-    esa_password: Optional[str] = None,
 ) -> Path:
     """Create a burst interferogram
 
@@ -82,15 +79,10 @@ def insar_tops_burst(
         azimuth_looks: Number of azimuth looks
         range_looks: Number of range looks
         apply_water_mask: Whether to apply a pre-unwrap water mask
-        esa_username: Username for ESA's Copernicus Data Space Ecosystem
-        esa_password: Password for ESA's Copernicus Data Space Ecosystem
 
     Returns:
         Path to results directory
     """
-    if (esa_username is None) or (esa_password is None):
-        esa_username, esa_password = get_esa_credentials()
-
     orbit_dir = Path('orbits')
     aux_cal_dir = Path('aux_cal')
     dem_dir = Path('dem')
@@ -125,7 +117,9 @@ def insar_tops_burst(
 
     orbit_dir.mkdir(exist_ok=True, parents=True)
     for granule in (ref_params.granule, sec_params.granule):
-        downloadSentinelOrbitFile(granule, str(orbit_dir), esa_credentials=(esa_username, esa_password))
+        log.info(f'Downloading orbit file for {granule}')
+        orbit_file = fetch_for_scene(granule, dir=orbit_dir)
+        log.info(f'Got orbit file {orbit_file} from s1_orbits')
 
     config = topsapp.TopsappBurstConfig(
         reference_safe=f'{ref_params.granule}.SAFE',
@@ -494,8 +488,6 @@ def main():
 
     parser.add_argument('--bucket', help='AWS S3 bucket HyP3 for upload the final product(s)')
     parser.add_argument('--bucket-prefix', default='', help='Add a bucket prefix to product(s)')
-    parser.add_argument('--esa-username', default=None, help="Username for ESA's Copernicus Data Space Ecosystem")
-    parser.add_argument('--esa-password', default=None, help="Password for ESA's Copernicus Data Space Ecosystem")
     parser.add_argument(
         '--looks', choices=['20x4', '10x2', '5x1'], default='20x4', help='Number of looks to take in range and azimuth'
     )
@@ -534,8 +526,6 @@ def main():
         range_looks=range_looks,
         swath_number=swath_number,
         apply_water_mask=apply_water_mask,
-        esa_username=args.esa_username,
-        esa_password=args.esa_password,
     )
 
     log.info('ISCE2 TopsApp run completed successfully')
