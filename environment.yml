@@ -4,28 +4,7 @@ channels:
   - nodefaults
 dependencies:
   - python>=3.10
-  - numpy
   - pip
-  - isce2>=2.6.3
-  - dem_stitcher>=2.5.8
-  - rasterio
-  - shapely
-  - jinja2
-  - asf_search>=6.4.0
   - gdal
-  - opencv
-  # For packaging, and testing
-  - flake8
-  - flake8-import-order
-  - flake8-blind-except
-  - flake8-builtins
-  - setuptools
-  - setuptools_scm
-  - wheel
-  - pytest
-  - pytest-console-scripts
-  - pytest-cov
-  - pytest-mock
-  # For running
-  - hyp3lib>=3,<4
-  - s1_orbits
+  - pip:
+    - --editable .[develop]
