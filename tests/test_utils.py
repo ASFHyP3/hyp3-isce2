@@ -5,7 +5,6 @@ from pathlib import Path
 from unittest.mock import patch
 
 import numpy as np
-import pytest
 from osgeo import gdal
 
 import hyp3_isce2.utils as utils

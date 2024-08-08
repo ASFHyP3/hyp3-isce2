@@ -1,12 +1,9 @@
-import netrc
-import os
 import shutil
 import subprocess
 from dataclasses import dataclass
 from datetime import datetime
 from pathlib import Path
-from platform import system
-from typing import Optional, Tuple
+from typing import Optional
 
 import isceobj
 import numpy as np

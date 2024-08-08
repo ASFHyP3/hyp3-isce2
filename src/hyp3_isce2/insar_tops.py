@@ -5,7 +5,6 @@ import logging
 import sys
 from pathlib import Path
 from shutil import copyfile, make_archive
-from typing import Optional
 
 from hyp3lib.aws import upload_file_to_s3
 from s1_orbits import fetch_for_scene
