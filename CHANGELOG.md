@@ -9,7 +9,6 @@ and uses [Semantic Versioning](https://semver.org/spec/v2.0.0.html).
 ## [2.0.0]
 ### Changed
 - Orbit files are now retrieved using the [s1-orbits](https://github.com/ASFHyP3/sentinel1-orbits-py) library.
-- Creating a Conda environment from `environment.yml` now installs all dependencies via `pip`, to reduce duplication between `environment.yml` and `pyproject.toml`.
 ### Removed
 - Removed support for the `--esa-username` and `--esa-password` command-line options and the `ESA_USERNAME` and `ESA_PASSWORD` environment variables.
 
