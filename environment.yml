@@ -28,4 +28,5 @@ dependencies:
   - pytest-mock
   # For running
   - hyp3lib>=3,<4
-  - s1_orbits
+  # TODO: uncomment after s1_orbits published to conda-forge
+  #- s1_orbits
