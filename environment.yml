@@ -28,5 +28,4 @@ dependencies:
   - pytest-mock
   # For running
   - hyp3lib>=3,<4
-  - pip: # TODO: delete this line after s1_orbits published to conda-forge
-    - s1_orbits
+  - s1_orbits
