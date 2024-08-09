@@ -28,6 +28,7 @@ dependencies = [
   "asf_search>=6.4.0",
   "gdal",
   "hyp3lib>=3,<4",
+  "s1_orbits",
   # Conda-forge only dependencies are listed below
   # "opencv",
   # "isce2>=2.6.3",

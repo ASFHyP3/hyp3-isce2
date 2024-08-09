@@ -73,13 +73,12 @@ those with 5x1 looks have a pixel spacing of 20 m.
 There is always a water mask geotiff file included in the product package, but setting the **apply-water-mask** 
 (`--apply-water-mask`) option to True will apply the mask to the wrapped interferogram prior to phase unwrapping.
 
-### Earthdata Login and ESA Credentials
+### Earthdata Login Credentials
 
-For all workflows, the user must provide their Earthdata Login credentials and ESA Copernicus Data Space Ecosystem (CDSE) credentials in order to download input data.
+For all workflows, the user must provide their Earthdata Login credentials in order to download input data.
 If you do not already have an Earthdata account, you can sign up [here](https://urs.earthdata.nasa.gov/home). 
-If you do not already have a CDSE account, you can sign up [here](https://dataspace.copernicus.eu). 
-Your credentials can be passed to the workflows via command-line options (`--esa-username` and  `--esa-password`), environment variables 
-(`EARTHDATA_USERNAME`, `EARTHDATA_PASSWORD`, `ESA_USERNAME`, and `ESA_PASSWORD`), or via your `.netrc` file. If you haven't set up a `.netrc` file 
+Your credentials can be passed to the workflows via environment variables
+(`EARTHDATA_USERNAME`, `EARTHDATA_PASSWORD`) or via your `.netrc` file. If you haven't set up a `.netrc` file
 before, check out this [guide](https://harmony.earthdata.nasa.gov/docs#getting-started) to get started.
 
 ### Docker Container
@@ -89,8 +88,6 @@ deployment. To run the current version of the project's container, use this comm
 docker run -it --rm \
     -e EARTHDATA_USERNAME=[YOUR_USERNAME_HERE] \
     -e EARTHDATA_PASSWORD=[YOUR_PASSWORD_HERE] \
-    -e ESA_USERNAME=[YOUR_USERNAME_HERE] \
-    -e ESA_PASSWORD=[YOUR_PASSWORD_HERE] \
     ghcr.io/asfhyp3/hyp3-isce2:latest \
     ++process [WORKFLOW_NAME] \
     [WORKFLOW_ARGS]
@@ -117,8 +114,6 @@ docker run -it --rm \
     -e AWS_SESSION_TOKEN=[YOUR_TOKEN] \ 
     -e EARTHDATA_USERNAME=[YOUR_USERNAME_HERE] \
     -e EARTHDATA_PASSWORD=[YOUR_PASSWORD_HERE] \
-    -e ESA_USERNAME=[YOUR_USERNAME_HERE] \
-    -e ESA_PASSWORD=[YOUR_PASSWORD_HERE] \
     ghcr.io/asfhyp3/hyp3-isce2:latest \
       ++process [WORKFLOW_NAME] \
       [WORKFLOW_ARGS] \
