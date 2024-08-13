@@ -1,66 +1,33 @@
 """A workflow for merging standard burst InSAR products."""
 import argparse
 import copy
-import datetime
 import logging
 import os
-import shutil
 import subprocess
 import sys
-from concurrent.futures import ThreadPoolExecutor
-from dataclasses import dataclass, field
+from dataclasses import dataclass
 from datetime import datetime, timezone
-from itertools import combinations
-from lxml import etree
 from pathlib import Path
 from secrets import token_hex
 from shutil import make_archive
-from tempfile import TemporaryDirectory
-from typing import Iterable, List, Optional, Tuple
+from typing import Iterable, Optional
 
-import asf_search
 import isce
-import isceobj
-import lxml.etree as ET
-import numpy as np
-from burst2safe import utils
 from burst2safe.burst2safe import burst2safe
-from burst2safe.safe import Safe
-from burst2safe.search import download_bursts, find_bursts
-from contrib.Snaphu.Snaphu import Snaphu
 from hyp3lib.aws import upload_file_to_s3
 from hyp3lib.image import create_thumbnail
 from hyp3lib.util import string_is_true
-from isceobj.Orbit.Orbit import Orbit
-from isceobj.Planet.Planet import Planet
-from isceobj.Sensor.TOPS.Sentinel1 import Sentinel1
-from isceobj.TopsProc.runIon import maskUnwrap
-from isceobj.TopsProc.runMergeBursts import mergeBox, mergeBursts2
-from iscesys.Component import createTraitSeq
-from iscesys.Component.ProductManager import ProductManager
-from mroipac.filter.Filter import Filter
-from mroipac.icu.Icu import Icu
+from lxml import etree
 from osgeo import gdal, gdalconst
-from shapely import geometry
-from stdproc.rectify.geocode.Geocodable import Geocodable
-from zerodop.geozero import createGeozero
 
 import hyp3_isce2
-import hyp3_isce2.burst as burst_utils
-from hyp3_isce2.insar_tops_burst import find_product, get_pixel_size, convert_raster_from_isce2_gdal
-from hyp3_isce2.dem import download_dem_for_isce2
 from hyp3_isce2.insar_tops import insar_tops
+from hyp3_isce2.insar_tops_burst import convert_raster_from_isce2_gdal, find_product, get_pixel_size
 from hyp3_isce2.utils import (
     ParameterFile,
-    create_image,
-    image_math,
-    load_product,
     make_browse_image,
-    read_product_metadata,
-    resample_to_radar_io,
     utm_from_lon_lat,
 )
-from hyp3_isce2.water_mask import create_water_mask
 
 
 log_format = '%(asctime)s - %(name)s - %(levelname)s - %(message)s'
@@ -109,7 +76,7 @@ def get_product_name(reference_scene: str, secondary_scene: str, pixel_spacing: 
     )
 
 
-def translate_outputs(product_name: str, pixel_size: float, include_radar: bool = False, use_multilooked=False) -> None:
+def translate_outputs(product_name: str, pixel_size: float, include_radar: bool = False) -> None:
     """Translate ISCE outputs to a standard GTiff format with a UTM projection.
     Assume you are in the top level of an ISCE run directory
 
@@ -136,19 +103,16 @@ def translate_outputs(product_name: str, pixel_size: float, include_radar: bool 
         ISCE2Dataset('merged/filt_topophase.unw.conncomp.geo', 'conncomp', [1]),
     ]
 
-    if use_multilooked:
-        suffix = '.multilooked'
-
     rdr_datasets = [
         ISCE2Dataset(
-            find_product(f'merged/filt_topophase.flat.vrt'),
+            find_product('merged/filt_topophase.flat.vrt'),
             'wrapped_phase_rdr',
             [1],
             gdalconst.GDT_CFloat32,
         ),
-        ISCE2Dataset(find_product(f'merged/lat.rdr.full.vrt'), 'lat_rdr', [1]),
-        ISCE2Dataset(find_product(f'merged/lon.rdr.full.vrt'), 'lon_rdr', [1]),
-        ISCE2Dataset(find_product(f'merged/los.rdr.full.vrt'), 'los_rdr', [1, 2]),
+        ISCE2Dataset(find_product('merged/lat.rdr.full.vrt'), 'lat_rdr', [1]),
+        ISCE2Dataset(find_product('merged/lon.rdr.full.vrt'), 'lon_rdr', [1]),
+        ISCE2Dataset(find_product('merged/los.rdr.full.vrt'), 'los_rdr', [1, 2]),
     ]
     if include_radar:
         datasets += rdr_datasets
@@ -287,7 +251,7 @@ def make_parameter_file(
     slant_range_time = float(ref_annotation_xml.find('.//slantRangeTime').text)
     range_sampling_rate = float(ref_annotation_xml.find('.//rangeSamplingRate').text)
     number_samples = int(ref_annotation_xml.find('.//swathTiming/samplesPerBurst').text)
-    baseline_perp = topsProc_xml.find(f'.//IW-2_Bperp_at_midrange_for_first_common_burst').text
+    baseline_perp = topsProc_xml.find('.//IW-2_Bperp_at_midrange_for_first_common_burst').text
     unwrapper_type = topsApp_xml.find('.//property[@name="unwrapper name"]').text
     phase_filter_strength = topsApp_xml.find('.//property[@name="filter strength"]').text
 
@@ -386,45 +350,40 @@ def main():
     args = parser.parse_args()
     granules_ref = list(set(args.reference))
     granules_sec = list(set(args.secondary))
-    
+
     ids_ref = [granule.split('_')[1]+'_'+granule.split('_')[2]+'_'+granule.split('_')[4] for granule in granules_ref]
     ids_sec = [granule.split('_')[1]+'_'+granule.split('_')[2]+'_'+granule.split('_')[4] for granule in granules_sec]
 
-    print(set(ids_ref))
-    print(set(ids_sec))
-    print(list(set(ids_ref)-set(ids_sec)),list(set(ids_sec)-set(ids_ref)))
-    if len(list(set(ids_ref)-set(ids_sec)))>0:
-        raise Exception('The reference bursts '+', '.join(list(set(ids_ref)-set(ids_sec)))+' do not have the correspondant bursts in the secondary granules')
-    elif len(list(set(ids_sec)-set(ids_ref)))>0:
-        raise Exception('The secondary bursts '+', '.join(list(set(ids_sec)-set(ids_ref)))+' do not have the correspondant bursts in the reference granules')
-    
-    work_dir = utils.optional_wd(None)
+    if len(list(set(ids_ref)-set(ids_sec))) > 0:
+        raise Exception('The reference bursts ' + ', '.join(list(set(ids_ref)-set(ids_sec))) +
+                        ' do not have the correspondant bursts in the secondary granules')
+    elif len(list(set(ids_sec)-set(ids_ref))) > 0:
+        raise Exception('The secondary bursts ' + ', '.join(list(set(ids_sec)-set(ids_ref))) +
+                        ' do not have the correspondant bursts in the reference granules')
 
     if not granules_ref[0].split('_')[4] == granules_sec[0].split('_')[4]:
         raise Exception('The secondary and reference granules do not have the same polarization')
-    
+
     if granules_ref[0].split('_')[3] > granules_sec[0].split('_')[3]:
         log.info('The secondary granules have a later date than the reference granules.')
-        temp=copy.copy(granules_ref)
-        granules_ref=copy.copy(granules_sec)
-        granules_sec=temp
+        temp = copy.copy(granules_ref)
+        granules_ref = copy.copy(granules_sec)
+        granules_sec = temp
 
-    swaths=list(set([int(granule.split('_')[2][2]) for granule in granules_ref]))
+    swaths = list(set([int(granule.split('_')[2][2]) for granule in granules_ref]))
 
-    #reference_scene=burst2safe(granules_ref)
-    #reference_scene = os.path.basename(reference_scene).split('.')[0]
-    reference_scene = 'S1A_IW_SLC__1SSV_20230212T025529_20230212T025534_047197_05A9B2_971A'
+    reference_scene = burst2safe(granules_ref)
+    reference_scene = os.path.basename(reference_scene).split('.')[0]
 
-    #secondary_scene=burst2safe(granules_sec)
-    #secondary_scene = os.path.basename(secondary_scene).split('.')[0]
-    secondary_scene = 'S1A_IW_SLC__1SSV_20230916T025538_20230916T025542_050347_060FBD_1EFB'
+    secondary_scene = burst2safe(granules_sec)
+    secondary_scene = os.path.basename(secondary_scene).split('.')[0]
 
-    polarization=granules_ref[0].split('_')[4]
+    polarization = granules_ref[0].split('_')[4]
 
     range_looks, azimuth_looks = [int(looks) for looks in args.looks.split('x')]
     apply_water_mask = args.apply_water_mask
 
-    #insar_tops(reference_scene, secondary_scene, swaths, polarization)
+    insar_tops(reference_scene, secondary_scene, swaths, polarization)
 
     pixel_size = get_pixel_size(args.looks)
     product_name = get_product_name(reference_scene, secondary_scene, pixel_spacing=int(pixel_size))
@@ -432,7 +391,7 @@ def main():
     product_dir = Path(product_name)
     product_dir.mkdir(parents=True, exist_ok=True)
 
-    translate_outputs(product_name, pixel_size=pixel_size, include_radar=True, use_multilooked=True)
+    translate_outputs(product_name, pixel_size=pixel_size, include_radar=True)
 
     unwrapped_phase = f'{product_name}/{product_name}_unw_phase.tif'
     water_mask = f'{product_name}/{product_name}_water_mask.tif'

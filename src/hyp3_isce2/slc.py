@@ -54,7 +54,7 @@ def get_geometry_from_manifest(manifest_path: Path):
     coords = [(float(lon), float(lat)) for lat, lon in coord_strings]
     footprint = Polygon(coords)
     return footprint
-    
+
 
 def get_dem_bounds(reference_granule: Path, secondary_granule: Path) -> tuple:
     """Get the bounds of the DEM to use in processing from SAFE KML files
