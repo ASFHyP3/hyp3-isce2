@@ -26,6 +26,7 @@ def insar_tops(
     polarization: str = 'VV',
     azimuth_looks: int = 4,
     range_looks: int = 20,
+    download: bool = True,
 ) -> Path:
     """Create a full-SLC interferogram
 
@@ -44,8 +45,12 @@ def insar_tops(
     aux_cal_dir = Path('aux_cal')
     dem_dir = Path('dem')
 
-    ref_dir = slc.get_granule(reference_scene)
-    sec_dir = slc.get_granule(secondary_scene)
+    if download:
+        ref_dir = slc.get_granule(reference_scene)
+        sec_dir = slc.get_granule(secondary_scene)
+    else:
+        ref_dir = Path(reference_scene+'.SAFE')
+        sec_dir = Path(secondary_scene+'.SAFE')
     roi = slc.get_dem_bounds(ref_dir, sec_dir)
     log.info(f'DEM ROI: {roi}')
 
