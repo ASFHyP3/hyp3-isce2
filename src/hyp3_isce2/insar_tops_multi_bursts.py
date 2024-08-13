@@ -383,7 +383,7 @@ def main():
     range_looks, azimuth_looks = [int(looks) for looks in args.looks.split('x')]
     apply_water_mask = args.apply_water_mask
 
-    insar_tops(reference_scene, secondary_scene, swaths, polarization)
+    insar_tops(reference_scene, secondary_scene, swaths, polarization, download=False)
 
     pixel_size = get_pixel_size(args.looks)
     product_name = get_product_name(reference_scene, secondary_scene, pixel_spacing=int(pixel_size))
