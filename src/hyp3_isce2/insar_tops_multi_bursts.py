@@ -23,11 +23,7 @@ from osgeo import gdal, gdalconst
 import hyp3_isce2
 from hyp3_isce2.insar_tops import insar_tops
 from hyp3_isce2.insar_tops_burst import convert_raster_from_isce2_gdal, find_product, get_pixel_size
-from hyp3_isce2.utils import (
-    ParameterFile,
-    make_browse_image,
-    utm_from_lon_lat,
-)
+from hyp3_isce2.utils import ParameterFile, get_projection, make_browse_image, utm_from_lon_lat
 
 
 log_format = '%(asctime)s - %(name)s - %(levelname)s - %(message)s'
@@ -312,7 +308,7 @@ def make_readme(
         'plugin_version': hyp3_isce2.__version__,
         'processor_name': isce.__name__.upper(),
         'processor_version': isce.__version__,
-        'projection': hyp3_isce2.metadata.util.get_projection(info['coordinateSystem']['wkt']),
+        'projection': get_projection(info['coordinateSystem']['wkt']),
         'pixel_spacing': info['geoTransform'][1],
         'product_name': product_name,
         'reference_burst_name': reference_scene,
@@ -351,15 +347,25 @@ def main():
     granules_ref = list(set(args.reference))
     granules_sec = list(set(args.secondary))
 
-    ids_ref = [granule.split('_')[1]+'_'+granule.split('_')[2]+'_'+granule.split('_')[4] for granule in granules_ref]
-    ids_sec = [granule.split('_')[1]+'_'+granule.split('_')[2]+'_'+granule.split('_')[4] for granule in granules_sec]
+    ids_ref = [
+        granule.split('_')[1] + '_' + granule.split('_')[2] + '_' + granule.split('_')[4] for granule in granules_ref
+    ]
+    ids_sec = [
+        granule.split('_')[1] + '_' + granule.split('_')[2] + '_' + granule.split('_')[4] for granule in granules_sec
+    ]
 
-    if len(list(set(ids_ref)-set(ids_sec))) > 0:
-        raise Exception('The reference bursts ' + ', '.join(list(set(ids_ref)-set(ids_sec))) +
-                        ' do not have the correspondant bursts in the secondary granules')
-    elif len(list(set(ids_sec)-set(ids_ref))) > 0:
-        raise Exception('The secondary bursts ' + ', '.join(list(set(ids_sec)-set(ids_ref))) +
-                        ' do not have the correspondant bursts in the reference granules')
+    if len(list(set(ids_ref) - set(ids_sec))) > 0:
+        raise Exception(
+            'The reference bursts '
+            + ', '.join(list(set(ids_ref) - set(ids_sec)))
+            + ' do not have the correspondant bursts in the secondary granules'
+        )
+    elif len(list(set(ids_sec) - set(ids_ref))) > 0:
+        raise Exception(
+            'The secondary bursts '
+            + ', '.join(list(set(ids_sec) - set(ids_ref)))
+            + ' do not have the correspondant bursts in the reference granules'
+        )
 
     if not granules_ref[0].split('_')[4] == granules_sec[0].split('_')[4]:
         raise Exception('The secondary and reference granules do not have the same polarization')

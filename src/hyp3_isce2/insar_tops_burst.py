@@ -24,7 +24,7 @@ from hyp3_isce2.burst import (
     validate_bursts,
 )
 from hyp3_isce2.dem import download_dem_for_isce2
-from hyp3_isce2.insar_tops import insar_tops
+from hyp3_isce2.insar_tops import insar_tops_packaged
 from hyp3_isce2.logger import configure_root_logger
 from hyp3_isce2.s1_auxcal import download_aux_cal
 from hyp3_isce2.utils import (
@@ -165,17 +165,16 @@ def insar_tops_single_burst(
     multilook_position = multilook_radar_merge_inputs(swath_number, rg_looks=range_looks, az_looks=azimuth_looks)
 
     pixel_size = packaging.get_pixel_size(looks)
-    product_name = packaging.get_product_name(reference, secondary, pixel_spacing=int(pixel_size))
+    product_name = packaging.get_product_name(reference, secondary, pixel_spacing=int(pixel_size), slc=False)
 
     product_dir = Path(product_name)
     product_dir.mkdir(parents=True, exist_ok=True)
 
     packaging.translate_outputs(product_name, pixel_size=pixel_size, include_radar=True, use_multilooked=True)
 
+    unwrapped_phase = f'{product_name}/{product_name}_unw_phase.tif'
     if apply_water_mask:
-        unwrapped_phase = f'{product_name}/{product_name}_unw_phase.tif'
-        water_mask = f'{product_name}/{product_name}_water_mask.tif'
-        packaging.water_mask(unwrapped_phase, water_mask)
+        packaging.water_mask(unwrapped_phase, f'{product_name}/{product_name}_water_mask.tif')
 
     packaging.make_browse_image(unwrapped_phase, f'{product_name}/{product_name}_unw_phase.png')
 
@@ -194,7 +193,6 @@ def insar_tops_single_burst(
         secondary_scene=secondary,
         azimuth_looks=azimuth_looks,
         range_looks=range_looks,
-        swath_number=swath_number,
         multilook_position=multilook_position,
         apply_water_mask=apply_water_mask,
     )
@@ -237,7 +235,14 @@ def insar_tops_multi_burst(
     secondary_safe = secondary_safe_path.name.split('.')[0]
 
     log.info('Begin ISCE2 TopsApp run')
-    insar_tops(reference_safe, secondary_safe, download=False)
+    insar_tops_packaged(
+        reference=reference_safe,
+        secondary=secondary_safe,
+        looks=looks,
+        apply_water_mask=apply_water_mask,
+        bucket=bucket,
+        bucket_prefix=bucket_prefix
+    )
     log.info('ISCE2 TopsApp run completed successfully')
 
 
@@ -282,4 +287,11 @@ def main():
             bucket_prefix=args.bucket_prefix,
         )
     else:
-        insar_tops_multi_burst()
+        insar_tops_multi_burst(
+            reference=args.reference[0],
+            secondary=args.secondary[0],
+            looks=args.looks,
+            apply_water_mask=args.apply_water_mask,
+            bucket=args.bucket,
+            bucket_prefix=args.bucket_prefix,
+        )

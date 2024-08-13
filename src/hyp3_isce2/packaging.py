@@ -14,8 +14,9 @@ from osgeo import gdal, gdalconst
 from pyproj import CRS
 
 import hyp3_isce2
+import hyp3_isce2.metadata.util
 from hyp3_isce2.burst import BurstPosition
-from hyp3_isce2.utils import utm_from_lon_lat
+from hyp3_isce2.utils import get_projection, utm_from_lon_lat
 
 
 @dataclass
@@ -44,21 +45,21 @@ def find_product(pattern: str) -> str:
     return product
 
 
-def get_product_name(reference_scene: str, secondary_scene: str, pixel_spacing: int, slc: bool = True) -> str:
+def get_product_name(reference: str, secondary: str, pixel_spacing: int, slc: bool = True) -> str:
     """Get the name of the interferogram product.
 
     Args:
-        reference_scene: The reference burst name.
-        secondary_scene: The secondary burst name.
+        reference: The reference burst name.
+        secondary: The secondary burst name.
         pixel_spacing: The spacing of the pixels in the output image.
         slc: Whether the input scenes are SLCs or bursts.
 
     Returns:
         The name of the interferogram product.
     """
-
-    reference_split = reference_scene.split('_')
-    secondary_split = secondary_scene.split('_')
+    breakpoint()
+    reference_split = reference.split('_')
+    secondary_split = secondary.split('_')
 
     if slc:
         platform = reference_split[0]
@@ -328,7 +329,7 @@ def make_readme(
         'plugin_version': hyp3_isce2.__version__,
         'processor_name': isce.__name__.upper(),
         'processor_version': isce.__version__,
-        'projection': hyp3_isce2.metadata.util.get_projection(info['coordinateSystem']['wkt']),
+        'projection': get_projection(info['coordinateSystem']['wkt']),
         'pixel_spacing': info['geoTransform'][1],
         'product_name': product_name,
         'reference_burst_name': reference_scene,
@@ -437,6 +438,20 @@ class ParameterFile:
         out_path.write_text(self.__str__())
 
 
+def find_available_swaths(base_dir: Path | str) -> list[str]:
+    """Find the available swaths in the given directory
+
+    Args:
+        base_dir: Path to the directory containing the swaths
+
+    Returns:
+        List of available swaths
+    """
+    geom_dir = Path(base_dir) / 'geom_reference'
+    swaths = sorted([file.name for file in geom_dir.iterdir() if file.is_dir()])
+    return swaths
+
+
 def make_parameter_file(
     out_path: Path,
     reference_scene: str,
@@ -445,7 +460,6 @@ def make_parameter_file(
     range_looks: int,
     apply_water_mask: bool,
     multilook_position: Optional[BurstPosition] = None,
-    swath_number: Optional[int] = None,
     dem_name: str = 'GLO_30',
     dem_resolution: int = 30,
 ) -> None:
@@ -457,7 +471,6 @@ def make_parameter_file(
         secondary_scene: Secondary burst name
         azimuth_looks: Number of azimuth looks
         range_looks: Number of range looks
-        swath_number: Number of swath to grab bursts from (1, 2, or 3) for IW
         multilook_position: Burst position for multilooked radar geometry products
         dem_name: Name of the DEM that is use
         dem_resolution: Resolution of the DEM
@@ -500,7 +513,8 @@ def make_parameter_file(
     slant_range_time = float(ref_annotation_xml.find('.//slantRangeTime').text)
     range_sampling_rate = float(ref_annotation_xml.find('.//rangeSamplingRate').text)
     number_samples = int(ref_annotation_xml.find('.//swathTiming/samplesPerBurst').text)
-    baseline_perp = topsProc_xml.find(f'.//IW-{swath_number}_Bperp_at_midrange_for_first_common_burst').text
+    min_swath = find_available_swaths(Path.cwd())[0]
+    baseline_perp = topsProc_xml.find(f'.//IW-{int(min_swath[2])}_Bperp_at_midrange_for_first_common_burst').text
     unwrapper_type = topsApp_xml.find('.//property[@name="unwrapper name"]').text
     phase_filter_strength = topsApp_xml.find('.//property[@name="filter strength"]').text
 
@@ -538,16 +552,18 @@ def make_parameter_file(
         unwrapping_type=unwrapper_type,
         speckle_filter=True,
         water_mask=apply_water_mask,
-        radar_n_lines=multilook_position.n_lines,
-        radar_n_samples=multilook_position.n_samples,
-        radar_first_valid_line=multilook_position.first_valid_line,
-        radar_n_valid_lines=multilook_position.n_valid_lines,
-        radar_first_valid_sample=multilook_position.first_valid_sample,
-        radar_n_valid_samples=multilook_position.n_valid_samples,
-        multilook_azimuth_time_interval=multilook_position.azimuth_time_interval,
-        multilook_range_pixel_size=multilook_position.range_pixel_size,
-        radar_sensing_stop=multilook_position.sensing_stop,
     )
+    if multilook_position:
+        parameter_file.radar_n_lines = multilook_position.n_lines
+        parameter_file.radar_n_samples = multilook_position.n_samples
+        parameter_file.radar_first_valid_line = multilook_position.first_valid_line
+        parameter_file.radar_n_valid_lines = multilook_position.n_valid_lines
+        parameter_file.radar_first_valid_sample = multilook_position.first_valid_sample
+        parameter_file.radar_n_valid_samples = multilook_position.n_valid_samples
+        parameter_file.multilook_azimuth_time_interval = multilook_position.azimuth_time_interval
+        parameter_file.multilook_range_pixel_size = multilook_position.range_pixel_size
+        parameter_file.radar_sensing_stop = multilook_position.sensing_stop
+
     parameter_file.write(out_path)
 
 

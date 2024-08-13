@@ -6,6 +6,7 @@ import sys
 from pathlib import Path
 from shutil import copyfile, make_archive
 
+from hyp3lib.util import string_is_true
 from s1_orbits import fetch_for_scene
 
 from hyp3_isce2 import packaging, slc, topsapp
@@ -92,18 +93,22 @@ def insar_tops_packaged(
     range_looks: int = 20,
     apply_water_mask: bool = True,
     download: bool = True,
+    bucket: str = None,
+    bucket_prefix: str = '',
 ) -> Path:
     """Create a full-SLC interferogram
 
     Args:
-        reference_scene: Reference SLC name
-        secondary_scene: Secondary SLC name
+        reference: Reference SLC name
+        secondary: Secondary SLC name
         swaths: Swaths to process
         polarization: Polarization to use
         azimuth_looks: Number of azimuth looks
         range_looks: Number of range looks
         apply_water_mask: Apply water mask to unwrapped phase
         download: Download the SLCs
+        bucket: AWS S3 bucket to upload the final product to
+        bucket_prefix: Bucket prefix to prefix to use when uploading the final product
 
     Returns:
         Path to the output files
@@ -140,46 +145,48 @@ def insar_tops_packaged(
         secondary_scene=secondary,
         azimuth_looks=azimuth_looks,
         range_looks=range_looks,
-        # swath_number=swath_number,
-        # multilook_position=multilook_position,
         apply_water_mask=apply_water_mask,
     )
     output_zip = make_archive(base_name=product_name, format='zip', base_dir=product_name)
+    if bucket:
+        packaging.upload_product_to_s3(product_dir, output_zip, bucket, bucket_prefix)
 
 
 def main():
     """HyP3 entrypoint for the SLC TOPS workflow"""
     parser = argparse.ArgumentParser(description=__doc__, formatter_class=argparse.ArgumentDefaultsHelpFormatter)
-
-    parser.add_argument('--bucket', help='AWS S3 bucket HyP3 for upload the final product(s)')
-    parser.add_argument('--bucket-prefix', default='', help='Add a bucket prefix to product(s)')
-    parser.add_argument('--reference-scene', type=str, required=True)
-    parser.add_argument('--secondary-scene', type=str, required=True)
-    parser.add_argument('--polarization', type=str, choices=['VV', 'HH'], default='VV')
+    parser.add_argument('--reference', type=str, help='Reference granule')
+    parser.add_argument('--secondary', type=str, help='Secondary granule')
+    parser.add_argument('--polarization', type=str, defualt='VV', help='Polarization to use')
     parser.add_argument(
         '--looks', choices=['20x4', '10x2', '5x1'], default='20x4', help='Number of looks to take in range and azimuth'
     )
+    parser.add_argument(
+        '--apply-water-mask',
+        type=string_is_true,
+        default=False,
+        help='Apply a water body mask before unwrapping.',
+    )
+    parser.add_argument('--bucket', help='AWS S3 bucket HyP3 for upload the final product(s)')
+    parser.add_argument('--bucket-prefix', default='', help='Add a bucket prefix to product(s)')
 
     args = parser.parse_args()
-
     configure_root_logger()
     log.debug(' '.join(sys.argv))
 
-    log.info('Begin ISCE2 TopsApp run')
-
     range_looks, azimuth_looks = [int(looks) for looks in args.looks.split('x')]
-    isce_output_dir = insar_tops(
-        reference_scene=args.reference_scene,
-        secondary_scene=args.secondary_scene,
+    if args.polarization not in ['VV', 'VH', 'HV', 'HH']:
+        raise ValueError('Polarization must be one of VV, VH, HV, or HH')
+
+    insar_tops_packaged(
+        reference_scene=args.reference,
+        secondary_scene=args.secondary,
         polarization=args.polarization,
         azimuth_looks=azimuth_looks,
         range_looks=range_looks,
+        apply_water_mask=args.apply_water_mask,
+        bucket=args.bucket,
+        bucket_prefix=args.bucket_prefix,
     )
 
     log.info('ISCE2 TopsApp run completed successfully')
-
-    product_name = f'{args.reference_scene}x{args.secondary_scene}'
-    output_zip = make_archive(base_name=product_name, format='zip', base_dir=isce_output_dir)
-
-    if args.bucket:
-        upload_file_to_s3(Path(output_zip), args.bucket, args.bucket_prefix)

@@ -1,5 +1,4 @@
 from jinja2 import Environment, PackageLoader, StrictUndefined, select_autoescape
-from osgeo import osr
 
 
 def get_environment() -> Environment:
@@ -19,9 +18,3 @@ def render_template(template: str, payload: dict) -> str:
     template = env.get_template(template)
     rendered = template.render(payload)
     return rendered
-
-
-def get_projection(srs_wkt) -> str:
-    srs = osr.SpatialReference()
-    srs.ImportFromWkt(srs_wkt)
-    return srs.GetAttrValue('projcs')
