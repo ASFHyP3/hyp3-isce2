@@ -7,7 +7,6 @@ from concurrent.futures import ThreadPoolExecutor
 from dataclasses import dataclass
 from datetime import datetime, timedelta
 from pathlib import Path
-from secrets import token_hex
 from typing import Iterator, List, Optional, Tuple, Union
 
 import asf_search
@@ -345,45 +344,6 @@ def download_bursts(param_list: Iterator[BurstParams]) -> List[BurstMetadata]:
     return bursts
 
 
-def get_product_name(reference_scene: str, secondary_scene: str, pixel_spacing: int) -> str:
-    """Get the name of the interferogram product.
-
-    Args:
-        reference_scene: The reference burst name.
-        secondary_scene: The secondary burst name.
-        pixel_spacing: The spacing of the pixels in the output image.
-
-    Returns:
-        The name of the interferogram product.
-    """
-
-    reference_split = reference_scene.split('_')
-    secondary_split = secondary_scene.split('_')
-
-    platform = reference_split[0]
-    burst_id = reference_split[1]
-    image_plus_swath = reference_split[2]
-    reference_date = reference_split[3][0:8]
-    secondary_date = secondary_split[3][0:8]
-    polarization = reference_split[4]
-    product_type = 'INT'
-    pixel_spacing = str(int(pixel_spacing))
-    product_id = token_hex(2).upper()
-
-    return '_'.join(
-        [
-            platform,
-            burst_id,
-            image_plus_swath,
-            reference_date,
-            secondary_date,
-            polarization,
-            product_type + pixel_spacing,
-            product_id,
-        ]
-    )
-
-
 def get_burst_params(scene_name: str) -> BurstParams:
     results = asf_search.search(product_list=[scene_name])
 
@@ -572,7 +532,7 @@ def safely_multilook(
     if subset_to_valid:
         last_line = position.first_valid_line + position.n_valid_lines
         last_sample = position.first_valid_sample + position.n_valid_samples
-        mask[position.first_valid_line: last_line, position.first_valid_sample: last_sample] = identity_value
+        mask[position.first_valid_line : last_line, position.first_valid_sample : last_sample] = identity_value
     else:
         mask[:, :] = identity_value
 

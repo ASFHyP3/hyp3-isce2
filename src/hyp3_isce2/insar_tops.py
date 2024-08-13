@@ -6,11 +6,9 @@ import sys
 from pathlib import Path
 from shutil import copyfile, make_archive
 
-from hyp3lib.aws import upload_file_to_s3
 from s1_orbits import fetch_for_scene
 
-from hyp3_isce2 import slc
-from hyp3_isce2 import topsapp
+from hyp3_isce2 import packaging, slc, topsapp
 from hyp3_isce2.dem import download_dem_for_isce2
 from hyp3_isce2.logger import configure_root_logger
 from hyp3_isce2.s1_auxcal import download_aux_cal
@@ -49,8 +47,8 @@ def insar_tops(
         ref_dir = slc.get_granule(reference_scene)
         sec_dir = slc.get_granule(secondary_scene)
     else:
-        ref_dir = Path(reference_scene+'.SAFE')
-        sec_dir = Path(secondary_scene+'.SAFE')
+        ref_dir = Path(reference_scene + '.SAFE')
+        sec_dir = Path(secondary_scene + '.SAFE')
     roi = slc.get_dem_bounds(ref_dir, sec_dir)
     log.info(f'DEM ROI: {roi}')
 
@@ -85,6 +83,70 @@ def insar_tops(
     return Path('merged')
 
 
+def insar_tops_packaged(
+    reference: str,
+    secondary: str,
+    swaths: list = [1, 2, 3],
+    polarization: str = 'VV',
+    azimuth_looks: int = 4,
+    range_looks: int = 20,
+    apply_water_mask: bool = True,
+    download: bool = True,
+) -> Path:
+    """Create a full-SLC interferogram
+
+    Args:
+        reference_scene: Reference SLC name
+        secondary_scene: Secondary SLC name
+        swaths: Swaths to process
+        polarization: Polarization to use
+        azimuth_looks: Number of azimuth looks
+        range_looks: Number of range looks
+        apply_water_mask: Apply water mask to unwrapped phase
+        download: Download the SLCs
+
+    Returns:
+        Path to the output files
+    """
+    pixel_size = packaging.get_pixel_size(f'{range_looks}x{azimuth_looks}')
+    product_name = packaging.get_product_name(reference, secondary, pixel_spacing=int(pixel_size))
+
+    log.info('Begin ISCE2 TopsApp run')
+    insar_tops(reference, secondary, download=False)
+    log.info('ISCE2 TopsApp run completed successfully')
+
+    product_dir = Path(product_name)
+    product_dir.mkdir(parents=True, exist_ok=True)
+
+    packaging.translate_outputs(product_name, pixel_size=pixel_size)
+
+    unwrapped_phase = f'{product_name}/{product_name}_unw_phase.tif'
+    if apply_water_mask:
+        packaging.water_mask(unwrapped_phase, f'{product_name}/{product_name}_water_mask.tif')
+
+    packaging.make_browse_image(unwrapped_phase, f'{product_name}/{product_name}_unw_phase.png')
+    packaging.make_readme(
+        product_dir=product_dir,
+        product_name=product_name,
+        reference_scene=reference,
+        secondary_scene=secondary,
+        range_looks=range_looks,
+        azimuth_looks=azimuth_looks,
+        apply_water_mask=apply_water_mask,
+    )
+    packaging.make_parameter_file(
+        Path(f'{product_name}/{product_name}.txt'),
+        reference_scene=reference,
+        secondary_scene=secondary,
+        azimuth_looks=azimuth_looks,
+        range_looks=range_looks,
+        # swath_number=swath_number,
+        # multilook_position=multilook_position,
+        apply_water_mask=apply_water_mask,
+    )
+    output_zip = make_archive(base_name=product_name, format='zip', base_dir=product_name)
+
+
 def main():
     """HyP3 entrypoint for the SLC TOPS workflow"""
     parser = argparse.ArgumentParser(description=__doc__, formatter_class=argparse.ArgumentDefaultsHelpFormatter)
@@ -95,10 +157,7 @@ def main():
     parser.add_argument('--secondary-scene', type=str, required=True)
     parser.add_argument('--polarization', type=str, choices=['VV', 'HH'], default='VV')
     parser.add_argument(
-        '--looks',
-        choices=['20x4', '10x2', '5x1'],
-        default='20x4',
-        help='Number of looks to take in range and azimuth'
+        '--looks', choices=['20x4', '10x2', '5x1'], default='20x4', help='Number of looks to take in range and azimuth'
     )
 
     args = parser.parse_args()
