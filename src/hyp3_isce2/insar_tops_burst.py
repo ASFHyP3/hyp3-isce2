@@ -8,7 +8,7 @@ from shutil import copyfile, make_archive
 from typing import Iterable, Optional
 
 import isce  # noqa
-from burst2safe import burst2safe
+from burst2safe.burst2safe import burst2safe
 from hyp3lib.util import string_is_true
 from isceobj.TopsProc.runMergeBursts import multilook
 from osgeo import gdal
@@ -288,8 +288,8 @@ def main():
         )
     else:
         insar_tops_multi_burst(
-            reference=args.reference[0],
-            secondary=args.secondary[0],
+            reference=args.reference,
+            secondary=args.secondary,
             looks=args.looks,
             apply_water_mask=args.apply_water_mask,
             bucket=args.bucket,
