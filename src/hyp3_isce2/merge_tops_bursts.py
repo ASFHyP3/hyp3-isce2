@@ -42,6 +42,7 @@ from hyp3_isce2.dem import download_dem_for_isce2
 from hyp3_isce2.utils import (
     ParameterFile,
     create_image,
+    get_projection,
     image_math,
     load_product,
     make_browse_image,
@@ -1027,7 +1028,7 @@ def make_readme(
         'plugin_version': hyp3_isce2.__version__,
         'processor_name': isce.__name__.upper(),  # noqa
         'processor_version': isce.__version__,  # noqa
-        'projection': hyp3_isce2.metadata.util.get_projection(info['coordinateSystem']['wkt']),
+        'projection': get_projection(info['coordinateSystem']['wkt']),
         'pixel_spacing': info['geoTransform'][1],
         'product_name': product_name,
         'reference_burst_name': ', '.join(reference_scenes),
