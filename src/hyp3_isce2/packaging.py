@@ -321,7 +321,7 @@ def make_readme(
     wrapped_phase_path = product_dir / f'{product_name}_wrapped_phase.tif'
     info = gdal.Info(str(wrapped_phase_path), format='json')
     secondary_granule_datetime_str = secondary_scene.split('_')[3]
-    if not 'T' in secondary_granule_datetime_str:
+    if 'T' not in secondary_granule_datetime_str:
         secondary_granule_datetime_str = secondary_scene.split('_')[5]
 
     payload = {
