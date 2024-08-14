@@ -117,7 +117,7 @@ def insar_tops_packaged(
     product_name = packaging.get_product_name(reference, secondary, pixel_spacing=int(pixel_size))
 
     log.info('Begin ISCE2 TopsApp run')
-    insar_tops(reference, secondary, download=False)
+    #insar_tops(reference, secondary, download=False)
     log.info('ISCE2 TopsApp run completed successfully')
 
     product_dir = Path(product_name)

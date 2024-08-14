@@ -57,7 +57,6 @@ def get_product_name(reference: str, secondary: str, pixel_spacing: int, slc: bo
     Returns:
         The name of the interferogram product.
     """
-    breakpoint()
     reference_split = reference.split('_')
     secondary_split = secondary.split('_')
 
@@ -322,6 +321,8 @@ def make_readme(
     wrapped_phase_path = product_dir / f'{product_name}_wrapped_phase.tif'
     info = gdal.Info(str(wrapped_phase_path), format='json')
     secondary_granule_datetime_str = secondary_scene.split('_')[3]
+    if not 'T' in secondary_granule_datetime_str:
+        secondary_granule_datetime_str = secondary_scene.split('_')[5]
 
     payload = {
         'processing_date': datetime.now(timezone.utc),
@@ -483,9 +484,12 @@ def make_parameter_file(
     EARTH_RADIUS = 6337286.638938101
 
     parser = etree.XMLParser(encoding='utf-8', recover=True)
-
-    ref_tag = reference_scene[-10:-6]
-    sec_tag = secondary_scene[-10:-6]
+    if 'BURST' in reference_scene:
+        ref_tag = reference_scene[-10:-6]
+        sec_tag = secondary_scene[-10:-6]
+    else:
+        ref_tag = reference_scene[-4::]
+        sec_tag = secondary_scene[-4::]
     reference_safe = [file for file in os.listdir('.') if file.endswith(f'{ref_tag}.SAFE')][0]
     secondary_safe = [file for file in os.listdir('.') if file.endswith(f'{sec_tag}.SAFE')][0]
 

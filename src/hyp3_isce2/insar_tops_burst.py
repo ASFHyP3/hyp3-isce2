@@ -205,6 +205,7 @@ def insar_tops_single_burst(
 def insar_tops_multi_burst(
     reference: Iterable[str],
     secondary: Iterable[str],
+    swaths: list = [1, 2, 3],
     looks: str = '20x4',
     apply_water_mask=False,
     bucket: Optional[str] = None,
@@ -229,16 +230,25 @@ def insar_tops_multi_burst(
     if not reference[0].split('_')[4] == secondary[0].split('_')[4]:
         raise Exception('The secondary and reference granules do not have the same polarization')
 
-    reference_safe_path = burst2safe(reference)
+    #reference_safe_path = burst2safe(reference)
+    reference_safe_path = Path('S1A_IW_SLC__1SSV_20230212T025529_20230212T025534_047197_05A9B2_35DE.SAFE')
     reference_safe = reference_safe_path.name.split('.')[0]
-    secondary_safe_path = burst2safe(secondary)
+    #secondary_safe_path = burst2safe(secondary)
+    secondary_safe_path = Path('S1A_IW_SLC__1SSV_20230916T025538_20230916T025542_050347_060FBD_DF45.SAFE')
     secondary_safe = secondary_safe_path.name.split('.')[0]
+    
+    range_looks, azimuth_looks = [int(looks) for looks in looks.split('x')]
+    swaths = list(set([int(granule.split('_')[2][2]) for granule in reference]))
+    polarization = reference[0].split('_')[4]
 
     log.info('Begin ISCE2 TopsApp run')
     insar_tops_packaged(
         reference=reference_safe,
         secondary=secondary_safe,
-        looks=looks,
+        swaths=swaths,
+        polarization=polarization,
+        azimuth_looks=azimuth_looks,
+        range_looks=range_looks,
         apply_water_mask=apply_water_mask,
         bucket=bucket,
         bucket_prefix=bucket_prefix
