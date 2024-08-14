@@ -56,18 +56,6 @@ def get_geometry_from_manifest(manifest_path: Path):
     return footprint
 
 
-def get_relative_orbit(granule: Path):
-    manifest_path = granule / 'manifest.safe'
-    manifest = ET.parse(manifest_path).getroot()
-    
-    frame_element = [x for x in manifest.findall('.//metadataObject') if x.get('ID') == 'measurementOrbitReference'][0]
-    frame_element = [x for x in frame_element.findall('.//metadataWrap/xmlData')][0]
-    
-    print(frame_element.get('type'))
-    relative_orbit = frame_element.findall('.//relativeOrbitNumber')[0].text
-    return relative_orbit
-
-
 def get_dem_bounds(reference_granule: Path, secondary_granule: Path) -> tuple:
     """Get the bounds of the DEM to use in processing from SAFE KML files
 
