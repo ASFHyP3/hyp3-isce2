@@ -230,11 +230,9 @@ def insar_tops_multi_burst(
     if not reference[0].split('_')[4] == secondary[0].split('_')[4]:
         raise Exception('The secondary and reference granules do not have the same polarization')
 
-    #reference_safe_path = burst2safe(reference)
-    reference_safe_path = Path('S1A_IW_SLC__1SSV_20230212T025529_20230212T025534_047197_05A9B2_35DE.SAFE')
+    reference_safe_path = burst2safe(reference)
     reference_safe = reference_safe_path.name.split('.')[0]
-    #secondary_safe_path = burst2safe(secondary)
-    secondary_safe_path = Path('S1A_IW_SLC__1SSV_20230916T025538_20230916T025542_050347_060FBD_DF45.SAFE')
+    secondary_safe_path = burst2safe(secondary)
     secondary_safe = secondary_safe_path.name.split('.')[0]
     
     range_looks, azimuth_looks = [int(looks) for looks in looks.split('x')]
