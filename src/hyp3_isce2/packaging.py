@@ -76,11 +76,11 @@ def get_product_name(reference: str, secondary: str, pixel_spacing: int, slc: bo
         orbit_number = ref_manifest_xml.find(relative_orbit_number_query).text.zfill(3)
         footprint = get_geometry_from_manifest(Path(f'{reference}.SAFE/manifest.safe'))
         lons, lats = footprint.exterior.coords.xy
-        lon_lims = [np.min(lons), np.max(lons)]
-        lat_lims = [np.min(lats), np.max(lats)]
-        lons = ['E'+str(abs(int(lon))) if lon >= 0 else 'W'+str(abs(int(lon))) for lon in lon_lims]
-        lats = ['N'+str(abs(int(lat))) if lat >= 0 else 'S'+str(abs(int(lat))) for lat in lat_lims]
-        name_parts = [platform, orbit_number, lons[0], lons[1], lats[0], lats[1]]
+        lat_string = lambda lat: ('N' if lat >= 0 else 'S') + f"{('%.1f' % np.abs(lat)).zfill(4)}".replace('.', '_')
+        lon_string = lambda lon: ('E' if lon >= 0 else 'W') + f"{('%.1f' % np.abs(lon)).zfill(5)}".replace('.', '_')
+        lat_lims = [lat_string(lat) for lat in [np.min(lats), np.max(lats)]]
+        lon_lims = [lon_string(lon) for lon in [np.min(lons), np.max(lons)]]
+        name_parts = [platform, orbit_number, lon_lims[0], lat_lims[0], lon_lims[1], lat_lims[1]]
     else:
         platform = reference_split[0]
         burst_id = reference_split[1]
