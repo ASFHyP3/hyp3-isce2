@@ -76,8 +76,8 @@ def get_product_name(reference: str, secondary: str, pixel_spacing: int, slc: bo
         orbit_number = ref_manifest_xml.find(relative_orbit_number_query).text.zfill(3)
         footprint = get_geometry_from_manifest(Path(f'{reference}.SAFE/manifest.safe'))
         lons, lats = footprint.exterior.coords.xy
-        def lat_string(lat): ('N' if lat >= 0 else 'S') + f"{('%.1f' % np.abs(lat)).zfill(4)}".replace('.', '_')
-        def lon_string(lon): ('E' if lon >= 0 else 'W') + f"{('%.1f' % np.abs(lon)).zfill(5)}".replace('.', '_')
+        def lat_string(lat): return ('N' if lat >= 0 else 'S') + f"{('%.1f' % np.abs(lat)).zfill(4)}".replace('.', '_')
+        def lon_string(lon): return ('E' if lon >= 0 else 'W') + f"{('%.1f' % np.abs(lon)).zfill(5)}".replace('.', '_')
         lat_lims = [lat_string(lat) for lat in [np.min(lats), np.max(lats)]]
         lon_lims = [lon_string(lon) for lon in [np.min(lons), np.max(lons)]]
         name_parts = [platform, orbit_number, lon_lims[0], lat_lims[0], lon_lims[1], lat_lims[1]]
