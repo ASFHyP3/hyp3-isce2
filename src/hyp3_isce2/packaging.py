@@ -3,12 +3,12 @@ import os
 import subprocess
 from dataclasses import dataclass
 from datetime import datetime, timezone
-import numpy as np
 from pathlib import Path
 from secrets import token_hex
 from typing import Iterable, Optional
 
 import isce
+import numpy as np
 from hyp3lib.aws import upload_file_to_s3
 from hyp3lib.image import create_thumbnail
 from lxml import etree
@@ -76,10 +76,10 @@ def get_product_name(reference: str, secondary: str, pixel_spacing: int, slc: bo
         orbit_number = ref_manifest_xml.find(relative_orbit_number_query).text.zfill(3)
         footprint = get_geometry_from_manifest(Path(f'{reference}.SAFE/manifest.safe'))
         lons, lats = footprint.exterior.coords.xy
-        lon_lims = [np.min(lons),np.max(lons)]
-        lat_lims = [np.min(lats),np.max(lats)]
-        lons = ['E'+str(abs(int(lon))) if lon>=0 else 'W'+str(abs(int(lon))) for lon in lons]
-        lats = ['N'+str(abs(int(lat))) if lat>=0 else 'S'+str(abs(int(lat))) for lat in lats]
+        lon_lims = [np.min(lons), np.max(lons)]
+        lat_lims = [np.min(lats), np.max(lats)]
+        lons = ['E'+str(abs(int(lon))) if lon >= 0 else 'W'+str(abs(int(lon))) for lon in lon_lims]
+        lats = ['N'+str(abs(int(lat))) if lat >= 0 else 'S'+str(abs(int(lat))) for lat in lat_lims]
         name_parts = [platform, orbit_number, lons[0], lons[1], lats[0], lats[1]]
     else:
         platform = reference_split[0]
