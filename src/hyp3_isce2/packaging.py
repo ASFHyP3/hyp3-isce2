@@ -1,3 +1,4 @@
+import glob
 import os
 import subprocess
 from dataclasses import dataclass
@@ -7,6 +8,7 @@ from secrets import token_hex
 from typing import Iterable, Optional
 
 import isce
+import numpy as np
 from hyp3lib.aws import upload_file_to_s3
 from hyp3lib.image import create_thumbnail
 from lxml import etree
@@ -16,6 +18,7 @@ from pyproj import CRS
 import hyp3_isce2
 import hyp3_isce2.metadata.util
 from hyp3_isce2.burst import BurstPosition
+from hyp3_isce2.slc import get_geometry_from_manifest
 from hyp3_isce2.utils import get_projection, utm_from_lon_lat
 
 
@@ -61,13 +64,23 @@ def get_product_name(reference: str, secondary: str, pixel_spacing: int, slc: bo
     secondary_split = secondary.split('_')
 
     if slc:
+        parser = etree.XMLParser(encoding='utf-8', recover=True)
+        safe = '{http://www.esa.int/safe/sentinel-1.0}'
         platform = reference_split[0]
         reference_date = reference_split[5][0:8]
         secondary_date = secondary_split[5][0:8]
-        polarization = reference_split[4]
-        # TODO: Remove hard code
-        polarization = 'VV'
-        name_parts = [platform]
+        polarization = os.path.basename(glob.glob(f'{reference}.SAFE/annotation/s1*')[0]).split('-')[3].upper()
+        ref_manifest_xml = etree.parse(f'{reference}.SAFE/manifest.safe', parser)
+        metadata_path = './/metadataObject[@ID="measurementOrbitReference"]//xmlData//'
+        relative_orbit_number_query = metadata_path + safe + 'relativeOrbitNumber'
+        orbit_number = ref_manifest_xml.find(relative_orbit_number_query).text.zfill(3)
+        footprint = get_geometry_from_manifest(Path(f'{reference}.SAFE/manifest.safe'))
+        lons, lats = footprint.exterior.coords.xy
+        lon_lims = [np.min(lons), np.max(lons)]
+        lat_lims = [np.min(lats), np.max(lats)]
+        lons = ['E'+str(abs(int(lon))) if lon >= 0 else 'W'+str(abs(int(lon))) for lon in lon_lims]
+        lats = ['N'+str(abs(int(lat))) if lat >= 0 else 'S'+str(abs(int(lat))) for lat in lat_lims]
+        name_parts = [platform, orbit_number, lons[0], lons[1], lats[0], lats[1]]
     else:
         platform = reference_split[0]
         burst_id = reference_split[1]
@@ -76,7 +89,6 @@ def get_product_name(reference: str, secondary: str, pixel_spacing: int, slc: bo
         secondary_date = secondary_split[3][0:8]
         polarization = reference_split[4]
         name_parts = [platform, burst_id, image_plus_swath]
-
     product_type = 'INT'
     pixel_spacing = str(int(pixel_spacing))
     product_id = token_hex(2).upper()
