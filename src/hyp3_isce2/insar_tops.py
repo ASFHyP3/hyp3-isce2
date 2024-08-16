@@ -109,7 +109,6 @@ def insar_tops_packaged(
     azimuth_looks: int = 4,
     range_looks: int = 20,
     apply_water_mask: bool = True,
-    download: bool = True,
     bucket: str = None,
     bucket_prefix: str = '',
 ) -> Path:
@@ -133,10 +132,20 @@ def insar_tops_packaged(
     pixel_size = packaging.get_pixel_size(f'{range_looks}x{azimuth_looks}')
 
     log.info('Begin ISCE2 TopsApp run')
-    if os.path.exists(f'{reference}.SAFE') and os.path.exists(f'{secondary}.SAFE'):
-        insar_tops(reference, secondary, apply_water_mask=apply_water_mask, download=False)
-    else:
-        insar_tops(reference, secondary, apply_water_mask=apply_water_mask)
+
+    do_download = os.path.exists(f'{reference}.SAFE') and os.path.exists(f'{secondary}.SAFE')
+
+    insar_tops(
+        reference_scene=reference,
+        secondary_scene=secondary,
+        swaths=swaths,
+        polarization=polarization,
+        azimuth_looks=azimuth_looks,
+        range_looks=range_looks,
+        apply_water_mask=apply_water_mask,
+        download=do_download
+    )
+
     log.info('ISCE2 TopsApp run completed successfully')
 
     product_name = packaging.get_product_name(reference, secondary, pixel_spacing=int(pixel_size))
