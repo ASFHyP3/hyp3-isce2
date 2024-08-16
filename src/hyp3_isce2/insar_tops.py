@@ -2,6 +2,7 @@
 
 import argparse
 import logging
+import os
 import sys
 from pathlib import Path
 from shutil import copyfile, make_archive
@@ -13,6 +14,7 @@ from hyp3_isce2 import packaging, slc, topsapp
 from hyp3_isce2.dem import download_dem_for_isce2
 from hyp3_isce2.logger import configure_root_logger
 from hyp3_isce2.s1_auxcal import download_aux_cal
+from hyp3_isce2.utils import make_browse_image
 
 
 log = logging.getLogger(__name__)
@@ -114,11 +116,15 @@ def insar_tops_packaged(
         Path to the output files
     """
     pixel_size = packaging.get_pixel_size(f'{range_looks}x{azimuth_looks}')
-    product_name = packaging.get_product_name(reference, secondary, pixel_spacing=int(pixel_size))
 
     log.info('Begin ISCE2 TopsApp run')
-    insar_tops(reference, secondary, download=False)
+    if os.path.exists(f'{reference}.SAFE') and os.path.exists(f'{reference}.SAFE'):
+        insar_tops(reference, secondary, download=False)
+    else:
+        insar_tops(reference, secondary)
     log.info('ISCE2 TopsApp run completed successfully')
+
+    product_name = packaging.get_product_name(reference, secondary, pixel_spacing=int(pixel_size))
 
     product_dir = Path(product_name)
     product_dir.mkdir(parents=True, exist_ok=True)
@@ -129,7 +135,7 @@ def insar_tops_packaged(
     if apply_water_mask:
         packaging.water_mask(unwrapped_phase, f'{product_name}/{product_name}_water_mask.tif')
 
-    packaging.make_browse_image(unwrapped_phase, f'{product_name}/{product_name}_unw_phase.png')
+    make_browse_image(unwrapped_phase, f'{product_name}/{product_name}_unw_phase.png')
     packaging.make_readme(
         product_dir=product_dir,
         product_name=product_name,
@@ -157,7 +163,7 @@ def main():
     parser = argparse.ArgumentParser(description=__doc__, formatter_class=argparse.ArgumentDefaultsHelpFormatter)
     parser.add_argument('--reference', type=str, help='Reference granule')
     parser.add_argument('--secondary', type=str, help='Secondary granule')
-    parser.add_argument('--polarization', type=str, defualt='VV', help='Polarization to use')
+    parser.add_argument('--polarization', type=str, default='VV', help='Polarization to use')
     parser.add_argument(
         '--looks', choices=['20x4', '10x2', '5x1'], default='20x4', help='Number of looks to take in range and azimuth'
     )
@@ -179,8 +185,8 @@ def main():
         raise ValueError('Polarization must be one of VV, VH, HV, or HH')
 
     insar_tops_packaged(
-        reference_scene=args.reference,
-        secondary_scene=args.secondary,
+        reference=args.reference,
+        secondary=args.secondary,
         polarization=args.polarization,
         azimuth_looks=azimuth_looks,
         range_looks=range_looks,
