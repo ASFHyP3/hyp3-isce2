@@ -27,6 +27,7 @@ def insar_tops(
     polarization: str = 'VV',
     azimuth_looks: int = 4,
     range_looks: int = 20,
+    apply_water_mask: bool = False,
     download: bool = True,
 ) -> Path:
     """Create a full-SLC interferogram
@@ -79,7 +80,19 @@ def insar_tops(
     )
     config_path = config.write_template('topsApp.xml')
 
-    topsapp.run_topsapp_burst(start='startup', end='unwrap2stage', config_xml=config_path)
+    if apply_water_mask:
+        topsapp.run_topsapp_burst(start='startup', end='filter', config_xml=config_path)
+        water_mask_path = 'water_mask.wgs84'
+        create_water_mask(str(dem_path), water_mask_path)
+        multilook('merged/lon.rdr.full', outname='merged/lon.rdr', alks=azimuth_looks, rlks=range_looks)
+        multilook('merged/lat.rdr.full', outname='merged/lat.rdr', alks=azimuth_looks, rlks=range_looks)
+        resample_to_radar_io(water_mask_path, 'merged/lat.rdr', 'merged/lon.rdr', 'merged/water_mask.rdr')
+        isce2_copy('merged/phsig.cor', 'merged/unmasked.phsig.cor')
+        image_math('merged/unmasked.phsig.cor', 'merged/water_mask.rdr', 'merged/phsig.cor', 'a*b')
+        topsapp.run_topsapp_burst(start='unwrap', end='unwrap2stage', config_xml=config_path)
+        isce2_copy('merged/unmasked.phsig.cor', 'merged/phsig.cor')
+    else:
+        topsapp.run_topsapp_burst(start='startup', end='unwrap2stage', config_xml=config_path)
     copyfile('merged/z.rdr.full.xml', 'merged/z.rdr.full.vrt.xml')
     topsapp.run_topsapp_burst(start='geocode', end='geocode', config_xml=config_path)
 
@@ -118,10 +131,10 @@ def insar_tops_packaged(
     pixel_size = packaging.get_pixel_size(f'{range_looks}x{azimuth_looks}')
 
     log.info('Begin ISCE2 TopsApp run')
-    if os.path.exists(f'{reference}.SAFE') and os.path.exists(f'{reference}.SAFE'):
-        insar_tops(reference, secondary, download=False)
+    if os.path.exists(f'{reference}.SAFE') and os.path.exists(f'{secondary}.SAFE'):
+        insar_tops(reference, secondary, apply_water_mask=apply_water_mask, download=False)
     else:
-        insar_tops(reference, secondary)
+        insar_tops(reference, secondary, apply_water_mask=apply_water_mask)
     log.info('ISCE2 TopsApp run completed successfully')
 
     product_name = packaging.get_product_name(reference, secondary, pixel_spacing=int(pixel_size))
