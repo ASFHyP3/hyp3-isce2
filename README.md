@@ -13,18 +13,28 @@ The HyP3-ISCE2 plugin provides a set of workflows (accessible directly in Python
 - `insar_tops_burst`: A workflow for creating multi-bursts Sentinel-1 geocoded unwrapped interferogram using ISCE2's TOPS processing workflow 
 ---
 
-To run a workflow, simply run `python -m hyp3_isce2 ++process [WORKFLOW_NAME] [WORKFLOW_ARGS]`. For example, to run the `insar_tops_burst` workflow:
+To run a workflow, simply run `python -m hyp3_isce2 ++process [WORKFLOW_NAME] [WORKFLOW_ARGS]`. For example, to run the `insar_tops_burst` workflow with a single burst pair:
 
 ```
 python -m hyp3_isce2 ++process insar_tops_burst \
-  --reference S1_136231_IW2_20200604T022312_VV_7C85-BURST S1_136231_IW3_20200604T022313_VV_7C85-BURST\
-  --secondary S1_136231_IW2_20200616T022313_VV_5D11-BURST S1_136231_IW3_20200616T022314_VV_5D11-BURST\
+  S1_136231_IW2_20200604T022312_VV_7C85-BURST\
+  S1_136231_IW2_20200616T022313_VV_5D11-BURST\
   --looks 20x4 \
   --apply-water-mask True
 ```
 
-This command will create a Sentinel-1 interferogram that contains a deformation signal related to a 
-2020 Iranian earthquake. 
+and, for multiple burst pairs:
+
+```
+python -m hyp3_isce2 ++process insar_tops_burst \
+  "S1_136231_IW2_20200604T022312_VV_7C85-BURST S1_136232_IW2_20200604T022315_VV_7C85-BURST"\
+  "S1_136231_IW2_20200616T022313_VV_5D11-BURST S1_136232_IW2_20200616T022316_VV_5D11-BURST"\
+  --looks 20x4 \
+  --apply-water-mask True
+```
+
+These commands will both create a Sentinel-1 interferogram that contains a deformation signal related to a 
+2020 Iranian earthquake.
 
 ### Product Merging Utility Usage
 **This feature is under active development and is subject to change!**
