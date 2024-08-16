@@ -109,7 +109,6 @@ def insar_tops_packaged(
     azimuth_looks: int = 4,
     range_looks: int = 20,
     apply_water_mask: bool = True,
-    download: bool = True,
     bucket: str = None,
     bucket_prefix: str = '',
 ) -> Path:
@@ -137,8 +136,8 @@ def insar_tops_packaged(
     do_download = os.path.exists(f'{reference}.SAFE') and os.path.exists(f'{secondary}.SAFE')
 
     insar_tops(
-        reference=reference,
-        secondary=secondary,
+        reference_scene=reference,
+        secondary_scene=secondary,
         swaths=swaths,
         polarization=polarization,
         azimuth_looks=azimuth_looks,
