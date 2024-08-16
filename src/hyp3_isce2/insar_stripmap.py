@@ -44,7 +44,7 @@ def insar_stripmap(reference_scene: str, secondary_scene: str) -> Path:
         processingLevel="L1.0",
     )
 
-    if products[0].properties['sceneName']==reference_scene:
+    if products[0].properties['sceneName'] == reference_scene:
         reference_product = products[0]
         secondary_product = products[1]
     else:

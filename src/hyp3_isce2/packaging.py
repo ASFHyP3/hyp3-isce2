@@ -19,7 +19,7 @@ import hyp3_isce2
 import hyp3_isce2.metadata.util
 from hyp3_isce2.burst import BurstPosition
 from hyp3_isce2.slc import get_geometry_from_manifest
-from hyp3_isce2.utils import get_projection, ParameterFile, utm_from_lon_lat
+from hyp3_isce2.utils import ParameterFile, get_projection, utm_from_lon_lat
 
 
 @dataclass
