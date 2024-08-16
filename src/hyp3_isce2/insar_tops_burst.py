@@ -274,7 +274,7 @@ def main():
         'granules',
         type=str.split,
         nargs='+',
-        help='List of references in quotes and list of secondaries in quotes i.e. "ref" "sec" or "ref1 ref2" "sec1 sec2"'
+        help='List of references and list of secondaries i.e. ref sec or "ref1 ref2" "sec1 sec2"'
     )
 
     args = parser.parse_args()
