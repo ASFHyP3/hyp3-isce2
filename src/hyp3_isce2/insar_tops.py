@@ -8,13 +8,15 @@ from pathlib import Path
 from shutil import copyfile, make_archive
 
 from hyp3lib.util import string_is_true
+from isceobj.TopsProc.runMergeBursts import multilook
 from s1_orbits import fetch_for_scene
 
 from hyp3_isce2 import packaging, slc, topsapp
 from hyp3_isce2.dem import download_dem_for_isce2
 from hyp3_isce2.logger import configure_root_logger
 from hyp3_isce2.s1_auxcal import download_aux_cal
-from hyp3_isce2.utils import make_browse_image
+from hyp3_isce2.utils import image_math, isce2_copy, make_browse_image, resample_to_radar_io
+from hyp3_isce2.water_mask import create_water_mask
 
 
 log = logging.getLogger(__name__)
@@ -27,6 +29,7 @@ def insar_tops(
     polarization: str = 'VV',
     azimuth_looks: int = 4,
     range_looks: int = 20,
+    apply_water_mask: bool = False,
     download: bool = True,
 ) -> Path:
     """Create a full-SLC interferogram
@@ -79,7 +82,19 @@ def insar_tops(
     )
     config_path = config.write_template('topsApp.xml')
 
-    topsapp.run_topsapp_burst(start='startup', end='unwrap2stage', config_xml=config_path)
+    if apply_water_mask:
+        topsapp.run_topsapp_burst(start='startup', end='filter', config_xml=config_path)
+        water_mask_path = 'water_mask.wgs84'
+        create_water_mask(str(dem_path), water_mask_path)
+        multilook('merged/lon.rdr.full', outname='merged/lon.rdr', alks=azimuth_looks, rlks=range_looks)
+        multilook('merged/lat.rdr.full', outname='merged/lat.rdr', alks=azimuth_looks, rlks=range_looks)
+        resample_to_radar_io(water_mask_path, 'merged/lat.rdr', 'merged/lon.rdr', 'merged/water_mask.rdr')
+        isce2_copy('merged/phsig.cor', 'merged/unmasked.phsig.cor')
+        image_math('merged/unmasked.phsig.cor', 'merged/water_mask.rdr', 'merged/phsig.cor', 'a*b')
+        topsapp.run_topsapp_burst(start='unwrap', end='unwrap2stage', config_xml=config_path)
+        isce2_copy('merged/unmasked.phsig.cor', 'merged/phsig.cor')
+    else:
+        topsapp.run_topsapp_burst(start='startup', end='unwrap2stage', config_xml=config_path)
     copyfile('merged/z.rdr.full.xml', 'merged/z.rdr.full.vrt.xml')
     topsapp.run_topsapp_burst(start='geocode', end='geocode', config_xml=config_path)
 
@@ -118,10 +133,10 @@ def insar_tops_packaged(
     pixel_size = packaging.get_pixel_size(f'{range_looks}x{azimuth_looks}')
 
     log.info('Begin ISCE2 TopsApp run')
-    if os.path.exists(f'{reference}.SAFE') and os.path.exists(f'{reference}.SAFE'):
-        insar_tops(reference, secondary, download=False)
+    if os.path.exists(f'{reference}.SAFE') and os.path.exists(f'{secondary}.SAFE'):
+        insar_tops(reference, secondary, apply_water_mask=apply_water_mask, download=False)
     else:
-        insar_tops(reference, secondary)
+        insar_tops(reference, secondary, apply_water_mask=apply_water_mask)
     log.info('ISCE2 TopsApp run completed successfully')
 
     product_name = packaging.get_product_name(reference, secondary, pixel_spacing=int(pixel_size))
