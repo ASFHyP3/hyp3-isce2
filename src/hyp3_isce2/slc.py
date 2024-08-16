@@ -33,7 +33,7 @@ def get_granule(granule: str) -> Path:
 def unzip_granule(zip_file: Path, remove: bool = False) -> Path:
     with ZipFile(zip_file) as z:
         z.extractall()
-        safe_dir = next(item.filename for item in z.infolist() if item.is_dir() and item.filename.endswith('.SAFE/'))
+        safe_dir = zip_file.split('.')[0]+'.SAFE/'
     if remove:
         os.remove(zip_file)
     return safe_dir.strip('/')

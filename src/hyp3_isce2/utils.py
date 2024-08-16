@@ -1,5 +1,8 @@
 import shutil
 import subprocess
+from dataclasses import dataclass
+from datetime import datetime
+from pathlib import Path
 from typing import Optional
 
 import isceobj
@@ -10,6 +13,119 @@ from osgeo import gdal, osr
 
 
 gdal.UseExceptions()
+
+
+class GDALConfigManager:
+    """Context manager for setting GDAL config options temporarily"""
+
+    def __init__(self, **options):
+        """
+        Args:
+            **options: GDAL Config `option=value` keyword arguments.
+        """
+        self.options = options.copy()
+        self._previous_options = {}
+
+    def __enter__(self):
+        for key in self.options:
+            self._previous_options[key] = gdal.GetConfigOption(key)
+
+        for key, value in self.options.items():
+            gdal.SetConfigOption(key, value)
+
+    def __exit__(self, exc_type, exc_val, exc_tb):
+        for key, value in self._previous_options.items():
+            gdal.SetConfigOption(key, value)
+
+
+@dataclass
+class ParameterFile:
+    reference_granule: str
+    secondary_granule: str
+    reference_orbit_direction: str
+    reference_orbit_number: str
+    secondary_orbit_direction: str
+    secondary_orbit_number: str
+    baseline: float
+    utc_time: float
+    heading: float
+    spacecraft_height: float
+    earth_radius_at_nadir: float
+    slant_range_near: float
+    slant_range_center: float
+    slant_range_far: float
+    range_looks: int
+    azimuth_looks: int
+    insar_phase_filter: bool
+    phase_filter_parameter: float
+    range_bandpass_filter: bool
+    azimuth_bandpass_filter: bool
+    dem_source: str
+    dem_resolution: int
+    unwrapping_type: str
+    speckle_filter: bool
+    water_mask: bool
+    radar_n_lines: Optional[int] = None
+    radar_n_samples: Optional[int] = None
+    radar_first_valid_line: Optional[int] = None
+    radar_n_valid_lines: Optional[int] = None
+    radar_first_valid_sample: Optional[int] = None
+    radar_n_valid_samples: Optional[int] = None
+    multilook_azimuth_time_interval: Optional[float] = None
+    multilook_range_pixel_size: Optional[float] = None
+    radar_sensing_stop: Optional[datetime] = None
+
+    def __str__(self):
+        output_strings = [
+            f'Reference Granule: {self.reference_granule}\n',
+            f'Secondary Granule: {self.secondary_granule}\n',
+            f'Reference Pass Direction: {self.reference_orbit_direction}\n',
+            f'Reference Orbit Number: {self.reference_orbit_number}\n',
+            f'Secondary Pass Direction: {self.secondary_orbit_direction}\n',
+            f'Secondary Orbit Number: {self.secondary_orbit_number}\n',
+            f'Baseline: {self.baseline}\n',
+            f'UTC time: {self.utc_time}\n',
+            f'Heading: {self.heading}\n',
+            f'Spacecraft height: {self.spacecraft_height}\n',
+            f'Earth radius at nadir: {self.earth_radius_at_nadir}\n',
+            f'Slant range near: {self.slant_range_near}\n',
+            f'Slant range center: {self.slant_range_center}\n',
+            f'Slant range far: {self.slant_range_far}\n',
+            f'Range looks: {self.range_looks}\n',
+            f'Azimuth looks: {self.azimuth_looks}\n',
+            f'INSAR phase filter: {"yes" if self.insar_phase_filter else "no"}\n',
+            f'Phase filter parameter: {self.phase_filter_parameter}\n',
+            f'Range bandpass filter: {"yes" if self.range_bandpass_filter else "no"}\n',
+            f'Azimuth bandpass filter: {"yes" if self.azimuth_bandpass_filter else "no"}\n',
+            f'DEM source: {self.dem_source}\n',
+            f'DEM resolution (m): {self.dem_resolution}\n',
+            f'Unwrapping type: {self.unwrapping_type}\n',
+            f'Speckle filter: {"yes" if self.speckle_filter else "no"}\n',
+            f'Water mask: {"yes" if self.water_mask else "no"}\n',
+        ]
+
+        # TODO could use a more robust way to check if radar data is present
+        if self.radar_n_lines:
+            radar_data = [
+                f'Radar n lines: {self.radar_n_lines}\n',
+                f'Radar n samples: {self.radar_n_samples}\n',
+                f'Radar first valid line: {self.radar_first_valid_line}\n',
+                f'Radar n valid lines: {self.radar_n_valid_lines}\n',
+                f'Radar first valid sample: {self.radar_first_valid_sample}\n',
+                f'Radar n valid samples: {self.radar_n_valid_samples}\n',
+                f'Multilook azimuth time interval: {self.multilook_azimuth_time_interval}\n',
+                f'Multilook range pixel size: {self.multilook_range_pixel_size}\n',
+                f'Radar sensing stop: {datetime.strftime(self.radar_sensing_stop, "%Y-%m-%dT%H:%M:%S.%f")}\n',
+            ]
+            output_strings += radar_data
+
+        return ''.join(output_strings)
+
+    def __repr__(self):
+        return self.__str__()
+
+    def write(self, out_path: Path):
+        out_path.write_text(self.__str__())
 
 
 def utm_from_lon_lat(lon: float, lat: float) -> int:
@@ -47,6 +163,20 @@ def extent_from_geotransform(geotransform: tuple, x_size: int, y_size: int) -> t
         geotransform[3] + geotransform[5] * y_size,
     )
     return extent
+
+
+def make_browse_image(input_tif: str, output_png: str) -> None:
+    with GDALConfigManager(GDAL_PAM_ENABLED='NO'):
+        stats = gdal.Info(input_tif, format='json', stats=True)['stac']['raster:bands'][0]['stats']
+        gdal.Translate(
+            destName=output_png,
+            srcDS=input_tif,
+            format='png',
+            outputType=gdal.GDT_Byte,
+            width=2048,
+            strict=True,
+            scaleParams=[[stats['minimum'], stats['maximum']]],
+        )
 
 
 def oldest_granule_first(g1, g2):

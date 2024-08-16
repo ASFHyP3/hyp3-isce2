@@ -30,6 +30,7 @@ from hyp3_isce2.s1_auxcal import download_aux_cal
 from hyp3_isce2.utils import (
     image_math,
     isce2_copy,
+    make_browse_image,
     oldest_granule_first,
     resample_to_radar_io,
 )
@@ -176,7 +177,7 @@ def insar_tops_single_burst(
     if apply_water_mask:
         packaging.water_mask(unwrapped_phase, f'{product_name}/{product_name}_water_mask.tif')
 
-    packaging.make_browse_image(unwrapped_phase, f'{product_name}/{product_name}_unw_phase.png')
+    make_browse_image(unwrapped_phase, f'{product_name}/{product_name}_unw_phase.png')
 
     packaging.make_readme(
         product_dir=product_dir,

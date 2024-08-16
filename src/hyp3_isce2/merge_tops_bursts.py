@@ -39,6 +39,7 @@ from zerodop.geozero import createGeozero
 import hyp3_isce2
 import hyp3_isce2.burst as burst_utils
 from hyp3_isce2.dem import download_dem_for_isce2
+from hyp3_isce2.packaging import get_pixel_size, translate_outputs
 from hyp3_isce2.utils import (
     ParameterFile,
     create_image,
@@ -55,8 +56,6 @@ from hyp3_isce2.water_mask import create_water_mask
 log_format = '%(asctime)s - %(name)s - %(levelname)s - %(message)s'
 logging.basicConfig(stream=sys.stdout, format=log_format, level=logging.INFO, force=True)
 log = logging.getLogger(__name__)
-
-from hyp3_isce2.insar_tops_burst import get_pixel_size, translate_outputs  # noqa
 
 
 BURST_IFG_DIR = 'fine_interferogram'
