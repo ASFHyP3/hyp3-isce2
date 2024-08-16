@@ -4,6 +4,7 @@ from pathlib import Path
 from subprocess import PIPE, run
 from zipfile import ZipFile
 
+import lxml.etree as ET
 from hyp3lib.fetch import download_file
 from hyp3lib.scene import get_download_url
 from shapely import geometry
@@ -19,6 +20,10 @@ def get_granule(granule: str) -> Path:
     Returns:
         The path to the unzipped granule
     """
+    if Path(f'{granule}.SAFE').exists():
+        print('SAFE file already exists, skipping download.')
+        return Path.cwd() / f'{granule}.SAFE'
+
     download_url = get_download_url(granule)
     zip_file = download_file(download_url, chunk_size=10485760)
     safe_dir = unzip_granule(zip_file, remove=True)
@@ -28,7 +33,7 @@ def get_granule(granule: str) -> Path:
 def unzip_granule(zip_file: Path, remove: bool = False) -> Path:
     with ZipFile(zip_file) as z:
         z.extractall()
-        safe_dir = next(item.filename for item in z.infolist() if item.is_dir() and item.filename.endswith('.SAFE/'))
+        safe_dir = zip_file.split('.')[0]+'.SAFE/'
     if remove:
         os.remove(zip_file)
     return safe_dir.strip('/')
@@ -39,6 +44,16 @@ def get_geometry_from_kml(kml_file: str) -> Polygon:
     geojson_str = run(cmd.split(' '), stdout=PIPE, check=True).stdout
     geojson = json.loads(geojson_str)['features'][0]['geometry']
     return geometry.shape(geojson)
+
+
+def get_geometry_from_manifest(manifest_path: Path):
+    manifest = ET.parse(manifest_path).getroot()
+    frame_element = [x for x in manifest.findall('.//metadataObject') if x.get('ID') == 'measurementFrameSet'][0]
+    frame_string = frame_element.find('.//{http://www.opengis.net/gml}coordinates').text
+    coord_strings = [pair.split(',') for pair in frame_string.split(' ')]
+    coords = [(float(lon), float(lat)) for lat, lon in coord_strings]
+    footprint = Polygon(coords)
+    return footprint
 
 
 def get_dem_bounds(reference_granule: Path, secondary_granule: Path) -> tuple:
@@ -53,7 +68,7 @@ def get_dem_bounds(reference_granule: Path, secondary_granule: Path) -> tuple:
     """
     bboxs = []
     for granule in (reference_granule, secondary_granule):
-        footprint = get_geometry_from_kml(str(granule / 'preview' / 'map-overlay.kml'))
+        footprint = get_geometry_from_manifest(granule / 'manifest.safe')
         bbox = geometry.box(*footprint.bounds)
         bboxs.append(bbox)
 

@@ -9,7 +9,7 @@ import isceobj
 import numpy as np
 from isceobj.Util.ImageUtil.ImageLib import loadImage
 from iscesys.Component.ProductManager import ProductManager
-from osgeo import gdal
+from osgeo import gdal, osr
 
 
 gdal.UseExceptions()
@@ -445,3 +445,9 @@ def read_product_metadata(meta_file_path: str) -> dict:
             value = ':'.join(values)
             hyp3_meta[key] = value
     return hyp3_meta
+
+
+def get_projection(srs_wkt) -> str:
+    srs = osr.SpatialReference()
+    srs.ImportFromWkt(srs_wkt)
+    return srs.GetAttrValue('projcs')

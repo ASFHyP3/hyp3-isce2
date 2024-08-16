@@ -39,9 +39,11 @@ from zerodop.geozero import createGeozero
 import hyp3_isce2
 import hyp3_isce2.burst as burst_utils
 from hyp3_isce2.dem import download_dem_for_isce2
+from hyp3_isce2.packaging import get_pixel_size, translate_outputs
 from hyp3_isce2.utils import (
     ParameterFile,
     create_image,
+    get_projection,
     image_math,
     load_product,
     make_browse_image,
@@ -54,8 +56,6 @@ from hyp3_isce2.water_mask import create_water_mask
 log_format = '%(asctime)s - %(name)s - %(levelname)s - %(message)s'
 logging.basicConfig(stream=sys.stdout, format=log_format, level=logging.INFO, force=True)
 log = logging.getLogger(__name__)
-
-from hyp3_isce2.insar_tops_burst import get_pixel_size, translate_outputs  # noqa
 
 
 BURST_IFG_DIR = 'fine_interferogram'
@@ -1027,7 +1027,7 @@ def make_readme(
         'plugin_version': hyp3_isce2.__version__,
         'processor_name': isce.__name__.upper(),  # noqa
         'processor_version': isce.__version__,  # noqa
-        'projection': hyp3_isce2.metadata.util.get_projection(info['coordinateSystem']['wkt']),
+        'projection': get_projection(info['coordinateSystem']['wkt']),
         'pixel_spacing': info['geoTransform'][1],
         'product_name': product_name,
         'reference_burst_name': ', '.join(reference_scenes),

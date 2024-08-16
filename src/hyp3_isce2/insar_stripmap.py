@@ -23,7 +23,7 @@ from hyp3_isce2.logger import configure_root_logger
 log = logging.getLogger(__name__)
 
 
-def insar_stripmap(user: str, password: str, reference_scene: str, secondary_scene: str) -> Path:
+def insar_stripmap(reference_scene: str, secondary_scene: str) -> Path:
     """Create a Stripmap interferogram
 
     Args:
@@ -35,12 +35,22 @@ def insar_stripmap(user: str, password: str, reference_scene: str, secondary_sce
     Returns:
         Path to the output files
     """
-    session = asf_search.ASFSession().auth_with_creds(user, password)
-
-    reference_product, secondary_product = asf_search.search(
+    scenes = sorted([reference_scene, secondary_scene])
+    print(scenes)
+    reference_scene = scenes[0]
+    secondary_scene = scenes[1]
+    products = asf_search.search(
         granule_list=[reference_scene, secondary_scene],
-        processingLevel=asf_search.L1_0,
+        processingLevel="L1.0",
     )
+
+    if products[0].properties['sceneName'] == reference_scene:
+        reference_product = products[0]
+        secondary_product = products[1]
+    else:
+        reference_product = products[1]
+        secondary_product = products[0]
+
     assert reference_product.properties['sceneName'] == reference_scene
     assert secondary_product.properties['sceneName'] == secondary_scene
     products = (reference_product, secondary_product)
@@ -51,7 +61,7 @@ def insar_stripmap(user: str, password: str, reference_scene: str, secondary_sce
     dem_path = download_dem_for_isce2(insar_roi, dem_name='glo_30', dem_dir=Path('dem'), buffer=0)
 
     urls = [product.properties['url'] for product in products]
-    asf_search.download_urls(urls=urls, path=os.getcwd(), session=session, processes=2)
+    asf_search.download_urls(urls=urls, path=os.getcwd(), processes=2)
 
     zip_paths = [product.properties['fileName'] for product in products]
     for zip_path in zip_paths:
@@ -93,7 +103,7 @@ def insar_stripmap(user: str, password: str, reference_scene: str, secondary_sce
 
 def get_product_file(product: asf_search.ASFProduct, file_prefix: str) -> str:
     paths = glob.glob(str(Path(product.properties['fileID']) / f'{file_prefix}*'))
-    assert len(paths) == 1
+    assert len(paths) > 0
     return paths[0]
 
 
@@ -104,10 +114,8 @@ def main():
 
     parser.add_argument('--bucket', help='AWS S3 bucket HyP3 for upload the final product(s)')
     parser.add_argument('--bucket-prefix', default='', help='Add a bucket prefix to product(s)')
-    parser.add_argument('--username', type=str, required=True)
-    parser.add_argument('--password', type=str, required=True)
-    parser.add_argument('--reference-scene', type=str, required=True)
-    parser.add_argument('--secondary-scene', type=str, required=True)
+    parser.add_argument('--reference', type=str, required=True)
+    parser.add_argument('--secondary', type=str, required=True)
 
     args = parser.parse_args()
 
@@ -117,10 +125,8 @@ def main():
     log.info('Begin InSAR Stripmap run')
 
     product_dir = insar_stripmap(
-        user=args.username,
-        password=args.password,
-        reference_scene=args.reference_scene,
-        secondary_scene=args.secondary_scene,
+        reference_scene=args.reference,
+        secondary_scene=args.secondary,
     )
 
     log.info('InSAR Stripmap run completed successfully')
