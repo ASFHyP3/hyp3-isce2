@@ -270,26 +270,31 @@ def main():
         default=False,
         help='Apply a water body mask before unwrapping.',
     )
-    # Allows granules to be given as a space-delimited list of strings (e.g. foo bar) or as a single
-    # quoted string that contains spaces (e.g. "foo bar"). AWS Batch uses the latter format when
-    # invoking the container command.
-    parser.add_argument('--reference', type=str.split, nargs='+', help='List of granules for the reference bursts')
-    parser.add_argument('--secondary', type=str.split, nargs='+', help='List of granules for the secondary bursts')
+    parser.add_argument(
+        'granules',
+        type=str.split,
+        nargs='+',
+        help='List of references in quotes and list of secondaries in quotes i.e. "ref" "sec" or "ref1 ref2" "sec1 sec2"'
+    )
 
     args = parser.parse_args()
 
-    args.reference = [item for sublist in args.reference for item in sublist]
-    args.secondary = [item for sublist in args.secondary for item in sublist]
-    if len(args.reference) != len(args.secondary):
-        parser.error('Number of reference and secondary granules must be the same')
+    granules = args.granules
+    if len(granules) != 2:
+        parser.error('No more than two lists of granules may be provided.')
+    if len(granules[0]) != len(granules[1]):
+        parser.error('Number of references must match the number of secondaries.')
+
+    references = granules[0]
+    secondaries = granules[1]
 
     configure_root_logger()
     log.debug(' '.join(sys.argv))
 
-    if len(args.reference) == 1:
+    if len(references) == 1:
         insar_tops_single_burst(
-            reference=args.reference[0],
-            secondary=args.secondary[0],
+            reference=references[0],
+            secondary=secondaries[0],
             looks=args.looks,
             apply_water_mask=args.apply_water_mask,
             bucket=args.bucket,
@@ -297,8 +302,8 @@ def main():
         )
     else:
         insar_tops_multi_burst(
-            reference=args.reference,
-            secondary=args.secondary,
+            reference=references,
+            secondary=secondaries,
             looks=args.looks,
             apply_water_mask=args.apply_water_mask,
             bucket=args.bucket,
