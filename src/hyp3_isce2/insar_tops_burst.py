@@ -5,7 +5,7 @@ import logging
 import sys
 from pathlib import Path
 from shutil import copyfile, make_archive
-from typing import Iterable, Optional
+from typing import Optional
 
 import isce  # noqa
 from hyp3lib.util import string_is_true
