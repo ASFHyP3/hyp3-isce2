@@ -8,12 +8,8 @@ and uses [Semantic Versioning](https://semver.org/spec/v2.0.0.html).
 
 ## [3.0.0]
 ### Added
-- New funcionality to process multi bursts with `insar_tops_burst`.
-- The `--reference` and `--secondary` command-line options to indicate the reference and secondary bursts.
-- `burst2safe` is now called to get SAFE files from bursts.
-### Changed
-- Product name has changed to indicate relative orbit, lon/lat extent and reference and secondary dates.
-  
+- `insar_tops_multi_burst` workflow which processes multiple bursts as one SLC.
+
 ## [2.0.0]
 ### Changed
 - Orbit files are now retrieved using the [s1-orbits](https://github.com/ASFHyP3/sentinel1-orbits-py) library.
