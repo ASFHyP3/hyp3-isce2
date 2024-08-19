@@ -8,7 +8,7 @@ and uses [Semantic Versioning](https://semver.org/spec/v2.0.0.html).
 
 ## [3.0.0]
 ### Added
-- `insar_tops_multi_burst` workflow which processes multiple bursts as one SLC.
+- `insar_tops_multi_burst` workflow for processing multiple bursts as one SLC.
 
 ## [2.0.0]
 ### Changed
