@@ -32,21 +32,8 @@ def insar_tops_multi_burst(
     ref_ids = [g.split('_')[1] + '_' + g.split('_')[2] + '_' + g.split('_')[4] for g in reference]
     sec_ids = [g.split('_')[1] + '_' + g.split('_')[2] + '_' + g.split('_')[4] for g in secondary]
 
-    if len(list(set(ref_ids) - set(sec_ids))) > 0:
-        raise Exception(
-            'The reference bursts '
-            + ', '.join(list(set(ref_ids) - set(sec_ids)))
-            + ' do not have the correspondant bursts in the secondary granules'
-        )
-    elif len(list(set(sec_ids) - set(ref_ids))) > 0:
-        raise Exception(
-            'The secondary bursts '
-            + ', '.join(list(set(sec_ids) - set(ref_ids)))
-            + ' do not have the correspondant bursts in the reference granules'
-        )
-
-    if not reference[0].split('_')[4] == secondary[0].split('_')[4]:
-        raise Exception('The secondary and reference granules do not have the same polarization')
+    if ref_ids != sec_ids:
+        raise Exception('The reference bursts and secondary bursts do not match')
 
     reference_safe_path = burst2safe(reference)
     reference_safe = reference_safe_path.name.split('.')[0]
