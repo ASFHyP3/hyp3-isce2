@@ -40,8 +40,8 @@ def insar_tops_multi_burst(
     secondary_safe_path = burst2safe(secondary)
     secondary_safe = secondary_safe_path.name.split('.')[0]
 
-    range_looks, azimuth_looks = [int(looks) for looks in looks.split('x')]
-    swaths = list(set([int(granule.split('_')[2][2]) for granule in reference]))
+    range_looks, azimuth_looks = [int(value) for value in looks.split('x')]
+    swaths = list(set(int(granule.split('_')[2][2]) for granule in reference))
     polarization = reference[0].split('_')[4]
 
     log.info('Begin ISCE2 TopsApp run')
