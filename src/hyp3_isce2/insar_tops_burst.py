@@ -227,7 +227,7 @@ def main():
 
     granules = [item for sublist in args.granules for item in sublist]
     if len(granules) != 2:
-        parser.error('No more than two lists of granules may be provided.')
+        parser.error('No more than two granules may be provided.')
     if len(granules[0]) != len(granules[1]) != 1:
         parser.error('Must include 1 reference and 1 secondary.')
 
