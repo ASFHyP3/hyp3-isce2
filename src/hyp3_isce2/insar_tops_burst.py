@@ -8,7 +8,6 @@ from shutil import copyfile, make_archive
 from typing import Iterable, Optional
 
 import isce  # noqa
-from burst2safe.burst2safe import burst2safe
 from hyp3lib.util import string_is_true
 from isceobj.TopsProc.runMergeBursts import multilook
 from osgeo import gdal
@@ -24,7 +23,6 @@ from hyp3_isce2.burst import (
     validate_bursts,
 )
 from hyp3_isce2.dem import download_dem_for_isce2
-from hyp3_isce2.insar_tops import insar_tops_packaged
 from hyp3_isce2.logger import configure_root_logger
 from hyp3_isce2.s1_auxcal import download_aux_cal
 from hyp3_isce2.utils import (
@@ -203,58 +201,6 @@ def insar_tops_single_burst(
         packaging.upload_product_to_s3(product_dir, output_zip, bucket, bucket_prefix)
 
 
-def insar_tops_multi_burst(
-    reference: Iterable[str],
-    secondary: Iterable[str],
-    swaths: list = [1, 2, 3],
-    looks: str = '20x4',
-    apply_water_mask=False,
-    bucket: Optional[str] = None,
-    bucket_prefix: str = '',
-):
-    ref_ids = [g.split('_')[1] + '_' + g.split('_')[2] + '_' + g.split('_')[4] for g in reference]
-    sec_ids = [g.split('_')[1] + '_' + g.split('_')[2] + '_' + g.split('_')[4] for g in secondary]
-
-    if len(list(set(ref_ids) - set(sec_ids))) > 0:
-        raise Exception(
-            'The reference bursts '
-            + ', '.join(list(set(ref_ids) - set(sec_ids)))
-            + ' do not have the correspondant bursts in the secondary granules'
-        )
-    elif len(list(set(sec_ids) - set(ref_ids))) > 0:
-        raise Exception(
-            'The secondary bursts '
-            + ', '.join(list(set(sec_ids) - set(ref_ids)))
-            + ' do not have the correspondant bursts in the reference granules'
-        )
-
-    if not reference[0].split('_')[4] == secondary[0].split('_')[4]:
-        raise Exception('The secondary and reference granules do not have the same polarization')
-
-    reference_safe_path = burst2safe(reference)
-    reference_safe = reference_safe_path.name.split('.')[0]
-    secondary_safe_path = burst2safe(secondary)
-    secondary_safe = secondary_safe_path.name.split('.')[0]
-
-    range_looks, azimuth_looks = [int(looks) for looks in looks.split('x')]
-    swaths = list(set([int(granule.split('_')[2][2]) for granule in reference]))
-    polarization = reference[0].split('_')[4]
-
-    log.info('Begin ISCE2 TopsApp run')
-    insar_tops_packaged(
-        reference=reference_safe,
-        secondary=secondary_safe,
-        swaths=swaths,
-        polarization=polarization,
-        azimuth_looks=azimuth_looks,
-        range_looks=range_looks,
-        apply_water_mask=apply_water_mask,
-        bucket=bucket,
-        bucket_prefix=bucket_prefix
-    )
-    log.info('ISCE2 TopsApp run completed successfully')
-
-
 def main():
     """HyP3 entrypoint for the burst TOPS workflow"""
     parser = argparse.ArgumentParser(description=__doc__, formatter_class=argparse.ArgumentDefaultsHelpFormatter)
@@ -274,38 +220,25 @@ def main():
         'granules',
         type=str.split,
         nargs='+',
-        help='List of references and list of secondaries i.e. ref sec or "ref1 ref2" "sec1 sec2"'
+        help='Reference and secondary scene names'
     )
 
     args = parser.parse_args()
 
-    granules = args.granules
+    granules = [item for sublist in args.granules for item in sublist]
     if len(granules) != 2:
         parser.error('No more than two lists of granules may be provided.')
-    if len(granules[0]) != len(granules[1]):
-        parser.error('Number of references must match the number of secondaries.')
-
-    references = granules[0]
-    secondaries = granules[1]
+    if len(granules[0]) != len(granules[1]) != 1:
+        parser.error('Must include 1 reference and 1 secondary.')
 
     configure_root_logger()
     log.debug(' '.join(sys.argv))
 
-    if len(references) == 1:
-        insar_tops_single_burst(
-            reference=references[0],
-            secondary=secondaries[0],
-            looks=args.looks,
-            apply_water_mask=args.apply_water_mask,
-            bucket=args.bucket,
-            bucket_prefix=args.bucket_prefix,
-        )
-    else:
-        insar_tops_multi_burst(
-            reference=references,
-            secondary=secondaries,
-            looks=args.looks,
-            apply_water_mask=args.apply_water_mask,
-            bucket=args.bucket,
-            bucket_prefix=args.bucket_prefix,
-        )
+    insar_tops_single_burst(
+        reference=granules[0],
+        secondary=granules[1],
+        looks=args.looks,
+        apply_water_mask=args.apply_water_mask,
+        bucket=args.bucket,
+        bucket_prefix=args.bucket_prefix,
+    )
