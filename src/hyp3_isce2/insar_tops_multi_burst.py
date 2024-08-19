@@ -94,7 +94,7 @@ def main():
 
     if len(references) < 1 or len(secondaries) < 1:
         parser.error("Must include at least 1 reference and 1 secondary")
-    if (len(references) != len(secondaries)):
+    if len(references) != len(secondaries):
         parser.error("Must have the same number of references and secondaries")
 
     configure_root_logger()
