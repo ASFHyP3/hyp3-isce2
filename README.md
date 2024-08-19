@@ -26,9 +26,9 @@ python -m hyp3_isce2 ++process insar_tops_burst \
 and, for multiple burst pairs:
 
 ```
-python -m hyp3_isce2 ++process insar_tops_burst \
-  "S1_136231_IW2_20200604T022312_VV_7C85-BURST S1_136232_IW2_20200604T022315_VV_7C85-BURST"\
-  "S1_136231_IW2_20200616T022313_VV_5D11-BURST S1_136232_IW2_20200616T022316_VV_5D11-BURST"\
+python -m hyp3_isce2 ++process insar_tops_multi_burst \
+  --reference S1_136231_IW2_20200604T022312_VV_7C85-BURST S1_136232_IW2_20200604T022315_VV_7C85-BURST\
+  --secondary S1_136231_IW2_20200616T022313_VV_5D11-BURST S1_136232_IW2_20200616T022316_VV_5D11-BURST\
   --looks 20x4 \
   --apply-water-mask True
 ```
