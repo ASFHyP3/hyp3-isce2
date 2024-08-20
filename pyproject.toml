@@ -60,7 +60,6 @@ merge_tops_bursts = "hyp3_isce2.merge_tops_bursts:main"
 
 [project.entry-points.hyp3]
 insar_tops_burst = "hyp3_isce2.insar_tops_burst:main"
-insar_tops_multi_burst = "hyp3_isce2.insar_tops_multi_burst:main"
 insar_tops = "hyp3_isce2.insar_tops:main"
 insar_stripmap = "hyp3_isce2.insar_stripmap:main"
 merge_tops_bursts = "hyp3_isce2.merge_tops_bursts:main"
