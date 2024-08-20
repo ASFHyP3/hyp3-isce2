@@ -146,7 +146,7 @@ def insar_tops_single_burst(
     reference, secondary = oldest_granule_first(reference, secondary)
     validate_bursts(reference, secondary)
     swath_number = int(reference[12])
-    range_looks, azimuth_looks = [int(looks) for looks in looks.split('x')]
+    range_looks, azimuth_looks = [int(value) for value in looks.split('x')]
 
     log.info('Begin ISCE2 TopsApp run')
 
