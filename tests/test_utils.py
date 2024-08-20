@@ -4,15 +4,36 @@ import shutil
 from pathlib import Path
 from unittest.mock import patch
 
+import isceobj  # noqa
 import numpy as np
+import pytest
 from osgeo import gdal
 
 import hyp3_isce2.utils as utils
 
-import isceobj  # noqa
-
 
 gdal.UseExceptions()
+
+
+def test_check_older_granule_is_reference():
+    set1 = ['S1_000000_IW1_20200101T000000_VV_0000-BURST', 'S1_000000_IW1_20200201T000000_VV_0000-BURST']
+    utils.check_older_granule_is_reference(set1[0], set1[1])
+
+    set2 = [
+        ['S1_000000_IW1_20200101T000000_VV_0000-BURST', 'S1_000001_IW1_20200101T000000_VV_0000-BURST'],
+        ['S1_000000_IW1_20200201T000000_VV_0000-BURST', 'S1_000001_IW1_20200201T000000_VV_0000-BURST'],
+    ]
+    utils.check_older_granule_is_reference(set2[0], set2[1])
+
+    set3 = [
+        ['S1_000000_IW1_20200101T000000_VV_0000-BURST', 'S1_000001_IW1_20200101T000000_VV_0000-BURST'],
+        ['S1_000000_IW1_20200201T000000_VV_0000-BURST', 'S1_000001_IW1_20200202T000000_VV_0000-BURST'],
+    ]
+    with pytest.raises(ValueError, match='Reference granule\(s\) must be from one date*'):
+        utils.check_older_granule_is_reference(set3[0], set3[1])
+
+    with pytest.raises(ValueError, match='Reference granule\(s\) must be older*'):
+        utils.check_older_granule_is_reference(set1[1], set1[0])
 
 
 def test_utm_from_lon_lat():

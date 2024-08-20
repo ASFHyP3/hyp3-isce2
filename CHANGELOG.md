@@ -9,6 +9,7 @@ and uses [Semantic Versioning](https://semver.org/spec/v2.0.0.html).
 ## [3.0.0]
 ### Added
 - The ability for the `insar_tops_burst` workflow to support processing multiple bursts as one SLC.
+- Function to check if the reference granules are older than the secondary granules.
 
 ### Changed
 - The interface for `insar_tops_burst` so that it takes `--reference` and `--secondary` arguments instead of one `--granules` argument

@@ -28,10 +28,10 @@ from hyp3_isce2.insar_tops import insar_tops_packaged
 from hyp3_isce2.logger import configure_root_logger
 from hyp3_isce2.s1_auxcal import download_aux_cal
 from hyp3_isce2.utils import (
+    check_older_granule_is_reference,
     image_math,
     isce2_copy,
     make_browse_image,
-    oldest_granule_first,
     resample_to_radar_io,
 )
 from hyp3_isce2.water_mask import create_water_mask
@@ -145,7 +145,7 @@ def insar_tops_single_burst(
     bucket: Optional[str] = None,
     bucket_prefix: str = '',
 ):
-    reference, secondary = oldest_granule_first(reference, secondary)
+    check_older_granule_is_reference(reference, secondary)
     validate_bursts(reference, secondary)
     swath_number = int(reference[12])
     range_looks, azimuth_looks = [int(value) for value in looks.split('x')]
@@ -216,7 +216,9 @@ def insar_tops_multi_burst(
     sec_ids = [g.split('_')[1] + '_' + g.split('_')[2] + '_' + g.split('_')[4] for g in secondary]
 
     if ref_ids != sec_ids:
-        raise Exception('The reference bursts and secondary bursts do not match')
+        raise Exception('The reference burst(s) and secondary burst(s) do not match')
+
+    check_older_granule_is_reference(reference, secondary)
 
     reference_safe_path = burst2safe(reference)
     reference_safe = reference_safe_path.name.split('.')[0]
