@@ -212,11 +212,11 @@ def insar_tops_multi_burst(
     bucket: Optional[str] = None,
     bucket_prefix: str = '',
 ):
-    ref_ids = [g.split('_')[1] + '_' + g.split('_')[2] + '_' + g.split('_')[4] for g in reference]
-    sec_ids = [g.split('_')[1] + '_' + g.split('_')[2] + '_' + g.split('_')[4] for g in secondary]
+    ref_unique_ids = [g.split('_')[1] + '_' + g.split('_')[2] + '_' + g.split('_')[4] for g in reference]
+    sec_unique_ids = [g.split('_')[1] + '_' + g.split('_')[2] + '_' + g.split('_')[4] for g in secondary]
 
-    if ref_ids != sec_ids:
-        raise Exception('The reference burst(s) and secondary burst(s) do not match')
+    if ref_unique_ids != sec_unique_ids:
+        raise ValueError('The reference burst(s) and secondary burst(s) do not match')
 
     check_older_granule_is_reference(reference, secondary)
 
@@ -248,16 +248,16 @@ def main():
     """HyP3 entrypoint for the burst TOPS workflow"""
     parser = argparse.ArgumentParser(description=__doc__, formatter_class=argparse.ArgumentDefaultsHelpFormatter)
 
-    parser.add_argument('--bucket', help='AWS S3 bucket HyP3 for upload the final product(s)')
-    parser.add_argument('--bucket-prefix', default='', help='Add a bucket prefix to product(s)')
+    parser.add_argument('--reference', type=str.split, nargs='+', help='List of reference scenes"')
+    parser.add_argument('--secondary', type=str.split, nargs='+', help='List of secondary scenes"')
     parser.add_argument(
         '--looks', choices=['20x4', '10x2', '5x1'], default='20x4', help='Number of looks to take in range and azimuth'
     )
     parser.add_argument(
         '--apply-water-mask', type=string_is_true, default=False, help='Apply a water body mask before unwrapping.'
     )
-    parser.add_argument('--reference', type=str.split, nargs='+', help='List of reference scenes"')
-    parser.add_argument('--secondary', type=str.split, nargs='+', help='List of secondary scenes"')
+    parser.add_argument('--bucket', help='AWS S3 bucket HyP3 for upload the final product(s)')
+    parser.add_argument('--bucket-prefix', default='', help='Add a bucket prefix to product(s)')
 
     args = parser.parse_args()
 
