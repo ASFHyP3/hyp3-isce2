@@ -75,13 +75,6 @@ def test_gdal_config_manager():
     assert gdal.GetConfigOption('OPTION4') == 'VALUE4'
 
 
-def test_oldest_granule_first():
-    oldest = 'S1_249434_IW1_20230511T170732_VV_07DE-BURST'
-    latest = 'S1_249434_IW1_20230523T170733_VV_8850-BURST'
-    assert utils.oldest_granule_first(oldest, latest) == (oldest, latest)
-    assert utils.oldest_granule_first(latest, oldest) == (oldest, latest)
-
-
 def test_make_browse_image():
     input_tif = 'tests/data/test_geotiff.tif'
     output_png = 'tests/data/test_browse_image2.png'

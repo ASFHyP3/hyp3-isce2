@@ -202,12 +202,6 @@ def make_browse_image(input_tif: str, output_png: str) -> None:
         )
 
 
-def oldest_granule_first(g1, g2):
-    if g1[14:29] <= g2[14:29]:
-        return g1, g2
-    return g2, g1
-
-
 def load_isce2_image(in_path) -> tuple[isceobj.Image, np.ndarray]:
     """Read an ISCE2 image file and return the image object and array.
 
