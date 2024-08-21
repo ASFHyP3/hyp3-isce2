@@ -130,7 +130,7 @@ class ParameterFile:
 
 def check_older_granule_is_reference(reference: Union[str, Iterable], secondary: Union[str, Iterable]) -> None:
     """Checks that the reference granule(s) are older than the secondary granule(s).
-    This is a conventention which ensures that positive interferogram values represent motion away from the satellite.
+    This is a convention which ensures that positive interferogram values represent motion away from the satellite.
 
     Args:
         reference: Reference granule(s)
@@ -142,12 +142,12 @@ def check_older_granule_is_reference(reference: Union[str, Iterable], secondary:
     if isinstance(secondary, str):
         secondary = [secondary]
 
-    ref_dates = list(set([g[14:29] for g in reference]))
-    sec_dates = list(set([g[14:29] for g in secondary]))
+    ref_dates = list(set([g.split('_')[3] for g in reference]))
+    sec_dates = list(set([g.split('_')[3] for g in secondary]))
     if len(ref_dates) > 1 or len(sec_dates) > 1:
         raise ValueError('Reference granules must be from one date and secondary granules must be from one date.')
 
-    if not ref_dates[0] < sec_dates[0]:
+    if ref_dates[0] >= sec_dates[0]:
         raise ValueError('Reference granules must be older than secondary granules.')
 
 
