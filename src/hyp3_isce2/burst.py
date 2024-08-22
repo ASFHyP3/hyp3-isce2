@@ -361,7 +361,7 @@ def get_burst_params(scene_name: str) -> BurstParams:
 
 
 def validate_bursts(reference: Union[str, Iterable[str]], secondary: Union[str, Iterable[str]]) -> None:
-    """Check whether the reference and secondary bursts are a valid sets.
+    """Check whether the reference and secondary bursts are valid.
 
     Args:
         reference: Reference granule(s)
@@ -372,23 +372,20 @@ def validate_bursts(reference: Union[str, Iterable[str]], secondary: Union[str, 
     if isinstance(secondary, str):
         secondary = [secondary]
 
-    # Check number of bursts
     if len(reference) < 1 or len(secondary) < 1:
         raise ValueError('Must include at least 1 reference and 1 secondary burst')
     if len(reference) != len(secondary):
         raise ValueError('Must have the same number of reference and secondary bursts')
 
-    # Check matching set of bursts
-    ref_num_swath_pol = sorted([g.split('_')[1] + '_' + g.split('_')[2] + '_' + g.split('_')[4] for g in reference])
-    sec_num_swath_pol = sorted([g.split('_')[1] + '_' + g.split('_')[2] + '_' + g.split('_')[4] for g in secondary])
+    ref_num_swath_pol = sorted(g.split('_')[1] + '_' + g.split('_')[2] + '_' + g.split('_')[4] for g in reference)
+    sec_num_swath_pol = sorted(g.split('_')[1] + '_' + g.split('_')[2] + '_' + g.split('_')[4] for g in secondary)
     if ref_num_swath_pol != sec_num_swath_pol:
         msg = 'The reference and secondary burst ID sets do not match.\n'
         msg += f'    Reference IDs: {ref_num_swath_pol}\n'
         msg += f'    Secondary IDs: {sec_num_swath_pol}'
         raise ValueError(msg)
 
-    # Check that only one valid polarization is present
-    pols = list(set([g.split('_')[4] for g in reference + secondary]))
+    pols = list(set(g.split('_')[4] for g in reference + secondary))
 
     if len(pols) > 1:
         raise ValueError(f'All bursts must have a single polarization. Polarizations present: {" ".join(pols)}')
@@ -396,9 +393,8 @@ def validate_bursts(reference: Union[str, Iterable[str]], secondary: Union[str, 
     if pols[0] not in ['VV', 'HH']:
         raise ValueError(f'{pols[0]} polarization is not currently supported, only VV and HH.')
 
-    # Check that the reference bursts are older
-    ref_dates = list(set([g.split('_')[3] for g in reference]))
-    sec_dates = list(set([g.split('_')[3] for g in secondary]))
+    ref_dates = list(set(g.split('_')[3] for g in reference))
+    sec_dates = list(set(g.split('_')[3] for g in secondary))
 
     if len(ref_dates) > 1 or len(sec_dates) > 1:
         raise ValueError('Reference granules must be from one date and secondary granules must be from one date.')
