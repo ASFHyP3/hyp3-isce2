@@ -3,6 +3,7 @@
 import argparse
 import logging
 import sys
+import warnings
 from pathlib import Path
 from shutil import copyfile, make_archive
 from typing import Iterable, Optional
@@ -27,12 +28,7 @@ from hyp3_isce2.dem import download_dem_for_isce2
 from hyp3_isce2.insar_tops import insar_tops_packaged
 from hyp3_isce2.logger import configure_root_logger
 from hyp3_isce2.s1_auxcal import download_aux_cal
-from hyp3_isce2.utils import (
-    image_math,
-    isce2_copy,
-    make_browse_image,
-    resample_to_radar_io,
-)
+from hyp3_isce2.utils import image_math, isce2_copy, make_browse_image, resample_to_radar_io
 from hyp3_isce2.water_mask import create_water_mask
 
 
@@ -235,10 +231,16 @@ def insar_tops_multi_burst(
     log.info('ISCE2 TopsApp run completed successfully')
 
 
+def oldest_granule_first(g1, g2):
+    if g1[14:29] <= g2[14:29]:
+        return [g1], [g2]
+    return [g2], [g1]
+
+
 def main():
     """HyP3 entrypoint for the burst TOPS workflow"""
     parser = argparse.ArgumentParser(description=__doc__, formatter_class=argparse.ArgumentDefaultsHelpFormatter)
-
+    parser.add_argument('granules', type=str.split, nargs='*', help='Reference and secondary scene names')
     parser.add_argument('--reference', type=str.split, nargs='+', help='List of reference scenes"')
     parser.add_argument('--secondary', type=str.split, nargs='+', help='List of secondary scenes"')
     parser.add_argument(
@@ -252,16 +254,32 @@ def main():
 
     args = parser.parse_args()
 
-    references = [item for sublist in args.reference for item in sublist]
-    secondaries = [item for sublist in args.secondary for item in sublist]
+    has_granules = args.granules is not None and len(args.granules) > 0
+    has_ref_sec = args.reference is not None and args.secondary is not None
+    if has_granules and has_ref_sec:
+        parser.error('Either the positional granules argument, or --reference and --secondary must be specified.')
+    elif not has_granules and not has_ref_sec:
+        parser.error('Only the positional granules argument, or --reference and --secondary must be specified.')
+    elif has_granules:
+        warnings.warn(
+            'The positional argument for granules is deprecated. Please use --reference and --secondary.',
+            DeprecationWarning,
+        )
+        granules = [item for sublist in args.granules for item in sublist]
+        if len(granules) != 2:
+            parser.error('No more than two granules may be provided.')
+        reference, secondary = oldest_granule_first(granules[0], granules[1])
+    else:
+        reference = [item for sublist in args.reference for item in sublist]
+        secondary = [item for sublist in args.secondary for item in sublist]
 
     configure_root_logger()
     log.debug(' '.join(sys.argv))
 
-    if len(references) == 1:
+    if len(reference) == 1:
         insar_tops_single_burst(
-            reference=references[0],
-            secondary=secondaries[0],
+            reference=reference[0],
+            secondary=secondary[0],
             looks=args.looks,
             apply_water_mask=args.apply_water_mask,
             bucket=args.bucket,
@@ -269,8 +287,8 @@ def main():
         )
     else:
         insar_tops_multi_burst(
-            reference=references,
-            secondary=secondaries,
+            reference=reference,
+            secondary=secondary,
             looks=args.looks,
             apply_water_mask=args.apply_water_mask,
             bucket=args.bucket,

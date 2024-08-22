@@ -190,11 +190,6 @@ def test_validate_bursts():
             ['S1_000000_IW1_20200101T000000_VV_0000-BURST'], ['S1_000000_IW2_20200201T000000_VV_0000-BURST']
         )
 
-    with pytest.raises(ValueError, match=r'.*burst ID sets do not match.*'):
-        burst.validate_bursts(
-            ['S1_000000_IW1_20200101T000000_VV_0000-BURST'], ['S1_000000_IW2_20200201T000000_VV_0000-BURST']
-        )
-
     with pytest.raises(ValueError, match=r'.*must have a single polarization.*'):
         burst.validate_bursts(
             ['S1_000000_IW1_20200101T000000_VV_0000-BURST', 'S1_000000_IW1_20200101T000000_VH_0000-BURST'],
