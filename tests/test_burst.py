@@ -173,18 +173,43 @@ def test_get_burst_params_multiple_results():
 
 
 def test_validate_bursts():
-    burst.validate_bursts('S1_030349_IW1_20230808T171601_VV_4A37-BURST', 'S1_030349_IW1_20230820T171602_VV_5AC3-BURST')
-    with pytest.raises(ValueError, match=r'.*polarizations are not the same.*'):
+    burst.validate_bursts('S1_000000_IW1_20200101T000000_VV_0000-BURST', 'S1_000000_IW1_20200201T000000_VV_0000-BURST')
+    burst.validate_bursts(
+        ['S1_000000_IW1_20200101T000000_VV_0000-BURST', 'S1_000001_IW1_20200101T000000_VV_0000-BURST'],
+        ['S1_000000_IW1_20200201T000000_VV_0000-BURST', 'S1_000001_IW1_20200201T000000_VV_0000-BURST'],
+    )
+
+    with pytest.raises(ValueError, match=r'Must include at least 1.*'):
+        burst.validate_bursts(['a'], [])
+
+    with pytest.raises(ValueError, match=r'Must have the same number.*'):
+        burst.validate_bursts(['a', 'b'], ['c'])
+
+    with pytest.raises(ValueError, match=r'.*burst ID sets do not match.*'):
         burst.validate_bursts(
-            'S1_215032_IW2_20230802T144608_VV_7EE2-BURST', 'S1_215032_IW2_20230721T144607_HH_B3FA-BURST'
+            ['S1_000000_IW1_20200101T000000_VV_0000-BURST'], ['S1_000000_IW2_20200201T000000_VV_0000-BURST']
         )
-    with pytest.raises(ValueError, match=r'.*burst IDs are not the same.*'):
+
+    with pytest.raises(ValueError, match=r'.*burst ID sets do not match.*'):
         burst.validate_bursts(
-            'S1_030349_IW1_20230808T171601_VV_4A37-BURST', 'S1_030348_IW1_20230820T171602_VV_5AC3-BURST'
+            ['S1_000000_IW1_20200101T000000_VV_0000-BURST'], ['S1_000000_IW2_20200201T000000_VV_0000-BURST']
         )
-    with pytest.raises(ValueError, match=r'.*only VV and HH.*'):
+
+    with pytest.raises(ValueError, match=r'.*must have a single polarization.*'):
         burst.validate_bursts(
-            'S1_030349_IW1_20230808T171601_VH_4A37-BURST', 'S1_030349_IW1_20230820T171602_VH_5AC3-BURST'
+            ['S1_000000_IW1_20200101T000000_VV_0000-BURST', 'S1_000000_IW1_20200101T000000_VH_0000-BURST'],
+            ['S1_000000_IW1_20200201T000000_VV_0000-BURST', 'S1_000000_IW1_20200201T000000_VH_0000-BURST'],
+        )
+
+    with pytest.raises(ValueError, match=r'.*polarization is not currently supported.*'):
+        burst.validate_bursts(
+            ['S1_000000_IW1_20200101T000000_VH_0000-BURST', 'S1_000000_IW1_20200101T000000_VH_0000-BURST'],
+            ['S1_000000_IW1_20200201T000000_VH_0000-BURST', 'S1_000000_IW1_20200201T000000_VH_0000-BURST'],
+        )
+
+    with pytest.raises(ValueError, match=r'Reference granules must be older.*'):
+        burst.validate_bursts(
+            'S1_000000_IW1_20200201T000000_VV_0000-BURST', 'S1_000000_IW1_20200101T000000_VV_0000-BURST'
         )
 
 

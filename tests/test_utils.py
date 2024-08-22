@@ -6,35 +6,12 @@ from unittest.mock import patch
 
 import isceobj  # noqa
 import numpy as np
-import pytest
 from osgeo import gdal
 
 import hyp3_isce2.utils as utils
 
 
 gdal.UseExceptions()
-
-
-def test_check_older_granule_is_reference():
-    utils.check_older_granule_is_reference(
-        'S1_000000_IW1_20200101T000000_VV_0000-BURST', 'S1_000000_IW1_20200201T000000_VV_0000-BURST'
-    )
-
-    utils.check_older_granule_is_reference(
-        reference=['S1_000000_IW1_20200101T000000_VV_0000-BURST', 'S1_000001_IW1_20200101T000000_VV_0000-BURST'],
-        secondary=['S1_000000_IW1_20200201T000000_VV_0000-BURST', 'S1_000001_IW1_20200201T000000_VV_0000-BURST'],
-    )
-
-    with pytest.raises(ValueError, match=r'.* granules must be from one date .*'):
-        utils.check_older_granule_is_reference(
-            reference=['S1_000000_IW1_20200101T000000_VV_0000-BURST', 'S1_000001_IW1_20200101T000000_VV_0000-BURST'],
-            secondary=['S1_000000_IW1_20200201T000000_VV_0000-BURST', 'S1_000001_IW1_20200202T000000_VV_0000-BURST'],
-        )
-
-    with pytest.raises(ValueError, match=r'Reference granules must be older .*'):
-        utils.check_older_granule_is_reference(
-            'S1_000000_IW1_20200201T000000_VV_0000-BURST', 'S1_000000_IW1_20200101T000000_VV_0000-BURST'
-        )
 
 
 def test_utm_from_lon_lat():
