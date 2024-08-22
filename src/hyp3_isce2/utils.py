@@ -3,7 +3,7 @@ import subprocess
 from dataclasses import dataclass
 from datetime import datetime
 from pathlib import Path
-from typing import Iterable, Optional, Union
+from typing import Optional
 
 import isceobj
 import numpy as np
@@ -128,29 +128,6 @@ class ParameterFile:
         out_path.write_text(self.__str__())
 
 
-def check_older_granule_is_reference(reference: Union[str, Iterable], secondary: Union[str, Iterable]) -> None:
-    """Checks that the reference granule(s) are older than the secondary granule(s).
-    This is a convention which ensures that positive interferogram values represent motion away from the satellite.
-
-    Args:
-        reference: Reference granule(s)
-        secondary: Secondary granule(s)
-    """
-    if isinstance(reference, str):
-        reference = [reference]
-
-    if isinstance(secondary, str):
-        secondary = [secondary]
-
-    ref_dates = list(set(g.split('_')[3] for g in reference))
-    sec_dates = list(set(g.split('_')[3] for g in secondary))
-    if len(ref_dates) > 1 or len(sec_dates) > 1:
-        raise ValueError('Reference granules must be from one date and secondary granules must be from one date.')
-
-    if ref_dates[0] >= sec_dates[0]:
-        raise ValueError('Reference granules must be older than secondary granules.')
-
-
 def utm_from_lon_lat(lon: float, lat: float) -> int:
     """Get the UTM zone EPSG code from a longitude and latitude.
     See https://en.wikipedia.org/wiki/Universal_Transverse_Mercator_coordinate_system
@@ -220,7 +197,7 @@ def load_isce2_image(in_path) -> tuple[isceobj.Image, np.ndarray]:
             shape = (image_obj.bands, image_obj.length, image_obj.width)
             new_array = np.zeros(shape, dtype=image_obj.toNumpyDataType())
             for i in range(image_obj.bands):
-                new_array[i, :, :] = array[i::image_obj.bands]
+                new_array[i, :, :] = array[i :: image_obj.bands]
             array = new_array.copy()
         else:
             raise NotImplementedError('Non-BIL reading is not implemented')
@@ -385,7 +362,7 @@ def write_isce2_image_from_obj(image_obj, array):
             shape = (image_obj.length * image_obj.bands, image_obj.width)
             new_array = np.zeros(shape, dtype=image_obj.toNumpyDataType())
             for i in range(image_obj.bands):
-                new_array[i::image_obj.bands] = array[i, :, :]
+                new_array[i :: image_obj.bands] = array[i, :, :]
             array = new_array.copy()
         else:
             raise NotImplementedError('Non-BIL writing is not implemented')

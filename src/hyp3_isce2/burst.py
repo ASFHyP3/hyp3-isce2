@@ -7,7 +7,7 @@ from concurrent.futures import ThreadPoolExecutor
 from dataclasses import dataclass
 from datetime import datetime, timedelta
 from pathlib import Path
-from typing import Iterator, List, Optional, Tuple, Union
+from typing import Iterable, Iterator, List, Optional, Tuple, Union
 
 import asf_search
 import numpy as np
@@ -360,35 +360,51 @@ def get_burst_params(scene_name: str) -> BurstParams:
     )
 
 
-def validate_bursts(reference_scene: str, secondary_scene: str) -> None:
-    """Check whether the reference and secondary bursts are valid.
+def validate_bursts(reference: Union[str, Iterable[str]], secondary: Union[str, Iterable[str]]) -> None:
+    """Check whether the reference and secondary bursts are a valid sets.
 
     Args:
-        reference_scene: The reference burst name.
-        secondary_scene: The secondary burst name.
-
-    Returns:
-        None
+        reference: Reference granule(s)
+        secondary: Secondary granule(s)
     """
-    ref_split = reference_scene.split('_')
-    sec_split = secondary_scene.split('_')
+    if isinstance(reference, str):
+        reference = [reference]
+    if isinstance(secondary, str):
+        secondary = [secondary]
 
-    ref_burst_id = ref_split[1]
-    sec_burst_id = sec_split[1]
+    # Check number of bursts
+    if len(reference) < 1 or len(secondary) < 1:
+        ValueError('Must include at least 1 reference and 1 secondary burst')
+    if len(reference) != len(secondary):
+        ValueError('Must have the same number of reference and secondary bursts')
 
-    ref_polarization = ref_split[4]
-    sec_polarization = sec_split[4]
+    # Check matching set of bursts
+    ref_num_swath_pol = sorted([g.split('_')[1] + '_' + g.split('_')[2] + '_' + g.split('_')[4] for g in reference])
+    sec_num_swath_pol = sorted([g.split('_')[1] + '_' + g.split('_')[2] + '_' + g.split('_')[4] for g in secondary])
+    if ref_num_swath_pol != sec_num_swath_pol:
+        msg = 'The reference and secondary burst ID sets do not match.\n'
+        msg += f'    Reference IDs: {ref_num_swath_pol}\n'
+        msg += f'    Secondary IDs: {sec_num_swath_pol}'
+        raise ValueError(msg)
 
-    if ref_burst_id != sec_burst_id:
-        raise ValueError(f'The reference and secondary burst IDs are not the same: {ref_burst_id} and {sec_burst_id}.')
+    # Check that only one valid polarization is present
+    pols = list(set([g.split('_')[4] for g in reference + secondary]))
 
-    if ref_polarization != sec_polarization:
-        raise ValueError(
-            f'The reference and secondary polarizations are not the same: {ref_polarization} and {sec_polarization}.'
-        )
+    if len(pols) > 1:
+        raise ValueError(f'All bursts must have a single polarization. Polarizations present: {" ".join(pols)}')
 
-    if ref_polarization != 'VV' and ref_polarization != 'HH':
-        raise ValueError(f'{ref_polarization} polarization is not currently supported, only VV and HH.')
+    if pols[0] not in ['VV', 'HH']:
+        raise ValueError(f'{pols[0]} polarization is not currently supported, only VV and HH.')
+
+    # Check that the reference bursts are older
+    ref_dates = list(set([g.split('_')[3] for g in reference]))
+    sec_dates = list(set([g.split('_')[3] for g in secondary]))
+
+    if len(ref_dates) > 1 or len(sec_dates) > 1:
+        raise ValueError('Reference granules must be from one date and secondary granules must be from one date.')
+
+    if ref_dates[0] >= sec_dates[0]:
+        raise ValueError('Reference granules must be older than secondary granules.')
 
 
 def load_burst_position(swath_xml_path: str, burst_number: int) -> BurstPosition:
@@ -532,7 +548,7 @@ def safely_multilook(
     if subset_to_valid:
         last_line = position.first_valid_line + position.n_valid_lines
         last_sample = position.first_valid_sample + position.n_valid_samples
-        mask[position.first_valid_line: last_line, position.first_valid_sample: last_sample] = identity_value
+        mask[position.first_valid_line : last_line, position.first_valid_sample : last_sample] = identity_value
     else:
         mask[:, :] = identity_value
 

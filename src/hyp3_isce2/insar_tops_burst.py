@@ -28,7 +28,6 @@ from hyp3_isce2.insar_tops import insar_tops_packaged
 from hyp3_isce2.logger import configure_root_logger
 from hyp3_isce2.s1_auxcal import download_aux_cal
 from hyp3_isce2.utils import (
-    check_older_granule_is_reference,
     image_math,
     isce2_copy,
     make_browse_image,
@@ -145,7 +144,6 @@ def insar_tops_single_burst(
     bucket: Optional[str] = None,
     bucket_prefix: str = '',
 ):
-    check_older_granule_is_reference(reference, secondary)
     validate_bursts(reference, secondary)
     swath_number = int(reference[12])
     range_looks, azimuth_looks = [int(value) for value in looks.split('x')]
@@ -212,14 +210,7 @@ def insar_tops_multi_burst(
     bucket: Optional[str] = None,
     bucket_prefix: str = '',
 ):
-    ref_number_swath_pol = [g.split('_')[1] + '_' + g.split('_')[2] + '_' + g.split('_')[4] for g in reference]
-    sec_number_swath_pol = [g.split('_')[1] + '_' + g.split('_')[2] + '_' + g.split('_')[4] for g in secondary]
-
-    if ref_number_swath_pol != sec_number_swath_pol:
-        raise ValueError('The reference burst(s) and secondary burst(s) do not match')
-
-    check_older_granule_is_reference(reference, secondary)
-
+    validate_bursts(reference, secondary)
     reference_safe_path = burst2safe(reference)
     reference_safe = reference_safe_path.name.split('.')[0]
     secondary_safe_path = burst2safe(secondary)
@@ -263,10 +254,6 @@ def main():
 
     references = [item for sublist in args.reference for item in sublist]
     secondaries = [item for sublist in args.secondary for item in sublist]
-    if len(references) < 1 or len(secondaries) < 1:
-        parser.error('Must include at least 1 reference and 1 secondary')
-    if len(references) != len(secondaries):
-        parser.error('Must have the same number of references and secondaries')
 
     configure_root_logger()
     log.debug(' '.join(sys.argv))
