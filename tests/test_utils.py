@@ -25,15 +25,15 @@ def test_check_older_granule_is_reference():
         secondary=['S1_000000_IW1_20200201T000000_VV_0000-BURST', 'S1_000001_IW1_20200201T000000_VV_0000-BURST'],
     )
 
-    with pytest.raises(ValueError, match='Reference granules must be from one date*'):
+    with pytest.raises(ValueError, match=r'.* granules must be from one date .*'):
         utils.check_older_granule_is_reference(
             reference=['S1_000000_IW1_20200101T000000_VV_0000-BURST', 'S1_000001_IW1_20200101T000000_VV_0000-BURST'],
             secondary=['S1_000000_IW1_20200201T000000_VV_0000-BURST', 'S1_000001_IW1_20200202T000000_VV_0000-BURST'],
         )
 
-    with pytest.raises(ValueError, match='Reference granules must be older*'):
+    with pytest.raises(ValueError, match=r'Reference granules must be older .*'):
         utils.check_older_granule_is_reference(
-            'S1_000000_IW1_20200101T000000_VV_0000-BURST', 'S1_000000_IW1_20200201T000000_VV_0000-BURST'
+            'S1_000000_IW1_20200201T000000_VV_0000-BURST', 'S1_000000_IW1_20200101T000000_VV_0000-BURST'
         )
 
 

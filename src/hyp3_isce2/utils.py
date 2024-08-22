@@ -142,8 +142,8 @@ def check_older_granule_is_reference(reference: Union[str, Iterable], secondary:
     if isinstance(secondary, str):
         secondary = [secondary]
 
-    ref_dates = list(set([g.split('_')[3] for g in reference]))
-    sec_dates = list(set([g.split('_')[3] for g in secondary]))
+    ref_dates = list(set(g.split('_')[3] for g in reference))
+    sec_dates = list(set(g.split('_')[3] for g in secondary))
     if len(ref_dates) > 1 or len(sec_dates) > 1:
         raise ValueError('Reference granules must be from one date and secondary granules must be from one date.')
 
