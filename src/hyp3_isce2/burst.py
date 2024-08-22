@@ -397,7 +397,7 @@ def validate_bursts(reference: Union[str, Iterable[str]], secondary: Union[str, 
     sec_dates = list(set(g.split('_')[3] for g in secondary))
 
     if len(ref_dates) > 1 or len(sec_dates) > 1:
-        raise ValueError('Reference granules must be from one date and secondary granules must be from one date.')
+        raise ValueError('Reference granules must be from one date and secondary granules must be another.')
 
     if ref_dates[0] >= sec_dates[0]:
         raise ValueError('Reference granules must be older than secondary granules.')

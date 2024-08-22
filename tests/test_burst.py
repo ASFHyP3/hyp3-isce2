@@ -207,6 +207,12 @@ def test_validate_bursts():
             ['S1_000000_IW1_20200201T000000_VH_0000-BURST', 'S1_000000_IW1_20200201T000000_VH_0000-BURST'],
         )
 
+    with pytest.raises(ValueError, match=r'.*must be from one date.*'):
+        burst.validate_bursts(
+            ['S1_000000_IW1_20200101T000000_VV_0000-BURST', 'S1_000001_IW1_20200101T000000_VV_0000-BURST'],
+            ['S1_000000_IW1_20200201T000000_VV_0000-BURST', 'S1_000001_IW1_20200202T000000_VV_0000-BURST'],
+        )
+
     with pytest.raises(ValueError, match=r'Reference granules must be older.*'):
         burst.validate_bursts(
             'S1_000000_IW1_20200201T000000_VV_0000-BURST', 'S1_000000_IW1_20200101T000000_VV_0000-BURST'
