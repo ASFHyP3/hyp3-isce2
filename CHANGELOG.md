@@ -12,7 +12,6 @@ and uses [Semantic Versioning](https://semver.org/spec/v2.0.0.html).
 
 ### Changed
 - The interface for `insar_tops_burst` so that it takes `--reference` and `--secondary` granule lists. The positional `granules` argument is now optional and deprecated.
-- The `insar_tops_burst` workflow now exits with an error message if the reference granules are not older than the secondary granules, rather than silently re-ordering the granules.
 
 ## [2.0.0]
 ### Changed
