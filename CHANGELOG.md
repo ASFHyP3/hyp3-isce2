@@ -8,7 +8,10 @@ and uses [Semantic Versioning](https://semver.org/spec/v2.0.0.html).
 
 ## [2.1.0]
 ### Added
-- `insar_tops_multi_burst` workflow for processing multiple bursts as one SLC.
+- The ability for the `insar_tops_burst` workflow to support processing multiple bursts as one SLC.
+
+### Changed
+- The interface for `insar_tops_burst` so that it takes `--reference` and `--secondary` granule lists. The positional `granules` argument is now optional and deprecated.
 
 ## [2.0.0]
 ### Changed

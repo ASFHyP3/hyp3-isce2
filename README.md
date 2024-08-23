@@ -10,16 +10,15 @@ The HyP3-ISCE2 plugin provides a set of workflows (accessible directly in Python
 
 - `insar_stripmap`: A workflow for creating ALOS-1 geocoded unwrapped interferogram using ISCE2's Stripmap processing workflow
 - `insar_tops`: A workflow for creating full-SLC Sentinel-1 geocoded unwrapped interferogram using ISCE2's TOPS processing workflow
-- `insar_tops_burst`: A workflow for creating single-burst Sentinel-1 geocoded unwrapped interferogram using ISCE2's TOPS processing workflow
-- `insar_tops_multi_burst`: A workflow for creating multi-burst Sentinel-1 geocoded unwrapped interferogram using ISCE2's TOPS processing workflow
+- `insar_tops_burst`: A workflow for creating burst-based Sentinel-1 geocoded unwrapped interferogram using ISCE2's TOPS processing workflow
 ---
 
 To run a workflow, simply run `python -m hyp3_isce2 ++process [WORKFLOW_NAME] [WORKFLOW_ARGS]`. For example, to run the `insar_tops_burst` workflow:
 
 ```
 python -m hyp3_isce2 ++process insar_tops_burst \
-  S1_136231_IW2_20200604T022312_VV_7C85-BURST \
-  S1_136231_IW2_20200616T022313_VV_5D11-BURST \
+  --reference S1_136231_IW2_20200604T022312_VV_7C85-BURST \
+  --secondary S1_136231_IW2_20200616T022313_VV_5D11-BURST \
   --looks 20x4 \
   --apply-water-mask True
 ```
@@ -27,7 +26,7 @@ python -m hyp3_isce2 ++process insar_tops_burst \
 and, for multiple burst pairs:
 
 ```
-python -m hyp3_isce2 ++process insar_tops_multi_burst \
+python -m hyp3_isce2 ++process insar_tops_burst \
   --reference S1_136231_IW2_20200604T022312_VV_7C85-BURST S1_136232_IW2_20200604T022315_VV_7C85-BURST \
   --secondary S1_136231_IW2_20200616T022313_VV_5D11-BURST S1_136232_IW2_20200616T022316_VV_5D11-BURST \
   --looks 20x4 \
