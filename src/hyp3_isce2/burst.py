@@ -393,8 +393,8 @@ def validate_bursts(reference: Union[str, Iterable[str]], secondary: Union[str, 
     if pols[0] not in ['VV', 'HH']:
         raise ValueError(f'{pols[0]} polarization is not currently supported, only VV and HH.')
 
-    ref_dates = list(set(g.split('_')[3] for g in reference))
-    sec_dates = list(set(g.split('_')[3] for g in secondary))
+    ref_dates = list(set(g.split('_')[3][:7] for g in reference))
+    sec_dates = list(set(g.split('_')[3][:7] for g in secondary))
 
     if len(ref_dates) > 1 or len(sec_dates) > 1:
         raise ValueError('Reference granules must be from one date and secondary granules must be another.')
@@ -544,7 +544,7 @@ def safely_multilook(
     if subset_to_valid:
         last_line = position.first_valid_line + position.n_valid_lines
         last_sample = position.first_valid_sample + position.n_valid_samples
-        mask[position.first_valid_line:last_line, position.first_valid_sample:last_sample] = identity_value
+        mask[position.first_valid_line : last_line, position.first_valid_sample : last_sample] = identity_value
     else:
         mask[:, :] = identity_value
 
