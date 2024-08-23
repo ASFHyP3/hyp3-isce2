@@ -257,9 +257,9 @@ def main():
     has_granules = args.granules is not None and len(args.granules) > 0
     has_ref_sec = args.reference is not None and args.secondary is not None
     if has_granules and has_ref_sec:
-        parser.error('Either the positional granules argument, or --reference and --secondary must be specified.')
+        parser.error('Provide either --reference and --secondary, or the positional granules argument, not both.')
     elif not has_granules and not has_ref_sec:
-        parser.error('Only the positional granules argument, or --reference and --secondary must be specified.')
+        parser.error('Either --reference and --secondary, or the positional granules argument, must be provided.')
     elif has_granules:
         warnings.warn(
             'The positional argument for granules is deprecated. Please use --reference and --secondary.',
