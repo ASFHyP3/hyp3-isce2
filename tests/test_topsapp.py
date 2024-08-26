@@ -1,10 +1,10 @@
 import pytest
 
-from hyp3_isce2.topsapp import TopsappBurstConfig, run_topsapp_burst, swap_burst_vrts
+from hyp3_isce2.topsapp import TopsappConfig, run_topsapp, swap_burst_vrts
 
 
 def test_topsapp_burst_config(tmp_path):
-    config = TopsappBurstConfig(
+    config = TopsappConfig(
         reference_safe='S1A_IW_SLC__1SDV_20200604T022251_20200604T022318_032861_03CE65_7C85.SAFE',
         secondary_safe='S1A_IW_SLC__1SDV_20200616T022252_20200616T022319_033036_03D3A3_5D11.SAFE',
         polarization='VV',
@@ -49,9 +49,9 @@ def test_swap_burst_vrts(tmp_path, monkeypatch):
 
 def test_run_topsapp_burst(tmp_path, monkeypatch):
     with pytest.raises(IOError):
-        run_topsapp_burst('topsApp.xml')
+        run_topsapp('topsApp.xml')
 
-    config = TopsappBurstConfig(
+    config = TopsappConfig(
         reference_safe='',
         secondary_safe='',
         polarization='',
@@ -67,10 +67,10 @@ def test_run_topsapp_burst(tmp_path, monkeypatch):
     template_path = config.write_template(tmp_path / 'topsApp.xml')
 
     with pytest.raises(ValueError, match=r'.*not a valid step.*'):
-        run_topsapp_burst('notastep', config_xml=template_path)
+        run_topsapp('notastep', config_xml=template_path)
 
     with pytest.raises(ValueError, match=r'^If dostep is specified, start and stop cannot be used$'):
-        run_topsapp_burst('preprocess', 'startup', config_xml=template_path)
+        run_topsapp('preprocess', 'startup', config_xml=template_path)
 
     monkeypatch.chdir(tmp_path)
-    run_topsapp_burst('preprocess', config_xml=template_path)
+    run_topsapp('preprocess', config_xml=template_path)

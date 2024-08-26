@@ -96,7 +96,7 @@ def insar_tops_burst(
         orbit_file = fetch_for_scene(granule, dir=orbit_dir)
         log.info(f'Got orbit file {orbit_file} from s1_orbits')
 
-    config = topsapp.TopsappBurstConfig(
+    config = topsapp.TopsappConfig(
         reference_safe=f'{ref_params.granule}.SAFE',
         secondary_safe=f'{sec_params.granule}.SAFE',
         polarization=ref_params.polarization,
@@ -111,10 +111,10 @@ def insar_tops_burst(
     )
     config_path = config.write_template('topsApp.xml')
 
-    topsapp.run_topsapp_burst(start='startup', end='preprocess', config_xml=config_path)
+    topsapp.run_topsapp(start='startup', end='preprocess', config_xml=config_path)
     topsapp.swap_burst_vrts()
     if apply_water_mask:
-        topsapp.run_topsapp_burst(start='computeBaselines', end='filter', config_xml=config_path)
+        topsapp.run_topsapp(start='computeBaselines', end='filter', config_xml=config_path)
         water_mask_path = 'water_mask.wgs84'
         create_water_mask(str(dem_path), water_mask_path)
         multilook('merged/lon.rdr.full', outname='merged/lon.rdr', alks=azimuth_looks, rlks=range_looks)
@@ -122,12 +122,12 @@ def insar_tops_burst(
         resample_to_radar_io(water_mask_path, 'merged/lat.rdr', 'merged/lon.rdr', 'merged/water_mask.rdr')
         isce2_copy('merged/phsig.cor', 'merged/unmasked.phsig.cor')
         image_math('merged/unmasked.phsig.cor', 'merged/water_mask.rdr', 'merged/phsig.cor', 'a*b')
-        topsapp.run_topsapp_burst(start='unwrap', end='unwrap2stage', config_xml=config_path)
+        topsapp.run_topsapp(start='unwrap', end='unwrap2stage', config_xml=config_path)
         isce2_copy('merged/unmasked.phsig.cor', 'merged/phsig.cor')
     else:
-        topsapp.run_topsapp_burst(start='computeBaselines', end='unwrap2stage', config_xml=config_path)
+        topsapp.run_topsapp(start='computeBaselines', end='unwrap2stage', config_xml=config_path)
     copyfile('merged/z.rdr.full.xml', 'merged/z.rdr.full.vrt.xml')
-    topsapp.run_topsapp_burst(start='geocode', end='geocode', config_xml=config_path)
+    topsapp.run_topsapp(start='geocode', end='geocode', config_xml=config_path)
 
     return Path('merged')
 
