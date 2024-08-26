@@ -49,12 +49,9 @@ def insar_tops(
     aux_cal_dir = Path('aux_cal')
     dem_dir = Path('dem')
 
-    if download:
-        ref_dir = slc.get_granule(reference_scene)
-        sec_dir = slc.get_granule(secondary_scene)
-    else:
-        ref_dir = Path(reference_scene + '.SAFE')
-        sec_dir = Path(secondary_scene + '.SAFE')
+    ref_dir = slc.get_granule(reference_scene)
+    sec_dir = slc.get_granule(secondary_scene)
+
     roi = slc.get_dem_bounds(ref_dir, sec_dir)
     log.info(f'DEM ROI: {roi}')
 
@@ -133,8 +130,6 @@ def insar_tops_packaged(
 
     log.info('Begin ISCE2 TopsApp run')
 
-    do_download = os.path.exists(f'{reference}.SAFE') and os.path.exists(f'{secondary}.SAFE')
-
     insar_tops(
         reference_scene=reference,
         secondary_scene=secondary,
@@ -143,7 +138,6 @@ def insar_tops_packaged(
         azimuth_looks=azimuth_looks,
         range_looks=range_looks,
         apply_water_mask=apply_water_mask,
-        download=do_download
     )
 
     log.info('ISCE2 TopsApp run completed successfully')
