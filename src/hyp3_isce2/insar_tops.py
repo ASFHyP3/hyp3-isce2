@@ -2,7 +2,6 @@
 
 import argparse
 import logging
-import os
 import sys
 from pathlib import Path
 from shutil import copyfile, make_archive
