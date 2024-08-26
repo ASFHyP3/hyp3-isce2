@@ -29,7 +29,6 @@ def insar_tops(
     azimuth_looks: int = 4,
     range_looks: int = 20,
     apply_water_mask: bool = False,
-    download: bool = True,
 ) -> Path:
     """Create a full-SLC interferogram
 
@@ -40,6 +39,7 @@ def insar_tops(
         polarization: Polarization to use
         azimuth_looks: Number of azimuth looks
         range_looks: Number of range looks
+        apply_water_mask: Apply water mask to unwrapped phase
 
     Returns:
         Path to the output files
@@ -118,7 +118,6 @@ def insar_tops_packaged(
         azimuth_looks: Number of azimuth looks
         range_looks: Number of range looks
         apply_water_mask: Apply water mask to unwrapped phase
-        download: Download the SLCs
         bucket: AWS S3 bucket to upload the final product to
         bucket_prefix: Bucket prefix to prefix to use when uploading the final product
 
