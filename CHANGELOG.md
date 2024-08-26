@@ -12,6 +12,7 @@ and uses [Semantic Versioning](https://semver.org/spec/v2.0.0.html).
 
 ### Changed
 - The interface for `insar_tops_burst` so that it takes `--reference` and `--secondary` granule lists. The positional `granules` argument is now optional and deprecated.
+- Moved HyP3 product packaging functionality out of `insar_tops_burst.py` and to a new `packaging.py` so that both `insar_tops` and `insar_tops_burst` can use it.
 
 ## [2.0.0]
 ### Changed
