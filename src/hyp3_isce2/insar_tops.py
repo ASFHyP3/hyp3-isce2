@@ -2,7 +2,6 @@
 
 import argparse
 import logging
-import os
 import sys
 from pathlib import Path
 from shutil import copyfile, make_archive
@@ -30,7 +29,6 @@ def insar_tops(
     azimuth_looks: int = 4,
     range_looks: int = 20,
     apply_water_mask: bool = False,
-    download: bool = True,
 ) -> Path:
     """Create a full-SLC interferogram
 
@@ -41,6 +39,7 @@ def insar_tops(
         polarization: Polarization to use
         azimuth_looks: Number of azimuth looks
         range_looks: Number of range looks
+        apply_water_mask: Apply water mask to unwrapped phase
 
     Returns:
         Path to the output files
@@ -49,12 +48,9 @@ def insar_tops(
     aux_cal_dir = Path('aux_cal')
     dem_dir = Path('dem')
 
-    if download:
-        ref_dir = slc.get_granule(reference_scene)
-        sec_dir = slc.get_granule(secondary_scene)
-    else:
-        ref_dir = Path(reference_scene + '.SAFE')
-        sec_dir = Path(secondary_scene + '.SAFE')
+    ref_dir = slc.get_granule(reference_scene)
+    sec_dir = slc.get_granule(secondary_scene)
+
     roi = slc.get_dem_bounds(ref_dir, sec_dir)
     log.info(f'DEM ROI: {roi}')
 
@@ -122,7 +118,6 @@ def insar_tops_packaged(
         azimuth_looks: Number of azimuth looks
         range_looks: Number of range looks
         apply_water_mask: Apply water mask to unwrapped phase
-        download: Download the SLCs
         bucket: AWS S3 bucket to upload the final product to
         bucket_prefix: Bucket prefix to prefix to use when uploading the final product
 
@@ -133,8 +128,6 @@ def insar_tops_packaged(
 
     log.info('Begin ISCE2 TopsApp run')
 
-    do_download = os.path.exists(f'{reference}.SAFE') and os.path.exists(f'{secondary}.SAFE')
-
     insar_tops(
         reference_scene=reference,
         secondary_scene=secondary,
@@ -143,12 +136,13 @@ def insar_tops_packaged(
         azimuth_looks=azimuth_looks,
         range_looks=range_looks,
         apply_water_mask=apply_water_mask,
-        download=do_download
     )
 
     log.info('ISCE2 TopsApp run completed successfully')
 
-    product_name = packaging.get_product_name(reference, secondary, pixel_spacing=int(pixel_size))
+    product_name = packaging.get_product_name(
+        reference, secondary, pixel_spacing=int(pixel_size), polarization=polarization, slc=True
+    )
 
     product_dir = Path(product_name)
     product_dir.mkdir(parents=True, exist_ok=True)
