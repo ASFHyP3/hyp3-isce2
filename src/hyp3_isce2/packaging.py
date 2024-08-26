@@ -47,14 +47,16 @@ def find_product(pattern: str) -> str:
     product = str(list(search)[0])
     return product
 
-
-def get_product_name(reference: str, secondary: str, pixel_spacing: int, slc: bool = True) -> str:
+def get_product_name(
+    reference: str, secondary: str, pixel_spacing: int, polarization: Optional[str] = None, slc: bool = True
+) -> str:
     """Get the name of the interferogram product.
 
     Args:
         reference: The reference burst name.
         secondary: The secondary burst name.
         pixel_spacing: The spacing of the pixels in the output image.
+        polarization: The polarization of the input data. Only required for SLCs.
         slc: Whether the input scenes are SLCs or bursts.
 
     Returns:
@@ -69,7 +71,10 @@ def get_product_name(reference: str, secondary: str, pixel_spacing: int, slc: bo
         platform = reference_split[0]
         reference_date = reference_split[5][0:8]
         secondary_date = secondary_split[5][0:8]
-        polarization = os.path.basename(glob.glob(f'{reference}.SAFE/annotation/s1*')[0]).split('-')[3].upper()
+        if not polarization:
+            raise ValueError('Polarization is required for SLCs')
+        elif polarization not in ['VV', 'VH', 'HV', 'HH']:
+            raise ValueError('Polarization must be one of VV, VH, HV, or HH')
         ref_manifest_xml = etree.parse(f'{reference}.SAFE/manifest.safe', parser)
         metadata_path = './/metadataObject[@ID="measurementOrbitReference"]//xmlData//'
         relative_orbit_number_query = metadata_path + safe + 'relativeOrbitNumber'
