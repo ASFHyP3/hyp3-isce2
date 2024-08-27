@@ -6,6 +6,14 @@ The format is based on [Keep a Changelog](https://keepachangelog.com/en/1.0.0/),
 and this project adheres to [PEP 440](https://www.python.org/dev/peps/pep-0440/)
 and uses [Semantic Versioning](https://semver.org/spec/v2.0.0.html).
 
+## [2.1.0]
+### Added
+- The ability for the `insar_tops_burst` workflow to support processing multiple bursts as one SLC.
+
+### Changed
+- The interface for `insar_tops_burst` so that it takes `--reference` and `--secondary` granule lists. The positional `granules` argument is now optional and deprecated.
+- Moved HyP3 product packaging functionality out of `insar_tops_burst.py` and to a new `packaging.py` so that both `insar_tops` and `insar_tops_burst` can use it.
+
 ## [2.0.0]
 ### Changed
 - Orbit files are now retrieved using the [s1-orbits](https://github.com/ASFHyP3/sentinel1-orbits-py) library.

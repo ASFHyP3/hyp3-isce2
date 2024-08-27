@@ -9,7 +9,7 @@ import isceobj
 import numpy as np
 from isceobj.Util.ImageUtil.ImageLib import loadImage
 from iscesys.Component.ProductManager import ProductManager
-from osgeo import gdal
+from osgeo import gdal, osr
 
 
 gdal.UseExceptions()
@@ -179,12 +179,6 @@ def make_browse_image(input_tif: str, output_png: str) -> None:
         )
 
 
-def oldest_granule_first(g1, g2):
-    if g1[14:29] <= g2[14:29]:
-        return g1, g2
-    return g2, g1
-
-
 def load_isce2_image(in_path) -> tuple[isceobj.Image, np.ndarray]:
     """Read an ISCE2 image file and return the image object and array.
 
@@ -203,7 +197,7 @@ def load_isce2_image(in_path) -> tuple[isceobj.Image, np.ndarray]:
             shape = (image_obj.bands, image_obj.length, image_obj.width)
             new_array = np.zeros(shape, dtype=image_obj.toNumpyDataType())
             for i in range(image_obj.bands):
-                new_array[i, :, :] = array[i:: image_obj.bands]
+                new_array[i, :, :] = array[i::image_obj.bands]
             array = new_array.copy()
         else:
             raise NotImplementedError('Non-BIL reading is not implemented')
@@ -368,7 +362,7 @@ def write_isce2_image_from_obj(image_obj, array):
             shape = (image_obj.length * image_obj.bands, image_obj.width)
             new_array = np.zeros(shape, dtype=image_obj.toNumpyDataType())
             for i in range(image_obj.bands):
-                new_array[i:: image_obj.bands] = array[i, :, :]
+                new_array[i::image_obj.bands] = array[i, :, :]
             array = new_array.copy()
         else:
             raise NotImplementedError('Non-BIL writing is not implemented')
@@ -445,3 +439,9 @@ def read_product_metadata(meta_file_path: str) -> dict:
             value = ':'.join(values)
             hyp3_meta[key] = value
     return hyp3_meta
+
+
+def get_projection(srs_wkt) -> str:
+    srs = osr.SpatialReference()
+    srs.ImportFromWkt(srs_wkt)
+    return srs.GetAttrValue('projcs')

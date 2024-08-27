@@ -41,7 +41,7 @@ TOPSAPP_GEOCODE_LIST = [
 ]
 
 
-class TopsappBurstConfig:
+class TopsappConfig:
     """Configuration for a topsApp.py run"""
 
     def __init__(
@@ -135,8 +135,8 @@ def swap_burst_vrts():
         del base
 
 
-def run_topsapp_burst(dostep: str = '', start: str = '', end: str = '', config_xml: Path = Path('topsApp.xml')):
-    """Run topsApp.py for a burst pair with the desired steps and config file
+def run_topsapp(dostep: str = '', start: str = '', end: str = '', config_xml: Path = Path('topsApp.xml')):
+    """Run topsApp.py for a granule pair with the desired steps and config file
 
     Args:
         dostep: The step to run
