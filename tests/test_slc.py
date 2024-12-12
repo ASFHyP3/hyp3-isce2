@@ -6,10 +6,10 @@ from hyp3_isce2 import slc
 
 
 def test_get_geometry_from_kml(test_data_dir):
-    kml = test_data_dir / 'alaska.kml'
+    kml = test_data_dir / "alaska.kml"
     expected = {
-        'type': 'Polygon',
-        'coordinates': (
+        "type": "Polygon",
+        "coordinates": (
             (
                 (-154.0, 71.0),
                 (-147.0, 71.0),
@@ -22,10 +22,10 @@ def test_get_geometry_from_kml(test_data_dir):
     geometry = slc.get_geometry_from_kml(kml)
     assert geometry.__geo_interface__ == expected
 
-    kml = test_data_dir / 'antimeridian.kml'
+    kml = test_data_dir / "antimeridian.kml"
     expected = {
-        'type': 'MultiPolygon',
-        'coordinates': [
+        "type": "MultiPolygon",
+        "coordinates": [
             (
                 (
                     (176.0, 51.0),
@@ -51,7 +51,7 @@ def test_get_geometry_from_kml(test_data_dir):
 
 
 def test_dem_bounds(mocker):
-    mocker.patch('hyp3_isce2.slc.get_geometry_from_manifest')
+    mocker.patch("hyp3_isce2.slc.get_geometry_from_manifest")
     slc.get_geometry_from_manifest.side_effect = [box(-1, -1, 1, 1), box(0, 0, 2, 2)]
-    bounds = slc.get_dem_bounds(Path('ref'), Path('sec'))
+    bounds = slc.get_dem_bounds(Path("ref"), Path("sec"))
     assert bounds == (0, 0, 1, 1)

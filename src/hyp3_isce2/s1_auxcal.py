@@ -21,8 +21,8 @@ from typing import Union
 import requests
 
 
-S1A_AUX_URL = 'https://sar-mpc.eu/download/55282da1-679d-4ecf-aeef-d06b024451cf'
-S1B_AUX_URL = 'https://sar-mpc.eu/download/3c8b7c8d-d3de-4381-a19d-7611fb8734b9'
+S1A_AUX_URL = "https://sar-mpc.eu/download/55282da1-679d-4ecf-aeef-d06b024451cf"
+S1B_AUX_URL = "https://sar-mpc.eu/download/3c8b7c8d-d3de-4381-a19d-7611fb8734b9"
 
 
 def _download_platform(url: str, aux_cal_dir: Path):
@@ -41,7 +41,7 @@ def _download_platform(url: str, aux_cal_dir: Path):
         zip_file.extractall(aux_cal_dir)
 
 
-def download_aux_cal(aux_cal_dir: Union[str, Path] = 'aux_cal'):
+def download_aux_cal(aux_cal_dir: Union[str, Path] = "aux_cal"):
     """Download and extract the aux cal files for Sentinel-1A/B.
 
     Args:
@@ -55,5 +55,5 @@ def download_aux_cal(aux_cal_dir: Union[str, Path] = 'aux_cal'):
         _download_platform(url, aux_cal_dir)
 
 
-if __name__ == '__main__':
+if __name__ == "__main__":
     download_aux_cal()

@@ -77,29 +77,29 @@ class ParameterFile:
 
     def __str__(self):
         output_strings = [
-            f'Reference Granule: {self.reference_granule}\n',
-            f'Secondary Granule: {self.secondary_granule}\n',
-            f'Reference Pass Direction: {self.reference_orbit_direction}\n',
-            f'Reference Orbit Number: {self.reference_orbit_number}\n',
-            f'Secondary Pass Direction: {self.secondary_orbit_direction}\n',
-            f'Secondary Orbit Number: {self.secondary_orbit_number}\n',
-            f'Baseline: {self.baseline}\n',
-            f'UTC time: {self.utc_time}\n',
-            f'Heading: {self.heading}\n',
-            f'Spacecraft height: {self.spacecraft_height}\n',
-            f'Earth radius at nadir: {self.earth_radius_at_nadir}\n',
-            f'Slant range near: {self.slant_range_near}\n',
-            f'Slant range center: {self.slant_range_center}\n',
-            f'Slant range far: {self.slant_range_far}\n',
-            f'Range looks: {self.range_looks}\n',
-            f'Azimuth looks: {self.azimuth_looks}\n',
+            f"Reference Granule: {self.reference_granule}\n",
+            f"Secondary Granule: {self.secondary_granule}\n",
+            f"Reference Pass Direction: {self.reference_orbit_direction}\n",
+            f"Reference Orbit Number: {self.reference_orbit_number}\n",
+            f"Secondary Pass Direction: {self.secondary_orbit_direction}\n",
+            f"Secondary Orbit Number: {self.secondary_orbit_number}\n",
+            f"Baseline: {self.baseline}\n",
+            f"UTC time: {self.utc_time}\n",
+            f"Heading: {self.heading}\n",
+            f"Spacecraft height: {self.spacecraft_height}\n",
+            f"Earth radius at nadir: {self.earth_radius_at_nadir}\n",
+            f"Slant range near: {self.slant_range_near}\n",
+            f"Slant range center: {self.slant_range_center}\n",
+            f"Slant range far: {self.slant_range_far}\n",
+            f"Range looks: {self.range_looks}\n",
+            f"Azimuth looks: {self.azimuth_looks}\n",
             f'INSAR phase filter: {"yes" if self.insar_phase_filter else "no"}\n',
-            f'Phase filter parameter: {self.phase_filter_parameter}\n',
+            f"Phase filter parameter: {self.phase_filter_parameter}\n",
             f'Range bandpass filter: {"yes" if self.range_bandpass_filter else "no"}\n',
             f'Azimuth bandpass filter: {"yes" if self.azimuth_bandpass_filter else "no"}\n',
-            f'DEM source: {self.dem_source}\n',
-            f'DEM resolution (m): {self.dem_resolution}\n',
-            f'Unwrapping type: {self.unwrapping_type}\n',
+            f"DEM source: {self.dem_source}\n",
+            f"DEM resolution (m): {self.dem_resolution}\n",
+            f"Unwrapping type: {self.unwrapping_type}\n",
             f'Speckle filter: {"yes" if self.speckle_filter else "no"}\n',
             f'Water mask: {"yes" if self.water_mask else "no"}\n',
         ]
@@ -107,19 +107,19 @@ class ParameterFile:
         # TODO could use a more robust way to check if radar data is present
         if self.radar_n_lines:
             radar_data = [
-                f'Radar n lines: {self.radar_n_lines}\n',
-                f'Radar n samples: {self.radar_n_samples}\n',
-                f'Radar first valid line: {self.radar_first_valid_line}\n',
-                f'Radar n valid lines: {self.radar_n_valid_lines}\n',
-                f'Radar first valid sample: {self.radar_first_valid_sample}\n',
-                f'Radar n valid samples: {self.radar_n_valid_samples}\n',
-                f'Multilook azimuth time interval: {self.multilook_azimuth_time_interval}\n',
-                f'Multilook range pixel size: {self.multilook_range_pixel_size}\n',
+                f"Radar n lines: {self.radar_n_lines}\n",
+                f"Radar n samples: {self.radar_n_samples}\n",
+                f"Radar first valid line: {self.radar_first_valid_line}\n",
+                f"Radar n valid lines: {self.radar_n_valid_lines}\n",
+                f"Radar first valid sample: {self.radar_first_valid_sample}\n",
+                f"Radar n valid samples: {self.radar_n_valid_samples}\n",
+                f"Multilook azimuth time interval: {self.multilook_azimuth_time_interval}\n",
+                f"Multilook range pixel size: {self.multilook_range_pixel_size}\n",
                 f'Radar sensing stop: {datetime.strftime(self.radar_sensing_stop, "%Y-%m-%dT%H:%M:%S.%f")}\n',
             ]
             output_strings += radar_data
 
-        return ''.join(output_strings)
+        return "".join(output_strings)
 
     def __repr__(self):
         return self.__str__()
@@ -166,16 +166,18 @@ def extent_from_geotransform(geotransform: tuple, x_size: int, y_size: int) -> t
 
 
 def make_browse_image(input_tif: str, output_png: str) -> None:
-    with GDALConfigManager(GDAL_PAM_ENABLED='NO'):
-        stats = gdal.Info(input_tif, format='json', stats=True)['stac']['raster:bands'][0]['stats']
+    with GDALConfigManager(GDAL_PAM_ENABLED="NO"):
+        stats = gdal.Info(input_tif, format="json", stats=True)["stac"]["raster:bands"][
+            0
+        ]["stats"]
         gdal.Translate(
             destName=output_png,
             srcDS=input_tif,
-            format='png',
+            format="png",
             outputType=gdal.GDT_Byte,
             width=2048,
             strict=True,
-            scaleParams=[[stats['minimum'], stats['maximum']]],
+            scaleParams=[[stats["minimum"], stats["maximum"]]],
         )
 
 
@@ -193,14 +195,14 @@ def load_isce2_image(in_path) -> tuple[isceobj.Image, np.ndarray]:
     array = np.fromfile(in_path, image_obj.toNumpyDataType())
     array = np.reshape(array, (-1, image_obj.width))
     if image_obj.bands > 1:
-        if image_obj.imageType == 'bil':
+        if image_obj.imageType == "bil":
             shape = (image_obj.bands, image_obj.length, image_obj.width)
             new_array = np.zeros(shape, dtype=image_obj.toNumpyDataType())
             for i in range(image_obj.bands):
-                new_array[i, :, :] = array[i::image_obj.bands]
+                new_array[i, :, :] = array[i :: image_obj.bands]
             array = new_array.copy()
         else:
-            raise NotImplementedError('Non-BIL reading is not implemented')
+            raise NotImplementedError("Non-BIL reading is not implemented")
     return image_obj, array
 
 
@@ -211,7 +213,13 @@ def write_isce2_image(output_path: str, array: np.ndarray) -> None:
         output_path: The path to the output image file.
         array: The array to write to the file.
     """
-    data_type_dic = {'float32': 'FLOAT', 'float64': 'DOUBLE', 'int32': 'INT', 'complex64': 'CFLOAT', 'int8': 'BYTE'}
+    data_type_dic = {
+        "float32": "FLOAT",
+        "float64": "DOUBLE",
+        "int32": "INT",
+        "complex64": "CFLOAT",
+        "int8": "BYTE",
+    }
 
     data_type = data_type_dic[str(array.dtype)]
 
@@ -225,12 +233,14 @@ def write_isce2_image(output_path: str, array: np.ndarray) -> None:
     elif array.ndim == 3:
         bands, length, width = array.shape
     else:
-        raise NotImplementedError('array with dimension larger than 3 is not implemented')
+        raise NotImplementedError(
+            "array with dimension larger than 3 is not implemented"
+        )
 
     image_obj = isceobj.createImage()
-    image_obj.initImage(output_path, 'write', width, data_type, bands)
+    image_obj.initImage(output_path, "write", width, data_type, bands)
     image_obj.setLength(length)
-    image_obj.setImageType('bil')
+    image_obj.setImageType("bil")
     image_obj.createImage()
     write_isce2_image_from_obj(image_obj, array)
 
@@ -253,7 +263,12 @@ def get_geotransform_from_dataset(dataset: isceobj.Image) -> tuple:
 
 
 def resample_to_radar(
-    mask: np.ndarray, lat: np.ndarray, lon: np.ndarray, geotransform: tuple, data_type: type, outshape: tuple[int, int]
+    mask: np.ndarray,
+    lat: np.ndarray,
+    lon: np.ndarray,
+    geotransform: tuple,
+    data_type: type,
+    outshape: tuple[int, int],
 ) -> np.ndarray:
     """Resample a geographic image to radar coordinates using a nearest neighbor method.
     The latin and lonin images are used to map from geographic to radar coordinates.
@@ -270,16 +285,27 @@ def resample_to_radar(
         resampled_image: The resampled image array
     """
 
-    start_lon, delta_lon, start_lat, delta_lat = geotransform[0], geotransform[1], geotransform[3], geotransform[5]
+    start_lon, delta_lon, start_lat, delta_lat = (
+        geotransform[0],
+        geotransform[1],
+        geotransform[3],
+        geotransform[5],
+    )
 
-    lati = np.clip((((lat - start_lat) / delta_lat) + 0.5).astype(int), 0, mask.shape[0] - 1)
-    loni = np.clip((((lon - start_lon) / delta_lon) + 0.5).astype(int), 0, mask.shape[1] - 1)
+    lati = np.clip(
+        (((lat - start_lat) / delta_lat) + 0.5).astype(int), 0, mask.shape[0] - 1
+    )
+    loni = np.clip(
+        (((lon - start_lon) / delta_lon) + 0.5).astype(int), 0, mask.shape[1] - 1
+    )
     resampled_image = (mask[lati, loni]).astype(data_type)
     resampled_image = np.reshape(resampled_image, outshape)
     return resampled_image
 
 
-def resample_to_radar_io(image_to_resample: str, latin: str, lonin: str, output: str) -> None:
+def resample_to_radar_io(
+    image_to_resample: str, latin: str, lonin: str, output: str
+) -> None:
     """Resample a geographic image to radar coordinates using a nearest neighbor method.
     The latin and lonin images are used to map from geographic to radar coordinates.
 
@@ -314,7 +340,7 @@ def isce2_copy(in_path: str, out_path: str):
         out_path: The path to the output image file (not the xml).
     """
     image, _, _ = loadImage(in_path)
-    clone = image.clone('write')
+    clone = image.clone("write")
     clone.setFilename(out_path)
     clone.renderHdr()
     shutil.copy(in_path, out_path)
@@ -329,7 +355,15 @@ def image_math(image_a_path: str, image_b_path: str, out_path: str, expression: 
         out_path: The path to the output image.
         expression: The expression to pass to imageMath.py.
     """
-    cmd = ['imageMath.py', f'--a={image_a_path}', f'--b={image_b_path}', '-o', f'{out_path}', '--eval', expression]
+    cmd = [
+        "imageMath.py",
+        f"--a={image_a_path}",
+        f"--b={image_b_path}",
+        "-o",
+        f"{out_path}",
+        "--eval",
+        expression,
+    ]
     subprocess.run(cmd, check=True)
 
 
@@ -358,14 +392,14 @@ def write_isce2_image_from_obj(image_obj, array):
     image_obj.renderHdr()
 
     if image_obj.bands > 1:
-        if image_obj.imageType == 'bil':
+        if image_obj.imageType == "bil":
             shape = (image_obj.length * image_obj.bands, image_obj.width)
             new_array = np.zeros(shape, dtype=image_obj.toNumpyDataType())
             for i in range(image_obj.bands):
-                new_array[i::image_obj.bands] = array[i, :, :]
+                new_array[i :: image_obj.bands] = array[i, :, :]
             array = new_array.copy()
         else:
-            raise NotImplementedError('Non-BIL writing is not implemented')
+            raise NotImplementedError("Non-BIL writing is not implemented")
 
     array.tofile(image_obj.filename)
 
@@ -373,9 +407,9 @@ def write_isce2_image_from_obj(image_obj, array):
 def create_image(
     out_path: str,
     width: Optional[int] = None,
-    access_mode: str = 'read',
-    image_subtype: str = 'default',
-    action: str = 'create',
+    access_mode: str = "read",
+    image_subtype: str = "default",
+    action: str = "create",
 ) -> isceobj.Image:
     """Create an ISCE2 image object from a set of parameters
 
@@ -394,29 +428,31 @@ def create_image(
         The ISCE2 image object
     """
     opts = {
-        'ifg': (isceobj.createIntImage, 1, 'CFLOAT', 'cpx'),
-        'cor': (isceobj.createImage, 1, 'FLOAT', 'cor'),
-        'unw': (isceobj.Image.createUnwImage, 2, 'FLOAT', 'unw'),
-        'conncomp': (isceobj.createImage, 1, 'BYTE', ''),
-        'default': (isceobj.createImage, 1, 'FLOAT', ''),
+        "ifg": (isceobj.createIntImage, 1, "CFLOAT", "cpx"),
+        "cor": (isceobj.createImage, 1, "FLOAT", "cor"),
+        "unw": (isceobj.Image.createUnwImage, 2, "FLOAT", "unw"),
+        "conncomp": (isceobj.createImage, 1, "BYTE", ""),
+        "default": (isceobj.createImage, 1, "FLOAT", ""),
     }
 
     create_func, bands, dtype, image_type = opts[image_subtype]
     image = create_func()
-    if action == 'load':
-        image.load(out_path + '.xml')
-        image.setAccessMode('read')
+    if action == "load":
+        image.load(out_path + ".xml")
+        image.setAccessMode("read")
         image.createImage()
         return image
 
     if width is None:
-        raise ValueError('Width must be specified when the action is create or finalize')
+        raise ValueError(
+            "Width must be specified when the action is create or finalize"
+        )
 
     image.initImage(out_path, access_mode, width, dtype, bands)
     image.setImageType(image_type)
-    if action == 'create':
+    if action == "create":
         image.createImage()
-    elif action == 'finalize':
+    elif action == "finalize":
         image.renderVRT()
         image.createImage()
         image.finalizeImage()
@@ -435,8 +471,8 @@ def read_product_metadata(meta_file_path: str) -> dict:
     hyp3_meta = {}
     with open(meta_file_path) as f:
         for line in f:
-            key, *values = line.strip().replace(' ', '').split(':')
-            value = ':'.join(values)
+            key, *values = line.strip().replace(" ", "").split(":")
+            value = ":".join(values)
             hyp3_meta[key] = value
     return hyp3_meta
 
@@ -444,4 +480,4 @@ def read_product_metadata(meta_file_path: str) -> dict:
 def get_projection(srs_wkt) -> str:
     srs = osr.SpatialReference()
     srs.ImportFromWkt(srs_wkt)
-    return srs.GetAttrValue('projcs')
+    return srs.GetAttrValue("projcs")

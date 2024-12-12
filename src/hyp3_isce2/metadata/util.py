@@ -3,8 +3,8 @@ from jinja2 import Environment, PackageLoader, StrictUndefined, select_autoescap
 
 def get_environment() -> Environment:
     env = Environment(
-        loader=PackageLoader('hyp3_isce2.metadata', 'templates'),
-        autoescape=select_autoescape(['html.j2', 'xml.j2']),
+        loader=PackageLoader("hyp3_isce2.metadata", "templates"),
+        autoescape=select_autoescape(["html.j2", "xml.j2"]),
         undefined=StrictUndefined,
         trim_blocks=True,
         lstrip_blocks=True,

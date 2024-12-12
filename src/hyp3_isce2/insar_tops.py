@@ -14,7 +14,12 @@ from hyp3_isce2 import packaging, slc, topsapp
 from hyp3_isce2.dem import download_dem_for_isce2
 from hyp3_isce2.logger import configure_root_logger
 from hyp3_isce2.s1_auxcal import download_aux_cal
-from hyp3_isce2.utils import image_math, isce2_copy, make_browse_image, resample_to_radar_io
+from hyp3_isce2.utils import (
+    image_math,
+    isce2_copy,
+    make_browse_image,
+    resample_to_radar_io,
+)
 from hyp3_isce2.water_mask import create_water_mask
 
 
@@ -25,7 +30,7 @@ def insar_tops(
     reference_scene: str,
     secondary_scene: str,
     swaths: list = [1, 2, 3],
-    polarization: str = 'VV',
+    polarization: str = "VV",
     azimuth_looks: int = 4,
     range_looks: int = 20,
     apply_water_mask: bool = False,
@@ -44,28 +49,28 @@ def insar_tops(
     Returns:
         Path to the output files
     """
-    orbit_dir = Path('orbits')
-    aux_cal_dir = Path('aux_cal')
-    dem_dir = Path('dem')
+    orbit_dir = Path("orbits")
+    aux_cal_dir = Path("aux_cal")
+    dem_dir = Path("dem")
 
     ref_dir = slc.get_granule(reference_scene)
     sec_dir = slc.get_granule(secondary_scene)
 
     roi = slc.get_dem_bounds(ref_dir, sec_dir)
-    log.info(f'DEM ROI: {roi}')
+    log.info(f"DEM ROI: {roi}")
 
-    dem_path = download_dem_for_isce2(roi, dem_name='glo_30', dem_dir=dem_dir, buffer=0)
+    dem_path = download_dem_for_isce2(roi, dem_name="glo_30", dem_dir=dem_dir, buffer=0)
     download_aux_cal(aux_cal_dir)
 
     orbit_dir.mkdir(exist_ok=True, parents=True)
     for granule in (reference_scene, secondary_scene):
-        log.info(f'Downloading orbit file for {granule}')
+        log.info(f"Downloading orbit file for {granule}")
         orbit_file = fetch_for_scene(granule, dir=orbit_dir)
-        log.info(f'Got orbit file {orbit_file} from s1_orbits')
+        log.info(f"Got orbit file {orbit_file} from s1_orbits")
 
     config = topsapp.TopsappConfig(
-        reference_safe=f'{reference_scene}.SAFE',
-        secondary_safe=f'{secondary_scene}.SAFE',
+        reference_safe=f"{reference_scene}.SAFE",
+        secondary_safe=f"{secondary_scene}.SAFE",
         polarization=polarization,
         orbit_directory=str(orbit_dir),
         aux_cal_directory=str(aux_cal_dir),
@@ -76,37 +81,54 @@ def insar_tops(
         azimuth_looks=azimuth_looks,
         range_looks=range_looks,
     )
-    config_path = config.write_template('topsApp.xml')
+    config_path = config.write_template("topsApp.xml")
 
     if apply_water_mask:
-        topsapp.run_topsapp(start='startup', end='filter', config_xml=config_path)
-        water_mask_path = 'water_mask.wgs84'
+        topsapp.run_topsapp(start="startup", end="filter", config_xml=config_path)
+        water_mask_path = "water_mask.wgs84"
         create_water_mask(str(dem_path), water_mask_path)
-        multilook('merged/lon.rdr.full', outname='merged/lon.rdr', alks=azimuth_looks, rlks=range_looks)
-        multilook('merged/lat.rdr.full', outname='merged/lat.rdr', alks=azimuth_looks, rlks=range_looks)
-        resample_to_radar_io(water_mask_path, 'merged/lat.rdr', 'merged/lon.rdr', 'merged/water_mask.rdr')
-        isce2_copy('merged/phsig.cor', 'merged/unmasked.phsig.cor')
-        image_math('merged/unmasked.phsig.cor', 'merged/water_mask.rdr', 'merged/phsig.cor', 'a*b')
-        topsapp.run_topsapp(start='unwrap', end='unwrap2stage', config_xml=config_path)
-        isce2_copy('merged/unmasked.phsig.cor', 'merged/phsig.cor')
+        multilook(
+            "merged/lon.rdr.full",
+            outname="merged/lon.rdr",
+            alks=azimuth_looks,
+            rlks=range_looks,
+        )
+        multilook(
+            "merged/lat.rdr.full",
+            outname="merged/lat.rdr",
+            alks=azimuth_looks,
+            rlks=range_looks,
+        )
+        resample_to_radar_io(
+            water_mask_path, "merged/lat.rdr", "merged/lon.rdr", "merged/water_mask.rdr"
+        )
+        isce2_copy("merged/phsig.cor", "merged/unmasked.phsig.cor")
+        image_math(
+            "merged/unmasked.phsig.cor",
+            "merged/water_mask.rdr",
+            "merged/phsig.cor",
+            "a*b",
+        )
+        topsapp.run_topsapp(start="unwrap", end="unwrap2stage", config_xml=config_path)
+        isce2_copy("merged/unmasked.phsig.cor", "merged/phsig.cor")
     else:
-        topsapp.run_topsapp(start='startup', end='unwrap2stage', config_xml=config_path)
-    copyfile('merged/z.rdr.full.xml', 'merged/z.rdr.full.vrt.xml')
-    topsapp.run_topsapp(start='geocode', end='geocode', config_xml=config_path)
+        topsapp.run_topsapp(start="startup", end="unwrap2stage", config_xml=config_path)
+    copyfile("merged/z.rdr.full.xml", "merged/z.rdr.full.vrt.xml")
+    topsapp.run_topsapp(start="geocode", end="geocode", config_xml=config_path)
 
-    return Path('merged')
+    return Path("merged")
 
 
 def insar_tops_packaged(
     reference: str,
     secondary: str,
     swaths: list = [1, 2, 3],
-    polarization: str = 'VV',
+    polarization: str = "VV",
     azimuth_looks: int = 4,
     range_looks: int = 20,
     apply_water_mask: bool = True,
     bucket: str = None,
-    bucket_prefix: str = '',
+    bucket_prefix: str = "",
 ) -> Path:
     """Create a full-SLC interferogram
 
@@ -124,9 +146,9 @@ def insar_tops_packaged(
     Returns:
         Path to the output files
     """
-    pixel_size = packaging.get_pixel_size(f'{range_looks}x{azimuth_looks}')
+    pixel_size = packaging.get_pixel_size(f"{range_looks}x{azimuth_looks}")
 
-    log.info('Begin ISCE2 TopsApp run')
+    log.info("Begin ISCE2 TopsApp run")
 
     insar_tops(
         reference_scene=reference,
@@ -138,10 +160,14 @@ def insar_tops_packaged(
         apply_water_mask=apply_water_mask,
     )
 
-    log.info('ISCE2 TopsApp run completed successfully')
+    log.info("ISCE2 TopsApp run completed successfully")
 
     product_name = packaging.get_product_name(
-        reference, secondary, pixel_spacing=int(pixel_size), polarization=polarization, slc=True
+        reference,
+        secondary,
+        pixel_spacing=int(pixel_size),
+        polarization=polarization,
+        slc=True,
     )
 
     product_dir = Path(product_name)
@@ -149,11 +175,13 @@ def insar_tops_packaged(
 
     packaging.translate_outputs(product_name, pixel_size=pixel_size)
 
-    unwrapped_phase = f'{product_name}/{product_name}_unw_phase.tif'
+    unwrapped_phase = f"{product_name}/{product_name}_unw_phase.tif"
     if apply_water_mask:
-        packaging.water_mask(unwrapped_phase, f'{product_name}/{product_name}_water_mask.tif')
+        packaging.water_mask(
+            unwrapped_phase, f"{product_name}/{product_name}_water_mask.tif"
+        )
 
-    make_browse_image(unwrapped_phase, f'{product_name}/{product_name}_unw_phase.png')
+    make_browse_image(unwrapped_phase, f"{product_name}/{product_name}_unw_phase.png")
     packaging.make_readme(
         product_dir=product_dir,
         product_name=product_name,
@@ -164,43 +192,56 @@ def insar_tops_packaged(
         apply_water_mask=apply_water_mask,
     )
     packaging.make_parameter_file(
-        Path(f'{product_name}/{product_name}.txt'),
+        Path(f"{product_name}/{product_name}.txt"),
         reference_scene=reference,
         secondary_scene=secondary,
         azimuth_looks=azimuth_looks,
         range_looks=range_looks,
         apply_water_mask=apply_water_mask,
     )
-    output_zip = make_archive(base_name=product_name, format='zip', base_dir=product_name)
+    output_zip = make_archive(
+        base_name=product_name, format="zip", base_dir=product_name
+    )
     if bucket:
         packaging.upload_product_to_s3(product_dir, output_zip, bucket, bucket_prefix)
 
 
 def main():
     """HyP3 entrypoint for the SLC TOPS workflow"""
-    parser = argparse.ArgumentParser(description=__doc__, formatter_class=argparse.ArgumentDefaultsHelpFormatter)
-    parser.add_argument('--reference', type=str, help='Reference granule')
-    parser.add_argument('--secondary', type=str, help='Secondary granule')
-    parser.add_argument('--polarization', type=str, default='VV', help='Polarization to use')
+    parser = argparse.ArgumentParser(
+        description=__doc__, formatter_class=argparse.ArgumentDefaultsHelpFormatter
+    )
+    parser.add_argument("--reference", type=str, help="Reference granule")
+    parser.add_argument("--secondary", type=str, help="Secondary granule")
     parser.add_argument(
-        '--looks', choices=['20x4', '10x2', '5x1'], default='20x4', help='Number of looks to take in range and azimuth'
+        "--polarization", type=str, default="VV", help="Polarization to use"
     )
     parser.add_argument(
-        '--apply-water-mask',
+        "--looks",
+        choices=["20x4", "10x2", "5x1"],
+        default="20x4",
+        help="Number of looks to take in range and azimuth",
+    )
+    parser.add_argument(
+        "--apply-water-mask",
         type=string_is_true,
         default=False,
-        help='Apply a water body mask before unwrapping.',
+        help="Apply a water body mask before unwrapping.",
     )
-    parser.add_argument('--bucket', help='AWS S3 bucket HyP3 for upload the final product(s)')
-    parser.add_argument('--bucket-prefix', default='', help='Add a bucket prefix to product(s)')
+    parser.add_argument(
+        "--bucket", help="AWS S3 bucket HyP3 for upload the final product(s)"
+    )
+    parser.add_argument(
+        "--bucket-prefix", default="", help="Add a bucket prefix to product(s)"
+    )
 
     args = parser.parse_args()
     configure_root_logger()
-    log.debug(' '.join(sys.argv))
+    log.debug(" ".join(sys.argv))
 
-    range_looks, azimuth_looks = [int(looks) for looks in args.looks.split('x')]
-    if args.polarization not in ['VV', 'VH', 'HV', 'HH']:
-        raise ValueError('Polarization must be one of VV, VH, HV, or HH')
+    range_looks, azimuth_looks = [int(looks) for looks in args.looks.split("x")]
+    if args.polarization not in ["VV", "VH", "HV", "HH"]:
+        raise ValueError("Polarization must be one of VV, VH, HV, or HH")
 
     insar_tops_packaged(
         reference=args.reference,
@@ -213,4 +254,4 @@ def main():
         bucket_prefix=args.bucket_prefix,
     )
 
-    log.info('ISCE2 TopsApp run completed successfully')
+    log.info("ISCE2 TopsApp run completed successfully")

@@ -4,48 +4,48 @@ from typing import Union
 from isce.applications.stripmapApp import Insar
 from jinja2 import Template
 
-TEMPLATE_DIR = Path(__file__).parent / 'templates'
+TEMPLATE_DIR = Path(__file__).parent / "templates"
 
 STRIPMAPAPP_STEPS = [
-    'startup',
-    'preprocess',
-    'cropraw',
-    'formslc',
-    'cropslc',
-    'verifyDEM',
-    'topo',
-    'geo2rdr',
-    'coarse_resample',
-    'misregistration',
-    'refined_resample',
-    'dense_offsets',
-    'rubber_sheet_range',
-    'rubber_sheet_azimuth',
-    'fine_resample',
-    'split_range_spectrum',
-    'sub_band_resample',
-    'interferogram',
-    'sub_band_interferogram',
-    'filter',
-    'filter_low_band',
-    'filter_high_band',
-    'unwrap',
-    'unwrap_low_band',
-    'unwrap_high_band',
-    'ionosphere',
-    'geocode',
-    'geocodeoffsets',
-    'endup'
+    "startup",
+    "preprocess",
+    "cropraw",
+    "formslc",
+    "cropslc",
+    "verifyDEM",
+    "topo",
+    "geo2rdr",
+    "coarse_resample",
+    "misregistration",
+    "refined_resample",
+    "dense_offsets",
+    "rubber_sheet_range",
+    "rubber_sheet_azimuth",
+    "fine_resample",
+    "split_range_spectrum",
+    "sub_band_resample",
+    "interferogram",
+    "sub_band_interferogram",
+    "filter",
+    "filter_low_band",
+    "filter_high_band",
+    "unwrap",
+    "unwrap_low_band",
+    "unwrap_high_band",
+    "ionosphere",
+    "geocode",
+    "geocodeoffsets",
+    "endup",
 ]
 
 STRIPMAPAPP_GEOCODE_LIST = [
-    'interferogram/phsig.cor',
-    'interferogram/filt_topophase.unw',
-    'interferogram/los.rdr',
-    'interferogram/topophase.flat',
-    'interferogram/filt_topophase.flat',
-    'interferogram/topophase.cor',
-    'interferogram/filt_topophase.unw.conncomp',
+    "interferogram/phsig.cor",
+    "interferogram/filt_topophase.unw",
+    "interferogram/los.rdr",
+    "interferogram/topophase.flat",
+    "interferogram/filt_topophase.flat",
+    "interferogram/topophase.cor",
+    "interferogram/filt_topophase.unw.conncomp",
 ]
 
 
@@ -86,11 +86,11 @@ class StripmapappConfig:
         Returns:
             The rendered template
         """
-        with open(TEMPLATE_DIR / 'stripmapapp_alos.xml', 'r') as file:
+        with open(TEMPLATE_DIR / "stripmapapp_alos.xml", "r") as file:
             template = Template(file.read())
         return template.render(self.__dict__)
 
-    def write_template(self, filename: Union[str, Path] = 'stripmapApp.xml') -> Path:
+    def write_template(self, filename: Union[str, Path] = "stripmapApp.xml") -> Path:
         """Write the topsApp.py jinja2 template to a file
 
         Args:
@@ -101,13 +101,18 @@ class StripmapappConfig:
         if not isinstance(filename, Path):
             filename = Path(filename)
 
-        with open(filename, 'w') as file:
+        with open(filename, "w") as file:
             file.write(self.generate_template())
 
         return filename
 
 
-def run_stripmapapp(dostep: str = '', start: str = '', end: str = '', config_xml: Path = Path('stripmapApp.xml')):
+def run_stripmapapp(
+    dostep: str = "",
+    start: str = "",
+    end: str = "",
+    config_xml: Path = Path("stripmapApp.xml"),
+):
     """Run topsApp.py for a burst pair with the desired steps and config file
 
     Args:
@@ -122,25 +127,25 @@ def run_stripmapapp(dostep: str = '', start: str = '', end: str = '', config_xml
         ValueError: If the step is not a valid step (see TOPSAPP_STEPS)
     """
     if not config_xml.exists():
-        raise IOError(f'The config file {config_xml} does not exist!')
+        raise IOError(f"The config file {config_xml} does not exist!")
 
     if dostep and (start or end):
-        raise ValueError('If dostep is specified, start and stop cannot be used')
+        raise ValueError("If dostep is specified, start and stop cannot be used")
 
     step_args = []
     options = {
-        'dostep': dostep,
-        'start': start,
-        'end': end,
+        "dostep": dostep,
+        "start": start,
+        "end": end,
     }
     for key, value in options.items():
         if not value:
             continue
         if value not in STRIPMAPAPP_STEPS:
-            raise ValueError(f'{value} is not a valid step')
-        step_args.append(f'--{key}={value}')
+            raise ValueError(f"{value} is not a valid step")
+        step_args.append(f"--{key}={value}")
 
     cmd_line = [str(config_xml)] + step_args
-    insar = Insar(name='stripmapApp', cmdline=cmd_line)
+    insar = Insar(name="stripmapApp", cmdline=cmd_line)
     insar.configure()
     insar.run()

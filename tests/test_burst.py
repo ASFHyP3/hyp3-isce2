@@ -1,4 +1,5 @@
 """Tests for the single-burst specific functionality found in burst.py"""
+
 from collections import namedtuple
 from datetime import datetime
 from pathlib import Path
@@ -13,15 +14,35 @@ from shapely import geometry
 from hyp3_isce2 import burst, utils
 
 
-URL_BASE = 'https://datapool.asf.alaska.edu/SLC'
-REF_DESC = burst.BurstParams('S1A_IW_SLC__1SDV_20200604T022251_20200604T022318_032861_03CE65_7C85', 'IW2', 'VV', 3)
-SEC_DESC = burst.BurstParams('S1A_IW_SLC__1SDV_20200616T022252_20200616T022319_033036_03D3A3_5D11', 'IW2', 'VV', 3)
-REF_ASC = burst.BurstParams('S1A_IW_SLC__1SDV_20200608T142544_20200608T142610_032927_03D069_14F4', 'IW1', 'VV', 1)
-SEC_ASC = burst.BurstParams('S1A_IW_SLC__1SDV_20200620T142544_20200620T142611_033102_03D5B7_8F1B', 'IW1', 'VV', 1)
+URL_BASE = "https://datapool.asf.alaska.edu/SLC"
+REF_DESC = burst.BurstParams(
+    "S1A_IW_SLC__1SDV_20200604T022251_20200604T022318_032861_03CE65_7C85",
+    "IW2",
+    "VV",
+    3,
+)
+SEC_DESC = burst.BurstParams(
+    "S1A_IW_SLC__1SDV_20200616T022252_20200616T022319_033036_03D3A3_5D11",
+    "IW2",
+    "VV",
+    3,
+)
+REF_ASC = burst.BurstParams(
+    "S1A_IW_SLC__1SDV_20200608T142544_20200608T142610_032927_03D069_14F4",
+    "IW1",
+    "VV",
+    1,
+)
+SEC_ASC = burst.BurstParams(
+    "S1A_IW_SLC__1SDV_20200620T142544_20200620T142611_033102_03D5B7_8F1B",
+    "IW1",
+    "VV",
+    1,
+)
 
 
 def load_metadata(metadata):
-    metadata_path = Path(__file__).parent.absolute() / 'data' / metadata
+    metadata_path = Path(__file__).parent.absolute() / "data" / metadata
     xml = etree.parse(metadata_path).getroot()
     return xml
 
@@ -36,30 +57,32 @@ def make_test_image(output_path, array=None):
         array[10:90, 10:90] = 1
 
     array = array.astype(np.float32)
-    img_obj = utils.create_image(output_path, array.shape[1], access_mode='write', action='create')
+    img_obj = utils.create_image(
+        output_path, array.shape[1], access_mode="write", action="create"
+    )
     utils.write_isce2_image_from_obj(img_obj, array)
 
 
 @pytest.mark.parametrize(
-    'pattern',
+    "pattern",
     (
-        '*SAFE',
-        '*SAFE/annotation/*xml',
-        '*SAFE/annotation/calibration/calibration*xml',
-        '*SAFE/annotation/calibration/noise*xml',
-        '*SAFE/measurement/*tiff',
+        "*SAFE",
+        "*SAFE/annotation/*xml",
+        "*SAFE/annotation/calibration/calibration*xml",
+        "*SAFE/annotation/calibration/noise*xml",
+        "*SAFE/measurement/*tiff",
     ),
 )
 def test_spoof_safe(tmp_path, mocker, pattern):
-    mock_tiff = tmp_path / 'test.tiff'
+    mock_tiff = tmp_path / "test.tiff"
     mock_tiff.touch()
 
-    ref_burst = burst.BurstMetadata(load_metadata('reference_descending.xml'), REF_DESC)
+    ref_burst = burst.BurstMetadata(load_metadata("reference_descending.xml"), REF_DESC)
     burst.spoof_safe(ref_burst, mock_tiff, tmp_path)
     assert len(list(tmp_path.glob(pattern))) == 1
 
 
-@pytest.mark.parametrize('orbit', ('ascending', 'descending'))
+@pytest.mark.parametrize("orbit", ("ascending", "descending"))
 def test_get_region_of_interest(tmp_path, orbit):
     """
     Test that the region of interest is correctly calculated for a given burst pair.
@@ -78,14 +101,16 @@ def test_get_region_of_interest(tmp_path, orbit):
     +---------------+
     The diagram for an ascending orbit is the same, but rotated 180 degrees.
     """
-    options = {'descending': [REF_DESC, SEC_DESC], 'ascending': [REF_ASC, SEC_ASC]}
+    options = {"descending": [REF_DESC, SEC_DESC], "ascending": [REF_ASC, SEC_ASC]}
 
     params = options[orbit]
 
-    for param, name in zip(params, ('reference', 'secondary')):
-        mock_tiff = tmp_path / 'test.tiff'
+    for param, name in zip(params, ("reference", "secondary")):
+        mock_tiff = tmp_path / "test.tiff"
         mock_tiff.touch()
-        burst_metadata = burst.BurstMetadata(load_metadata(f'{name}_{orbit}.xml'), param)
+        burst_metadata = burst.BurstMetadata(
+            load_metadata(f"{name}_{orbit}.xml"), param
+        )
         burst.spoof_safe(burst_metadata, mock_tiff, tmp_path)
 
     sec_bbox = burst.get_isce2_burst_bbox(params[1], tmp_path)
@@ -94,11 +119,17 @@ def test_get_region_of_interest(tmp_path, orbit):
     burst_number = params[0].burst_number
     swath = params[0].swath
     pol = params[0].polarization
-    ref_bbox_pre = burst.get_isce2_burst_bbox(burst.BurstParams(granule, swath, pol, burst_number - 1), tmp_path)
-    ref_bbox_on = burst.get_isce2_burst_bbox(burst.BurstParams(granule, swath, pol, burst_number), tmp_path)
-    ref_bbox_post = burst.get_isce2_burst_bbox(burst.BurstParams(granule, swath, pol, burst_number + 1), tmp_path)
+    ref_bbox_pre = burst.get_isce2_burst_bbox(
+        burst.BurstParams(granule, swath, pol, burst_number - 1), tmp_path
+    )
+    ref_bbox_on = burst.get_isce2_burst_bbox(
+        burst.BurstParams(granule, swath, pol, burst_number), tmp_path
+    )
+    ref_bbox_post = burst.get_isce2_burst_bbox(
+        burst.BurstParams(granule, swath, pol, burst_number + 1), tmp_path
+    )
 
-    asc = orbit == 'ascending'
+    asc = orbit == "ascending"
     roi = geometry.box(*burst.get_region_of_interest(ref_bbox_on, sec_bbox, asc))
 
     assert not roi.intersects(ref_bbox_pre)
@@ -110,11 +141,11 @@ def mock_asf_search_results(
     slc_name: str, subswath: str, polarization: str, burst_index: int
 ) -> asf_search.ASFSearchResults:
     product = asf_search.ASFProduct()
-    product.umm = {'InputGranules': [slc_name]}
+    product.umm = {"InputGranules": [slc_name]}
     product.properties.update(
         {
-            'burst': {'subswath': subswath, 'burstIndex': burst_index},
-            'polarization': polarization,
+            "burst": {"subswath": subswath, "burstIndex": burst_index},
+            "polarization": polarization,
         }
     )
     results = asf_search.ASFSearchResults([product])
@@ -123,118 +154,161 @@ def mock_asf_search_results(
 
 
 def test_get_burst_params_08F8():
-    with patch.object(asf_search, 'search') as mock_search:
+    with patch.object(asf_search, "search") as mock_search:
         mock_search.return_value = mock_asf_search_results(
-            slc_name='S1A_IW_SLC__1SDV_20230526T190821_20230526T190847_048709_05DBA8_08F8-SLC',
-            subswath='IW3',
-            polarization='VV',
+            slc_name="S1A_IW_SLC__1SDV_20230526T190821_20230526T190847_048709_05DBA8_08F8-SLC",
+            subswath="IW3",
+            polarization="VV",
             burst_index=8,
         )
-        assert burst.get_burst_params('S1_346041_IW3_20230526T190843_VV_08F8-BURST') == burst.BurstParams(
-            granule='S1A_IW_SLC__1SDV_20230526T190821_20230526T190847_048709_05DBA8_08F8',
-            swath='IW3',
-            polarization='VV',
+        assert burst.get_burst_params(
+            "S1_346041_IW3_20230526T190843_VV_08F8-BURST"
+        ) == burst.BurstParams(
+            granule="S1A_IW_SLC__1SDV_20230526T190821_20230526T190847_048709_05DBA8_08F8",
+            swath="IW3",
+            polarization="VV",
             burst_number=8,
         )
-        mock_search.assert_called_once_with(product_list=['S1_346041_IW3_20230526T190843_VV_08F8-BURST'])
+        mock_search.assert_called_once_with(
+            product_list=["S1_346041_IW3_20230526T190843_VV_08F8-BURST"]
+        )
 
 
 def test_get_burst_params_1B3B():
-    with patch.object(asf_search, 'search') as mock_search:
+    with patch.object(asf_search, "search") as mock_search:
         mock_search.return_value = mock_asf_search_results(
-            slc_name='S1A_EW_SLC__1SDH_20230526T143200_20230526T143303_048706_05DB92_1B3B-SLC',
-            subswath='EW5',
-            polarization='HH',
+            slc_name="S1A_EW_SLC__1SDH_20230526T143200_20230526T143303_048706_05DB92_1B3B-SLC",
+            subswath="EW5",
+            polarization="HH",
             burst_index=19,
         )
-        assert burst.get_burst_params('S1_308695_EW5_20230526T143259_HH_1B3B-BURST') == burst.BurstParams(
-            granule='S1A_EW_SLC__1SDH_20230526T143200_20230526T143303_048706_05DB92_1B3B',
-            swath='EW5',
-            polarization='HH',
+        assert burst.get_burst_params(
+            "S1_308695_EW5_20230526T143259_HH_1B3B-BURST"
+        ) == burst.BurstParams(
+            granule="S1A_EW_SLC__1SDH_20230526T143200_20230526T143303_048706_05DB92_1B3B",
+            swath="EW5",
+            polarization="HH",
             burst_number=19,
         )
-        mock_search.assert_called_with(product_list=['S1_308695_EW5_20230526T143259_HH_1B3B-BURST'])
+        mock_search.assert_called_with(
+            product_list=["S1_308695_EW5_20230526T143259_HH_1B3B-BURST"]
+        )
 
 
 def test_get_burst_params_burst_does_not_exist():
-    with patch.object(asf_search, 'search') as mock_search:
+    with patch.object(asf_search, "search") as mock_search:
         mock_search.return_value = []
-        with pytest.raises(ValueError, match=r'.*failed to find.*'):
-            burst.get_burst_params('this burst does not exist')
-        mock_search.assert_called_once_with(product_list=['this burst does not exist'])
+        with pytest.raises(ValueError, match=r".*failed to find.*"):
+            burst.get_burst_params("this burst does not exist")
+        mock_search.assert_called_once_with(product_list=["this burst does not exist"])
 
 
 def test_get_burst_params_multiple_results():
-    with patch.object(asf_search, 'search') as mock_search:
-        mock_search.return_value = ['foo', 'bar']
-        with pytest.raises(ValueError, match=r'.*found multiple results.*'):
-            burst.get_burst_params('there are multiple copies of this burst')
-        mock_search.assert_called_once_with(product_list=['there are multiple copies of this burst'])
+    with patch.object(asf_search, "search") as mock_search:
+        mock_search.return_value = ["foo", "bar"]
+        with pytest.raises(ValueError, match=r".*found multiple results.*"):
+            burst.get_burst_params("there are multiple copies of this burst")
+        mock_search.assert_called_once_with(
+            product_list=["there are multiple copies of this burst"]
+        )
 
 
 def test_validate_bursts():
-    burst.validate_bursts('S1_000000_IW1_20200101T000000_VV_0000-BURST', 'S1_000000_IW1_20200201T000000_VV_0000-BURST')
     burst.validate_bursts(
-        ['S1_000000_IW1_20200101T000000_VV_0000-BURST', 'S1_000001_IW1_20200101T000001_VV_0000-BURST'],
-        ['S1_000000_IW1_20200201T000000_VV_0000-BURST', 'S1_000001_IW1_20200201T000001_VV_0000-BURST'],
+        "S1_000000_IW1_20200101T000000_VV_0000-BURST",
+        "S1_000000_IW1_20200201T000000_VV_0000-BURST",
+    )
+    burst.validate_bursts(
+        [
+            "S1_000000_IW1_20200101T000000_VV_0000-BURST",
+            "S1_000001_IW1_20200101T000001_VV_0000-BURST",
+        ],
+        [
+            "S1_000000_IW1_20200201T000000_VV_0000-BURST",
+            "S1_000001_IW1_20200201T000001_VV_0000-BURST",
+        ],
     )
 
-    with pytest.raises(ValueError, match=r'Must include at least 1.*'):
-        burst.validate_bursts(['a'], [])
+    with pytest.raises(ValueError, match=r"Must include at least 1.*"):
+        burst.validate_bursts(["a"], [])
 
-    with pytest.raises(ValueError, match=r'Must have the same number.*'):
-        burst.validate_bursts(['a', 'b'], ['c'])
+    with pytest.raises(ValueError, match=r"Must have the same number.*"):
+        burst.validate_bursts(["a", "b"], ["c"])
 
-    with pytest.raises(ValueError, match=r'.*burst ID sets do not match.*'):
+    with pytest.raises(ValueError, match=r".*burst ID sets do not match.*"):
         burst.validate_bursts(
-            ['S1_000000_IW1_20200101T000000_VV_0000-BURST'], ['S1_000000_IW2_20200201T000000_VV_0000-BURST']
+            ["S1_000000_IW1_20200101T000000_VV_0000-BURST"],
+            ["S1_000000_IW2_20200201T000000_VV_0000-BURST"],
         )
 
-    with pytest.raises(ValueError, match=r'.*must have a single polarization.*'):
+    with pytest.raises(ValueError, match=r".*must have a single polarization.*"):
         burst.validate_bursts(
-            ['S1_000000_IW1_20200101T000000_VV_0000-BURST', 'S1_000000_IW1_20200101T000000_VH_0000-BURST'],
-            ['S1_000000_IW1_20200201T000000_VV_0000-BURST', 'S1_000000_IW1_20200201T000000_VH_0000-BURST'],
+            [
+                "S1_000000_IW1_20200101T000000_VV_0000-BURST",
+                "S1_000000_IW1_20200101T000000_VH_0000-BURST",
+            ],
+            [
+                "S1_000000_IW1_20200201T000000_VV_0000-BURST",
+                "S1_000000_IW1_20200201T000000_VH_0000-BURST",
+            ],
         )
 
-    with pytest.raises(ValueError, match=r'.*polarization is not currently supported.*'):
+    with pytest.raises(
+        ValueError, match=r".*polarization is not currently supported.*"
+    ):
         burst.validate_bursts(
-            ['S1_000000_IW1_20200101T000000_VH_0000-BURST', 'S1_000000_IW1_20200101T000000_VH_0000-BURST'],
-            ['S1_000000_IW1_20200201T000000_VH_0000-BURST', 'S1_000000_IW1_20200201T000000_VH_0000-BURST'],
+            [
+                "S1_000000_IW1_20200101T000000_VH_0000-BURST",
+                "S1_000000_IW1_20200101T000000_VH_0000-BURST",
+            ],
+            [
+                "S1_000000_IW1_20200201T000000_VH_0000-BURST",
+                "S1_000000_IW1_20200201T000000_VH_0000-BURST",
+            ],
         )
 
-    with pytest.raises(ValueError, match=r'.*must be from one date.*'):
+    with pytest.raises(ValueError, match=r".*must be from one date.*"):
         burst.validate_bursts(
-            ['S1_000000_IW1_20200101T000000_VV_0000-BURST', 'S1_000001_IW1_20200101T000000_VV_0000-BURST'],
-            ['S1_000000_IW1_20200201T000000_VV_0000-BURST', 'S1_000001_IW1_20200202T000000_VV_0000-BURST'],
+            [
+                "S1_000000_IW1_20200101T000000_VV_0000-BURST",
+                "S1_000001_IW1_20200101T000000_VV_0000-BURST",
+            ],
+            [
+                "S1_000000_IW1_20200201T000000_VV_0000-BURST",
+                "S1_000001_IW1_20200202T000000_VV_0000-BURST",
+            ],
         )
 
-    with pytest.raises(ValueError, match=r'Reference granules must be older.*'):
+    with pytest.raises(ValueError, match=r"Reference granules must be older.*"):
         burst.validate_bursts(
-            'S1_000000_IW1_20200201T000000_VV_0000-BURST', 'S1_000000_IW1_20200101T000000_VV_0000-BURST'
+            "S1_000000_IW1_20200201T000000_VV_0000-BURST",
+            "S1_000000_IW1_20200101T000000_VV_0000-BURST",
         )
 
 
 def test_load_burst_position(tmpdir):
-    product = namedtuple('product', ['bursts'])
+    product = namedtuple("product", ["bursts"])
     bursts = namedtuple(
-        'bursts',
+        "bursts",
         [
-            'numberOfLines',
-            'numberOfSamples',
-            'firstValidLine',
-            'numValidLines',
-            'firstValidSample',
-            'numValidSamples',
-            'azimuthTimeInterval',
-            'rangePixelSize',
-            'sensingStop',
+            "numberOfLines",
+            "numberOfSamples",
+            "firstValidLine",
+            "numValidLines",
+            "firstValidSample",
+            "numValidSamples",
+            "azimuthTimeInterval",
+            "rangePixelSize",
+            "sensingStop",
         ],
     )
 
-    mock_product = product([bursts(100, 200, 10, 50, 20, 60, 0.1, 0.2, datetime(2020, 1, 1))])
-    with patch('hyp3_isce2.burst.load_product') as mock_load_product:
+    mock_product = product(
+        [bursts(100, 200, 10, 50, 20, 60, 0.1, 0.2, datetime(2020, 1, 1))]
+    )
+    with patch("hyp3_isce2.burst.load_product") as mock_load_product:
         mock_load_product.return_value = mock_product
-        position = burst.load_burst_position('', 0)
+        position = burst.load_burst_position("", 0)
 
     assert position.n_lines == 100
     assert position.n_samples == 200
@@ -258,12 +332,14 @@ def test_evenize():
     assert valid_start == 5
     assert valid_length == 55
 
-    with pytest.raises(ValueError, match=r'.*valid data region.*'):
+    with pytest.raises(ValueError, match=r".*valid data region.*"):
         burst.evenize(20, 6, 20, 5)
 
 
 def test_evenly_subset_position():
-    input_pos = burst.BurstPosition(101, 101, 11, 20, 11, 20, 1, 1, datetime(2021, 1, 1, 0, 0, 0))
+    input_pos = burst.BurstPosition(
+        101, 101, 11, 20, 11, 20, 1, 1, datetime(2021, 1, 1, 0, 0, 0)
+    )
     ml_params = burst.evenly_subset_position(input_pos, 2, 10)
 
     assert ml_params.n_lines == 100
@@ -278,7 +354,9 @@ def test_evenly_subset_position():
 
 
 def test_multilook_position():
-    input_pos = burst.BurstPosition(100, 100, 20, 60, 20, 30, 1, 1, datetime(2021, 1, 1, 0, 0, 0))
+    input_pos = burst.BurstPosition(
+        100, 100, 20, 60, 20, 30, 1, 1, datetime(2021, 1, 1, 0, 0, 0)
+    )
     output_pos = burst.multilook_position(input_pos, 10, 2)
 
     assert output_pos.n_lines == 50
@@ -293,11 +371,13 @@ def test_multilook_position():
 
 
 def test_safely_multilook(tmpdir):
-    image_path = str(tmpdir / 'image')
+    image_path = str(tmpdir / "image")
     make_test_image(image_path)
-    pos = burst.BurstPosition(100, 100, 20, 60, 20, 60, 0.1, 0.1, datetime(2021, 1, 1, 0, 0, 0))
+    pos = burst.BurstPosition(
+        100, 100, 20, 60, 20, 60, 0.1, 0.1, datetime(2021, 1, 1, 0, 0, 0)
+    )
     burst.safely_multilook(image_path, pos, 5, 5)
-    _, multilooked_array = utils.load_isce2_image(f'{image_path}.multilooked')
+    _, multilooked_array = utils.load_isce2_image(f"{image_path}.multilooked")
     assert multilooked_array.shape == (20, 20)
 
     golden_array = np.zeros(multilooked_array.shape, dtype=np.float32)
@@ -307,23 +387,25 @@ def test_safely_multilook(tmpdir):
 
 def test_multilook_radar_merge_inputs(tmpdir):
     paths = [
-        'fine_interferogram/IW1/burst_01.int',
-        'geom_reference/IW1/lat_01.rdr',
-        'geom_reference/IW1/lon_01.rdr',
-        'geom_reference/IW1/los_01.rdr',
+        "fine_interferogram/IW1/burst_01.int",
+        "geom_reference/IW1/lat_01.rdr",
+        "geom_reference/IW1/lon_01.rdr",
+        "geom_reference/IW1/los_01.rdr",
     ]
     paths = [Path(tmpdir) / x for x in paths]
     for path in paths:
         make_test_image(str(path))
 
-    mock_position = burst.BurstPosition(100, 100, 20, 60, 20, 60, 0.1, 0.1, datetime(2021, 1, 1, 0, 0, 0))
-    with patch('hyp3_isce2.burst.load_burst_position') as mock_load_burst_position:
+    mock_position = burst.BurstPosition(
+        100, 100, 20, 60, 20, 60, 0.1, 0.1, datetime(2021, 1, 1, 0, 0, 0)
+    )
+    with patch("hyp3_isce2.burst.load_burst_position") as mock_load_burst_position:
         mock_load_burst_position.return_value = mock_position
         output = burst.multilook_radar_merge_inputs(1, 5, 2, base_dir=tmpdir)
 
     assert output.n_lines == 50
     assert output.n_samples == 20
 
-    multilooked = [x.parent / f'{x.stem}.multilooked{x.suffix}' for x in paths]
+    multilooked = [x.parent / f"{x.stem}.multilooked{x.suffix}" for x in paths]
     for file in multilooked:
         assert file.exists()

@@ -44,36 +44,38 @@ def insar_stripmap(reference_scene: str, secondary_scene: str) -> Path:
         processingLevel="L1.0",
     )
 
-    if products[0].properties['sceneName'] == reference_scene:
+    if products[0].properties["sceneName"] == reference_scene:
         reference_product = products[0]
         secondary_product = products[1]
     else:
         reference_product = products[1]
         secondary_product = products[0]
 
-    assert reference_product.properties['sceneName'] == reference_scene
-    assert secondary_product.properties['sceneName'] == secondary_scene
+    assert reference_product.properties["sceneName"] == reference_scene
+    assert secondary_product.properties["sceneName"] == secondary_scene
     products = (reference_product, secondary_product)
 
-    polygons = [Polygon(product.geometry['coordinates'][0]) for product in products]
+    polygons = [Polygon(product.geometry["coordinates"][0]) for product in products]
     insar_roi = polygons[0].intersection(polygons[1]).bounds
 
-    dem_path = download_dem_for_isce2(insar_roi, dem_name='glo_30', dem_dir=Path('dem'), buffer=0)
+    dem_path = download_dem_for_isce2(
+        insar_roi, dem_name="glo_30", dem_dir=Path("dem"), buffer=0
+    )
 
-    urls = [product.properties['url'] for product in products]
+    urls = [product.properties["url"] for product in products]
     asf_search.download_urls(urls=urls, path=os.getcwd(), processes=2)
 
-    zip_paths = [product.properties['fileName'] for product in products]
+    zip_paths = [product.properties["fileName"] for product in products]
     for zip_path in zip_paths:
-        with zipfile.ZipFile(zip_path, 'r') as zip_file:
+        with zipfile.ZipFile(zip_path, "r") as zip_file:
             zip_file.extractall()
         os.remove(zip_path)
 
-    reference_image = get_product_file(reference_product, 'IMG-')
-    reference_leader = get_product_file(reference_product, 'LED-')
+    reference_image = get_product_file(reference_product, "IMG-")
+    reference_leader = get_product_file(reference_product, "LED-")
 
-    secondary_image = get_product_file(secondary_product, 'IMG-')
-    secondary_leader = get_product_file(secondary_product, 'LED-')
+    secondary_image = get_product_file(secondary_product, "IMG-")
+    secondary_leader = get_product_file(secondary_product, "LED-")
 
     config = stripmapapp.StripmapappConfig(
         reference_image=reference_image,
@@ -83,55 +85,63 @@ def insar_stripmap(reference_scene: str, secondary_scene: str) -> Path:
         roi=insar_roi,
         dem_filename=str(dem_path),
     )
-    config_path = config.write_template('stripmapApp.xml')
+    config_path = config.write_template("stripmapApp.xml")
 
-    stripmapapp.run_stripmapapp(start='startup', end='geocode', config_xml=config_path)
+    stripmapapp.run_stripmapapp(start="startup", end="geocode", config_xml=config_path)
 
-    product_dir = Path(f'{reference_scene}x{secondary_scene}')
-    (product_dir / 'interferogram').mkdir(parents=True)
+    product_dir = Path(f"{reference_scene}x{secondary_scene}")
+    (product_dir / "interferogram").mkdir(parents=True)
 
-    for filename in os.listdir('interferogram'):
-        path = Path('interferogram') / filename
+    for filename in os.listdir("interferogram"):
+        path = Path("interferogram") / filename
         if os.path.isfile(path):
             shutil.move(path, product_dir / path)
 
-    shutil.move('geometry', product_dir)
-    shutil.move('ionosphere', product_dir)
+    shutil.move("geometry", product_dir)
+    shutil.move("ionosphere", product_dir)
 
     return product_dir
 
 
 def get_product_file(product: asf_search.ASFProduct, file_prefix: str) -> str:
-    paths = glob.glob(str(Path(product.properties['fileID']) / f'{file_prefix}*'))
+    paths = glob.glob(str(Path(product.properties["fileID"]) / f"{file_prefix}*"))
     assert len(paths) > 0
     return paths[0]
 
 
 def main():
-    """ Entrypoint for the stripmap workflow"""
+    """Entrypoint for the stripmap workflow"""
 
-    parser = argparse.ArgumentParser(description=__doc__, formatter_class=argparse.ArgumentDefaultsHelpFormatter)
+    parser = argparse.ArgumentParser(
+        description=__doc__, formatter_class=argparse.ArgumentDefaultsHelpFormatter
+    )
 
-    parser.add_argument('--bucket', help='AWS S3 bucket HyP3 for upload the final product(s)')
-    parser.add_argument('--bucket-prefix', default='', help='Add a bucket prefix to product(s)')
-    parser.add_argument('--reference', type=str, required=True)
-    parser.add_argument('--secondary', type=str, required=True)
+    parser.add_argument(
+        "--bucket", help="AWS S3 bucket HyP3 for upload the final product(s)"
+    )
+    parser.add_argument(
+        "--bucket-prefix", default="", help="Add a bucket prefix to product(s)"
+    )
+    parser.add_argument("--reference", type=str, required=True)
+    parser.add_argument("--secondary", type=str, required=True)
 
     args = parser.parse_args()
 
     configure_root_logger()
-    log.debug(' '.join(sys.argv))
+    log.debug(" ".join(sys.argv))
 
-    log.info('Begin InSAR Stripmap run')
+    log.info("Begin InSAR Stripmap run")
 
     product_dir = insar_stripmap(
         reference_scene=args.reference,
         secondary_scene=args.secondary,
     )
 
-    log.info('InSAR Stripmap run completed successfully')
+    log.info("InSAR Stripmap run completed successfully")
 
-    output_zip = make_archive(base_name=product_dir.name, format='zip', base_dir=product_dir)
+    output_zip = make_archive(
+        base_name=product_dir.name, format="zip", base_dir=product_dir
+    )
 
     if args.bucket:
         # TODO do we want browse images?
