@@ -300,9 +300,10 @@ class Sentinel1BurstSelect(Sentinel1):
             ind, isce2_burst = match[0]
 
             cropList.append(isce2_burst)
+            # mypy can't find the types for these inherited variables
             if len(self._tiffSrc): #type: ignore
                 tiffList.append(self._tiffSrc[ind]) #type: ignore
-            eapList.append(self._elevationAngleVsTau[ind])
+            eapList.append(self._elevationAngleVsTau[ind]) #type: ignore
 
         # Actual cropping
         self.product.bursts = cropList
