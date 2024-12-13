@@ -7,7 +7,7 @@ from concurrent.futures import ThreadPoolExecutor
 from dataclasses import dataclass
 from datetime import datetime, timedelta
 from pathlib import Path
-from typing import Iterator, List, Optional, Tuple
+from typing import Optional, Tuple
 
 import asf_search
 import numpy as np
@@ -147,11 +147,13 @@ def download_from_extractor(
     Returns:
         The downloaded content.
     """
-    burst_request_url = create_burst_request_url(burst_params, content_type=content_type)
+    burst_request_url = create_burst_request_url(
+        burst_params, content_type=content_type
+    )
     burst_request_cookies = {"asf-urs": asf_session.cookies["asf-urs"]}
 
     for i in range(1, 11):
-        log.info(f'Download attempt #{i} for {burst_request_url}')
+        log.info(f"Download attempt #{i} for {burst_request_url}")
         response = asf_session.get(url=burst_request_url, cookies=burst_request_cookies)
         downloaded = wait_for_extractor(response)
         if downloaded:
@@ -398,9 +400,7 @@ def get_burst_params(scene_name: str) -> BurstParams:
     )
 
 
-def validate_bursts(
-    reference: str | list[str], secondary: str | list[str]
-) -> None:
+def validate_bursts(reference: str | list[str], secondary: str | list[str]) -> None:
     """Check whether the reference and secondary bursts are valid.
 
     Args:
@@ -483,7 +483,9 @@ def load_burst_position(swath_xml_path: str, burst_number: int) -> BurstPosition
     return pos
 
 
-def evenize(length: int, first_valid: int, valid_length: int, looks: int) -> tuple[int, int, int]:
+def evenize(
+    length: int, first_valid: int, valid_length: int, looks: int
+) -> tuple[int, int, int]:
     """Get dimensions for an image that are integer multiples of looks.
     This applies to both the full image and the valid data region.
     Works with either the image's lines or samples.

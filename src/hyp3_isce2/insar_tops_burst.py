@@ -6,7 +6,7 @@ import sys
 import warnings
 from pathlib import Path
 from shutil import copyfile, make_archive
-from typing import Iterable, Optional
+from typing import Optional
 
 import isce  # noqa
 from burst2safe.burst2safe import burst2safe

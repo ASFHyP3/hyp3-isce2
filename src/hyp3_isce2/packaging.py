@@ -4,7 +4,7 @@ from dataclasses import dataclass
 from datetime import datetime, timezone
 from pathlib import Path
 from secrets import token_hex
-from typing import Iterable, Optional
+from typing import Optional
 
 import isce
 import numpy as np
@@ -135,7 +135,7 @@ def translate_outputs(
     product_name: str,
     pixel_size: float,
     include_radar: bool = False,
-    use_multilooked = False,
+    use_multilooked=False,
 ) -> None:
     """Translate ISCE outputs to a standard GTiff format with a UTM projection.
     Assume you are in the top level of an ISCE run directory

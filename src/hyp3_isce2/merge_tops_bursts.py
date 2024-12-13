@@ -8,7 +8,7 @@ import os
 import shutil
 import sys
 from concurrent.futures import ThreadPoolExecutor
-from dataclasses import dataclass, field
+from dataclasses import dataclass
 from itertools import combinations
 from pathlib import Path
 from secrets import token_hex
@@ -301,16 +301,16 @@ class Sentinel1BurstSelect(Sentinel1):
 
             cropList.append(isce2_burst)
             # mypy can't find the types for these inherited variables
-            if len(self._tiffSrc): #type: ignore
-                tiffList.append(self._tiffSrc[ind]) #type: ignore
-            eapList.append(self._elevationAngleVsTau[ind]) #type: ignore
+            if len(self._tiffSrc):  # type: ignore
+                tiffList.append(self._tiffSrc[ind])  # type: ignore
+            eapList.append(self._elevationAngleVsTau[ind])  # type: ignore
 
         # Actual cropping
         self.product.bursts = cropList
         self.product.numberOfBursts = len(self.product.bursts)
 
-        self._tiffSrc = tiffList #type: ignore
-        self._elevationAngleVsTau = eapList #type: ignore
+        self._tiffSrc = tiffList  # type: ignore
+        self._elevationAngleVsTau = eapList  # type: ignore
         print("Number of Bursts after cropping: ", len(self.product.bursts))
 
     def update_burst_properties(self, products: list[BurstProduct]) -> None:
@@ -944,7 +944,7 @@ def geocode_products(
 
     # Setup DEM
     demImage = isceobj.createDemImage()
-    demImage.load(dem_path.with_suffix('.xml'))
+    demImage.load(dem_path.with_suffix(".xml"))
 
     # Geocode one by one
     ge = Geocodable()
