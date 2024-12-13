@@ -300,16 +300,16 @@ class Sentinel1BurstSelect(Sentinel1):
             ind, isce2_burst = match[0]
 
             cropList.append(isce2_burst)
-            if len(self._tiffSrc):
-                tiffList.append(self._tiffSrc[ind])
+            if len(self._tiffSrc): #type: ignore
+                tiffList.append(self._tiffSrc[ind]) #type: ignore
             eapList.append(self._elevationAngleVsTau[ind])
 
         # Actual cropping
         self.product.bursts = cropList
         self.product.numberOfBursts = len(self.product.bursts)
 
-        self._tiffSrc = tiffList
-        self._elevationAngleVsTau = eapList
+        self._tiffSrc = tiffList #type: ignore
+        self._elevationAngleVsTau = eapList #type: ignore
         print("Number of Bursts after cropping: ", len(self.product.bursts))
 
     def update_burst_properties(self, products: list[BurstProduct]) -> None:
