@@ -606,7 +606,7 @@ def spoof_isce2_setup(
             translate_image(in_path, out_path, image_type)
 
 
-def get_swath_list(base_dir: Path) -> list[str]:
+def get_swath_list(base_dir: Path) -> list[int]:
     """Get the list of swaths from a directory of burst products
 
     Args:
@@ -619,7 +619,7 @@ def get_swath_list(base_dir: Path) -> list[str]:
     for x in [1, 2, 3]:
         swath_path = Path(base_dir) / f"IW{x}"
         if swath_path.exists():
-            swathList.append(str(x))
+            swathList.append(x)
 
     return swathList
 

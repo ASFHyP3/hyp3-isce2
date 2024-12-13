@@ -143,5 +143,5 @@ def isce2_merge_setup(annotation_manifest_dirs, burst_products):
     multilooked_swath_obj = merge.modify_for_multilook(burst_products, s1_obj, save_dir)
     multilooked_swath_obj.write_xml()
 
-    merge.spoof_isce2_setup(burst_products, s1_obj, base_dir=base_dir)
+    merge.spoof_isce2_setup(burst_products, base_dir=base_dir)
     return base_dir

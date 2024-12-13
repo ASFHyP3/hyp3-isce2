@@ -274,7 +274,7 @@ def test_spoof_isce2_setup(annotation_manifest_dirs, burst_product1):
     s1_obj = merge.create_burst_cropped_s1_obj(
         2, [tmp_product], "VV", base_dir=base_dir
     )
-    merge.spoof_isce2_setup([tmp_product], s1_obj, base_dir=base_dir)
+    merge.spoof_isce2_setup([tmp_product], base_dir=base_dir)
 
     fine_ifg_dir = base_dir / "fine_interferogram" / "IW2"
     assert fine_ifg_dir.is_dir()
@@ -395,7 +395,7 @@ def test_geocode_products(test_data_dir, tmp_path, test_s1_obj):
     utils.write_isce2_image(str(unw_path), array)
     utils.write_isce2_image(str(dem_path), array)
     merge.geocode_products(
-        1, 1, str(dem_path), base_dir=merge_dir, to_be_geocoded=[str(unw_path)]
+        1, 1, dem_path, base_dir=merge_dir, to_be_geocoded=[str(unw_path)]
     )
 
     assert (merge_dir / "filt_topophase.unw.geo").exists()
