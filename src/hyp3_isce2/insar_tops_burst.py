@@ -70,7 +70,7 @@ def insar_tops_burst(
     ref_params = get_burst_params(reference_scene)
     sec_params = get_burst_params(secondary_scene)
 
-    ref_metadata, sec_metadata = download_bursts([ref_params, sec_params])
+    ref_metadata, _ = download_bursts([ref_params, sec_params])
 
     is_ascending = ref_metadata.orbit_direction == "ascending"
     ref_footprint = get_isce2_burst_bbox(ref_params)
@@ -240,12 +240,12 @@ def insar_tops_single_burst(
 
 
 def insar_tops_multi_burst(
-    reference: Iterable[str],
-    secondary: Iterable[str],
+    reference: list[str],
+    secondary: list[str],
     swaths: list = [1, 2, 3],
     looks: str = "20x4",
     apply_water_mask=False,
-    bucket: Optional[str] = None,
+    bucket: str | None = None,
     bucket_prefix: str = "",
 ):
     validate_bursts(reference, secondary)

@@ -7,7 +7,7 @@ from concurrent.futures import ThreadPoolExecutor
 from dataclasses import dataclass
 from datetime import datetime, timedelta
 from pathlib import Path
-from typing import Iterable, Iterator, List, Optional, Tuple, Union
+from typing import Iterator, List, Optional, Tuple
 
 import asf_search
 import numpy as np
@@ -54,13 +54,19 @@ class BurstPosition:
 class BurstMetadata:
     """Metadata for a burst."""
 
-    def __init__(self, metadata: etree.Element, burst_params: BurstParams):
+    def __init__(self, metadata: etree._Element, burst_params: BurstParams):
         self.safe_name = burst_params.granule
         self.swath = burst_params.swath
         self.polarization = burst_params.polarization
         self.burst_number = burst_params.burst_number
         self.manifest = metadata[0]
         self.manifest_name = "manifest.safe"
+        self.annotation = None
+        self.annotation_name: Path = Path()
+        self.calibration = None
+        self.calibration_name: Path = Path()
+        self.noise = None
+        self.noise_name: Path = Path()
         metadata = metadata[1]
 
         names = [file.attrib["source_filename"] for file in metadata]
@@ -74,6 +80,7 @@ class BurstMetadata:
             "calibration": "calibration",
             "noise": "noise",
         }
+
         for name in files:
             elem = metadata[swaths_and_products.index((self.swath.lower(), name))]
             content = copy.deepcopy(elem.find("content"))
@@ -140,14 +147,12 @@ def download_from_extractor(
     Returns:
         The downloaded content.
     """
-    burst_request = {
-        "url": create_burst_request_url(burst_params, content_type=content_type),
-        "cookies": {"asf-urs": asf_session.cookies["asf-urs"]},
-    }
+    burst_request_url = create_burst_request_url(burst_params, content_type=content_type)
+    burst_request_cookies = {"asf-urs": asf_session.cookies["asf-urs"]}
 
     for i in range(1, 11):
-        log.info(f'Download attempt #{i} for {burst_request["url"]}')
-        response = asf_session.get(**burst_request)
+        log.info(f'Download attempt #{i} for {burst_request_url}')
+        response = asf_session.get(url=burst_request_url, cookies=burst_request_cookies)
         downloaded = wait_for_extractor(response)
         if downloaded:
             break
@@ -161,8 +166,8 @@ def download_from_extractor(
 def download_metadata(
     asf_session: requests.Session,
     burst_params: BurstParams,
-    out_file: Union[Path, str] = None,
-) -> Union[etree._Element, str]:
+    out_file: Path | str | None = None,
+) -> etree._Element | str:
     """Download burst metadata.
 
     Args:
@@ -188,7 +193,7 @@ def download_metadata(
 def download_burst(
     asf_session: requests.Session,
     burst_params: BurstParams,
-    out_file: Union[Path, str] = None,
+    out_file: Path | str | None = None,
 ) -> Path:
     """Download a burst geotiff.
 
@@ -262,7 +267,7 @@ def spoof_safe(
 
 
 def get_isce2_burst_bbox(
-    params: BurstParams, base_dir: Optional[Path] = None
+    params: BurstParams, base_dir: Path | None = None
 ) -> geometry.Polygon:
     """Get the bounding box of a Sentinel-1 burst using ISCE2.
     Using ISCE2 directly ensures that the bounding box is the same as the one used by ISCE2 for processing.
@@ -337,7 +342,7 @@ def get_asf_session() -> requests.Session:
     return session
 
 
-def download_bursts(param_list: Iterator[BurstParams]) -> List[BurstMetadata]:
+def download_bursts(param_list: list[BurstParams]) -> list[BurstMetadata]:
     """Download bursts in parallel and creates SAFE files.
 
     For each burst:
@@ -394,7 +399,7 @@ def get_burst_params(scene_name: str) -> BurstParams:
 
 
 def validate_bursts(
-    reference: Union[str, Iterable[str]], secondary: Union[str, Iterable[str]]
+    reference: str | list[str], secondary: str | list[str]
 ) -> None:
     """Check whether the reference and secondary bursts are valid.
 
@@ -478,7 +483,7 @@ def load_burst_position(swath_xml_path: str, burst_number: int) -> BurstPosition
     return pos
 
 
-def evenize(length: int, first_valid: int, valid_length: int, looks: int) -> Tuple[int]:
+def evenize(length: int, first_valid: int, valid_length: int, looks: int) -> tuple[int, int, int]:
     """Get dimensions for an image that are integer multiples of looks.
     This applies to both the full image and the valid data region.
     Works with either the image's lines or samples.

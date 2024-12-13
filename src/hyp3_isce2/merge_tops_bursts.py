@@ -99,7 +99,7 @@ class BurstProduct:
     start_utc: datetime.datetime
     stop_utc: datetime.datetime
     relative_orbit: int
-    isce2_burst_number: int = field(default=None)
+    isce2_burst_number: int | None = None
 
     def to_burst_params(self):
         """Convert to a burst_utils.BurstParams object"""
@@ -108,7 +108,7 @@ class BurstProduct:
         )
 
 
-def get_burst_metadata(product_paths: Iterable[Path]) -> Iterable[BurstProduct]:
+def get_burst_metadata(product_paths: list[Path]) -> list[BurstProduct]:
     """Create a list of BurstProduct objects from a set of burst product paths
 
     Args:
@@ -118,7 +118,7 @@ def get_burst_metadata(product_paths: Iterable[Path]) -> Iterable[BurstProduct]:
         A list of BurstProduct objects representing the burst metadata
     """
     meta_file_paths = [path / f"{path.name}.txt" for path in product_paths]
-    metas = [read_product_metadata(path) for path in meta_file_paths]
+    metas = [read_product_metadata(str(path)) for path in meta_file_paths]
 
     # TODO why does asf_search not return values in order?
     results = [asf_search.granule_search(item["ReferenceGranule"])[0] for item in metas]
@@ -312,7 +312,7 @@ class Sentinel1BurstSelect(Sentinel1):
         self._elevationAngleVsTau = eapList
         print("Number of Bursts after cropping: ", len(self.product.bursts))
 
-    def update_burst_properties(self, products: Iterable[BurstProduct]) -> None:
+    def update_burst_properties(self, products: list[BurstProduct]) -> None:
         """Update burst properties based on the burst metadata and previous subset operations
 
         Args:
@@ -412,7 +412,7 @@ def load_isce_s1_obj(
 
 
 def create_burst_cropped_s1_obj(
-    swath: str,
+    swath: int,
     products: Iterable[BurstProduct],
     polarization: str = "VV",
     base_dir: Optional[Path] = None,
@@ -453,7 +453,7 @@ def modify_for_multilook(
     burst_products: Iterable[BurstProduct],
     swath_obj: Sentinel1BurstSelect,
     outdir: str = BURST_IFG_DIR,
-) -> None:
+) -> Sentinel1BurstSelect:
     """Modify a Sentinel1 instance so that it is compatible with previously multilooked burst products
 
     Args:
@@ -555,7 +555,6 @@ def translate_image(in_path: str, out_path: str, image_type: str) -> None:
 
 def spoof_isce2_setup(
     burst_products: Iterable[BurstProduct],
-    s1_obj: Sentinel1BurstSelect,
     base_dir: Optional[Path] = None,
 ) -> None:
     """For a set of ASF burst products, create spoofed geom_reference and fine_interferogram directories
@@ -563,7 +562,6 @@ def spoof_isce2_setup(
 
     Args:
         burst_products: A list of BurstProduct objects
-        s1_obj: An ISCE2 Sentinel1 instance representing the parent swath
         base_dir: The base directory to write the spoofed directories to. Defaults to the current working directory.
     """
     if base_dir is None:
@@ -620,12 +618,12 @@ def get_swath_list(base_dir: Path) -> list[str]:
     for x in [1, 2, 3]:
         swath_path = Path(base_dir) / f"IW{x}"
         if swath_path.exists():
-            swathList.append(x)
+            swathList.append(str(x))
 
     return swathList
 
 
-def get_merged_orbit(products: Iterable[Sentinel1]) -> Orbit:
+def get_merged_orbit(products: list[Sentinel1]) -> Orbit:
     """Create a merged orbit from a set of ISCE2 Sentinel1 products
 
     Args:
@@ -692,7 +690,7 @@ def merge_bursts(
         range_looks: The number of range looks
         merge_dir: The directory to write the merged product to
     """
-    frames, burstIndex = get_frames_and_indexes(BURST_IFG_DIR)
+    frames, burstIndex = get_frames_and_indexes(Path(BURST_IFG_DIR))
 
     box = mergeBox(frames)
     file_types = {
@@ -735,8 +733,7 @@ def goldstein_werner_filter(
     ifg_image = create_image(str(in_path), image_subtype="ifg", action="load")
     width_ifg = ifg_image.getWidth()
 
-    out_path = str(out_path)
-    filt_image = create_image(out_path, width_ifg, "write", image_subtype="ifg")
+    filt_image = create_image(str(out_path), width_ifg, "write", image_subtype="ifg")
 
     filter_obj = Filter()
     filter_obj.wireInputPort(name="interferogram", object=ifg_image)
@@ -747,7 +744,7 @@ def goldstein_werner_filter(
     filt_image.finalizeImage()
     del filt_image
 
-    filt_image = create_image(out_path, width_ifg, "read", image_subtype="ifg")
+    filt_image = create_image(str(out_path), width_ifg, "read", image_subtype="ifg")
     phsigImage = create_image(str(coh_path), width_ifg, "write", image_subtype="cor")
 
     icu_obj = Icu(name="topsapp_filter_icu")
@@ -824,7 +821,7 @@ def snaphu_unwrap(
     img.load(str(wrap_name) + ".xml")
     width = img.getWidth()
 
-    swath = get_swath_list(str(burst_ifg_dir))[0]
+    swath = get_swath_list(burst_ifg_dir)[0]
     ifg = load_product(str(burst_ifg_dir / f"IW{swath}_multilooked.xml"))
     wavelength = ifg.bursts[0].radarWavelength
 
@@ -911,7 +908,7 @@ def geocode_products(
     burst_ifg_dir = base_dir.parent / BURST_IFG_DIR
 
     to_be_geocoded = [str(base_dir / file) for file in to_be_geocoded]
-    swath_list = get_swath_list(str(burst_ifg_dir))
+    swath_list = get_swath_list(burst_ifg_dir)
 
     frames = []
     for swath in swath_list:
@@ -946,7 +943,7 @@ def geocode_products(
 
     # Setup DEM
     demImage = isceobj.createDemImage()
-    demImage.load(dem_path + ".xml")
+    demImage.load(dem_path.with_suffix('.xml'))
 
     # Geocode one by one
     ge = Geocodable()
@@ -983,7 +980,7 @@ def geocode_products(
         geo_obj.geocode()
 
 
-def get_product_name(product: BurstProduct, pixel_size: int) -> str:
+def get_product_name(product: BurstProduct, pixel_size: float) -> str:
     """Create a product name for a merged burst product. Follows the convention used by ASF burst products,
     but replaces the burst id with the relative orbit number, and removes the swath compenent with ''.
 
@@ -1023,7 +1020,7 @@ def get_product_metadata_info(base_dir: Path) -> List:
     """
     product_paths = list(Path(base_dir).glob("S1_??????_IW?_*"))
     meta_file_paths = [path / f"{path.name}.txt" for path in product_paths]
-    metas = [read_product_metadata(path) for path in meta_file_paths]
+    metas = [read_product_metadata(str(path)) for path in meta_file_paths]
     return metas
 
 
@@ -1066,7 +1063,7 @@ def make_parameter_file(
 
     burst_ifg_dir = base_dir / BURST_IFG_DIR
     insar_product = load_product(
-        burst_ifg_dir / f"IW{get_swath_list(burst_ifg_dir)[0]}.xml"
+        str(burst_ifg_dir / f"IW{get_swath_list(burst_ifg_dir)[0]}.xml")
     )
 
     orbit_direction = insar_product.bursts[0].passDirection
@@ -1114,8 +1111,8 @@ def make_parameter_file(
 
 def make_readme(
     product_dir: Path,
-    reference_scenes: Iterable,
-    secondary_scenes: Iterable,
+    reference_scenes: list[str],
+    secondary_scenes: list[str],
     range_looks: int,
     azimuth_looks: int,
     apply_water_mask: bool,
@@ -1235,7 +1232,7 @@ def get_product_multilook(product_dir: Path) -> Tuple:
         The number of azimuth looks and range looks
     """
     product_path = list(product_dir.glob("S1_??????_IW?_*"))[0]
-    metadata_path = product_path / f"{product_path.name}.txt"
+    metadata_path = str(product_path / f"{product_path.name}.txt")
     meta = read_product_metadata(metadata_path)
     return int(meta["Rangelooks"]), int(meta["Azimuthlooks"])
 
@@ -1303,16 +1300,17 @@ def run_isce2_workflow(
     )
     if apply_water_mask:
         log.info("Water masking requested, downloading water mask")
-        mask_coherence(f"masked.{COH_NAME}")
-        corrfile = os.path.join(str(mergedir), f"masked.{COH_NAME}")
+        mask = f"masked.{COH_NAME}"
+        mask_coherence(mask)
+        corrfile = mergedir / mask
     else:
-        corrfile = os.path.join(str(mergedir), COH_NAME)
-    snaphu_unwrap(range_looks, azimuth_looks, corrfile=corrfile, base_dir=str(mergedir))
+        corrfile = mergedir / COH_NAME
+    snaphu_unwrap(range_looks, azimuth_looks, corrfile=corrfile, base_dir=mergedir)
     geocode_products(
         range_looks,
         azimuth_looks,
-        dem_path="full_res.dem.wgs84",
-        base_dir=str(mergedir),
+        dem_path=Path("full_res.dem.wgs84"),
+        base_dir=mergedir,
     )
 
 
@@ -1334,7 +1332,7 @@ def package_output(
     pixel_size = get_pixel_size(looks)
     range_looks, azimuth_looks = [int(look) for look in looks.split("x")]
 
-    product_path = list(product_directory.glob("S1_??????_IW?_*"))[0]
+    product_path = Path(list(product_directory.glob("S1_??????_IW?_*"))[0])
     example_metadata = get_burst_metadata([product_path])[0]
     product_name = get_product_name(example_metadata, pixel_size)
     out_product_dir = Path(product_name)

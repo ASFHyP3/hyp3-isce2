@@ -127,9 +127,9 @@ def insar_tops_packaged(
     azimuth_looks: int = 4,
     range_looks: int = 20,
     apply_water_mask: bool = True,
-    bucket: str = None,
+    bucket: str | None = None,
     bucket_prefix: str = "",
-) -> Path:
+) -> None:
     """Create a full-SLC interferogram
 
     Args:

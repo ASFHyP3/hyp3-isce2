@@ -43,7 +43,7 @@ def fix_image_xml(xml_path: str) -> None:
     subprocess.run(cmd, check=True)
 
 
-def buffer_extent(extent: list, buffer: float) -> list:
+def buffer_extent(extent: list | tuple, buffer: float) -> list:
     extent_geo = box(*extent)
     extent_buffered = list(extent_geo.buffer(buffer).bounds)
     return [
@@ -76,9 +76,9 @@ def distance_meters_to_degrees(distance_meters, latitude):
 
 
 def download_dem_for_isce2(
-    extent: list,
+    extent: list | tuple,
     dem_name: str = "glo_30",
-    dem_dir: Path = None,
+    dem_dir: Path | None = None,
     buffer: float = 0.4,
     resample_20m: bool = False,
 ) -> Path:

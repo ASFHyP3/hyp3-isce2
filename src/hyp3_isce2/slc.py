@@ -33,10 +33,10 @@ def get_granule(granule: str) -> Path:
 def unzip_granule(zip_file: Path, remove: bool = False) -> Path:
     with ZipFile(zip_file) as z:
         z.extractall()
-        safe_dir = zip_file.split(".")[0] + ".SAFE/"
+        safe_dir = str(zip_file).split(".")[0] + ".SAFE/"
     if remove:
         os.remove(zip_file)
-    return safe_dir.strip("/")
+    return Path(str(safe_dir).strip("/"))
 
 
 def get_geometry_from_kml(kml_file: str) -> Polygon:
@@ -48,12 +48,16 @@ def get_geometry_from_kml(kml_file: str) -> Polygon:
 
 def get_geometry_from_manifest(manifest_path: Path):
     manifest = ET.parse(manifest_path).getroot()
-    frame_element = [
+
+    frame_element: ET._Element = [
         x
         for x in manifest.findall(".//metadataObject")
         if x.get("ID") == "measurementFrameSet"
     ][0]
-    frame_string = frame_element.find(".//{http://www.opengis.net/gml}coordinates").text
+    coord_element = frame_element.find(".//{http://www.opengis.net/gml}coordinates")
+    assert isinstance(coord_element, ET._Element)
+    assert isinstance(coord_element.text, str)
+    frame_string = coord_element.text
     coord_strings = [pair.split(",") for pair in frame_string.split(" ")]
     coords = [(float(lon), float(lat)) for lat, lon in coord_strings]
     footprint = Polygon(coords)

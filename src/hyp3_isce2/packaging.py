@@ -25,8 +25,8 @@ from hyp3_isce2.utils import ParameterFile, get_projection, utm_from_lon_lat
 class ISCE2Dataset:
     name: str
     suffix: str
-    band: Iterable[int]
-    dtype: Optional[int] = gdalconst.GDT_Float32
+    band: int | list[int]
+    dtype: int = gdalconst.GDT_Float32
 
 
 def get_pixel_size(looks: str) -> float:
@@ -115,7 +115,7 @@ def get_product_name(
         polarization = reference_split[4]
         name_parts = [platform, burst_id, image_plus_swath]
     product_type = "INT"
-    pixel_spacing = str(int(pixel_spacing))
+    pixel_spacing_str = str(int(pixel_spacing))
     product_id = token_hex(2).upper()
     product_name = "_".join(
         name_parts
@@ -123,7 +123,7 @@ def get_product_name(
             reference_date,
             secondary_date,
             polarization,
-            product_type + pixel_spacing,
+            product_type + pixel_spacing_str,
             product_id,
         ]
     )
@@ -135,7 +135,7 @@ def translate_outputs(
     product_name: str,
     pixel_size: float,
     include_radar: bool = False,
-    use_multilooked=False,
+    use_multilooked = False,
 ) -> None:
     """Translate ISCE outputs to a standard GTiff format with a UTM projection.
     Assume you are in the top level of an ISCE run directory

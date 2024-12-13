@@ -15,6 +15,6 @@ def get_environment() -> Environment:
 
 def render_template(template: str, payload: dict) -> str:
     env = get_environment()
-    template = env.get_template(template)
-    rendered = template.render(payload)
+    render_template = env.get_template(template)
+    rendered = render_template.render(payload)
     return rendered
