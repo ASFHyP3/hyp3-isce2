@@ -7,37 +7,37 @@ from osgeo import gdal
 
 gdal.UseExceptions()
 
-TEMPLATE_DIR = Path(__file__).parent / "templates"
+TEMPLATE_DIR = Path(__file__).parent / 'templates'
 TOPSAPP_STEPS = [
-    "startup",
-    "preprocess",
-    "computeBaselines",
-    "verifyDEM",
-    "topo",
-    "subsetoverlaps",
-    "coarseoffsets",
-    "coarseresamp",
-    "overlapifg",
-    "prepesd",
-    "esd",
-    "rangecoreg",
-    "fineoffsets",
-    "fineresamp",
-    "ion",
-    "burstifg",
-    "mergebursts",
-    "filter",
-    "unwrap",
-    "unwrap2stage",
-    "geocode",
+    'startup',
+    'preprocess',
+    'computeBaselines',
+    'verifyDEM',
+    'topo',
+    'subsetoverlaps',
+    'coarseoffsets',
+    'coarseresamp',
+    'overlapifg',
+    'prepesd',
+    'esd',
+    'rangecoreg',
+    'fineoffsets',
+    'fineresamp',
+    'ion',
+    'burstifg',
+    'mergebursts',
+    'filter',
+    'unwrap',
+    'unwrap2stage',
+    'geocode',
 ]
 TOPSAPP_GEOCODE_LIST = [
-    "merged/phsig.cor",
-    "merged/filt_topophase.unw",
-    "merged/los.rdr",
-    "merged/filt_topophase.flat",
-    "merged/topophase.cor",
-    "merged/filt_topophase.unw.conncomp",
+    'merged/phsig.cor',
+    'merged/filt_topophase.unw',
+    'merged/los.rdr',
+    'merged/filt_topophase.flat',
+    'merged/topophase.cor',
+    'merged/filt_topophase.unw.conncomp',
 ]
 
 
@@ -91,11 +91,11 @@ class TopsappConfig:
         Returns:
             The rendered template
         """
-        with open(TEMPLATE_DIR / "topsapp.xml", "r") as file:
+        with open(TEMPLATE_DIR / 'topsapp.xml', 'r') as file:
             template = Template(file.read())
         return template.render(self.__dict__)
 
-    def write_template(self, filename: Union[str, Path] = "topsApp.xml") -> Path:
+    def write_template(self, filename: Union[str, Path] = 'topsApp.xml') -> Path:
         """Write the topsApp.py jinja2 template to a file
 
         Args:
@@ -106,7 +106,7 @@ class TopsappConfig:
         if not isinstance(filename, Path):
             filename = Path(filename)
 
-        with open(filename, "w") as file:
+        with open(filename, 'w') as file:
             file.write(self.generate_template())
 
         return filename
@@ -118,12 +118,12 @@ def swap_burst_vrts():
     To convince topsApp to process a burst pair, we need to swap the VRTs it generates for the
     reference and secondary bursts with custom VRTs that point to the actual burst rasters.
     """
-    ref_vrt_list = [str(path) for path in Path("reference").glob("**/*.vrt")]
-    sec_vrt_list = [str(path) for path in Path("secondary").glob("**/*.vrt")]
+    ref_vrt_list = [str(path) for path in Path('reference').glob('**/*.vrt')]
+    sec_vrt_list = [str(path) for path in Path('secondary').glob('**/*.vrt')]
     if len(ref_vrt_list) != 1 or len(sec_vrt_list) != 1:
         raise ValueError(
-            "There should only be 2 VRT files in the reference and secondary directories, "
-            "this indicates there is likely a bug in the region of interest generation."
+            'There should only be 2 VRT files in the reference and secondary directories, '
+            'this indicates there is likely a bug in the region of interest generation.'
         )
 
     for vrt_path in (ref_vrt_list[0], sec_vrt_list[0]):
@@ -131,15 +131,15 @@ def swap_burst_vrts():
         base = gdal.Open(vrt.GetFileList()[1])
         del vrt
 
-        gdal.Translate(vrt_path, base, format="VRT")
+        gdal.Translate(vrt_path, base, format='VRT')
         del base
 
 
 def run_topsapp(
-    dostep: str = "",
-    start: str = "",
-    end: str = "",
-    config_xml: Path = Path("topsApp.xml"),
+    dostep: str = '',
+    start: str = '',
+    end: str = '',
+    config_xml: Path = Path('topsApp.xml'),
 ):
     """Run topsApp.py for a granule pair with the desired steps and config file
 
@@ -155,25 +155,25 @@ def run_topsapp(
         ValueError: If the step is not a valid step (see TOPSAPP_STEPS)
     """
     if not config_xml.exists():
-        raise IOError(f"The config file {config_xml} does not exist!")
+        raise IOError(f'The config file {config_xml} does not exist!')
 
     if dostep and (start or end):
-        raise ValueError("If dostep is specified, start and stop cannot be used")
+        raise ValueError('If dostep is specified, start and stop cannot be used')
 
     step_args = []
     options = {
-        "dostep": dostep,
-        "start": start,
-        "end": end,
+        'dostep': dostep,
+        'start': start,
+        'end': end,
     }
     for key, value in options.items():
         if not value:
             continue
         if value not in TOPSAPP_STEPS:
-            raise ValueError(f"{value} is not a valid step")
-        step_args.append(f"--{key}={value}")
+            raise ValueError(f'{value} is not a valid step')
+        step_args.append(f'--{key}={value}')
 
     cmd_line = [str(config_xml)] + step_args
-    insar = TopsInSAR(name="topsApp", cmdline=cmd_line)
+    insar = TopsInSAR(name='topsApp', cmdline=cmd_line)
     insar.configure()
     insar.run()

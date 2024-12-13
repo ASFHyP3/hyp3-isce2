@@ -14,18 +14,18 @@ MOCK_DEM_ARRAY[:, 1000] = np.nan
 MOCK_DEM_ARRAY[:, 2000] = 2
 
 MOCK_DEM_PROFILE = {
-    "blockxsize": 1024,
-    "blockysize": 1024,
-    "compress": "deflate",
-    "count": 1,
-    "crs": CRS.from_epsg(4326),
-    "driver": "GTiff",
-    "dtype": "float32",
-    "height": 3600,
-    "interleave": "band",
-    "nodata": np.nan,
-    "tiled": True,
-    "transform": Affine(
+    'blockxsize': 1024,
+    'blockysize': 1024,
+    'compress': 'deflate',
+    'count': 1,
+    'crs': CRS.from_epsg(4326),
+    'driver': 'GTiff',
+    'dtype': 'float32',
+    'height': 3600,
+    'interleave': 'band',
+    'nodata': np.nan,
+    'tiled': True,
+    'transform': Affine(
         0.0002777777777777778,
         0.0,
         -169.00020833333335,
@@ -33,37 +33,37 @@ MOCK_DEM_PROFILE = {
         -0.0002777777777777778,
         54.00013888888889,
     ),
-    "width": 3600,
+    'width': 3600,
 }
 
 
 def test_download_dem_for_isce2(tmp_path):
-    dem_dir = tmp_path / "isce2_dem"
+    dem_dir = tmp_path / 'isce2_dem'
     dem_dir.mkdir()
 
-    with patch("dem_stitcher.stitch_dem") as mock_stitch_dem:
+    with patch('dem_stitcher.stitch_dem') as mock_stitch_dem:
         mock_stitch_dem.return_value = (MOCK_DEM_ARRAY, MOCK_DEM_PROFILE)
 
         dem_path = dem.download_dem_for_isce2(
             extent=[-168.7, 53.2, -168.2, 53.7],
-            dem_name="glo_30",
+            dem_name='glo_30',
             dem_dir=dem_dir,
             buffer=0,
         )
 
         mock_stitch_dem.assert_called_once_with(
             [-169, 53, -168, 54],
-            "glo_30",
+            'glo_30',
             dst_ellipsoidal_height=True,
-            dst_area_or_point="Point",
+            dst_area_or_point='Point',
             n_threads_downloading=5,
         )
 
-        root = etree.parse(str(dem_path) + ".xml").getroot()
-        assert root.find("./property[@name='reference']/value").text == "WGS84"
-        assert root.find("./property[@name='reference']/doc").text == "Geodetic datum"
+        root = etree.parse(str(dem_path) + '.xml').getroot()
+        assert root.find("./property[@name='reference']/value").text == 'WGS84'
+        assert root.find("./property[@name='reference']/doc").text == 'Geodetic datum'
 
-        with rasterio.open(dem_path, "r") as ds:
+        with rasterio.open(dem_path, 'r') as ds:
             dem_array = ds.read(1)
 
         assert np.all(dem_array[:, 0:1000] == 1)
