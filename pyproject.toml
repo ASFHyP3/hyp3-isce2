@@ -79,9 +79,3 @@ readme = {file = ["README.md"], content-type = "text/markdown"}
 where = ["src"]
 
 [tool.setuptools_scm]
-
-[tool.ruff]
-line-length = 120
-
-[tool.ruff.format]
-quote-style = "single"
