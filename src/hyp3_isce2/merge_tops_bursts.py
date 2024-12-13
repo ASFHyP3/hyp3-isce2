@@ -944,7 +944,7 @@ def geocode_products(
 
     # Setup DEM
     demImage = isceobj.createDemImage()
-    demImage.load(dem_path.with_suffix(".xml"))
+    demImage.load(str(dem_path) + '.xml')
 
     # Geocode one by one
     ge = Geocodable()
