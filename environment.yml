@@ -16,10 +16,7 @@ dependencies:
   - opencv
   - burst2safe
   # For packaging, and testing
-  - flake8
-  - flake8-import-order
-  - flake8-blind-except
-  - flake8-builtins
+  - ruff
   - setuptools
   - setuptools_scm
   - wheel
