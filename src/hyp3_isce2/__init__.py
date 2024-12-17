@@ -1,4 +1,5 @@
 """HyP3 plugin for ISCE2 processing"""
+
 import logging
 import os
 from importlib.metadata import version
@@ -7,6 +8,7 @@ from pathlib import Path
 # Ensures all ISCE2 paths and environment variables are set when using this module, see:
 # https://github.com/isce-framework/isce2/blob/main/__init__.py#L41-L50
 import isce  # noqa: F401
+
 
 # ISCE2 sets the root logger to DEBUG resulting in excessively verbose logging, see:
 # https://github.com/isce-framework/isce2/issues/258

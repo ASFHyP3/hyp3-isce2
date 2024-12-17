@@ -1,6 +1,4 @@
-"""
-ISCE2 stripmap processing
-"""
+"""ISCE2 stripmap processing"""
 
 import argparse
 import glob
@@ -19,6 +17,7 @@ from shapely.geometry.polygon import Polygon
 from hyp3_isce2 import stripmapapp_alos as stripmapapp
 from hyp3_isce2.dem import download_dem_for_isce2
 from hyp3_isce2.logger import configure_root_logger
+
 
 log = logging.getLogger(__name__)
 
@@ -41,7 +40,7 @@ def insar_stripmap(reference_scene: str, secondary_scene: str) -> Path:
     secondary_scene = scenes[1]
     products = asf_search.search(
         granule_list=[reference_scene, secondary_scene],
-        processingLevel="L1.0",
+        processingLevel='L1.0',
     )
 
     if products[0].properties['sceneName'] == reference_scene:
@@ -108,8 +107,7 @@ def get_product_file(product: asf_search.ASFProduct, file_prefix: str) -> str:
 
 
 def main():
-    """ Entrypoint for the stripmap workflow"""
-
+    """Entrypoint for the stripmap workflow"""
     parser = argparse.ArgumentParser(description=__doc__, formatter_class=argparse.ArgumentDefaultsHelpFormatter)
 
     parser.add_argument('--bucket', help='AWS S3 bucket HyP3 for upload the final product(s)')

@@ -14,7 +14,12 @@ from hyp3_isce2 import packaging, slc, topsapp
 from hyp3_isce2.dem import download_dem_for_isce2
 from hyp3_isce2.logger import configure_root_logger
 from hyp3_isce2.s1_auxcal import download_aux_cal
-from hyp3_isce2.utils import image_math, isce2_copy, make_browse_image, resample_to_radar_io
+from hyp3_isce2.utils import (
+    image_math,
+    isce2_copy,
+    make_browse_image,
+    resample_to_radar_io,
+)
 from hyp3_isce2.water_mask import create_water_mask
 
 
@@ -82,11 +87,26 @@ def insar_tops(
         topsapp.run_topsapp(start='startup', end='filter', config_xml=config_path)
         water_mask_path = 'water_mask.wgs84'
         create_water_mask(str(dem_path), water_mask_path)
-        multilook('merged/lon.rdr.full', outname='merged/lon.rdr', alks=azimuth_looks, rlks=range_looks)
-        multilook('merged/lat.rdr.full', outname='merged/lat.rdr', alks=azimuth_looks, rlks=range_looks)
+        multilook(
+            'merged/lon.rdr.full',
+            outname='merged/lon.rdr',
+            alks=azimuth_looks,
+            rlks=range_looks,
+        )
+        multilook(
+            'merged/lat.rdr.full',
+            outname='merged/lat.rdr',
+            alks=azimuth_looks,
+            rlks=range_looks,
+        )
         resample_to_radar_io(water_mask_path, 'merged/lat.rdr', 'merged/lon.rdr', 'merged/water_mask.rdr')
         isce2_copy('merged/phsig.cor', 'merged/unmasked.phsig.cor')
-        image_math('merged/unmasked.phsig.cor', 'merged/water_mask.rdr', 'merged/phsig.cor', 'a*b')
+        image_math(
+            'merged/unmasked.phsig.cor',
+            'merged/water_mask.rdr',
+            'merged/phsig.cor',
+            'a*b',
+        )
         topsapp.run_topsapp(start='unwrap', end='unwrap2stage', config_xml=config_path)
         isce2_copy('merged/unmasked.phsig.cor', 'merged/phsig.cor')
     else:
@@ -105,9 +125,9 @@ def insar_tops_packaged(
     azimuth_looks: int = 4,
     range_looks: int = 20,
     apply_water_mask: bool = True,
-    bucket: str = None,
+    bucket: str | None = None,
     bucket_prefix: str = '',
-) -> Path:
+) -> None:
     """Create a full-SLC interferogram
 
     Args:
@@ -141,7 +161,11 @@ def insar_tops_packaged(
     log.info('ISCE2 TopsApp run completed successfully')
 
     product_name = packaging.get_product_name(
-        reference, secondary, pixel_spacing=int(pixel_size), polarization=polarization, slc=True
+        reference,
+        secondary,
+        pixel_spacing=int(pixel_size),
+        polarization=polarization,
+        slc=True,
     )
 
     product_dir = Path(product_name)
@@ -183,7 +207,10 @@ def main():
     parser.add_argument('--secondary', type=str, help='Secondary granule')
     parser.add_argument('--polarization', type=str, default='VV', help='Polarization to use')
     parser.add_argument(
-        '--looks', choices=['20x4', '10x2', '5x1'], default='20x4', help='Number of looks to take in range and azimuth'
+        '--looks',
+        choices=['20x4', '10x2', '5x1'],
+        default='20x4',
+        help='Number of looks to take in range and azimuth',
     )
     parser.add_argument(
         '--apply-water-mask',

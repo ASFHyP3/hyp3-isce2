@@ -6,7 +6,7 @@ import sys
 import warnings
 from pathlib import Path
 from shutil import copyfile, make_archive
-from typing import Iterable, Optional
+from typing import Optional
 
 import isce  # noqa
 from burst2safe.burst2safe import burst2safe
@@ -28,7 +28,12 @@ from hyp3_isce2.dem import download_dem_for_isce2
 from hyp3_isce2.insar_tops import insar_tops_packaged
 from hyp3_isce2.logger import configure_root_logger
 from hyp3_isce2.s1_auxcal import download_aux_cal
-from hyp3_isce2.utils import image_math, isce2_copy, make_browse_image, resample_to_radar_io
+from hyp3_isce2.utils import (
+    image_math,
+    isce2_copy,
+    make_browse_image,
+    resample_to_radar_io,
+)
 from hyp3_isce2.water_mask import create_water_mask
 
 
@@ -65,7 +70,7 @@ def insar_tops_burst(
     ref_params = get_burst_params(reference_scene)
     sec_params = get_burst_params(secondary_scene)
 
-    ref_metadata, sec_metadata = download_bursts([ref_params, sec_params])
+    ref_metadata, _ = download_bursts([ref_params, sec_params])
 
     is_ascending = ref_metadata.orbit_direction == 'ascending'
     ref_footprint = get_isce2_burst_bbox(ref_params)
@@ -117,11 +122,26 @@ def insar_tops_burst(
         topsapp.run_topsapp(start='computeBaselines', end='filter', config_xml=config_path)
         water_mask_path = 'water_mask.wgs84'
         create_water_mask(str(dem_path), water_mask_path)
-        multilook('merged/lon.rdr.full', outname='merged/lon.rdr', alks=azimuth_looks, rlks=range_looks)
-        multilook('merged/lat.rdr.full', outname='merged/lat.rdr', alks=azimuth_looks, rlks=range_looks)
+        multilook(
+            'merged/lon.rdr.full',
+            outname='merged/lon.rdr',
+            alks=azimuth_looks,
+            rlks=range_looks,
+        )
+        multilook(
+            'merged/lat.rdr.full',
+            outname='merged/lat.rdr',
+            alks=azimuth_looks,
+            rlks=range_looks,
+        )
         resample_to_radar_io(water_mask_path, 'merged/lat.rdr', 'merged/lon.rdr', 'merged/water_mask.rdr')
         isce2_copy('merged/phsig.cor', 'merged/unmasked.phsig.cor')
-        image_math('merged/unmasked.phsig.cor', 'merged/water_mask.rdr', 'merged/phsig.cor', 'a*b')
+        image_math(
+            'merged/unmasked.phsig.cor',
+            'merged/water_mask.rdr',
+            'merged/phsig.cor',
+            'a*b',
+        )
         topsapp.run_topsapp(start='unwrap', end='unwrap2stage', config_xml=config_path)
         isce2_copy('merged/unmasked.phsig.cor', 'merged/phsig.cor')
     else:
@@ -198,12 +218,12 @@ def insar_tops_single_burst(
 
 
 def insar_tops_multi_burst(
-    reference: Iterable[str],
-    secondary: Iterable[str],
+    reference: list[str],
+    secondary: list[str],
     swaths: list = [1, 2, 3],
     looks: str = '20x4',
     apply_water_mask=False,
-    bucket: Optional[str] = None,
+    bucket: str | None = None,
     bucket_prefix: str = '',
 ):
     validate_bursts(reference, secondary)
@@ -240,14 +260,25 @@ def oldest_granule_first(g1, g2):
 def main():
     """HyP3 entrypoint for the burst TOPS workflow"""
     parser = argparse.ArgumentParser(description=__doc__, formatter_class=argparse.ArgumentDefaultsHelpFormatter)
-    parser.add_argument('granules', type=str.split, nargs='*', help='Reference and secondary scene names')
+    parser.add_argument(
+        'granules',
+        type=str.split,
+        nargs='*',
+        help='Reference and secondary scene names',
+    )
     parser.add_argument('--reference', type=str.split, nargs='+', help='List of reference scenes"')
     parser.add_argument('--secondary', type=str.split, nargs='+', help='List of secondary scenes"')
     parser.add_argument(
-        '--looks', choices=['20x4', '10x2', '5x1'], default='20x4', help='Number of looks to take in range and azimuth'
+        '--looks',
+        choices=['20x4', '10x2', '5x1'],
+        default='20x4',
+        help='Number of looks to take in range and azimuth',
     )
     parser.add_argument(
-        '--apply-water-mask', type=string_is_true, default=False, help='Apply a water body mask before unwrapping.'
+        '--apply-water-mask',
+        type=string_is_true,
+        default=False,
+        help='Apply a water body mask before unwrapping.',
     )
     parser.add_argument('--bucket', help='AWS S3 bucket HyP3 for upload the final product(s)')
     parser.add_argument('--bucket-prefix', default='', help='Add a bucket prefix to product(s)')

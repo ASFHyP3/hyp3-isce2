@@ -28,9 +28,9 @@ def tag_dem_xml_as_ellipsoidal(dem_path: Path) -> str:
     assert Path(xml_path).exists()
     root = etree.parse(xml_path).getroot()
 
-    element = etree.Element("property", name='reference')
-    etree.SubElement(element, "value").text = "WGS84"
-    etree.SubElement(element, "doc").text = "Geodetic datum"
+    element = etree.Element('property', name='reference')
+    etree.SubElement(element, 'value').text = 'WGS84'
+    etree.SubElement(element, 'doc').text = 'Geodetic datum'
 
     root.insert(0, element)
     with open(xml_path, 'wb') as file:
@@ -43,14 +43,14 @@ def fix_image_xml(xml_path: str) -> None:
     subprocess.run(cmd, check=True)
 
 
-def buffer_extent(extent: list, buffer: float) -> list:
+def buffer_extent(extent: list | tuple, buffer: float) -> list:
     extent_geo = box(*extent)
     extent_buffered = list(extent_geo.buffer(buffer).bounds)
     return [
         np.floor(extent_buffered[0]),
         np.floor(extent_buffered[1]),
         np.ceil(extent_buffered[2]),
-        np.ceil(extent_buffered[3])
+        np.ceil(extent_buffered[3]),
     ]
 
 
@@ -60,6 +60,7 @@ def distance_meters_to_degrees(distance_meters, latitude):
     Args:
         distance_meters: Arc length in meters.
         latitude: The line of latitude at which the calculation takes place.
+
     Returns:
         The length in degrees for longitude and latitude, respectively.
     """
@@ -74,11 +75,11 @@ def distance_meters_to_degrees(distance_meters, latitude):
 
 
 def download_dem_for_isce2(
-        extent: list,
-        dem_name: str = 'glo_30',
-        dem_dir: Path = None,
-        buffer: float = .4,
-        resample_20m: bool = False
+    extent: list | tuple,
+    dem_name: str = 'glo_30',
+    dem_dir: Path | None = None,
+    buffer: float = 0.4,
+    resample_20m: bool = False,
 ) -> Path:
     """Download the given DEM for the given extent.
 
@@ -89,10 +90,11 @@ def download_dem_for_isce2(
         buffer: The extent buffer in degrees, by default .4, which is about 44 km at the equator
                 (or about 2.5 bursts at the equator).
         resample_20m: Whether or not the DEM should be resampled to 20 meters.
+
     Returns:
         The path to the downloaded DEM.
     """
-    dem_dir = dem_dir or Path('.')
+    dem_dir = dem_dir or Path()
     dem_dir.mkdir(exist_ok=True, parents=True)
 
     extent_buffered = buffer_extent(extent, buffer)
@@ -105,7 +107,7 @@ def download_dem_for_isce2(
             dst_ellipsoidal_height=True,
             dst_area_or_point='Point',
             n_threads_downloading=5,
-            dst_resolution=res_degrees
+            dst_resolution=res_degrees,
         )
         dem_path = dem_dir / 'full_res_geocode.dem.wgs84'
     else:
@@ -118,7 +120,7 @@ def download_dem_for_isce2(
         )
         dem_path = dem_dir / 'full_res.dem.wgs84'
 
-    dem_array[np.isnan(dem_array)] = 0.
+    dem_array[np.isnan(dem_array)] = 0.0
 
     dem_profile['nodata'] = None
     dem_profile['driver'] = 'ISCE'

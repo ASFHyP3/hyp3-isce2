@@ -1,6 +1,5 @@
-"""
-ISCE2 processing for HyP3
-"""
+"""ISCE2 processing for HyP3"""
+
 import argparse
 import os
 import sys
@@ -19,11 +18,20 @@ def main():
     parser = argparse.ArgumentParser(prefix_chars='+', formatter_class=argparse.ArgumentDefaultsHelpFormatter)
     parser.add_argument(
         '++process',
-        choices=['insar_tops_burst', 'insar_tops', 'insar_stripmap', 'merge_tops_bursts'],
+        choices=[
+            'insar_tops_burst',
+            'insar_tops',
+            'insar_stripmap',
+            'merge_tops_bursts',
+        ],
         default='insar_tops_burst',
         help='Select the HyP3 entrypoint to use',  # HyP3 entrypoints are specified in `pyproject.toml`
     )
-    parser.add_argument('++omp-num-threads', type=int, help='The number of OpenMP threads to use for parallel regions')
+    parser.add_argument(
+        '++omp-num-threads',
+        type=int,
+        help='The number of OpenMP threads to use for parallel regions',
+    )
 
     args, unknowns = parser.parse_known_args()
 
@@ -33,7 +41,10 @@ def main():
         write_credentials_to_netrc_file(username, password, append=False)
 
     if not (Path.home() / '.netrc').exists():
-        warnings.warn('Earthdata credentials must be present as environment variables, or in your netrc.', UserWarning)
+        warnings.warn(
+            'Earthdata credentials must be present as environment variables, or in your netrc.',
+            UserWarning,
+        )
 
     # NOTE: Cast to set because of: https://github.com/pypa/setuptools/issues/3649
     # NOTE: Will need to update to `entry_points(group='hyp3', name=args.process)` when updating to python 3.10

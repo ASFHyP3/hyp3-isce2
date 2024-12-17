@@ -19,9 +19,8 @@ class GDALConfigManager:
     """Context manager for setting GDAL config options temporarily"""
 
     def __init__(self, **options):
-        """
-        Args:
-            **options: GDAL Config `option=value` keyword arguments.
+        """Args:
+        **options: GDAL Config `option=value` keyword arguments.
         """
         self.options = options.copy()
         self._previous_options = {}
@@ -197,7 +196,7 @@ def load_isce2_image(in_path) -> tuple[isceobj.Image, np.ndarray]:
             shape = (image_obj.bands, image_obj.length, image_obj.width)
             new_array = np.zeros(shape, dtype=image_obj.toNumpyDataType())
             for i in range(image_obj.bands):
-                new_array[i, :, :] = array[i::image_obj.bands]
+                new_array[i, :, :] = array[i :: image_obj.bands]
             array = new_array.copy()
         else:
             raise NotImplementedError('Non-BIL reading is not implemented')
@@ -211,7 +210,13 @@ def write_isce2_image(output_path: str, array: np.ndarray) -> None:
         output_path: The path to the output image file.
         array: The array to write to the file.
     """
-    data_type_dic = {'float32': 'FLOAT', 'float64': 'DOUBLE', 'int32': 'INT', 'complex64': 'CFLOAT', 'int8': 'BYTE'}
+    data_type_dic = {
+        'float32': 'FLOAT',
+        'float64': 'DOUBLE',
+        'int32': 'INT',
+        'complex64': 'CFLOAT',
+        'int8': 'BYTE',
+    }
 
     data_type = data_type_dic[str(array.dtype)]
 
@@ -253,7 +258,12 @@ def get_geotransform_from_dataset(dataset: isceobj.Image) -> tuple:
 
 
 def resample_to_radar(
-    mask: np.ndarray, lat: np.ndarray, lon: np.ndarray, geotransform: tuple, data_type: type, outshape: tuple[int, int]
+    mask: np.ndarray,
+    lat: np.ndarray,
+    lon: np.ndarray,
+    geotransform: tuple,
+    data_type: type,
+    outshape: tuple[int, int],
 ) -> np.ndarray:
     """Resample a geographic image to radar coordinates using a nearest neighbor method.
     The latin and lonin images are used to map from geographic to radar coordinates.
@@ -269,8 +279,12 @@ def resample_to_radar(
     Returns:
         resampled_image: The resampled image array
     """
-
-    start_lon, delta_lon, start_lat, delta_lat = geotransform[0], geotransform[1], geotransform[3], geotransform[5]
+    start_lon, delta_lon, start_lat, delta_lat = (
+        geotransform[0],
+        geotransform[1],
+        geotransform[3],
+        geotransform[5],
+    )
 
     lati = np.clip((((lat - start_lat) / delta_lat) + 0.5).astype(int), 0, mask.shape[0] - 1)
     loni = np.clip((((lon - start_lon) / delta_lon) + 0.5).astype(int), 0, mask.shape[1] - 1)
@@ -329,7 +343,15 @@ def image_math(image_a_path: str, image_b_path: str, out_path: str, expression: 
         out_path: The path to the output image.
         expression: The expression to pass to imageMath.py.
     """
-    cmd = ['imageMath.py', f'--a={image_a_path}', f'--b={image_b_path}', '-o', f'{out_path}', '--eval', expression]
+    cmd = [
+        'imageMath.py',
+        f'--a={image_a_path}',
+        f'--b={image_b_path}',
+        '-o',
+        f'{out_path}',
+        '--eval',
+        expression,
+    ]
     subprocess.run(cmd, check=True)
 
 
@@ -362,7 +384,7 @@ def write_isce2_image_from_obj(image_obj, array):
             shape = (image_obj.length * image_obj.bands, image_obj.width)
             new_array = np.zeros(shape, dtype=image_obj.toNumpyDataType())
             for i in range(image_obj.bands):
-                new_array[i::image_obj.bands] = array[i, :, :]
+                new_array[i :: image_obj.bands] = array[i, :, :]
             array = new_array.copy()
         else:
             raise NotImplementedError('Non-BIL writing is not implemented')

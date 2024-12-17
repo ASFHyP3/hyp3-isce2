@@ -4,7 +4,7 @@ from dataclasses import dataclass
 from datetime import datetime, timezone
 from pathlib import Path
 from secrets import token_hex
-from typing import Iterable, Optional
+from typing import Optional
 
 import isce
 import numpy as np
@@ -25,8 +25,8 @@ from hyp3_isce2.utils import ParameterFile, get_projection, utm_from_lon_lat
 class ISCE2Dataset:
     name: str
     suffix: str
-    band: Iterable[int]
-    dtype: Optional[int] = gdalconst.GDT_Float32
+    band: int | list[int]
+    dtype: int = gdalconst.GDT_Float32
 
 
 def get_pixel_size(looks: str) -> float:
@@ -39,7 +39,7 @@ def find_product(pattern: str) -> str:
     Args:
         pattern: Glob pattern for file
 
-    Returns
+    Returns:
         Path to file
     """
     search = Path.cwd().glob(pattern)
@@ -48,7 +48,11 @@ def find_product(pattern: str) -> str:
 
 
 def get_product_name(
-    reference: str, secondary: str, pixel_spacing: int, polarization: Optional[str] = None, slc: bool = True
+    reference: str,
+    secondary: str,
+    pixel_spacing: int,
+    polarization: Optional[str] = None,
+    slc: bool = True,
 ) -> str:
     """Get the name of the interferogram product.
 
@@ -90,7 +94,14 @@ def get_product_name(
 
         lat_lims = [lat_string(lat) for lat in [np.min(lats), np.max(lats)]]
         lon_lims = [lon_string(lon) for lon in [np.min(lons), np.max(lons)]]
-        name_parts = [platform, orbit_number, lon_lims[0], lat_lims[0], lon_lims[1], lat_lims[1]]
+        name_parts = [
+            platform,
+            orbit_number,
+            lon_lims[0],
+            lat_lims[0],
+            lon_lims[1],
+            lat_lims[1],
+        ]
     else:
         platform = reference_split[0]
         burst_id = reference_split[1]
@@ -100,7 +111,7 @@ def get_product_name(
         polarization = reference_split[4]
         name_parts = [platform, burst_id, image_plus_swath]
     product_type = 'INT'
-    pixel_spacing = str(int(pixel_spacing))
+    pixel_spacing_str = str(int(pixel_spacing))
     product_id = token_hex(2).upper()
     product_name = '_'.join(
         name_parts
@@ -108,7 +119,7 @@ def get_product_name(
             reference_date,
             secondary_date,
             polarization,
-            product_type + pixel_spacing,
+            product_type + pixel_spacing_str,
             product_id,
         ]
     )
@@ -116,7 +127,12 @@ def get_product_name(
     return product_name
 
 
-def translate_outputs(product_name: str, pixel_size: float, include_radar: bool = False, use_multilooked=False) -> None:
+def translate_outputs(
+    product_name: str,
+    pixel_size: float,
+    include_radar: bool = False,
+    use_multilooked=False,
+) -> None:
     """Translate ISCE outputs to a standard GTiff format with a UTM projection.
     Assume you are in the top level of an ISCE run directory
 
@@ -126,7 +142,6 @@ def translate_outputs(product_name: str, pixel_size: float, include_radar: bool 
         include_radar: Flag to include the full resolution radar geometry products in the output
         use_multilooked: Flag to use multilooked versions of the radar geometry products
     """
-
     src_ds = gdal.Open('merged/filt_topophase.unw.geo')
     src_geotransform = src_ds.GetGeoTransform()
     src_projection = src_ds.GetProjection()
@@ -244,7 +259,6 @@ def convert_raster_from_isce2_gdal(input_image, ref_image, output_image):
         ref_image: output geotiff file name
         output_image: water mask file name
     """
-
     ref_ds = gdal.Open(ref_image)
 
     gt = ref_ds.GetGeoTransform()
@@ -280,7 +294,6 @@ def water_mask(unwrapped_phase: str, water_mask: str) -> None:
         unwrapped_phase: The unwrapped phase file
         water_mask: The water mask file
     """
-
     convert_raster_from_isce2_gdal('water_mask.wgs84', unwrapped_phase, water_mask)
     cmd = (
         'gdal_calc.py '

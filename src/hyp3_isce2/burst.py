@@ -7,7 +7,7 @@ from concurrent.futures import ThreadPoolExecutor
 from dataclasses import dataclass
 from datetime import datetime, timedelta
 from pathlib import Path
-from typing import Iterable, Iterator, List, Optional, Tuple, Union
+from typing import Optional, Tuple
 
 import asf_search
 import numpy as np
@@ -54,13 +54,19 @@ class BurstPosition:
 class BurstMetadata:
     """Metadata for a burst."""
 
-    def __init__(self, metadata: etree.Element, burst_params: BurstParams):
+    def __init__(self, metadata: etree._Element, burst_params: BurstParams):
         self.safe_name = burst_params.granule
         self.swath = burst_params.swath
         self.polarization = burst_params.polarization
         self.burst_number = burst_params.burst_number
         self.manifest = metadata[0]
         self.manifest_name = 'manifest.safe'
+        self.annotation = None
+        self.annotation_name: Path = Path()
+        self.calibration = None
+        self.calibration_name: Path = Path()
+        self.noise = None
+        self.noise_name: Path = Path()
         metadata = metadata[1]
 
         names = [file.attrib['source_filename'] for file in metadata]
@@ -69,7 +75,12 @@ class BurstMetadata:
         products = [x.tag for x in metadata]
         swaths_and_products = list(zip(swaths, products))
 
-        files = {'product': 'annotation', 'calibration': 'calibration', 'noise': 'noise'}
+        files = {
+            'product': 'annotation',
+            'calibration': 'calibration',
+            'noise': 'noise',
+        }
+
         for name in files:
             elem = metadata[swaths_and_products.index((self.swath.lower(), name))]
             content = copy.deepcopy(elem.find('content'))
@@ -129,14 +140,12 @@ def download_from_extractor(asf_session: requests.Session, burst_params: BurstPa
     Returns:
         The downloaded content.
     """
-    burst_request = {
-        'url': create_burst_request_url(burst_params, content_type=content_type),
-        'cookies': {'asf-urs': asf_session.cookies['asf-urs']},
-    }
+    burst_request_url = create_burst_request_url(burst_params, content_type=content_type)
+    burst_request_cookies = {'asf-urs': asf_session.cookies['asf-urs']}
 
     for i in range(1, 11):
-        log.info(f'Download attempt #{i} for {burst_request["url"]}')
-        response = asf_session.get(**burst_request)
+        log.info(f'Download attempt #{i} for {burst_request_url}')
+        response = asf_session.get(url=burst_request_url, cookies=burst_request_cookies)
         downloaded = wait_for_extractor(response)
         if downloaded:
             break
@@ -148,8 +157,10 @@ def download_from_extractor(asf_session: requests.Session, burst_params: BurstPa
 
 
 def download_metadata(
-    asf_session: requests.Session, burst_params: BurstParams, out_file: Union[Path, str] = None
-) -> Union[etree._Element, str]:
+    asf_session: requests.Session,
+    burst_params: BurstParams,
+    out_file: Path | str | None = None,
+) -> etree._Element | str:
     """Download burst metadata.
 
     Args:
@@ -172,7 +183,11 @@ def download_metadata(
     return str(out_file)
 
 
-def download_burst(asf_session: requests.Session, burst_params: BurstParams, out_file: Union[Path, str] = None) -> Path:
+def download_burst(
+    asf_session: requests.Session,
+    burst_params: BurstParams,
+    out_file: Path | str | None = None,
+) -> Path:
     """Download a burst geotiff.
 
     Args:
@@ -196,7 +211,7 @@ def download_burst(asf_session: requests.Session, burst_params: BurstParams, out
     return Path(out_file)
 
 
-def spoof_safe(burst: BurstMetadata, burst_tiff_path: Path, base_path: Path = Path('.')) -> Path:
+def spoof_safe(burst: BurstMetadata, burst_tiff_path: Path, base_path: Path = Path()) -> Path:
     """Spoof a Sentinel-1 SAFE file for a burst.
 
     The created SAFE file will be saved to the base_path directory. The SAFE will have the following structure:
@@ -238,11 +253,11 @@ def spoof_safe(burst: BurstMetadata, burst_tiff_path: Path, base_path: Path = Pa
     return safe_path
 
 
-def get_isce2_burst_bbox(params: BurstParams, base_dir: Optional[Path] = None) -> geometry.Polygon:
+def get_isce2_burst_bbox(params: BurstParams, base_dir: Path | None = None) -> geometry.Polygon:
     """Get the bounding box of a Sentinel-1 burst using ISCE2.
     Using ISCE2 directly ensures that the bounding box is the same as the one used by ISCE2 for processing.
 
-    args:
+    Args:
         params: The burst parameters.
         base_dir: The directory containing the SAFE file.
             If base_dir is not set, it will default to the current working directory.
@@ -310,7 +325,7 @@ def get_asf_session() -> requests.Session:
     return session
 
 
-def download_bursts(param_list: Iterator[BurstParams]) -> List[BurstMetadata]:
+def download_bursts(param_list: list[BurstParams]) -> list[BurstMetadata]:
     """Download bursts in parallel and creates SAFE files.
 
     For each burst:
@@ -360,7 +375,7 @@ def get_burst_params(scene_name: str) -> BurstParams:
     )
 
 
-def validate_bursts(reference: Union[str, Iterable[str]], secondary: Union[str, Iterable[str]]) -> None:
+def validate_bursts(reference: str | list[str], secondary: str | list[str]) -> None:
     """Check whether the reference and secondary bursts are valid.
 
     Args:
@@ -413,7 +428,6 @@ def load_burst_position(swath_xml_path: str, burst_number: int) -> BurstPosition
     Returns:
         A BurstPosition object describing the burst.
     """
-
     product = load_product(swath_xml_path)
     burst_props = product.bursts[burst_number]
 
@@ -431,7 +445,7 @@ def load_burst_position(swath_xml_path: str, burst_number: int) -> BurstPosition
     return pos
 
 
-def evenize(length: int, first_valid: int, valid_length: int, looks: int) -> Tuple[int]:
+def evenize(length: int, first_valid: int, valid_length: int, looks: int) -> tuple[int, int, int]:
     """Get dimensions for an image that are integer multiples of looks.
     This applies to both the full image and the valid data region.
     Works with either the image's lines or samples.
@@ -478,7 +492,10 @@ def evenly_subset_position(position: BurstPosition, rg_looks, az_looks) -> Burst
         A BurstPosition object describing the burst.
     """
     even_n_samples, even_first_valid_sample, even_n_valid_samples = evenize(
-        position.n_samples, position.first_valid_sample, position.n_valid_samples, rg_looks
+        position.n_samples,
+        position.first_valid_sample,
+        position.n_valid_samples,
+        rg_looks,
     )
     even_n_lines, even_first_valid_line, even_n_valid_lines = evenize(
         position.n_lines, position.first_valid_line, position.n_valid_lines, az_looks
@@ -523,7 +540,11 @@ def multilook_position(position: BurstPosition, rg_looks: int, az_looks: int) ->
 
 
 def safely_multilook(
-    in_file: str, position: BurstPosition, rg_looks: int, az_looks: int, subset_to_valid: bool = True
+    in_file: str,
+    position: BurstPosition,
+    rg_looks: int,
+    az_looks: int,
+    subset_to_valid: bool = True,
 ) -> None:
     """Multilook an image, but only over a subset of the data whose dimensions are
     integer divisible by range/azimuth looks. Do the same for the valid data region.
@@ -544,7 +565,10 @@ def safely_multilook(
     if subset_to_valid:
         last_line = position.first_valid_line + position.n_valid_lines
         last_sample = position.first_valid_sample + position.n_valid_samples
-        mask[position.first_valid_line:last_line, position.first_valid_sample:last_sample] = identity_value
+        mask[
+            position.first_valid_line : last_line,
+            position.first_valid_sample : last_sample,
+        ] = identity_value
     else:
         mask[:, :] = identity_value
 

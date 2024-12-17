@@ -17,7 +17,7 @@ def test_stripmap_config(tmp_path):
     config.write_template(template_path)
     assert template_path.exists()
 
-    with open(template_path, 'r') as template_file:
+    with open(template_path) as template_file:
         template = template_file.read()
         assert 'ALPSRP156121200-L1.0/IMG-HH-ALPSRP156121200-H1.0__A' in template
         assert 'ALPSRP156121200-L1.0/LED-ALPSRP156121200-H1.0__A' in template
