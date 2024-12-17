@@ -9,12 +9,38 @@ Example 1: Downloading metadata for a pair of ascending/descending bursts
 Example 2: Downloading a pair of ascending/descending bursts and spoofing a SAFE
 """
 
-from hyp3_isce2.burst import BurstParams, download_bursts, download_metadata, get_asf_session
+from hyp3_isce2.burst import (
+    BurstParams,
+    download_bursts,
+    download_metadata,
+    get_asf_session,
+)
 
-ref_desc = BurstParams('S1A_IW_SLC__1SDV_20200604T022251_20200604T022318_032861_03CE65_7C85', 'IW2', 'VV', 3)
-sec_desc = BurstParams('S1A_IW_SLC__1SDV_20200616T022252_20200616T022319_033036_03D3A3_5D11', 'IW2', 'VV', 3)
-ref_asc = BurstParams('S1A_IW_SLC__1SDV_20200608T142544_20200608T142610_032927_03D069_14F4', 'IW1', 'VV', 1)
-sec_asc = BurstParams('S1A_IW_SLC__1SDV_20200620T142544_20200620T142611_033102_03D5B7_8F1B', 'IW1', 'VV', 1)
+
+ref_desc = BurstParams(
+    'S1A_IW_SLC__1SDV_20200604T022251_20200604T022318_032861_03CE65_7C85',
+    'IW2',
+    'VV',
+    3,
+)
+sec_desc = BurstParams(
+    'S1A_IW_SLC__1SDV_20200616T022252_20200616T022319_033036_03D3A3_5D11',
+    'IW2',
+    'VV',
+    3,
+)
+ref_asc = BurstParams(
+    'S1A_IW_SLC__1SDV_20200608T142544_20200608T142610_032927_03D069_14F4',
+    'IW1',
+    'VV',
+    1,
+)
+sec_asc = BurstParams(
+    'S1A_IW_SLC__1SDV_20200620T142544_20200620T142611_033102_03D5B7_8F1B',
+    'IW1',
+    'VV',
+    1,
+)
 
 # Example 1
 # Download metadata files for tests

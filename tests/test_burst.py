@@ -1,4 +1,5 @@
 """Tests for the single-burst specific functionality found in burst.py"""
+
 from collections import namedtuple
 from datetime import datetime
 from pathlib import Path
@@ -14,10 +15,30 @@ from hyp3_isce2 import burst, utils
 
 
 URL_BASE = 'https://datapool.asf.alaska.edu/SLC'
-REF_DESC = burst.BurstParams('S1A_IW_SLC__1SDV_20200604T022251_20200604T022318_032861_03CE65_7C85', 'IW2', 'VV', 3)
-SEC_DESC = burst.BurstParams('S1A_IW_SLC__1SDV_20200616T022252_20200616T022319_033036_03D3A3_5D11', 'IW2', 'VV', 3)
-REF_ASC = burst.BurstParams('S1A_IW_SLC__1SDV_20200608T142544_20200608T142610_032927_03D069_14F4', 'IW1', 'VV', 1)
-SEC_ASC = burst.BurstParams('S1A_IW_SLC__1SDV_20200620T142544_20200620T142611_033102_03D5B7_8F1B', 'IW1', 'VV', 1)
+REF_DESC = burst.BurstParams(
+    'S1A_IW_SLC__1SDV_20200604T022251_20200604T022318_032861_03CE65_7C85',
+    'IW2',
+    'VV',
+    3,
+)
+SEC_DESC = burst.BurstParams(
+    'S1A_IW_SLC__1SDV_20200616T022252_20200616T022319_033036_03D3A3_5D11',
+    'IW2',
+    'VV',
+    3,
+)
+REF_ASC = burst.BurstParams(
+    'S1A_IW_SLC__1SDV_20200608T142544_20200608T142610_032927_03D069_14F4',
+    'IW1',
+    'VV',
+    1,
+)
+SEC_ASC = burst.BurstParams(
+    'S1A_IW_SLC__1SDV_20200620T142544_20200620T142611_033102_03D5B7_8F1B',
+    'IW1',
+    'VV',
+    1,
+)
 
 
 def load_metadata(metadata):
@@ -61,8 +82,7 @@ def test_spoof_safe(tmp_path, mocker, pattern):
 
 @pytest.mark.parametrize('orbit', ('ascending', 'descending'))
 def test_get_region_of_interest(tmp_path, orbit):
-    """
-    Test that the region of interest is correctly calculated for a given burst pair.
+    """Test that the region of interest is correctly calculated for a given burst pair.
     Specifically, the region of interest we create should intersect the bursts used to create it,
     but not the bursts before or after it. This is difficult due to to the high degree of overlap between bursts.
 
@@ -173,10 +193,19 @@ def test_get_burst_params_multiple_results():
 
 
 def test_validate_bursts():
-    burst.validate_bursts('S1_000000_IW1_20200101T000000_VV_0000-BURST', 'S1_000000_IW1_20200201T000000_VV_0000-BURST')
     burst.validate_bursts(
-        ['S1_000000_IW1_20200101T000000_VV_0000-BURST', 'S1_000001_IW1_20200101T000001_VV_0000-BURST'],
-        ['S1_000000_IW1_20200201T000000_VV_0000-BURST', 'S1_000001_IW1_20200201T000001_VV_0000-BURST'],
+        'S1_000000_IW1_20200101T000000_VV_0000-BURST',
+        'S1_000000_IW1_20200201T000000_VV_0000-BURST',
+    )
+    burst.validate_bursts(
+        [
+            'S1_000000_IW1_20200101T000000_VV_0000-BURST',
+            'S1_000001_IW1_20200101T000001_VV_0000-BURST',
+        ],
+        [
+            'S1_000000_IW1_20200201T000000_VV_0000-BURST',
+            'S1_000001_IW1_20200201T000001_VV_0000-BURST',
+        ],
     )
 
     with pytest.raises(ValueError, match=r'Must include at least 1.*'):
@@ -187,30 +216,50 @@ def test_validate_bursts():
 
     with pytest.raises(ValueError, match=r'.*burst ID sets do not match.*'):
         burst.validate_bursts(
-            ['S1_000000_IW1_20200101T000000_VV_0000-BURST'], ['S1_000000_IW2_20200201T000000_VV_0000-BURST']
+            ['S1_000000_IW1_20200101T000000_VV_0000-BURST'],
+            ['S1_000000_IW2_20200201T000000_VV_0000-BURST'],
         )
 
     with pytest.raises(ValueError, match=r'.*must have a single polarization.*'):
         burst.validate_bursts(
-            ['S1_000000_IW1_20200101T000000_VV_0000-BURST', 'S1_000000_IW1_20200101T000000_VH_0000-BURST'],
-            ['S1_000000_IW1_20200201T000000_VV_0000-BURST', 'S1_000000_IW1_20200201T000000_VH_0000-BURST'],
+            [
+                'S1_000000_IW1_20200101T000000_VV_0000-BURST',
+                'S1_000000_IW1_20200101T000000_VH_0000-BURST',
+            ],
+            [
+                'S1_000000_IW1_20200201T000000_VV_0000-BURST',
+                'S1_000000_IW1_20200201T000000_VH_0000-BURST',
+            ],
         )
 
     with pytest.raises(ValueError, match=r'.*polarization is not currently supported.*'):
         burst.validate_bursts(
-            ['S1_000000_IW1_20200101T000000_VH_0000-BURST', 'S1_000000_IW1_20200101T000000_VH_0000-BURST'],
-            ['S1_000000_IW1_20200201T000000_VH_0000-BURST', 'S1_000000_IW1_20200201T000000_VH_0000-BURST'],
+            [
+                'S1_000000_IW1_20200101T000000_VH_0000-BURST',
+                'S1_000000_IW1_20200101T000000_VH_0000-BURST',
+            ],
+            [
+                'S1_000000_IW1_20200201T000000_VH_0000-BURST',
+                'S1_000000_IW1_20200201T000000_VH_0000-BURST',
+            ],
         )
 
     with pytest.raises(ValueError, match=r'.*must be from one date.*'):
         burst.validate_bursts(
-            ['S1_000000_IW1_20200101T000000_VV_0000-BURST', 'S1_000001_IW1_20200101T000000_VV_0000-BURST'],
-            ['S1_000000_IW1_20200201T000000_VV_0000-BURST', 'S1_000001_IW1_20200202T000000_VV_0000-BURST'],
+            [
+                'S1_000000_IW1_20200101T000000_VV_0000-BURST',
+                'S1_000001_IW1_20200101T000000_VV_0000-BURST',
+            ],
+            [
+                'S1_000000_IW1_20200201T000000_VV_0000-BURST',
+                'S1_000001_IW1_20200202T000000_VV_0000-BURST',
+            ],
         )
 
     with pytest.raises(ValueError, match=r'Reference granules must be older.*'):
         burst.validate_bursts(
-            'S1_000000_IW1_20200201T000000_VV_0000-BURST', 'S1_000000_IW1_20200101T000000_VV_0000-BURST'
+            'S1_000000_IW1_20200201T000000_VV_0000-BURST',
+            'S1_000000_IW1_20200101T000000_VV_0000-BURST',
         )
 
 

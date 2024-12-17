@@ -4,6 +4,7 @@ from typing import Union
 from isce.applications.stripmapApp import Insar
 from jinja2 import Template
 
+
 TEMPLATE_DIR = Path(__file__).parent / 'templates'
 
 STRIPMAPAPP_STEPS = [
@@ -35,7 +36,7 @@ STRIPMAPAPP_STEPS = [
     'ionosphere',
     'geocode',
     'geocodeoffsets',
-    'endup'
+    'endup',
 ]
 
 STRIPMAPAPP_GEOCODE_LIST = [
@@ -86,7 +87,7 @@ class StripmapappConfig:
         Returns:
             The rendered template
         """
-        with open(TEMPLATE_DIR / 'stripmapapp_alos.xml', 'r') as file:
+        with open(TEMPLATE_DIR / 'stripmapapp_alos.xml') as file:
             template = Template(file.read())
         return template.render(self.__dict__)
 
@@ -107,7 +108,12 @@ class StripmapappConfig:
         return filename
 
 
-def run_stripmapapp(dostep: str = '', start: str = '', end: str = '', config_xml: Path = Path('stripmapApp.xml')):
+def run_stripmapapp(
+    dostep: str = '',
+    start: str = '',
+    end: str = '',
+    config_xml: Path = Path('stripmapApp.xml'),
+):
     """Run topsApp.py for a burst pair with the desired steps and config file
 
     Args:
@@ -122,7 +128,7 @@ def run_stripmapapp(dostep: str = '', start: str = '', end: str = '', config_xml
         ValueError: If the step is not a valid step (see TOPSAPP_STEPS)
     """
     if not config_xml.exists():
-        raise IOError(f'The config file {config_xml} does not exist!')
+        raise OSError(f'The config file {config_xml} does not exist!')
 
     if dostep and (start or end):
         raise ValueError('If dostep is specified, start and stop cannot be used')

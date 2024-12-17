@@ -42,14 +42,20 @@ def create_test_products():
     out_dir = Path.cwd() / 'merge'
 
     pairs = [
-        ['S1_136231_IW2_20200604T022312_VV_7C85-BURST', 'S1_136231_IW2_20200616T022313_VV_5D11-BURST'],
-        ['S1_136232_IW2_20200604T022315_VV_7C85-BURST', 'S1_136232_IW2_20200616T022316_VV_5D11-BURST'],
+        [
+            'S1_136231_IW2_20200604T022312_VV_7C85-BURST',
+            'S1_136231_IW2_20200616T022313_VV_5D11-BURST',
+        ],
+        [
+            'S1_136232_IW2_20200604T022315_VV_7C85-BURST',
+            'S1_136232_IW2_20200616T022316_VV_5D11-BURST',
+        ],
     ]
     for granule1, granule2 in pairs:
         create_product(Path.cwd() / 'tmp', out_dir, granule1, granule2)
 
     ifgs = out_dir.glob('./*/*_wrapped_phase_rdr.tif')
-    value = (1 + 0j)
+    value = 1 + 0j
     for ifg in ifgs:
         value += (0 + 1j) * np.pi / 2
         replace_geotiff_data(str(ifg), value)

@@ -1,9 +1,11 @@
+from collections.abc import Iterable, Sequence
 from pathlib import Path
-from typing import Iterable, Sequence, Union
+from typing import Union
 
 from isce.applications.topsApp import TopsInSAR
 from jinja2 import Template
 from osgeo import gdal
+
 
 gdal.UseExceptions()
 
@@ -91,7 +93,7 @@ class TopsappConfig:
         Returns:
             The rendered template
         """
-        with open(TEMPLATE_DIR / 'topsapp.xml', 'r') as file:
+        with open(TEMPLATE_DIR / 'topsapp.xml') as file:
             template = Template(file.read())
         return template.render(self.__dict__)
 
@@ -135,7 +137,12 @@ def swap_burst_vrts():
         del base
 
 
-def run_topsapp(dostep: str = '', start: str = '', end: str = '', config_xml: Path = Path('topsApp.xml')):
+def run_topsapp(
+    dostep: str = '',
+    start: str = '',
+    end: str = '',
+    config_xml: Path = Path('topsApp.xml'),
+):
     """Run topsApp.py for a granule pair with the desired steps and config file
 
     Args:
@@ -150,7 +157,7 @@ def run_topsapp(dostep: str = '', start: str = '', end: str = '', config_xml: Pa
         ValueError: If the step is not a valid step (see TOPSAPP_STEPS)
     """
     if not config_xml.exists():
-        raise IOError(f'The config file {config_xml} does not exist!')
+        raise OSError(f'The config file {config_xml} does not exist!')
 
     if dostep and (start or end):
         raise ValueError('If dostep is specified, start and stop cannot be used')

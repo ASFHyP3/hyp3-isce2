@@ -1,10 +1,12 @@
 """Create and apply a water body mask"""
+
 import subprocess
 from pathlib import Path
 from typing import Optional
 
 import numpy as np
 from osgeo import gdal
+
 
 gdal.UseExceptions()
 
@@ -51,7 +53,7 @@ def coord_to_tile(coord: tuple[float, float]) -> str:
     return lat_part + lon_part + '.tif'
 
 
-def get_tiles(filename: str, tmp_path: Optional[Path]) -> None:
+def get_tiles(filename: str, tmp_path: Optional[Path]) -> list[str]:
     """Get the AWS vsicurl path's to the tiles necessary to cover the inputted file.
 
     Args:
@@ -67,7 +69,12 @@ def get_tiles(filename: str, tmp_path: Optional[Path]) -> None:
     return tiles
 
 
-def create_water_mask(input_image: str, output_image: str, gdal_format='ISCE', tmp_path: Optional[Path] = Path('.')):
+def create_water_mask(
+    input_image: str,
+    output_image: str,
+    gdal_format='ISCE',
+    tmp_path: Path = Path(),
+):
     """Create a water mask GeoTIFF with the same geometry as a given input GeoTIFF
 
     The water mask is assembled from OpenStreetMap data.
@@ -81,7 +88,6 @@ def create_water_mask(input_image: str, output_image: str, gdal_format='ISCE', t
         gdal_format: GDAL format name to create output image as
         tmp_path: An optional path to a temporary directory for temp files.
     """
-
     tiles = get_tiles(input_image, tmp_path=tmp_path)
 
     if len(tiles) < 1:
@@ -116,7 +122,7 @@ def create_water_mask(input_image: str, output_image: str, gdal_format='ISCE', t
         yRes=pixel_size,
         targetAlignedPixels=True,
         dstSRS='EPSG:4326',
-        format='GTiff'
+        format='GTiff',
     )
 
     flip_values_command = [

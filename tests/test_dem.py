@@ -9,6 +9,7 @@ from rasterio import CRS
 
 from hyp3_isce2 import dem
 
+
 MOCK_DEM_ARRAY = np.ones((3600, 3600), dtype=float)
 MOCK_DEM_ARRAY[:, 1000] = np.nan
 MOCK_DEM_ARRAY[:, 2000] = 2
@@ -26,8 +27,12 @@ MOCK_DEM_PROFILE = {
     'nodata': np.nan,
     'tiled': True,
     'transform': Affine(
-        0.0002777777777777778, 0.0, -169.00020833333335,
-        0.0, -0.0002777777777777778, 54.00013888888889
+        0.0002777777777777778,
+        0.0,
+        -169.00020833333335,
+        0.0,
+        -0.0002777777777777778,
+        54.00013888888889,
     ),
     'width': 3600,
 }
@@ -82,11 +87,26 @@ def test_buffer_extent():
 
 
 def test_distance_meters_to_degrees():
-    assert dem.distance_meters_to_degrees(distance_meters=20, latitude=0) == (0.000179864321184, 0.000179864321184)
-    assert dem.distance_meters_to_degrees(distance_meters=20, latitude=45) == (0.000254366562405, 0.000179864321184)
-    assert dem.distance_meters_to_degrees(distance_meters=20, latitude=89.9) == (0.103054717208573, 0.000179864321184)
-    assert dem.distance_meters_to_degrees(distance_meters=20, latitude=-45) == (0.000254366562405, 0.000179864321184)
-    assert dem.distance_meters_to_degrees(distance_meters=20, latitude=-89.9) == (0.103054717208573, 0.000179864321184)
+    assert dem.distance_meters_to_degrees(distance_meters=20, latitude=0) == (
+        0.000179864321184,
+        0.000179864321184,
+    )
+    assert dem.distance_meters_to_degrees(distance_meters=20, latitude=45) == (
+        0.000254366562405,
+        0.000179864321184,
+    )
+    assert dem.distance_meters_to_degrees(distance_meters=20, latitude=89.9) == (
+        0.103054717208573,
+        0.000179864321184,
+    )
+    assert dem.distance_meters_to_degrees(distance_meters=20, latitude=-45) == (
+        0.000254366562405,
+        0.000179864321184,
+    )
+    assert dem.distance_meters_to_degrees(distance_meters=20, latitude=-89.9) == (
+        0.103054717208573,
+        0.000179864321184,
+    )
     # This is since cos(90) = 0, leading to a divide by zero issue.
     with raises(ZeroDivisionError):
         dem.distance_meters_to_degrees(20, 90)
