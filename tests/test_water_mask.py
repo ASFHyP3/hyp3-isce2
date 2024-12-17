@@ -4,6 +4,7 @@ from osgeo import gdal
 
 from hyp3_isce2 import water_mask
 
+
 gdal.UseExceptions()
 
 TILE_PATH = '/vsicurl/https://asf-dem-west.s3.amazonaws.com/WATER_MASK/TILES/'

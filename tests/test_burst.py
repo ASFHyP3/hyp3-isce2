@@ -82,8 +82,7 @@ def test_spoof_safe(tmp_path, mocker, pattern):
 
 @pytest.mark.parametrize('orbit', ('ascending', 'descending'))
 def test_get_region_of_interest(tmp_path, orbit):
-    """
-    Test that the region of interest is correctly calculated for a given burst pair.
+    """Test that the region of interest is correctly calculated for a given burst pair.
     Specifically, the region of interest we create should intersect the bursts used to create it,
     but not the bursts before or after it. This is difficult due to to the high degree of overlap between bursts.
 

@@ -9,6 +9,7 @@ from pathlib import Path
 # https://github.com/isce-framework/isce2/blob/main/__init__.py#L41-L50
 import isce  # noqa: F401
 
+
 # ISCE2 sets the root logger to DEBUG resulting in excessively verbose logging, see:
 # https://github.com/isce-framework/isce2/issues/258
 root_logger = logging.getLogger()

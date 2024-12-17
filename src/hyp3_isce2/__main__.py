@@ -1,6 +1,4 @@
-"""
-ISCE2 processing for HyP3
-"""
+"""ISCE2 processing for HyP3"""
 
 import argparse
 import os

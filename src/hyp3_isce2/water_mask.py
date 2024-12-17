@@ -7,6 +7,7 @@ from typing import Optional
 import numpy as np
 from osgeo import gdal
 
+
 gdal.UseExceptions()
 
 TILE_PATH = '/vsicurl/https://asf-dem-west.s3.amazonaws.com/WATER_MASK/TILES/'
@@ -72,7 +73,7 @@ def create_water_mask(
     input_image: str,
     output_image: str,
     gdal_format='ISCE',
-    tmp_path: Path = Path('.'),
+    tmp_path: Path = Path(),
 ):
     """Create a water mask GeoTIFF with the same geometry as a given input GeoTIFF
 
@@ -87,7 +88,6 @@ def create_water_mask(
         gdal_format: GDAL format name to create output image as
         tmp_path: An optional path to a temporary directory for temp files.
     """
-
     tiles = get_tiles(input_image, tmp_path=tmp_path)
 
     if len(tiles) < 1:

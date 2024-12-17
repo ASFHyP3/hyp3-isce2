@@ -39,7 +39,7 @@ def find_product(pattern: str) -> str:
     Args:
         pattern: Glob pattern for file
 
-    Returns
+    Returns:
         Path to file
     """
     search = Path.cwd().glob(pattern)
@@ -142,7 +142,6 @@ def translate_outputs(
         include_radar: Flag to include the full resolution radar geometry products in the output
         use_multilooked: Flag to use multilooked versions of the radar geometry products
     """
-
     src_ds = gdal.Open('merged/filt_topophase.unw.geo')
     src_geotransform = src_ds.GetGeoTransform()
     src_projection = src_ds.GetProjection()
@@ -260,7 +259,6 @@ def convert_raster_from_isce2_gdal(input_image, ref_image, output_image):
         ref_image: output geotiff file name
         output_image: water mask file name
     """
-
     ref_ds = gdal.Open(ref_image)
 
     gt = ref_ds.GetGeoTransform()
@@ -296,7 +294,6 @@ def water_mask(unwrapped_phase: str, water_mask: str) -> None:
         unwrapped_phase: The unwrapped phase file
         water_mask: The water mask file
     """
-
     convert_raster_from_isce2_gdal('water_mask.wgs84', unwrapped_phase, water_mask)
     cmd = (
         'gdal_calc.py '

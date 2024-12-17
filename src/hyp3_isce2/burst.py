@@ -211,7 +211,7 @@ def download_burst(
     return Path(out_file)
 
 
-def spoof_safe(burst: BurstMetadata, burst_tiff_path: Path, base_path: Path = Path('.')) -> Path:
+def spoof_safe(burst: BurstMetadata, burst_tiff_path: Path, base_path: Path = Path()) -> Path:
     """Spoof a Sentinel-1 SAFE file for a burst.
 
     The created SAFE file will be saved to the base_path directory. The SAFE will have the following structure:
@@ -257,7 +257,7 @@ def get_isce2_burst_bbox(params: BurstParams, base_dir: Path | None = None) -> g
     """Get the bounding box of a Sentinel-1 burst using ISCE2.
     Using ISCE2 directly ensures that the bounding box is the same as the one used by ISCE2 for processing.
 
-    args:
+    Args:
         params: The burst parameters.
         base_dir: The directory containing the SAFE file.
             If base_dir is not set, it will default to the current working directory.
@@ -428,7 +428,6 @@ def load_burst_position(swath_xml_path: str, burst_number: int) -> BurstPosition
     Returns:
         A BurstPosition object describing the burst.
     """
-
     product = load_product(swath_xml_path)
     burst_props = product.bursts[burst_number]
 

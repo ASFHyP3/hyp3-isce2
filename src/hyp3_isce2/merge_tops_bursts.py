@@ -7,6 +7,7 @@ import logging
 import os
 import shutil
 import sys
+from collections.abc import Iterable
 from concurrent.futures import ThreadPoolExecutor
 from dataclasses import dataclass
 from itertools import combinations
@@ -14,7 +15,7 @@ from pathlib import Path
 from secrets import token_hex
 from shutil import make_archive
 from tempfile import TemporaryDirectory
-from typing import Iterable, List, Optional, Tuple
+from typing import List, Optional, Tuple
 
 import asf_search
 import isce
@@ -316,7 +317,7 @@ class Sentinel1BurstSelect(Sentinel1):
             burst.numberOfSamples = width
             burst.numberOfLines = length
 
-            print('Updating burst number from {0} to {1}'.format(burst.burstNumber, index + 1))
+            print(f'Updating burst number from {burst.burstNumber} to {index + 1}')
             burst.burstNumber = index + 1
 
     def write_xml(self) -> None:
@@ -417,7 +418,7 @@ def modify_for_multilook(
         outdir: The directory to write the xml to
     """
     multilook_swath_obj = copy.deepcopy(swath_obj)
-    multilook_swath_obj.output = os.path.join(outdir, 'IW{0}_multilooked'.format(multilook_swath_obj.swath))
+    multilook_swath_obj.output = os.path.join(outdir, f'IW{multilook_swath_obj.swath}_multilooked')
     multilook_swath_obj.output = str(Path(outdir) / f'IW{multilook_swath_obj.swath}_multilooked')
     for new_metadata, burst_obj in zip(burst_products, multilook_swath_obj.product.bursts):
         if new_metadata.start_utc.replace(microsecond=0) != burst_obj.burstStartUTC.replace(microsecond=0):
@@ -603,7 +604,7 @@ def get_frames_and_indexes(burst_ifg_dir: Path) -> Tuple:
 
     swath_list = get_swath_list(burst_ifg_dir)
     for swath in swath_list:
-        ifg = load_product(os.path.join(burst_ifg_dir, 'IW{0}_multilooked.xml'.format(swath)))
+        ifg = load_product(os.path.join(burst_ifg_dir, f'IW{swath}_multilooked.xml'))
         min_burst = ifg.bursts[0].burstNumber - 1
         max_burst = ifg.bursts[-1].burstNumber
         frames.append(ifg)
