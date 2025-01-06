@@ -17,6 +17,7 @@ dependencies:
   - burst2safe
   # For packaging, and testing
   - ruff
+  - mypy
   - setuptools
   - setuptools_scm
   - wheel

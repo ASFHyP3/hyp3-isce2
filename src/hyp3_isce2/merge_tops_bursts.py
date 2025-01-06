@@ -217,6 +217,8 @@ def download_metadata_xmls(params: Iterable[burst_utils.BurstParams], base_dir: 
     for param in params:
         metadata_xml = metadata_xmls[param.granule]
         burst_metadata = burst_utils.BurstMetadata(metadata_xml, param)
+        assert isinstance(burst_metadata.annotation, str)
+        assert isinstance(burst_metadata.manifest, str)
         ET.ElementTree(burst_metadata.annotation).write(annotation_dir / burst_metadata.annotation_name, **et_args)
         ET.ElementTree(burst_metadata.manifest).write(manifest_dir / f'{burst_metadata.safe_name}.xml', **et_args)
 
