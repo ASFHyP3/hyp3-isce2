@@ -1,5 +1,6 @@
 import os
 import subprocess
+import system
 from dataclasses import dataclass
 from datetime import datetime, timezone
 from pathlib import Path
@@ -479,11 +480,11 @@ def make_parameter_file(
     parameter_file.write(out_path)
 
 
-def upload_product_to_s3(product_dir, output_zip, bucket, bucket_prefix)
+def upload_product_to_s3(product_dir, output_zip, bucket, bucket_prefix):
     for browse in product_dir.glob('*.png'):
         create_thumbnail(browse, output_dir=product_dir)
 
     upload_file_to_s3(Path(output_zip), bucket, bucket_prefix)
 
-    for product_file in product_dir.iterdir()
+    for product_file in product_dir.iterdir():
         upload_file_to_s3(product_file, bucket, bucket_prefix)
