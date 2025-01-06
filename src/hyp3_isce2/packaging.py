@@ -22,7 +22,7 @@ from hyp3_isce2.utils import ParameterFile, get_projection, utm_from_lon_lat
 
 
 @dataclass
-class ISCE2Dataset:
+class ISCE2Dataset
     name: str
     suffix: str
     band: int | list[int]
