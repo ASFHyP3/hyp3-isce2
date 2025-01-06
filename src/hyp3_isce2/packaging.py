@@ -5,7 +5,7 @@ from dataclasses import dataclass
 from datetime import datetime, timezone
 from pathlib import Path
 from secrets import token_hex
-from typing import Optional, Any
+from typing import Optional
 
 import isce
 import numpy as np
