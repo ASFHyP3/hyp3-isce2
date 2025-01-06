@@ -31,7 +31,7 @@ class ISCE2Dataset:
 
 
 def get_pixel_size(looks: str) -> float:
-    return {'20x4': 80.0, '10x2': 40.0, '5x1': 20.0}[looks]
+    return {"20x4": 80.0, '10x2': 40.0, '5x1': 20.0}[looks]
 
 
 def find_product(pattern: str) -> str:
