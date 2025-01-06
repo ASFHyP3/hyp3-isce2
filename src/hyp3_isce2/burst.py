@@ -73,8 +73,8 @@ class BurstMetadata:
         metadata = metadata[1]
 
         names = [file.attrib['source_filename'] for file in metadata]
-        lengths = [len(str(name).split('-')) for name in names]
-        swaths = [str(name).split('-')[length - 8] for name, length in zip(names, lengths)]
+        lengths = [len(name.split('-')) for name in names]
+        swaths = [name.split('-')[length - 8] for name, length in zip(names, lengths)]
         products = [x.tag for x in metadata]
         swaths_and_products = list(zip(swaths, products))
 
