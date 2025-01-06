@@ -114,7 +114,7 @@ class ParameterFile:
                 f'Radar n valid samples: {self.radar_n_valid_samples}\n',
                 f'Multilook azimuth time interval: {self.multilook_azimuth_time_interval}\n',
                 f'Multilook range pixel size: {self.multilook_range_pixel_size}\n',
-                f'Radar sensing stop: {datetime.strftime(self.radar_sensing_stop, "%Y-%m-%dT%H:%M:%S.%f")}\n',
+                f'Radar sensing stop: {datetime.strftime(self.radar_sensing_stop, "%Y-%m-%dT%H:%M:%S.%f")}\n',  # type: ignore
             ]
             output_strings += radar_data
 

@@ -361,8 +361,8 @@ def test_multilook_radar_merge_inputs(tmpdir):
         'geom_reference/IW1/lon_01.rdr',
         'geom_reference/IW1/los_01.rdr',
     ]
-    paths = [Path(tmpdir) / x for x in paths]
-    for path in paths:
+    tmp_paths = [Path(tmpdir) / x for x in paths]
+    for path in tmp_paths:
         make_test_image(str(path))
 
     mock_position = burst.BurstPosition(100, 100, 20, 60, 20, 60, 0.1, 0.1, datetime(2021, 1, 1, 0, 0, 0))
@@ -373,6 +373,6 @@ def test_multilook_radar_merge_inputs(tmpdir):
     assert output.n_lines == 50
     assert output.n_samples == 20
 
-    multilooked = [x.parent / f'{x.stem}.multilooked{x.suffix}' for x in paths]
+    multilooked = [x.parent / f'{x.stem}.multilooked{x.suffix}' for x in tmp_paths]
     for file in multilooked:
         assert file.exists()

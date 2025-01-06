@@ -12,9 +12,9 @@ TILE_PATH = '/vsicurl/https://asf-dem-west.s3.amazonaws.com/WATER_MASK/TILES/'
 
 def test_get_corners(tmp_path):
     filepath_1 = 'tests/data/water_mask_input.tif'
-    corners_1 = np.round(np.asarray(water_mask.get_corners(filepath_1, tmp_path=str(tmp_path))), 13)
+    corners_1 = np.round(np.asarray(water_mask.get_corners(filepath_1, tmp_path=tmp_path)), 13)
     filepath_2 = 'tests/data/test_geotiff.tif'
-    corners_2 = np.round(np.asarray(water_mask.get_corners(filepath_2, tmp_path=str(tmp_path))), 13)
+    corners_2 = np.round(np.asarray(water_mask.get_corners(filepath_2, tmp_path=tmp_path)), 13)
     assert (
         corners_1.all()
         == np.round(
@@ -67,8 +67,8 @@ def test_get_tiles(tmp_path):
         'tests/data/test_geotiff.tif',
         ['/vsicurl/https://asf-dem-west.s3.amazonaws.com/WATER_MASK/TILES/n30w120.tif'],
     )
-    assert water_mask.get_tiles(case_1[0], tmp_path=str(tmp_path)) == case_1[1]
-    assert water_mask.get_tiles(case_2[0], tmp_path=str(tmp_path)) == case_2[1]
+    assert water_mask.get_tiles(case_1[0], tmp_path=tmp_path) == case_1[1]
+    assert water_mask.get_tiles(case_2[0], tmp_path=tmp_path) == case_2[1]
 
 
 @pytest.mark.integration

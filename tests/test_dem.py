@@ -61,8 +61,15 @@ def test_download_dem_for_isce2(tmp_path):
         )
 
         root = etree.parse(str(dem_path) + '.xml').getroot()
-        assert root.find("./property[@name='reference']/value").text == 'WGS84'
-        assert root.find("./property[@name='reference']/doc").text == 'Geodetic datum'
+
+        value = root.find("./property[@name='reference']/value")
+        doc = root.find("./property[@name='reference']/doc")
+
+        assert isinstance(value, etree._Element)
+        assert isinstance(doc, etree._Element)
+
+        assert value.text == 'WGS84'
+        assert doc.text == 'Geodetic datum'
 
         with rasterio.open(dem_path, 'r') as ds:
             dem_array = ds.read(1)
