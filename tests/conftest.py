@@ -46,8 +46,12 @@ def annotation_manifest_dirs(tmp_path, test_data_dir):
     burst_metadata = burst_utils.BurstMetadata(sample_xml, param)
     assert isinstance(burst_metadata.annotation, ET._Element)
     assert isinstance(burst_metadata.manifest, ET._Element)
-    ET.ElementTree(burst_metadata.annotation).write(annotation_dir / burst_metadata.annotation_name, encoding='UTF-8', xml_declaration=True)
-    ET.ElementTree(burst_metadata.manifest).write(manifest_dir / f'{burst_metadata.safe_name}.xml', encoding='UTF-8', xml_declaration=True)
+    ET.ElementTree(burst_metadata.annotation).write(
+        annotation_dir / burst_metadata.annotation_name, encoding='UTF-8', xml_declaration=True
+    )
+    ET.ElementTree(burst_metadata.manifest).write(
+        manifest_dir / f'{burst_metadata.safe_name}.xml', encoding='UTF-8', xml_declaration=True
+    )
     return annotation_dir, manifest_dir
 
 
