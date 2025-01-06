@@ -18,6 +18,7 @@ dependencies:
   # For packaging, and testing
   - ruff
   - mypy
+  - types-lxml
   - setuptools
   - setuptools_scm
   - wheel
