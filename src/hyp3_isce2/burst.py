@@ -104,6 +104,7 @@ class BurstMetadata:
         else:
             raise AttributeError(f'Could not find "pass" attribute in {name}.')
 
+
 def create_burst_request_url(params: BurstParams, content_type: str) -> str:
     """Create a URL to request a burst from the API.
 
@@ -256,15 +257,10 @@ def spoof_safe(burst: BurstMetadata, burst_tiff_path: Path, base_path: Path = Pa
         annotation_path / burst.annotation_name,
         calibration_path / burst.calibration_name,
         calibration_path / burst.noise_name,
-        safe_path / 'manifest.safe'
+        safe_path / 'manifest.safe',
     ]
 
-    elements: list[etree._Element | None] = [
-        burst.annotation,
-        burst.calibration,
-        burst.noise,
-        burst.manifest
-    ]
+    elements: list[etree._Element | None] = [burst.annotation, burst.calibration, burst.noise, burst.manifest]
 
     for filepath, element in zip(filepaths, elements):
         if element:

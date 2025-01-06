@@ -82,7 +82,7 @@ def get_product_name(
         ref_manifest_xml = etree.parse(f'{reference}.SAFE/manifest.safe', parser)
         metadata_path = './/metadataObject[@ID="measurementOrbitReference"]//xmlData//'
         relative_orbit_number_query = metadata_path + safe + 'relativeOrbitNumber'
-        orbit_number = ref_manifest_xml.find(relative_orbit_number_query).text.zfill(3) # type: ignore
+        orbit_number = ref_manifest_xml.find(relative_orbit_number_query).text.zfill(3)  # type: ignore
         footprint = get_geometry_from_manifest(Path(f'{reference}.SAFE/manifest.safe'))
         lons, lats = footprint.exterior.coords.xy
 
@@ -416,26 +416,26 @@ def make_parameter_file(
     orbit_number_query = metadata_path + safe + 'orbitNumber'
     orbit_direction_query = metadata_path + safe + 'extension//' + s1 + 'pass'
 
-    ref_orbit_number = ref_manifest_xml.find(orbit_number_query).text # type: ignore
-    ref_orbit_direction = ref_manifest_xml.find(orbit_direction_query).text # type: ignore
-    sec_orbit_number = sec_manifest_xml.find(orbit_number_query).text # type: ignore
-    sec_orbit_direction = sec_manifest_xml.find(orbit_direction_query).text # type: ignore
-    ref_heading = float(ref_annotation_xml.find('.//platformHeading').text) # type: ignore
-    ref_time = ref_annotation_xml.find('.//productFirstLineUtcTime').text # type: ignore
-    slant_range_time = float(ref_annotation_xml.find('.//slantRangeTime').text) # type: ignore
-    range_sampling_rate = float(ref_annotation_xml.find('.//rangeSamplingRate').text) # type: ignore
-    number_samples = int(ref_annotation_xml.find('.//swathTiming/samplesPerBurst').text) # type: ignore
+    ref_orbit_number = ref_manifest_xml.find(orbit_number_query).text  # type: ignore
+    ref_orbit_direction = ref_manifest_xml.find(orbit_direction_query).text  # type: ignore
+    sec_orbit_number = sec_manifest_xml.find(orbit_number_query).text  # type: ignore
+    sec_orbit_direction = sec_manifest_xml.find(orbit_direction_query).text  # type: ignore
+    ref_heading = float(ref_annotation_xml.find('.//platformHeading').text)  # type: ignore
+    ref_time = ref_annotation_xml.find('.//productFirstLineUtcTime').text  # type: ignore
+    slant_range_time = float(ref_annotation_xml.find('.//slantRangeTime').text)  # type: ignore
+    range_sampling_rate = float(ref_annotation_xml.find('.//rangeSamplingRate').text)  # type: ignore
+    number_samples = int(ref_annotation_xml.find('.//swathTiming/samplesPerBurst').text)  # type: ignore
     min_swath = find_available_swaths(Path.cwd())[0]
-    baseline_perp = topsProc_xml.find(f'.//IW-{int(min_swath[2])}_Bperp_at_midrange_for_first_common_burst').text # type: ignore
-    unwrapper_type = topsApp_xml.find('.//property[@name="unwrapper name"]').text # type: ignore
-    phase_filter_strength = topsApp_xml.find('.//property[@name="filter strength"]').text # type: ignore
+    baseline_perp = topsProc_xml.find(f'.//IW-{int(min_swath[2])}_Bperp_at_midrange_for_first_common_burst').text  # type: ignore
+    unwrapper_type = topsApp_xml.find('.//property[@name="unwrapper name"]').text  # type: ignore
+    phase_filter_strength = topsApp_xml.find('.//property[@name="filter strength"]').text  # type: ignore
 
     slant_range_near = float(slant_range_time) * SPEED_OF_LIGHT / 2
     range_pixel_spacing = SPEED_OF_LIGHT / (2 * range_sampling_rate)
     slant_range_far = slant_range_near + (number_samples - 1) * range_pixel_spacing
     slant_range_center = (slant_range_near + slant_range_far) / 2
 
-    s = ref_time.split('T')[1].split(':') # type: ignore
+    s = ref_time.split('T')[1].split(':')  # type: ignore
     utc_time = ((int(s[0]) * 60 + int(s[1])) * 60) + float(s[2])
 
     parameter_file = ParameterFile(
@@ -445,7 +445,7 @@ def make_parameter_file(
         reference_orbit_number=ref_orbit_number,  # type: ignore
         secondary_orbit_direction=sec_orbit_direction,  # type: ignore
         secondary_orbit_number=sec_orbit_number,  # type: ignore
-        baseline=float(baseline_perp), # type: ignore
+        baseline=float(baseline_perp),  # type: ignore
         utc_time=utc_time,
         heading=ref_heading,
         spacecraft_height=SPACECRAFT_HEIGHT,
@@ -456,13 +456,13 @@ def make_parameter_file(
         range_looks=int(range_looks),
         azimuth_looks=int(azimuth_looks),
         insar_phase_filter=True,
-        phase_filter_parameter=float(phase_filter_strength), # type: ignore
+        phase_filter_parameter=float(phase_filter_strength),  # type: ignore
         range_bandpass_filter=False,
         azimuth_bandpass_filter=False,
         dem_source=dem_name,
         dem_resolution=dem_resolution,
-        unwrapping_type=unwrapper_type, # type: ignore
-        speckle_filter=True, 
+        unwrapping_type=unwrapper_type,  # type: ignore
+        speckle_filter=True,
         water_mask=apply_water_mask,
     )
     if multilook_position:
