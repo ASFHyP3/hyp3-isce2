@@ -7,6 +7,10 @@ and this project adheres to [PEP 440](https://www.python.org/dev/peps/pep-0440/)
 and uses [Semantic Versioning](https://semver.org/spec/v2.0.0.html).
 
 ## [2.1.1]
+### Added
+- Added `mypy` type checker to the [`static-analysis`](https://github.com/ASFHyP3/hyp3-isce2/blob/develop/.github/workflows/static-analysis.yml) workflow.
+
+## [2.1.1]
 ### Changed
 - The [`static-analysis`](https://github.com/ASFHyP3/hyp3-isce2/blob/develop/.github/workflows/static-analysis.yml) workflow now uses `ruff` rather than `flake8`.
 
