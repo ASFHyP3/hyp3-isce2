@@ -485,5 +485,5 @@ def upload_product_to_s3(product_dir, output_zip, bucket, bucket_prefix)
 
     upload_file_to_s3(Path(output_zip), bucket, bucket_prefix)
 
-    for product_file in product_dir.iterdir():
+    for product_file in product_dir.iterdir()
         upload_file_to_s3(product_file, bucket, bucket_prefix)
