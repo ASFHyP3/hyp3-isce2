@@ -82,7 +82,7 @@ def get_product_name(
         ref_manifest_xml = etree.parse(f'{reference}.SAFE/manifest.safe', parser)
         metadata_path = './/metadataObject[@ID="measurementOrbitReference"]//xmlData//'
         relative_orbit_number_query = metadata_path + safe + 'relativeOrbitNumber'
-        orbit_number = ref_manifest_xml.find(relative_orbit_number_query).text.zfill(3)
+        orbit_number = ref_manifest_xml.find(relative_orbit_number_query).text.zfill(3)  # type: ignore[union-attr]
         footprint = get_geometry_from_manifest(Path(f'{reference}.SAFE/manifest.safe'))
         lons, lats = footprint.exterior.coords.xy
 
@@ -416,19 +416,19 @@ def make_parameter_file(
     orbit_number_query = metadata_path + safe + 'orbitNumber'
     orbit_direction_query = metadata_path + safe + 'extension//' + s1 + 'pass'
 
-    ref_orbit_number = ref_manifest_xml.find(orbit_number_query).text
-    ref_orbit_direction = ref_manifest_xml.find(orbit_direction_query).text
-    sec_orbit_number = sec_manifest_xml.find(orbit_number_query).text
-    sec_orbit_direction = sec_manifest_xml.find(orbit_direction_query).text
-    ref_heading = float(ref_annotation_xml.find('.//platformHeading').text)
-    ref_time = ref_annotation_xml.find('.//productFirstLineUtcTime').text
-    slant_range_time = float(ref_annotation_xml.find('.//slantRangeTime').text)
-    range_sampling_rate = float(ref_annotation_xml.find('.//rangeSamplingRate').text)
-    number_samples = int(ref_annotation_xml.find('.//swathTiming/samplesPerBurst').text)
+    ref_orbit_number: str = ref_manifest_xml.find(orbit_number_query).text  # type: ignore[assignment, union-attr]
+    ref_orbit_direction: str = ref_manifest_xml.find(orbit_direction_query).text  # type: ignore[assignment, union-attr]
+    sec_orbit_number: str = sec_manifest_xml.find(orbit_number_query).text  # type: ignore[assignment, union-attr]
+    sec_orbit_direction: str = sec_manifest_xml.find(orbit_direction_query).text  # type: ignore[assignment, union-attr]
+    ref_heading = float(ref_annotation_xml.find('.//platformHeading').text)  # type: ignore[arg-type, union-attr]
+    ref_time: str = ref_annotation_xml.find('.//productFirstLineUtcTime').text  # type: ignore[assignment, union-attr]
+    slant_range_time = float(ref_annotation_xml.find('.//slantRangeTime').text)  # type: ignore[arg-type, union-attr]
+    range_sampling_rate = float(ref_annotation_xml.find('.//rangeSamplingRate').text)  # type: ignore[arg-type, union-attr]
+    number_samples = int(ref_annotation_xml.find('.//swathTiming/samplesPerBurst').text)  # type: ignore[arg-type, union-attr]
     min_swath = find_available_swaths(Path.cwd())[0]
-    baseline_perp = topsProc_xml.find(f'.//IW-{int(min_swath[2])}_Bperp_at_midrange_for_first_common_burst').text
-    unwrapper_type = topsApp_xml.find('.//property[@name="unwrapper name"]').text
-    phase_filter_strength = topsApp_xml.find('.//property[@name="filter strength"]').text
+    baseline_perp: str = topsProc_xml.find(f'.//IW-{int(min_swath[2])}_Bperp_at_midrange_for_first_common_burst').text  # type: ignore[assignment, union-attr]
+    unwrapper_type: str = topsApp_xml.find('.//property[@name="unwrapper name"]').text  # type: ignore[assignment, union-attr]
+    phase_filter_strength: str = topsApp_xml.find('.//property[@name="filter strength"]').text  # type: ignore[assignment, union-attr]
 
     slant_range_near = float(slant_range_time) * SPEED_OF_LIGHT / 2
     range_pixel_spacing = SPEED_OF_LIGHT / (2 * range_sampling_rate)

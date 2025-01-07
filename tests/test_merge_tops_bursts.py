@@ -270,11 +270,11 @@ def test_spoof_isce2_setup(annotation_manifest_dirs, burst_product1):
 def test_get_swath_list(tmp_path):
     test_dir = tmp_path / 'test'
     test_dir.mkdir()
-    assert merge.get_swath_list(str(test_dir)) == []
+    assert merge.get_swath_list(test_dir) == []
 
     for x in [1, 2, 3]:
         (test_dir / f'IW{x}').mkdir()
-    assert merge.get_swath_list(str(test_dir)) == [1, 2, 3]
+    assert merge.get_swath_list(test_dir) == [1, 2, 3]
 
 
 def test_get_merged_orbit(test_s1_obj):
@@ -304,7 +304,7 @@ def test_goldstein_werner_filter(tmp_path):
     array = np.ones((10, 10), dtype=np.complex64)
     utils.write_isce2_image(str(in_path), array)
     utils.write_isce2_image(str(coh_path), array.astype(np.float32))
-    merge.goldstein_werner_filter(str(in_path), str(out_path), str(coh_path))
+    merge.goldstein_werner_filter(in_path, out_path, coh_path)
     assert out_path.exists()
     assert (out_path.parent / f'{out_path.name}.xml').exists()
     assert (out_path.parent / f'{out_path.name}.vrt').exists()
@@ -350,7 +350,7 @@ def test_snaphu_unwrap(test_s1_obj, test_data_dir, tmp_path):
     array = np.ones((100, 100), dtype=np.complex64)
     utils.write_isce2_image(str(filt_path), array)
     utils.write_isce2_image(str(coh_path), array.astype(np.float32))
-    merge.snaphu_unwrap(2, 2, str(coh_path), base_dir=merge_dir)
+    merge.snaphu_unwrap(2, 2, coh_path, base_dir=merge_dir)
 
     assert (merge_dir / 'filt_topophase.unw').exists()
     assert (merge_dir / 'filt_topophase.unw.xml').exists()

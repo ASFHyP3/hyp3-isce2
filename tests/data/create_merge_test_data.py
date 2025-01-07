@@ -27,7 +27,7 @@ def create_product(tmp_path: Path, out_path: Path, granule1: str, granule2: str)
     shutil.rmtree(result_directory.parent)
 
 
-def replace_geotiff_data(geotiff_path: str, stock_value: float) -> None:
+def replace_geotiff_data(geotiff_path: str, stock_value: complex) -> None:
     """Load a geotiff file, swap the non-zero data for all ones and resave."""
     ds = gdal.Open(geotiff_path, gdal.GA_Update)
     band = ds.GetRasterBand(1)
