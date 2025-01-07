@@ -73,8 +73,8 @@ class BurstMetadata:
         metadata = metadata[1]
 
         names = [file.attrib['source_filename'] for file in metadata]
-        lengths = [len(str(name).split('-')) for name in names]
-        swaths = [str(name).split('-')[length - 8] for name, length in zip(names, lengths)]
+        lengths = [len(name.split('-')) for name in names]
+        swaths = [name.split('-')[length - 8] for name, length in zip(names, lengths)]
         products = [x.tag for x in metadata]
         swaths_and_products = list(zip(swaths, products))
 
@@ -92,9 +92,9 @@ class BurstMetadata:
                 setattr(self, files[name], content)
                 setattr(self, f'{files[name]}_name', elem.attrib['source_filename'])
             else:
-                raise AttributeError(f'Could not find "content" attribute in {name}.')
+                raise ValueError(f'Could not find "content" attribute in {name}.')
 
-        file_paths = [str(elements.attrib['href']) for elements in self.manifest.findall('.//fileLocation')]
+        file_paths = [elements.attrib['href'] for elements in self.manifest.findall('.//fileLocation')]
         pattern = f'^./measurement/s1.*{self.swath.lower()}.*{self.polarization.lower()}.*.tiff$'
         self.measurement_name = [Path(path).name for path in file_paths if re.search(pattern, path)][0]
 
@@ -102,7 +102,7 @@ class BurstMetadata:
         if orbit_direction:
             self.orbit_direction = orbit_direction.lower()
         else:
-            raise AttributeError(f'Could not find "pass" attribute in {name}.')
+            raise ValueError(f'Could not find "pass" attribute in {name}.')
 
 
 def create_burst_request_url(params: BurstParams, content_type: str) -> str:
