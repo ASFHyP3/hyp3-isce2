@@ -263,10 +263,8 @@ def spoof_safe(burst: BurstMetadata, burst_tiff_path: Path, base_path: Path = Pa
     elements: list[etree._Element | None] = [burst.annotation, burst.calibration, burst.noise, burst.manifest]
 
     for filepath, element in zip(filepaths, elements):
-        if element:
-            etree.ElementTree(element).write(filepath, encoding=encoding, xml_declaration=xml_dec)
-        else:
-            raise ValueError(f'Error writing burst metadata to {filepath}.')
+        assert isinstance(element, etree._Element)
+        etree.ElementTree(element).write(filepath, encoding=encoding, xml_declaration=xml_dec)
 
     shutil.move(str(burst_tiff_path), str(measurement_path / burst.measurement_name))
 
