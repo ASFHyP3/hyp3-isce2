@@ -421,7 +421,7 @@ def make_parameter_file(
     sec_orbit_number: str = sec_manifest_xml.find(orbit_number_query).text  # type: ignore[assignment, union-attr]
     sec_orbit_direction: str = sec_manifest_xml.find(orbit_direction_query).text  # type: ignore[assignment, union-attr]
     ref_heading = float(ref_annotation_xml.find('.//platformHeading').text)  # type: ignore[arg-type, union-attr]
-    ref_time = ref_annotation_xml.find('.//productFirstLineUtcTime').text  # type: ignore[union-attr]
+    ref_time: str = ref_annotation_xml.find('.//productFirstLineUtcTime').text  # type: ignore[assignment, union-attr]
     slant_range_time = float(ref_annotation_xml.find('.//slantRangeTime').text)  # type: ignore[arg-type, union-attr]
     range_sampling_rate = float(ref_annotation_xml.find('.//rangeSamplingRate').text)  # type: ignore[arg-type, union-attr]
     number_samples = int(ref_annotation_xml.find('.//swathTiming/samplesPerBurst').text)  # type: ignore[arg-type, union-attr]
@@ -435,7 +435,7 @@ def make_parameter_file(
     slant_range_far = slant_range_near + (number_samples - 1) * range_pixel_spacing
     slant_range_center = (slant_range_near + slant_range_far) / 2
 
-    s = ref_time.split('T')[1].split(':')  # type: ignore[union-attr]
+    s = ref_time.split('T')[1].split(':')
     utc_time = ((int(s[0]) * 60 + int(s[1])) * 60) + float(s[2])
 
     parameter_file = ParameterFile(
