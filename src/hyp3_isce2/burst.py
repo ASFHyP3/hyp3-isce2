@@ -55,18 +55,21 @@ class BurstMetadata:
     """Metadata for a burst."""
 
     def __init__(self, metadata: etree._Element, burst_params: BurstParams):
-        self.safe_name = burst_params.granule
-        self.swath = burst_params.swath
-        self.polarization = burst_params.polarization
-        self.burst_number = burst_params.burst_number
-        self.manifest = metadata[0]
-        self.manifest_name = 'manifest.safe'
-        self.annotation = None
+        self.swath: str = burst_params.swath
+        self.polarization: str = burst_params.polarization
+        self.burst_number: int = burst_params.burst_number
+
+        self.safe_name: str = burst_params.granule
+        self.manifest_name: str = 'manifest.safe'
         self.annotation_name: Path = Path()
-        self.calibration = None
         self.calibration_name: Path = Path()
-        self.noise = None
         self.noise_name: Path = Path()
+
+        self.manifest: etree._Element | None = metadata[0]
+        self.annotation: etree._Element | None = None
+        self.calibration: etree._Element | None = None
+        self.noise: etree._Element | None = None
+
         metadata = metadata[1]
 
         names = [file.attrib['source_filename'] for file in metadata]
@@ -84,15 +87,22 @@ class BurstMetadata:
         for name in files:
             elem = metadata[swaths_and_products.index((self.swath.lower(), name))]
             content = copy.deepcopy(elem.find('content'))
-            content.tag = 'product'
-            setattr(self, files[name], content)
-            setattr(self, f'{files[name]}_name', elem.attrib['source_filename'])
+            if content:
+                content.tag = 'product'
+                setattr(self, files[name], content)
+                setattr(self, f'{files[name]}_name', elem.attrib['source_filename'])
+            else:
+                raise ValueError(f'Could not find "content" attribute in {name}.')
 
         file_paths = [elements.attrib['href'] for elements in self.manifest.findall('.//fileLocation')]
         pattern = f'^./measurement/s1.*{self.swath.lower()}.*{self.polarization.lower()}.*.tiff$'
         self.measurement_name = [Path(path).name for path in file_paths if re.search(pattern, path)][0]
 
-        self.orbit_direction = self.manifest.findtext('.//{*}pass').lower()
+        orbit_direction = self.manifest.findtext('.//{*}pass')
+        if orbit_direction:
+            self.orbit_direction = orbit_direction.lower()
+        else:
+            raise ValueError(f'Could not find "pass" attribute in {name}.')
 
 
 def create_burst_request_url(params: BurstParams, content_type: str) -> str:
@@ -160,7 +170,7 @@ def download_metadata(
     asf_session: requests.Session,
     burst_params: BurstParams,
     out_file: Path | str | None = None,
-) -> etree._Element | str:
+) -> etree._Element:
     """Download burst metadata.
 
     Args:
@@ -169,18 +179,16 @@ def download_metadata(
         out_file: The path to save the metadata to (if desired).
 
     Returns:
-        The metadata as an lxml.etree._Element object or the path to the saved metadata file.
+        The metadata as an lxml.etree._Element object
     """
     content = download_from_extractor(asf_session, burst_params, 'metadata')
     metadata = etree.fromstring(content)
 
-    if not out_file:
-        return metadata
+    if out_file:
+        with open(out_file, 'wb') as f:
+            f.write(content)
 
-    with open(out_file, 'wb') as f:
-        f.write(content)
-
-    return str(out_file)
+    return metadata
 
 
 def download_burst(
@@ -237,16 +245,26 @@ def spoof_safe(burst: BurstMetadata, burst_tiff_path: Path, base_path: Path = Pa
     annotation_path = safe_path / 'annotation'
     calibration_path = safe_path / 'annotation' / 'calibration'
     measurement_path = safe_path / 'measurement'
+
     paths = [annotation_path, calibration_path, measurement_path]
     for path in paths:
         path.mkdir(parents=True, exist_ok=True)
 
-    et_args = {'encoding': 'UTF-8', 'xml_declaration': True}
+    encoding = 'UTF-8'
+    xml_dec = True
 
-    etree.ElementTree(burst.annotation).write(annotation_path / burst.annotation_name, **et_args)
-    etree.ElementTree(burst.calibration).write(calibration_path / burst.calibration_name, **et_args)
-    etree.ElementTree(burst.noise).write(calibration_path / burst.noise_name, **et_args)
-    etree.ElementTree(burst.manifest).write(safe_path / 'manifest.safe', **et_args)
+    filepaths: list[Path] = [
+        annotation_path / burst.annotation_name,
+        calibration_path / burst.calibration_name,
+        calibration_path / burst.noise_name,
+        safe_path / 'manifest.safe',
+    ]
+
+    elements: list[etree._Element | None] = [burst.annotation, burst.calibration, burst.noise, burst.manifest]
+
+    for filepath, element in zip(filepaths, elements):
+        assert isinstance(element, etree._Element)
+        etree.ElementTree(element).write(filepath, encoding=encoding, xml_declaration=xml_dec)
 
     shutil.move(str(burst_tiff_path), str(measurement_path / burst.measurement_name))
 

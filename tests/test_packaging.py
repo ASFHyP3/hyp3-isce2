@@ -7,7 +7,7 @@ def test_get_product_name():
     reference_name = 'S1_136231_IW2_20200604T022312_VV_7C85-BURST'
     secondary_name = 'S1_136231_IW2_20200616T022313_VV_5D11-BURST'
 
-    name_20m = packaging.get_product_name(reference_name, secondary_name, pixel_spacing=20.0, slc=False)
+    name_20m = packaging.get_product_name(reference_name, secondary_name, pixel_spacing=20, slc=False)
     name_80m = packaging.get_product_name(reference_name, secondary_name, pixel_spacing=80, slc=False)
 
     assert match('[A-F0-9]{4}', name_20m[-4:]) is not None

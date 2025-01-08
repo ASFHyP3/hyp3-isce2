@@ -213,12 +213,17 @@ def download_metadata_xmls(params: Iterable[burst_utils.BurstParams], base_dir: 
             ]
             metadata_xmls = {param.granule: future.result() for param, future in zip(download_params, xml_futures)}
 
-    et_args = {'encoding': 'UTF-8', 'xml_declaration': True}
     for param in params:
         metadata_xml = metadata_xmls[param.granule]
         burst_metadata = burst_utils.BurstMetadata(metadata_xml, param)
-        ET.ElementTree(burst_metadata.annotation).write(annotation_dir / burst_metadata.annotation_name, **et_args)
-        ET.ElementTree(burst_metadata.manifest).write(manifest_dir / f'{burst_metadata.safe_name}.xml', **et_args)
+        assert isinstance(burst_metadata.annotation, ET._Element)
+        assert isinstance(burst_metadata.manifest, ET._Element)
+        ET.ElementTree(burst_metadata.annotation).write(
+            annotation_dir / burst_metadata.annotation_name, encoding='UTF-8', xml_declaration=True
+        )
+        ET.ElementTree(burst_metadata.manifest).write(
+            manifest_dir / f'{burst_metadata.safe_name}.xml', encoding='UTF-8', xml_declaration=True
+        )
 
 
 def get_scene_roi(
@@ -277,8 +282,8 @@ class Sentinel1BurstSelect(Sentinel1):
         self.product.bursts = cropList
         self.product.numberOfBursts = len(self.product.bursts)
 
-        self._tiffSrc = tiffList  # type: ignore
-        self._elevationAngleVsTau = eapList  # type: ignore
+        self._tiffSrc = tiffList
+        self._elevationAngleVsTau = eapList
         print('Number of Bursts after cropping: ', len(self.product.bursts))
 
     def update_burst_properties(self, products: list[BurstProduct]) -> None:
