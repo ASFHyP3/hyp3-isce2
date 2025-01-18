@@ -7,7 +7,7 @@ from pathlib import Path
 from unittest.mock import patch
 
 import asf_search
-import isceobj  # noqa: I100
+import isceobj  # type: ignore[import-not-found]
 import lxml.etree as ET
 import numpy as np
 import pytest

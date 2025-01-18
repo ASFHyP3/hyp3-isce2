@@ -12,8 +12,8 @@ from typing import Optional, Tuple
 import asf_search
 import numpy as np
 import requests
-from isceobj.Sensor.TOPS.Sentinel1 import Sentinel1
-from isceobj.TopsProc.runMergeBursts import multilook
+from isceobj.Sensor.TOPS.Sentinel1 import Sentinel1  # type: ignore[import-not-found]
+from isceobj.TopsProc.runMergeBursts import multilook  # type: ignore[import-not-found]
 from lxml import etree
 from shapely import geometry
 
