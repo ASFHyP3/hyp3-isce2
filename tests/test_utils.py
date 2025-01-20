@@ -4,7 +4,7 @@ import shutil
 from pathlib import Path
 from unittest.mock import patch
 
-import isceobj  # noqa
+import isceobj  # type: ignore[import-not-found]
 import numpy as np
 from osgeo import gdal
 

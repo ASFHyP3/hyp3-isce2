@@ -7,7 +7,7 @@ from pathlib import Path
 from shutil import copyfile, make_archive
 
 from hyp3lib.util import string_is_true
-from isceobj.TopsProc.runMergeBursts import multilook
+from isceobj.TopsProc.runMergeBursts import multilook  # type: ignore[import-not-found]
 from s1_orbits import fetch_for_scene
 
 from hyp3_isce2 import packaging, slc, topsapp
