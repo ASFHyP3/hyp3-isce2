@@ -87,10 +87,10 @@ def get_product_name(
         lons, lats = footprint.exterior.coords.xy
 
         def lat_string(lat):
-            return ('N' if lat >= 0 else 'S') + f"{('%.1f' % np.abs(lat)).zfill(4)}".replace('.', '_')
+            return ('N' if lat >= 0 else 'S') + f'{("%.1f" % np.abs(lat)).zfill(4)}'.replace('.', '_')
 
         def lon_string(lon):
-            return ('E' if lon >= 0 else 'W') + f"{('%.1f' % np.abs(lon)).zfill(5)}".replace('.', '_')
+            return ('E' if lon >= 0 else 'W') + f'{("%.1f" % np.abs(lon)).zfill(5)}'.replace('.', '_')
 
         lat_lims = [lat_string(lat) for lat in [np.min(lats), np.max(lats)]]
         lon_lims = [lon_string(lon) for lon in [np.min(lons), np.max(lons)]]
