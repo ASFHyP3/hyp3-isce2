@@ -1,17 +1,12 @@
-
 # Contributor Covenant Code of Conduct
 
 ## Our Pledge
 
 We as members, contributors, and leaders pledge to make participation in our
-community a harassment-free experience for everyone, regardless of age, body
-size, visible or invisible disability, ethnicity, sex characteristics, gender
-identity and expression, level of experience, education, socio-economic status,
-nationality, personal appearance, race, religion, or sexual identity
-and orientation.
+community a harassment-free experience for everyone.
 
 We pledge to act and interact in ways that contribute to an open, welcoming,
-diverse, inclusive, and healthy community.
+and healthy community.
 
 ## Our Standards
 
@@ -61,7 +56,7 @@ representative at an online or offline event.
 
 Instances of abusive, harassing, or otherwise unacceptable behavior may be
 reported to the community leaders responsible for enforcement by emailing the
-development team at [UAF-asf-apd@alaska.edu](mailto:UAF-asf-apd@alaska.edu).
+ASF APD/Tools team at [UAF-asf-apd@alaska.edu](mailto:UAF-asf-apd@alaska.edu).
 All complaints will be reviewed and investigated promptly and fairly.
 
 All community leaders are obligated to respect the privacy and security of the
