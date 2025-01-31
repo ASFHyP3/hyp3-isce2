@@ -21,8 +21,8 @@ from typing import Union
 import requests
 
 
-S1A_AUX_URL = 'https://sar-mpc.eu/download/55282da1-679d-4ecf-aeef-d06b024451cf'
-S1B_AUX_URL = 'https://sar-mpc.eu/download/3c8b7c8d-d3de-4381-a19d-7611fb8734b9'
+S1A_AUX_URL = 'https://sar-mpc.eu/files/S1A_AUX_CAL_20241128.zip'
+S1B_AUX_URL = 'https://sar-mpc.eu/files/S1B_AUX_CAL_20241128.zip'
 
 
 def _download_platform(url: str, aux_cal_dir: Path):
@@ -38,7 +38,11 @@ def _download_platform(url: str, aux_cal_dir: Path):
 
     content = BytesIO(response.content)
     with zipfile.ZipFile(content) as zip_file:
-        zip_file.extractall(aux_cal_dir)
+        for zip_info in zip_file.infolist():
+            # remove leading directories, i.e. extract S1A/AUX_CAL/2019/02/28/foo.SAFE/* to foo.SAFE/*
+            if not zip_info.is_dir() and '.SAFE/' in zip_info.filename:
+                zip_info.filename = '/'.join(zip_info.filename.split('/')[5:])
+                zip_file.extract(zip_info, aux_cal_dir)
 
 
 def download_aux_cal(aux_cal_dir: Union[str, Path] = 'aux_cal'):
