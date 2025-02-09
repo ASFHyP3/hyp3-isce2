@@ -16,8 +16,6 @@ dependencies:
   - opencv
   - burst2safe
   # For packaging, and testing
-  - ruff
-  - mypy
   - types-lxml
   - setuptools
   - setuptools_scm
@@ -29,3 +27,5 @@ dependencies:
   # For running
   - hyp3lib>=3,<4
   - s1_orbits
+  - pip:
+    - -r requirements-static.txt
