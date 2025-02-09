@@ -16,7 +16,6 @@ dependencies:
   - opencv
   - burst2safe
   # For packaging, and testing
-  - types-lxml
   - setuptools
   - setuptools_scm
   - wheel
