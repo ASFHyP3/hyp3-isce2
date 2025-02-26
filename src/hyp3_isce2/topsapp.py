@@ -1,6 +1,5 @@
 from collections.abc import Iterable, Sequence
 from pathlib import Path
-from typing import Union
 
 from isce.applications.topsApp import TopsInSAR
 from jinja2 import Template
@@ -56,7 +55,7 @@ class TopsappConfig:
         dem_filename: str,
         geocode_dem_filename: str,
         roi: Sequence[float],
-        swaths: Union[int, Iterable[int]] = (1, 2, 3),
+        swaths: int | Iterable[int] = (1, 2, 3),
         azimuth_looks: int = 4,
         range_looks: int = 20,
         do_unwrap: bool = True,
@@ -97,7 +96,7 @@ class TopsappConfig:
             template = Template(file.read())
         return template.render(self.__dict__)
 
-    def write_template(self, filename: Union[str, Path] = 'topsApp.xml') -> Path:
+    def write_template(self, filename: str | Path = 'topsApp.xml') -> Path:
         """Write the topsApp.py jinja2 template to a file
 
         Args:

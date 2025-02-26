@@ -7,7 +7,6 @@ from concurrent.futures import ThreadPoolExecutor
 from dataclasses import dataclass
 from datetime import datetime, timedelta
 from pathlib import Path
-from typing import Optional, Tuple
 
 import asf_search
 import numpy as np
@@ -301,7 +300,7 @@ def get_isce2_burst_bbox(params: BurstParams, base_dir: Path | None = None) -> g
 
 def get_region_of_interest(
     ref_bbox: geometry.Polygon, sec_bbox: geometry.Polygon, is_ascending: bool = True
-) -> Tuple[float]:
+) -> tuple[float, float, float, float]:
     """Get the region of interest for two bursts that will lead to single burst ISCE2 processing.
 
     For a descending orbit, the roi is in the lower left corner of the two bursts, and for an ascending orbit the roi is
@@ -611,7 +610,7 @@ def safely_multilook(
 
 
 def multilook_radar_merge_inputs(
-    swath_number: int, rg_looks: int, az_looks: int, base_dir: Optional[Path] = None
+    swath_number: int, rg_looks: int, az_looks: int, base_dir: Path | None = None
 ) -> BurstPosition:
     """Multilook the radar datasets needed for post-generation product merging.
 

@@ -6,7 +6,6 @@ import sys
 import warnings
 from pathlib import Path
 from shutil import copyfile, make_archive
-from typing import Optional
 
 import isce  # noqa: F401
 from burst2safe.burst2safe import burst2safe
@@ -157,7 +156,7 @@ def insar_tops_single_burst(
     secondary: str,
     looks: str = '20x4',
     apply_water_mask=False,
-    bucket: Optional[str] = None,
+    bucket: str | None = None,
     bucket_prefix: str = '',
 ):
     validate_bursts(reference, secondary)

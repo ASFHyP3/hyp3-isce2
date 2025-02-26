@@ -2,7 +2,6 @@
 
 import subprocess
 from pathlib import Path
-from typing import Optional
 
 import numpy as np
 from osgeo import gdal
@@ -13,7 +12,7 @@ gdal.UseExceptions()
 TILE_PATH = '/vsicurl/https://asf-dem-west.s3.amazonaws.com/WATER_MASK/TILES/'
 
 
-def get_corners(filename, tmp_path: Optional[Path]):
+def get_corners(filename, tmp_path: Path | None):
     """Get all four corners of the given image: [upper_left, bottom_left, upper_right, bottom_right].
 
     Args:
@@ -53,7 +52,7 @@ def coord_to_tile(coord: tuple[float, float]) -> str:
     return lat_part + lon_part + '.tif'
 
 
-def get_tiles(filename: str, tmp_path: Optional[Path]) -> list[str]:
+def get_tiles(filename: str, tmp_path: Path | None) -> list[str]:
     """Get the AWS vsicurl path's to the tiles necessary to cover the inputted file.
 
     Args:
