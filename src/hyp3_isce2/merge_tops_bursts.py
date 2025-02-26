@@ -15,7 +15,6 @@ from pathlib import Path
 from secrets import token_hex
 from shutil import make_archive
 from tempfile import TemporaryDirectory
-from typing import List, Optional, Tuple
 
 import asf_search
 import isce
@@ -34,7 +33,8 @@ from iscesys.Component.ProductManager import ProductManager  # type: ignore[impo
 from mroipac.filter.Filter import Filter  # type: ignore[import-not-found]
 from mroipac.icu.Icu import Icu  # type: ignore[import-not-found]
 from osgeo import gdal
-from shapely import geometry
+from shapely import Polygon, geometry
+from shapely.geometry.base import BaseGeometry
 from stdproc.rectify.geocode.Geocodable import Geocodable  # type: ignore[import-not-found]
 from zerodop.geozero import createGeozero  # type: ignore[import-not-found]
 
@@ -173,7 +173,7 @@ def get_burst_metadata(product_paths: list[Path]) -> list[BurstProduct]:
     return products
 
 
-def prep_metadata_dirs(base_path: Optional[Path] = None) -> Tuple[Path, Path]:
+def prep_metadata_dirs(base_path: Path | None = None) -> tuple[Path, Path]:
     """Create the annotation and manifest directories
 
     Args:
@@ -191,7 +191,7 @@ def prep_metadata_dirs(base_path: Optional[Path] = None) -> Tuple[Path, Path]:
     return annotation_dir, manifest_dir
 
 
-def download_metadata_xmls(params: Iterable[burst_utils.BurstParams], base_dir: Optional[Path] = None) -> None:
+def download_metadata_xmls(params: Iterable[burst_utils.BurstParams], base_dir: Path | None = None) -> None:
     """Download annotation xmls for a set of burst parameters to a directory
     named 'annotation' in the current working directory
 
@@ -228,7 +228,7 @@ def download_metadata_xmls(params: Iterable[burst_utils.BurstParams], base_dir: 
 
 def get_scene_roi(
     s1_obj_bursts: Iterable[isceobj.Sensor.TOPS.BurstSLC.BurstSLC],
-) -> Tuple:
+) -> tuple:
     """Get the bounding box of a set of ISCE2 Sentinel1 burst objects
 
     Args:
@@ -241,7 +241,7 @@ def get_scene_roi(
         snwe = isce_burst.getBbox()
         bbox = geometry.box(snwe[2], snwe[0], snwe[3], snwe[1])
         if i == 0:
-            overall_bbox = bbox
+            overall_bbox: Polygon | BaseGeometry = bbox
         else:
             overall_bbox = overall_bbox.union(bbox)
     return overall_bbox.bounds
@@ -309,7 +309,7 @@ class Sentinel1BurstSelect(Sentinel1):
             burst.firstValidSample = product.first_valid_sample
             burst.numValidSamples = product.n_valid_samples
 
-            outfile = os.path.join(self.output, 'burst_%02d' % (index + 1) + '.slc')
+            outfile = os.path.join(self.output, 'burst_%02d' % (index + 1) + '.slc')  # noqa: UP031
             slcImage = isceobj.createSlcImage()
             slcImage.setByteOrder('l')
             slcImage.setFilename(outfile)
@@ -336,7 +336,7 @@ class Sentinel1BurstSelect(Sentinel1):
         pm.dumpProduct(self.product, os.path.join(outxml + '.xml'))
 
 
-def load_isce_s1_obj(swath: int, polarization: str, base_dir: Optional[Path] = None) -> Sentinel1BurstSelect:
+def load_isce_s1_obj(swath: int, polarization: str, base_dir: Path | None = None) -> Sentinel1BurstSelect:
     """Load a modified ISCE2 Sentinel1 instance for a swath and polarization given annotation and manifest directories
 
     Args:
@@ -376,7 +376,7 @@ def create_burst_cropped_s1_obj(
     swath: int,
     products: Iterable[BurstProduct],
     polarization: str = 'VV',
-    base_dir: Optional[Path] = None,
+    base_dir: Path | None = None,
 ) -> Sentinel1BurstSelect:
     """Create an ISCE2 Sentinel1BurstSelect instance for a set of burst products, and write the xml.
     Also updates the BurstProduct objects with the ISCE2 burst number.
@@ -500,7 +500,7 @@ def translate_image(in_path: str, out_path: str, image_type: str) -> None:
 
 def spoof_isce2_setup(
     burst_products: Iterable[BurstProduct],
-    base_dir: Optional[Path] = None,
+    base_dir: Path | None = None,
 ) -> None:
     """For a set of ASF burst products, create spoofed geom_reference and fine_interferogram directories
     that are in the state they would be in after running topsApp.py from the 'startup' step to the 'burstifg' step.
@@ -595,7 +595,7 @@ def get_merged_orbit(products: list[Sentinel1]) -> Orbit:
     return orb
 
 
-def get_frames_and_indexes(burst_ifg_dir: Path) -> Tuple:
+def get_frames_and_indexes(burst_ifg_dir: Path) -> tuple:
     """Get the frames and burst indexes from a directory of burst interferograms.
 
     Args:
@@ -692,7 +692,7 @@ def goldstein_werner_filter(in_path: Path, out_path: Path, coh_path: Path, filte
     phsigImage.renderHdr()
 
 
-def mask_coherence(out_name: str, merge_dir: Optional[Path] = None) -> None:
+def mask_coherence(out_name: str, merge_dir: Path | None = None) -> None:
     """Mask the coherence image with a water mask that has been resampled to radar coordinates
 
     Args:
@@ -720,8 +720,8 @@ def mask_coherence(out_name: str, merge_dir: Optional[Path] = None) -> None:
 def snaphu_unwrap(
     range_looks: int,
     azimuth_looks: int,
-    corrfile: Optional[Path] = None,
-    base_dir: Optional[Path] = None,
+    corrfile: Path | None = None,
+    base_dir: Path | None = None,
     cost_mode='DEFO',
     init_method='MST',
     defomax=4.0,
@@ -818,7 +818,7 @@ def geocode_products(
     range_looks: int,
     azimuth_looks: int,
     dem_path: Path,
-    base_dir: Optional[Path] = None,
+    base_dir: Path | None = None,
     to_be_geocoded=GEOCODE_LIST,
 ) -> None:
     """Geocode a set of ISCE2 products
@@ -935,7 +935,7 @@ def get_product_name(product: BurstProduct, pixel_size: float) -> str:
     )
 
 
-def get_product_metadata_info(base_dir: Path) -> List:
+def get_product_metadata_info(base_dir: Path) -> list:
     """Get the metadata for a set of ASF burst products
 
     Args:
@@ -952,14 +952,14 @@ def get_product_metadata_info(base_dir: Path) -> List:
 
 def make_parameter_file(
     out_path: Path,
-    metas: List,
+    metas: list,
     range_looks: int,
     azimuth_looks: int,
     filter_strength: float,
     water_mask: bool,
     dem_name: str = 'GLO_30',
     dem_resolution: int = 30,
-    base_dir: Optional[Path] = None,
+    base_dir: Path | None = None,
 ):
     """Create a parameter file for the ASF merged burst product and write it to out_path
 
@@ -1130,7 +1130,7 @@ def check_burst_group_validity(products) -> None:
             raise ValueError(f'Products from swaths {swath1} and {swath2} do not overlap')
 
 
-def get_product_multilook(product_dir: Path) -> Tuple:
+def get_product_multilook(product_dir: Path) -> tuple:
     """Get the multilook values for a set of ASF burst products.
     You should have already checked that all products have the same multilook,
     so you can just use the first product's values.
