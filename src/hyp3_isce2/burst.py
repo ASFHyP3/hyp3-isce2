@@ -407,6 +407,7 @@ def validate_bursts(reference: str | list[str], secondary: str | list[str]) -> N
     if len(reference) < 1 or len(secondary) < 1:
         raise ValueError('Must include at least 1 reference and 1 secondary burst')
     if len(reference) != len(secondary):
+        # TODO: report number of each
         raise ValueError('Must have the same number of reference and secondary bursts')
 
     ref_num_swath_pol = sorted(g.split('_')[1] + '_' + g.split('_')[2] + '_' + g.split('_')[4] for g in reference)
