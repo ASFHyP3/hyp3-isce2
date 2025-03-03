@@ -218,11 +218,15 @@ def test_validate_bursts():
         burst.validate_bursts([], [])
 
     with pytest.raises(
-        ValueError, match=r'^Must provide the same number of reference and secondary scenes, got 2 reference and 1 secondary$'
+        ValueError,
+        match=r'^Must provide the same number of reference and secondary scenes, got 2 reference and 1 secondary$',
     ):
         burst.validate_bursts(['a', 'b'], ['c'])
 
-    with pytest.raises(ValueError, match=r'^Number \+ swath \+ polarization identifier does not match for reference scene S1_000001_IW1_20200101T000001_VV_0000\-BURST and secondary scene S1_000002_IW1_20200201T000001_VV_0000\-BURST$'):
+    with pytest.raises(
+        ValueError,
+        match=r'^Number \+ swath \+ polarization identifier does not match for reference scene S1_000001_IW1_20200101T000001_VV_0000\-BURST and secondary scene S1_000002_IW1_20200201T000001_VV_0000\-BURST$',
+    ):
         burst.validate_bursts(
             [
                 'S1_000000_IW1_20200101T000000_VV_0000-BURST',
@@ -285,7 +289,7 @@ def test_validate_bursts():
         )
 
     with pytest.raises(
-            ValueError, match=r'^Secondary scenes must be from a single date. Dates present: 20200201, 20200301$'
+        ValueError, match=r'^Secondary scenes must be from a single date. Dates present: 20200201, 20200301$'
     ):
         burst.validate_bursts(
             [
