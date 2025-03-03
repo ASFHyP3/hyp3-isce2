@@ -418,10 +418,10 @@ def validate_bursts(reference: str | list[str], secondary: str | list[str]) -> N
         msg += f'    Secondary IDs: {sec_num_swath_pol}'
         raise ValueError(msg)
 
-    pols = list(set(g.split('_')[4] for g in reference + secondary))
+    pols = sorted(set(g.split('_')[4] for g in reference + secondary))
 
     if len(pols) > 1:
-        raise ValueError(f'All bursts must have a single polarization. Polarizations present: {" ".join(pols)}')
+        raise ValueError(f'All bursts must have a single polarization. Polarizations present: {", ".join(pols)}')
 
     if pols[0] not in ['VV', 'HH']:
         raise ValueError(f'{pols[0]} polarization is not currently supported, only VV and HH.')

@@ -208,10 +208,10 @@ def test_validate_bursts():
         ],
     )
 
-    with pytest.raises(ValueError, match=r'Must include at least 1.*'):
+    with pytest.raises(ValueError, match='Must include at least 1 reference and 1 secondary burst'):
         burst.validate_bursts(['a'], [])
 
-    with pytest.raises(ValueError, match=r'Must have the same number.*'):
+    with pytest.raises(ValueError, match='Must have the same number of reference and secondary bursts'):
         burst.validate_bursts(['a', 'b'], ['c'])
 
     with pytest.raises(ValueError, match=r'.*burst ID sets do not match.*'):
@@ -220,7 +220,7 @@ def test_validate_bursts():
             ['S1_000000_IW2_20200201T000000_VV_0000-BURST'],
         )
 
-    with pytest.raises(ValueError, match=r'.*must have a single polarization.*'):
+    with pytest.raises(ValueError, match='All bursts must have a single polarization. Polarizations present: VH, VV'):
         burst.validate_bursts(
             [
                 'S1_000000_IW1_20200101T000000_VV_0000-BURST',
@@ -232,7 +232,7 @@ def test_validate_bursts():
             ],
         )
 
-    with pytest.raises(ValueError, match=r'.*polarization is not currently supported.*'):
+    with pytest.raises(ValueError, match='VH polarization is not currently supported, only VV and HH.'):
         burst.validate_bursts(
             [
                 'S1_000000_IW1_20200101T000000_VH_0000-BURST',
@@ -244,7 +244,7 @@ def test_validate_bursts():
             ],
         )
 
-    with pytest.raises(ValueError, match=r'.*must be from one date.*'):
+    with pytest.raises(ValueError, match='Reference granules must be from one date and secondary granules must be another.'):
         burst.validate_bursts(
             [
                 'S1_000000_IW1_20200101T000000_VV_0000-BURST',
@@ -256,7 +256,7 @@ def test_validate_bursts():
             ],
         )
 
-    with pytest.raises(ValueError, match=r'Reference granules must be older.*'):
+    with pytest.raises(ValueError, match='Reference granules must be older than secondary granules.'):
         burst.validate_bursts(
             'S1_000000_IW1_20200201T000000_VV_0000-BURST',
             'S1_000000_IW1_20200101T000000_VV_0000-BURST',
