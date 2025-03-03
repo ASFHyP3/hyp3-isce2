@@ -192,6 +192,11 @@ def test_get_burst_params_multiple_results():
         mock_search.assert_called_once_with(product_list=['there are multiple copies of this burst'])
 
 
+def test_num_swath_pol():
+    assert burst._num_swath_pol('S1_136231_IW2_20200604T022312_VV_7C85-BURST') == '136231_IW2_VV'
+    assert burst._num_swath_pol('S1_068687_IW3_20230423T223824_HH_BA77-BURST') == '068687_IW3_HH'
+
+
 def test_validate_bursts():
     burst.validate_bursts(
         'S1_000000_IW1_20200101T000000_VV_0000-BURST',
@@ -313,11 +318,6 @@ def test_validate_bursts():
             ['S1_000000_IW1_20200203T000000_VV_0000-BURST'],
             ['S1_000000_IW1_20200202T000000_VV_0000-BURST'],
         )
-
-
-def test_num_swath_pol():
-    assert burst._num_swath_pol('S1_136231_IW2_20200604T022312_VV_7C85-BURST') == '136231_IW2_VV'
-    assert burst._num_swath_pol('S1_068687_IW3_20230423T223824_HH_BA77-BURST') == '068687_IW3_HH'
 
 
 def test_load_burst_position(tmpdir):

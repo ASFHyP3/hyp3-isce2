@@ -392,6 +392,14 @@ def get_burst_params(scene_name: str) -> BurstParams:
     )
 
 
+def _num_swath_pol(scene: str) -> str:
+    parts = scene.split('_')
+    num = parts[1]
+    swath = parts[2]
+    pol = parts[4]
+    return '_'.join([num, swath, pol])
+
+
 def validate_bursts(reference: str | list[str], secondary: str | list[str]) -> None:
     """Check whether the reference and secondary bursts are valid.
 
@@ -441,14 +449,6 @@ def validate_bursts(reference: str | list[str], secondary: str | list[str]) -> N
 
     if ref_dates[0] >= sec_dates[0]:
         raise ValueError('Reference scenes must be older than secondary scenes')
-
-
-def _num_swath_pol(scene: str) -> str:
-    parts = scene.split('_')
-    num = parts[1]
-    swath = parts[2]
-    pol = parts[4]
-    return '_'.join([num, swath, pol])
 
 
 def load_burst_position(swath_xml_path: str, burst_number: int) -> BurstPosition:
