@@ -421,10 +421,6 @@ def validate_bursts(reference: str | list[str], secondary: str | list[str]) -> N
             f'Must provide the same number of reference and secondary scenes, got {len(reference)} reference and {len(secondary)} secondary'
         )
 
-    ref_num_swath_pol = [_num_swath_pol(g) for g in reference]
-    sec_num_swath_pol = [_num_swath_pol(g) for g in secondary]
-
-   
     for ref, sec in zip(reference, secondary):
         if _num_swath_pol(ref) != _num_swath_pol(sec):
             raise ValueError(
