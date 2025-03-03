@@ -532,7 +532,7 @@ def evenly_subset_position(position: BurstPosition, rg_looks, az_looks) -> Burst
         position.n_lines, position.first_valid_line, position.n_valid_lines, az_looks
     )
     n_lines_remove = position.n_lines - even_n_lines
-    even_sensing_stop = position.sensing_stop - timedelta(seconds=position.azimuth_time_interval * (n_lines_remove))
+    even_sensing_stop = position.sensing_stop - timedelta(seconds=position.azimuth_time_interval * n_lines_remove)
 
     clip_position = BurstPosition(
         n_lines=even_n_lines,
@@ -556,7 +556,7 @@ def multilook_position(position: BurstPosition, rg_looks: int, az_looks: int) ->
         rg_looks: The number of range looks.
         az_looks: The number of azimuth looks.
     """
-    multilook_position = BurstPosition(
+    return BurstPosition(
         n_lines=int(position.n_lines / az_looks),
         n_samples=int(position.n_samples / rg_looks),
         first_valid_line=int(position.first_valid_line / az_looks),
@@ -567,7 +567,6 @@ def multilook_position(position: BurstPosition, rg_looks: int, az_looks: int) ->
         range_pixel_size=position.range_pixel_size * rg_looks,
         sensing_stop=position.sensing_stop,
     )
-    return multilook_position
 
 
 def safely_multilook(
