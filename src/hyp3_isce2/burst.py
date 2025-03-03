@@ -424,10 +424,11 @@ def validate_bursts(reference: str | list[str], secondary: str | list[str]) -> N
     ref_num_swath_pol = [_num_swath_pol(g) for g in reference]
     sec_num_swath_pol = [_num_swath_pol(g) for g in secondary]
 
-    for i in range(len(reference)):
-        if ref_num_swath_pol[i] != sec_num_swath_pol[i]:
+   
+    for ref, sec in zip(reference, secondary):
+        if _num_swath_pol(ref) != _num_swath_pol(sec):
             raise ValueError(
-                f'Number + swath + polarization identifier does not match for reference scene {reference[i]} and secondary scene {secondary[i]}'
+                f'Number + swath + polarization identifier does not match for reference scene {ref} and secondary scene {sec}'
             )
 
     pols = list(set(g.split('_')[4] for g in reference))
