@@ -208,19 +208,45 @@ def test_validate_bursts():
         ],
     )
 
-    with pytest.raises(ValueError, match='Must include at least 1 reference and 1 secondary burst'):
+    with pytest.raises(ValueError, match=r'^Must include at least 1 reference scene and 1 secondary scene$'):
         burst.validate_bursts(['a'], [])
 
-    with pytest.raises(ValueError, match='Must have the same number of reference and secondary bursts'):
+    with pytest.raises(ValueError, match=r'^Must include at least 1 reference scene and 1 secondary scene$'):
+        burst.validate_bursts([], ['a'])
+
+    with pytest.raises(ValueError, match=r'^Must include at least 1 reference scene and 1 secondary scene$'):
+        burst.validate_bursts([], [])
+
+    with pytest.raises(
+        ValueError, match=r'^Must provide the same number of reference and secondary scenes, got 2 reference and 1 secondary$'
+    ):
         burst.validate_bursts(['a', 'b'], ['c'])
 
-    with pytest.raises(ValueError, match=r'.*burst ID sets do not match.*'):
+    with pytest.raises(ValueError, match=r'^Number \+ swath \+ polarization identifier does not match for reference scene S1_000001_IW1_20200101T000001_VV_0000\-BURST and secondary scene S1_000002_IW1_20200201T000001_VV_0000\-BURST$'):
+        burst.validate_bursts(
+            [
+                'S1_000000_IW1_20200101T000000_VV_0000-BURST',
+                'S1_000001_IW1_20200101T000001_VV_0000-BURST',
+            ],
+            [
+                'S1_000000_IW1_20200201T000000_VV_0000-BURST',
+                'S1_000002_IW1_20200201T000001_VV_0000-BURST',
+            ],
+        )
+
+    with pytest.raises(ValueError, match=r'^Number \+ swath \+ polarization identifier does not match for .*'):
         burst.validate_bursts(
             ['S1_000000_IW1_20200101T000000_VV_0000-BURST'],
             ['S1_000000_IW2_20200201T000000_VV_0000-BURST'],
         )
 
-    with pytest.raises(ValueError, match='All bursts must have a single polarization. Polarizations present: VH, VV'):
+    with pytest.raises(ValueError, match=r'^Number \+ swath \+ polarization identifier does not match for .*'):
+        burst.validate_bursts(
+            ['S1_000000_IW1_20200101T000000_VV_0000-BURST'],
+            ['S1_000000_IW1_20200201T000000_VH_0000-BURST'],
+        )
+
+    with pytest.raises(ValueError, match=r'^Scenes must have the same polarization. Polarizations present: VH, VV$'):
         burst.validate_bursts(
             [
                 'S1_000000_IW1_20200101T000000_VV_0000-BURST',
@@ -232,7 +258,7 @@ def test_validate_bursts():
             ],
         )
 
-    with pytest.raises(ValueError, match='VH polarization is not currently supported, only VV and HH.'):
+    with pytest.raises(ValueError, match=r'^VH polarization is not currently supported, only VV and HH$'):
         burst.validate_bursts(
             [
                 'S1_000000_IW1_20200101T000000_VH_0000-BURST',
@@ -244,23 +270,44 @@ def test_validate_bursts():
             ],
         )
 
-    with pytest.raises(ValueError, match='Reference granules must be from one date and secondary granules must be another.'):
+    with pytest.raises(
+        ValueError, match=r'^Reference scenes must be from a single date. Dates present: 20200101, 20200102$'
+    ):
+        burst.validate_bursts(
+            [
+                'S1_000000_IW1_20200101T000000_VV_0000-BURST',
+                'S1_000001_IW1_20200102T000000_VV_0000-BURST',
+            ],
+            [
+                'S1_000000_IW1_20200201T000000_VV_0000-BURST',
+                'S1_000001_IW1_20200201T000000_VV_0000-BURST',
+            ],
+        )
+
+    with pytest.raises(
+            ValueError, match=r'^Secondary scenes must be from a single date. Dates present: 20200201, 20200301$'
+    ):
         burst.validate_bursts(
             [
                 'S1_000000_IW1_20200101T000000_VV_0000-BURST',
                 'S1_000001_IW1_20200101T000000_VV_0000-BURST',
             ],
             [
-                'S1_000000_IW1_20200201T000000_VV_0000-BURST',
-                'S1_000001_IW1_20200202T000000_VV_0000-BURST',
+                'S1_000000_IW1_20200301T000000_VV_0000-BURST',
+                'S1_000001_IW1_20200201T000000_VV_0000-BURST',
             ],
         )
 
-    with pytest.raises(ValueError, match='Reference granules must be older than secondary granules.'):
+    with pytest.raises(ValueError, match=r'^Reference granules must be older than secondary granules$'):
         burst.validate_bursts(
-            'S1_000000_IW1_20200201T000000_VV_0000-BURST',
-            'S1_000000_IW1_20200101T000000_VV_0000-BURST',
+            ['S1_000000_IW1_20200201T000000_VV_0000-BURST'],
+            ['S1_000000_IW1_20200101T000000_VV_0000-BURST'],
         )
+
+
+def test_num_swath_pol():
+    assert burst._num_swath_pol('S1_136231_IW2_20200604T022312_VV_7C85-BURST') == '136231_IW2_VV'
+    assert burst._num_swath_pol('S1_068687_IW3_20230423T223824_HH_BA77-BURST') == '068687_IW3_HH'
 
 
 def test_load_burst_position(tmpdir):

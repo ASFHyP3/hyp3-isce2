@@ -401,39 +401,52 @@ def validate_bursts(reference: str | list[str], secondary: str | list[str]) -> N
     """
     if isinstance(reference, str):
         reference = [reference]
+
     if isinstance(secondary, str):
         secondary = [secondary]
 
     if len(reference) < 1 or len(secondary) < 1:
-        raise ValueError('Must include at least 1 reference and 1 secondary burst')
+        raise ValueError('Must include at least 1 reference scene and 1 secondary scene')
+
     if len(reference) != len(secondary):
-        # TODO: report number of each
-        raise ValueError('Must have the same number of reference and secondary bursts')
+        raise ValueError(
+            f'Must provide the same number of reference and secondary scenes, got {len(reference)} reference and {len(secondary)} secondary'
+        )
 
-    ref_num_swath_pol = sorted(g.split('_')[1] + '_' + g.split('_')[2] + '_' + g.split('_')[4] for g in reference)
-    sec_num_swath_pol = sorted(g.split('_')[1] + '_' + g.split('_')[2] + '_' + g.split('_')[4] for g in secondary)
-    if ref_num_swath_pol != sec_num_swath_pol:
-        msg = 'The reference and secondary burst ID sets do not match.\n'
-        msg += f'    Reference IDs: {ref_num_swath_pol}\n'
-        msg += f'    Secondary IDs: {sec_num_swath_pol}'
-        raise ValueError(msg)
+    ref_num_swath_pol = [_num_swath_pol(g) for g in reference]
+    sec_num_swath_pol = [_num_swath_pol(g) for g in secondary]
 
-    pols = sorted(set(g.split('_')[4] for g in reference + secondary))
+    for i in range(len(reference)):
+        if ref_num_swath_pol[i] != sec_num_swath_pol[i]:
+            raise ValueError(f'Number + swath + polarization identifier does not match for reference scene {reference[i]} and secondary scene {secondary[i]}')
+
+    pols = sorted(set(g.split('_')[4] for g in reference))
 
     if len(pols) > 1:
-        raise ValueError(f'All bursts must have a single polarization. Polarizations present: {", ".join(pols)}')
+        raise ValueError(f'Scenes must have the same polarization. Polarizations present: {", ".join(pols)}')
 
     if pols[0] not in ['VV', 'HH']:
-        raise ValueError(f'{pols[0]} polarization is not currently supported, only VV and HH.')
+        raise ValueError(f'{pols[0]} polarization is not currently supported, only VV and HH')
 
-    ref_dates = list(set(g.split('_')[3][:8] for g in reference))
-    sec_dates = list(set(g.split('_')[3][:8] for g in secondary))
+    ref_dates = sorted(set(g.split('_')[3][:8] for g in reference))
+    sec_dates = sorted(set(g.split('_')[3][:8] for g in secondary))
 
-    if len(ref_dates) > 1 or len(sec_dates) > 1:
-        raise ValueError('Reference granules must be from one date and secondary granules must be another.')
+    if len(ref_dates) > 1:
+        raise ValueError(f'Reference scenes must be from a single date. Dates present: {", ".join(ref_dates)}')
+
+    if len(sec_dates) > 1:
+        raise ValueError(f'Secondary scenes must be from a single date. Dates present: {", ".join(sec_dates)}')
 
     if ref_dates[0] >= sec_dates[0]:
-        raise ValueError('Reference granules must be older than secondary granules.')
+        raise ValueError('Reference granules must be older than secondary granules')
+
+
+def _num_swath_pol(scene: str) -> str:
+    parts = scene.split('_')
+    num = parts[1]
+    swath = parts[2]
+    pol = parts[4]
+    return '_'.join([num, swath, pol])
 
 
 def load_burst_position(swath_xml_path: str, burst_number: int) -> BurstPosition:
