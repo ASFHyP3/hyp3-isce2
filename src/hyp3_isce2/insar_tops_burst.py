@@ -219,7 +219,6 @@ def insar_tops_single_burst(
 def insar_tops_multi_burst(
     reference: list[str],
     secondary: list[str],
-    swaths: list = [1, 2, 3],  # TODO: mutable, and unused; ruff option for these?
     looks: str = '20x4',
     apply_water_mask=False,
     bucket: str | None = None,
