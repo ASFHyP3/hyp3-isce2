@@ -438,7 +438,7 @@ def validate_bursts(reference: str | list[str], secondary: str | list[str]) -> N
         raise ValueError(f'Secondary scenes must be from a single date. Dates present: {", ".join(sec_dates)}')
 
     if ref_dates[0] >= sec_dates[0]:
-        raise ValueError('Reference granules must be older than secondary granules')
+        raise ValueError('Reference scenes must be older than secondary scenes')
 
 
 def _num_swath_pol(scene: str) -> str:

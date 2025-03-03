@@ -298,7 +298,7 @@ def test_validate_bursts():
             ],
         )
 
-    with pytest.raises(ValueError, match=r'^Reference granules must be older than secondary granules$'):
+    with pytest.raises(ValueError, match=r'^Reference scenes must be older than secondary scenes$'):
         burst.validate_bursts(
             ['S1_000000_IW1_20200201T000000_VV_0000-BURST'],
             ['S1_000000_IW1_20200101T000000_VV_0000-BURST'],
