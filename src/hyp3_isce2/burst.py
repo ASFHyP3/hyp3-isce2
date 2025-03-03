@@ -422,22 +422,22 @@ def validate_bursts(reference: str | list[str], secondary: str | list[str]) -> N
                 f'Number + swath + polarization identifier does not match for reference scene {reference[i]} and secondary scene {secondary[i]}'
             )
 
-    pols = sorted(set(g.split('_')[4] for g in reference))
+    pols = list(set(g.split('_')[4] for g in reference))
 
     if len(pols) > 1:
-        raise ValueError(f'Scenes must have the same polarization. Polarizations present: {", ".join(pols)}')
+        raise ValueError(f'Scenes must have the same polarization. Polarizations present: {", ".join(sorted(pols))}')
 
     if pols[0] not in ['VV', 'HH']:
         raise ValueError(f'{pols[0]} polarization is not currently supported, only VV and HH')
 
-    ref_dates = sorted(set(g.split('_')[3][:8] for g in reference))
-    sec_dates = sorted(set(g.split('_')[3][:8] for g in secondary))
+    ref_dates = list(set(g.split('_')[3][:8] for g in reference))
+    sec_dates = list(set(g.split('_')[3][:8] for g in secondary))
 
     if len(ref_dates) > 1:
-        raise ValueError(f'Reference scenes must be from a single date. Dates present: {", ".join(ref_dates)}')
+        raise ValueError(f'Reference scenes must be from a single date. Dates present: {", ".join(sorted(ref_dates))}')
 
     if len(sec_dates) > 1:
-        raise ValueError(f'Secondary scenes must be from a single date. Dates present: {", ".join(sec_dates)}')
+        raise ValueError(f'Secondary scenes must be from a single date. Dates present: {", ".join(sorted(sec_dates))}')
 
     if ref_dates[0] >= sec_dates[0]:
         raise ValueError('Reference scenes must be older than secondary scenes')
