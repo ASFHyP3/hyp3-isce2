@@ -412,6 +412,9 @@ def validate_bursts(reference: list[str], secondary: list[str]) -> None:
         reference: Reference granule(s)
         secondary: Secondary granule(s)
     """
+    # **WARNING:** Changes to this function must be kept in sync with the HyP3 API validator
+    # until https://github.com/ASFHyP3/hyp3-lib/issues/340 is done
+
     if len(reference) < 1 or len(secondary) < 1:
         raise ValueError('Must include at least 1 reference scene and 1 secondary scene')
 
