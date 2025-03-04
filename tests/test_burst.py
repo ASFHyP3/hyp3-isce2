@@ -318,7 +318,7 @@ def test_validate_bursts_datetimes():
         ],
     )
 
-    with pytest.raises(ValueError, match=r'^Reference scenes must fall within a 2-minute window$'):
+    with pytest.raises(ValueError, match=r'^Reference scenes must fall within a 2-minute window .*'):
         burst.validate_bursts(
             [
                 'S1_000000_IW1_20250101T000000_VV_0000-BURST',
@@ -332,7 +332,7 @@ def test_validate_bursts_datetimes():
             ],
         )
 
-    with pytest.raises(ValueError, match=r'^Reference scenes must fall within a 2-minute window$'):
+    with pytest.raises(ValueError, match=r'^Reference scenes must fall within a 2-minute window .*'):
         burst.validate_bursts(
             [
                 # Test with reference datetimes unsorted
@@ -347,7 +347,7 @@ def test_validate_bursts_datetimes():
             ],
         )
 
-    with pytest.raises(ValueError, match=r'^Secondary scenes must fall within a 2-minute window$'):
+    with pytest.raises(ValueError, match=r'^Secondary scenes must fall within a 2-minute window .*'):
         burst.validate_bursts(
             [
                 'S1_000000_IW1_20250101T000000_VV_0000-BURST',
@@ -361,7 +361,7 @@ def test_validate_bursts_datetimes():
             ],
         )
 
-    with pytest.raises(ValueError, match=r'^Secondary scenes must fall within a 2-minute window$'):
+    with pytest.raises(ValueError, match=r'^Secondary scenes must fall within a 2-minute window .*'):
         burst.validate_bursts(
             [
                 'S1_000000_IW1_20250101T000000_VV_0000-BURST',
