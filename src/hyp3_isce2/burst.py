@@ -400,6 +400,11 @@ def _num_swath_pol(scene: str) -> str:
     return '_'.join([num, swath, pol])
 
 
+def _burst_datetime(scene: str) -> datetime:
+    datetime_str = scene.split('_')[3]
+    return datetime.strptime(datetime_str, '%Y%m%dT%H%M%S')
+
+
 def validate_bursts(reference: str | list[str], secondary: str | list[str]) -> None:
     """Check whether the reference and secondary bursts are valid.
 
@@ -435,8 +440,17 @@ def validate_bursts(reference: str | list[str], secondary: str | list[str]) -> N
     if pols[0] not in ['VV', 'HH']:
         raise ValueError(f'{pols[0]} polarization is not currently supported, only VV and HH')
 
-    ref_dates = list(set(g.split('_')[3][:8] for g in reference))
-    sec_dates = list(set(g.split('_')[3][:8] for g in secondary))
+    ref_datetimes = sorted(_burst_datetime(g) for g in reference)
+    sec_datetimes = sorted(_burst_datetime(g) for g in secondary)
+
+    if ref_datetimes[-1] - ref_datetimes[0] > timedelta(minutes=2):
+        raise ValueError('Reference scenes must fall within a 2-minute window')
+
+    if sec_datetimes[-1] - sec_datetimes[0] > timedelta(minutes=2):
+        raise ValueError('Secondary scenes must fall within a 2-minute window')
+
+    if ref_datetimes[-1] >= sec_datetimes[0]:
+        raise ValueError('Reference scenes must be older than secondary scenes')
 
 
 def load_burst_position(swath_xml_path: str, burst_number: int) -> BurstPosition:
