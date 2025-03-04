@@ -444,10 +444,14 @@ def validate_bursts(reference: str | list[str], secondary: str | list[str]) -> N
     sec_datetimes = sorted(_burst_datetime(g) for g in secondary)
 
     if ref_datetimes[-1] - ref_datetimes[0] > timedelta(minutes=2):
-        raise ValueError('Reference scenes must fall within a 2-minute window in order to ensure they were collected during the same pass')
+        raise ValueError(
+            'Reference scenes must fall within a 2-minute window in order to ensure they were collected during the same pass'
+        )
 
     if sec_datetimes[-1] - sec_datetimes[0] > timedelta(minutes=2):
-        raise ValueError('Secondary scenes must fall within a 2-minute window in order to ensure they were collected during the same pass')
+        raise ValueError(
+            'Secondary scenes must fall within a 2-minute window in order to ensure they were collected during the same pass'
+        )
 
     if ref_datetimes[-1] >= sec_datetimes[0]:
         raise ValueError('Reference scenes must be older than secondary scenes')
