@@ -392,6 +392,19 @@ def get_burst_params(scene_name: str) -> BurstParams:
     )
 
 
+def _num_swath_pol(scene: str) -> str:
+    parts = scene.split('_')
+    num = parts[1]
+    swath = parts[2]
+    pol = parts[4]
+    return '_'.join([num, swath, pol])
+
+
+def _burst_datetime(scene: str) -> datetime:
+    datetime_str = scene.split('_')[3]
+    return datetime.strptime(datetime_str, '%Y%m%dT%H%M%S')
+
+
 def validate_bursts(reference: str | list[str], secondary: str | list[str]) -> None:
     """Check whether the reference and secondary bursts are valid.
 
@@ -401,38 +414,47 @@ def validate_bursts(reference: str | list[str], secondary: str | list[str]) -> N
     """
     if isinstance(reference, str):
         reference = [reference]
+
     if isinstance(secondary, str):
         secondary = [secondary]
 
     if len(reference) < 1 or len(secondary) < 1:
-        raise ValueError('Must include at least 1 reference and 1 secondary burst')
+        raise ValueError('Must include at least 1 reference scene and 1 secondary scene')
+
     if len(reference) != len(secondary):
-        raise ValueError('Must have the same number of reference and secondary bursts')
+        raise ValueError(
+            f'Must provide the same number of reference and secondary scenes, got {len(reference)} reference and {len(secondary)} secondary'
+        )
 
-    ref_num_swath_pol = sorted(g.split('_')[1] + '_' + g.split('_')[2] + '_' + g.split('_')[4] for g in reference)
-    sec_num_swath_pol = sorted(g.split('_')[1] + '_' + g.split('_')[2] + '_' + g.split('_')[4] for g in secondary)
-    if ref_num_swath_pol != sec_num_swath_pol:
-        msg = 'The reference and secondary burst ID sets do not match.\n'
-        msg += f'    Reference IDs: {ref_num_swath_pol}\n'
-        msg += f'    Secondary IDs: {sec_num_swath_pol}'
-        raise ValueError(msg)
+    for ref, sec in zip(reference, secondary):
+        if _num_swath_pol(ref) != _num_swath_pol(sec):
+            raise ValueError(
+                f'Number + swath + polarization identifier does not match for reference scene {ref} and secondary scene {sec}'
+            )
 
-    pols = list(set(g.split('_')[4] for g in reference + secondary))
+    pols = list(set(g.split('_')[4] for g in reference))
 
     if len(pols) > 1:
-        raise ValueError(f'All bursts must have a single polarization. Polarizations present: {" ".join(pols)}')
+        raise ValueError(f'Scenes must have the same polarization. Polarizations present: {", ".join(sorted(pols))}')
 
     if pols[0] not in ['VV', 'HH']:
-        raise ValueError(f'{pols[0]} polarization is not currently supported, only VV and HH.')
+        raise ValueError(f'{pols[0]} polarization is not currently supported, only VV and HH')
 
-    ref_dates = list(set(g.split('_')[3][:8] for g in reference))
-    sec_dates = list(set(g.split('_')[3][:8] for g in secondary))
+    ref_datetimes = sorted(_burst_datetime(g) for g in reference)
+    sec_datetimes = sorted(_burst_datetime(g) for g in secondary)
 
-    if len(ref_dates) > 1 or len(sec_dates) > 1:
-        raise ValueError('Reference granules must be from one date and secondary granules must be another.')
+    if ref_datetimes[-1] - ref_datetimes[0] > timedelta(minutes=2):
+        raise ValueError(
+            'Reference scenes must fall within a 2-minute window in order to ensure they were collected during the same pass'
+        )
 
-    if ref_dates[0] >= sec_dates[0]:
-        raise ValueError('Reference granules must be older than secondary granules.')
+    if sec_datetimes[-1] - sec_datetimes[0] > timedelta(minutes=2):
+        raise ValueError(
+            'Secondary scenes must fall within a 2-minute window in order to ensure they were collected during the same pass'
+        )
+
+    if ref_datetimes[-1] >= sec_datetimes[0]:
+        raise ValueError('Reference scenes must be older than secondary scenes')
 
 
 def load_burst_position(swath_xml_path: str, burst_number: int) -> BurstPosition:
@@ -518,7 +540,7 @@ def evenly_subset_position(position: BurstPosition, rg_looks, az_looks) -> Burst
         position.n_lines, position.first_valid_line, position.n_valid_lines, az_looks
     )
     n_lines_remove = position.n_lines - even_n_lines
-    even_sensing_stop = position.sensing_stop - timedelta(seconds=position.azimuth_time_interval * (n_lines_remove))
+    even_sensing_stop = position.sensing_stop - timedelta(seconds=position.azimuth_time_interval * n_lines_remove)
 
     clip_position = BurstPosition(
         n_lines=even_n_lines,
@@ -542,7 +564,7 @@ def multilook_position(position: BurstPosition, rg_looks: int, az_looks: int) ->
         rg_looks: The number of range looks.
         az_looks: The number of azimuth looks.
     """
-    multilook_position = BurstPosition(
+    return BurstPosition(
         n_lines=int(position.n_lines / az_looks),
         n_samples=int(position.n_samples / rg_looks),
         first_valid_line=int(position.first_valid_line / az_looks),
@@ -553,7 +575,6 @@ def multilook_position(position: BurstPosition, rg_looks: int, az_looks: int) ->
         range_pixel_size=position.range_pixel_size * rg_looks,
         sensing_stop=position.sensing_stop,
     )
-    return multilook_position
 
 
 def safely_multilook(
