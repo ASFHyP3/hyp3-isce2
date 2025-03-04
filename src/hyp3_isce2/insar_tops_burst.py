@@ -41,7 +41,7 @@ gdal.UseExceptions()
 log = logging.getLogger(__name__)
 
 
-def insar_tops_burst(
+def _insar_tops_burst(
     reference_scene: str,
     secondary_scene: str,
     swath_number: int,
@@ -151,7 +151,7 @@ def insar_tops_burst(
     return Path('merged')
 
 
-def insar_tops_single_burst(
+def _insar_tops_single_burst(
     reference: str,
     secondary: str,
     looks: str = '20x4',
@@ -159,13 +159,12 @@ def insar_tops_single_burst(
     bucket: str | None = None,
     bucket_prefix: str = '',
 ):
-    validate_bursts(reference, secondary)
     swath_number = int(reference[12])
     range_looks, azimuth_looks = [int(value) for value in looks.split('x')]
 
     log.info('Begin ISCE2 TopsApp run')
 
-    insar_tops_burst(
+    _insar_tops_burst(
         reference_scene=reference,
         secondary_scene=secondary,
         azimuth_looks=azimuth_looks,
@@ -216,7 +215,7 @@ def insar_tops_single_burst(
         packaging.upload_product_to_s3(product_dir, output_zip, bucket, bucket_prefix)
 
 
-def insar_tops_multi_burst(
+def _insar_tops_multi_burst(
     reference: list[str],
     secondary: list[str],
     looks: str = '20x4',
@@ -224,7 +223,6 @@ def insar_tops_multi_burst(
     bucket: str | None = None,
     bucket_prefix: str = '',
 ):
-    validate_bursts(reference, secondary)
     reference_safe_path = burst2safe(reference)
     reference_safe = reference_safe_path.name.split('.')[0]
     secondary_safe_path = burst2safe(secondary)
@@ -249,7 +247,7 @@ def insar_tops_multi_burst(
     log.info('ISCE2 TopsApp run completed successfully')
 
 
-def oldest_granule_first(g1, g2):
+def _oldest_granule_first(g1, g2):
     if g1[14:29] <= g2[14:29]:
         return [g1], [g2]
     return [g2], [g1]
@@ -297,7 +295,7 @@ def main():
         granules = [item for sublist in args.granules for item in sublist]
         if len(granules) != 2:
             parser.error('No more than two granules may be provided.')
-        reference, secondary = oldest_granule_first(granules[0], granules[1])
+        reference, secondary = _oldest_granule_first(granules[0], granules[1])
     else:
         reference = [item for sublist in args.reference for item in sublist]
         secondary = [item for sublist in args.secondary for item in sublist]
@@ -305,8 +303,9 @@ def main():
     configure_root_logger()
     log.debug(' '.join(sys.argv))
 
+    validate_bursts(reference, secondary)
     if len(reference) == 1:
-        insar_tops_single_burst(
+        _insar_tops_single_burst(
             reference=reference[0],
             secondary=secondary[0],
             looks=args.looks,
@@ -315,7 +314,7 @@ def main():
             bucket_prefix=args.bucket_prefix,
         )
     else:
-        insar_tops_multi_burst(
+        _insar_tops_multi_burst(
             reference=reference,
             secondary=secondary,
             looks=args.looks,
