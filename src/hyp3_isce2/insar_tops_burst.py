@@ -158,7 +158,7 @@ def _insar_tops_single_burst(
     apply_water_mask=False,
     bucket: str | None = None,
     bucket_prefix: str = '',
-):
+) -> None:
     swath_number = int(reference[12])
     range_looks, azimuth_looks = [int(value) for value in looks.split('x')]
 
@@ -222,7 +222,7 @@ def _insar_tops_multi_burst(
     apply_water_mask=False,
     bucket: str | None = None,
     bucket_prefix: str = '',
-):
+) -> None:
     reference_safe_path = burst2safe(reference)
     reference_safe = reference_safe_path.name.split('.')[0]
     secondary_safe_path = burst2safe(secondary)
@@ -247,7 +247,7 @@ def _insar_tops_multi_burst(
     log.info('ISCE2 TopsApp run completed successfully')
 
 
-def _oldest_granule_first(g1, g2):
+def _oldest_granule_first(g1: str, g2: str) -> tuple[list[str], list[str]]:
     if g1[14:29] <= g2[14:29]:
         return [g1], [g2]
     return [g2], [g1]
