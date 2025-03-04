@@ -438,15 +438,6 @@ def validate_bursts(reference: str | list[str], secondary: str | list[str]) -> N
     ref_dates = list(set(g.split('_')[3][:8] for g in reference))
     sec_dates = list(set(g.split('_')[3][:8] for g in secondary))
 
-    if len(ref_dates) > 1:
-        raise ValueError(f'Reference scenes must be from a single date. Dates present: {", ".join(sorted(ref_dates))}')
-
-    if len(sec_dates) > 1:
-        raise ValueError(f'Secondary scenes must be from a single date. Dates present: {", ".join(sorted(sec_dates))}')
-
-    if ref_dates[0] >= sec_dates[0]:
-        raise ValueError('Reference scenes must be older than secondary scenes')
-
 
 def load_burst_position(swath_xml_path: str, burst_number: int) -> BurstPosition:
     """Get the tiff resolution and position parameters for a burst.

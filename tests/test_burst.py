@@ -279,46 +279,6 @@ def test_validate_bursts():
             ],
         )
 
-    with pytest.raises(
-        ValueError, match=r'^Reference scenes must be from a single date. Dates present: 20200101, 20200102$'
-    ):
-        burst.validate_bursts(
-            [
-                'S1_000000_IW1_20200101T000000_VV_0000-BURST',
-                'S1_000001_IW1_20200102T000000_VV_0000-BURST',
-            ],
-            [
-                'S1_000000_IW1_20200201T000000_VV_0000-BURST',
-                'S1_000001_IW1_20200201T000000_VV_0000-BURST',
-            ],
-        )
-
-    with pytest.raises(
-        ValueError, match=r'^Secondary scenes must be from a single date. Dates present: 20200201, 20200301$'
-    ):
-        burst.validate_bursts(
-            [
-                'S1_000000_IW1_20200101T000000_VV_0000-BURST',
-                'S1_000001_IW1_20200101T000000_VV_0000-BURST',
-            ],
-            [
-                'S1_000000_IW1_20200301T000000_VV_0000-BURST',
-                'S1_000001_IW1_20200201T000000_VV_0000-BURST',
-            ],
-        )
-
-    with pytest.raises(ValueError, match=r'^Reference scenes must be older than secondary scenes$'):
-        burst.validate_bursts(
-            ['S1_000000_IW1_20200203T000000_VV_0000-BURST'],
-            ['S1_000000_IW1_20200203T000000_VV_0000-BURST'],
-        )
-
-    with pytest.raises(ValueError, match=r'^Reference scenes must be older than secondary scenes$'):
-        burst.validate_bursts(
-            ['S1_000000_IW1_20200203T000000_VV_0000-BURST'],
-            ['S1_000000_IW1_20200202T000000_VV_0000-BURST'],
-        )
-
 
 def test_load_burst_position(tmpdir):
     product = namedtuple('product', ['bursts'])
