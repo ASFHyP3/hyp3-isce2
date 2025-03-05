@@ -6,6 +6,16 @@ The format is based on [Keep a Changelog](https://keepachangelog.com/en/1.0.0/),
 and this project adheres to [PEP 440](https://www.python.org/dev/peps/pep-0440/)
 and uses [Semantic Versioning](https://semver.org/spec/v2.0.0.html).
 
+## [2.1.4]
+
+### Changed
+- Improved error messages for validating the reference and secondary scenes passed to the `insar_tops_burst` workflow.
+
+### Fixed
+- Refined temporal requirements for scenes passed to the `insar_tops_burst` workflow, to allow the acquisition to cross midnight. Previously, the reference scenes were required to fall on one calendar day and the secondary scenes on a different calendar day. Now, each list of scenes must fall within a two-minute temporal window (with reference older than secondary, as before).
+- Removed the unused `swaths` parameter from the `hyp3_isce2.insar_tops_burst.insar_tops_multi_burst` function.
+- The `insar_tops_burst` workflow now validates the reference and secondary scenes immediately after parsing CLI args. Fixes <https://github.com/ASFHyP3/hyp3-isce2/issues/278>, in which the wrong error message was displayed if one reference scene and multiple secondary scenes were provided.
+
 ## [2.1.3]
 ### Changed
 - Updated download URLs for Sentinel-1 AUX_CAL files.

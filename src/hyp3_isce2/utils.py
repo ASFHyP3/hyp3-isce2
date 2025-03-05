@@ -3,7 +3,6 @@ import subprocess
 from dataclasses import dataclass
 from datetime import datetime
 from pathlib import Path
-from typing import Optional
 
 import isceobj  # type: ignore[import-not-found]
 import numpy as np
@@ -64,15 +63,15 @@ class ParameterFile:
     unwrapping_type: str
     speckle_filter: bool
     water_mask: bool
-    radar_n_lines: Optional[int] = None
-    radar_n_samples: Optional[int] = None
-    radar_first_valid_line: Optional[int] = None
-    radar_n_valid_lines: Optional[int] = None
-    radar_first_valid_sample: Optional[int] = None
-    radar_n_valid_samples: Optional[int] = None
-    multilook_azimuth_time_interval: Optional[float] = None
-    multilook_range_pixel_size: Optional[float] = None
-    radar_sensing_stop: Optional[datetime] = None
+    radar_n_lines: int | None = None
+    radar_n_samples: int | None = None
+    radar_first_valid_line: int | None = None
+    radar_n_valid_lines: int | None = None
+    radar_first_valid_sample: int | None = None
+    radar_n_valid_samples: int | None = None
+    multilook_azimuth_time_interval: float | None = None
+    multilook_range_pixel_size: float | None = None
+    radar_sensing_stop: datetime | None = None
 
     def __str__(self):
         output_strings = [
@@ -394,7 +393,7 @@ def write_isce2_image_from_obj(image_obj, array):
 
 def create_image(
     out_path: str,
-    width: Optional[int] = None,
+    width: int | None = None,
     access_mode: str = 'read',
     image_subtype: str = 'default',
     action: str = 'create',

@@ -4,7 +4,6 @@ from dataclasses import dataclass
 from datetime import datetime, timezone
 from pathlib import Path
 from secrets import token_hex
-from typing import Optional
 
 import isce
 import numpy as np
@@ -51,7 +50,7 @@ def get_product_name(
     reference: str,
     secondary: str,
     pixel_spacing: int,
-    polarization: Optional[str] = None,
+    polarization: str | None = None,
     slc: bool = True,
 ) -> str:
     """Get the name of the interferogram product.
@@ -87,10 +86,10 @@ def get_product_name(
         lons, lats = footprint.exterior.coords.xy
 
         def lat_string(lat):
-            return ('N' if lat >= 0 else 'S') + f'{("%.1f" % np.abs(lat)).zfill(4)}'.replace('.', '_')
+            return ('N' if lat >= 0 else 'S') + f'{("%.1f" % np.abs(lat)).zfill(4)}'.replace('.', '_')  # noqa: UP031
 
         def lon_string(lon):
-            return ('E' if lon >= 0 else 'W') + f'{("%.1f" % np.abs(lon)).zfill(5)}'.replace('.', '_')
+            return ('E' if lon >= 0 else 'W') + f'{("%.1f" % np.abs(lon)).zfill(5)}'.replace('.', '_')  # noqa: UP031
 
         lat_lims = [lat_string(lat) for lat in [np.min(lats), np.max(lats)]]
         lon_lims = [lon_string(lon) for lon in [np.min(lons), np.max(lons)]]
@@ -368,7 +367,7 @@ def make_parameter_file(
     azimuth_looks: int,
     range_looks: int,
     apply_water_mask: bool,
-    multilook_position: Optional[BurstPosition] = None,
+    multilook_position: BurstPosition | None = None,
     dem_name: str = 'GLO_30',
     dem_resolution: int = 30,
 ) -> None:

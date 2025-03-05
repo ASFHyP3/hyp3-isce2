@@ -1,5 +1,4 @@
 from pathlib import Path
-from typing import Union
 
 from isce.applications.stripmapApp import Insar
 from jinja2 import Template
@@ -59,7 +58,7 @@ class StripmapappConfig:
         reference_leader: str,
         secondary_image: str,
         secondary_leader: str,
-        roi: list[float],
+        roi: list[float] | tuple[float, float, float, float],
         dem_filename: str,
         azimuth_looks: int = 14,
         range_looks: int = 4,
@@ -91,7 +90,7 @@ class StripmapappConfig:
             template = Template(file.read())
         return template.render(self.__dict__)
 
-    def write_template(self, filename: Union[str, Path] = 'stripmapApp.xml') -> Path:
+    def write_template(self, filename: str | Path = 'stripmapApp.xml') -> Path:
         """Write the topsApp.py jinja2 template to a file
 
         Args:

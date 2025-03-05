@@ -16,7 +16,6 @@
 import zipfile
 from io import BytesIO
 from pathlib import Path
-from typing import Union
 
 import requests
 
@@ -45,7 +44,7 @@ def _download_platform(url: str, aux_cal_dir: Path):
                 zip_file.extract(zip_info, aux_cal_dir)
 
 
-def download_aux_cal(aux_cal_dir: Union[str, Path] = 'aux_cal'):
+def download_aux_cal(aux_cal_dir: str | Path = 'aux_cal'):
     """Download and extract the aux cal files for Sentinel-1A/B.
 
     Args:
