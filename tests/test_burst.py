@@ -205,10 +205,6 @@ def test_burst_datetime():
 
 def test_validate_bursts_list_length():
     burst.validate_bursts(
-        'S1_000000_IW1_20200101T000000_VV_0000-BURST',
-        'S1_000000_IW1_20200201T000000_VV_0000-BURST',
-    )
-    burst.validate_bursts(
         ['S1_000000_IW1_20200101T000000_VV_0000-BURST'],
         ['S1_000000_IW1_20200201T000000_VV_0000-BURST'],
     )

@@ -405,18 +405,15 @@ def _burst_datetime(scene: str) -> datetime:
     return datetime.strptime(datetime_str, '%Y%m%dT%H%M%S')
 
 
-def validate_bursts(reference: str | list[str], secondary: str | list[str]) -> None:
+def validate_bursts(reference: list[str], secondary: list[str]) -> None:
     """Check whether the reference and secondary bursts are valid.
 
     Args:
         reference: Reference granule(s)
         secondary: Secondary granule(s)
     """
-    if isinstance(reference, str):
-        reference = [reference]
-
-    if isinstance(secondary, str):
-        secondary = [secondary]
+    # **WARNING:** Changes to this function must be kept in sync with the HyP3 API validator
+    # until https://github.com/ASFHyP3/hyp3-lib/issues/340 is done
 
     if len(reference) < 1 or len(secondary) < 1:
         raise ValueError('Must include at least 1 reference scene and 1 secondary scene')
