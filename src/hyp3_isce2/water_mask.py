@@ -13,7 +13,7 @@ TILE_PATH = '/vsicurl/https://asf-dem-west.s3.amazonaws.com/WATER_MASK/TILES/'
 
 
 def get_projection_window(filename: Path | str):
-    """Get the projection window from a GeoTIFF, i.e. [ulx, uly, lrx, lry].
+    """Get the projection window info from a GeoTIFF, i.e. [ulx, uly, lrx, lry, xRes, yRes].
 
     Args:
         filename: The path to the input image.
@@ -26,7 +26,7 @@ def get_projection_window(filename: Path | str):
     y_max = geotransform[3]
     x_max = x_min + pixel_size_x * ds.RasterXSize
     y_min = y_max + pixel_size_y * ds.RasterYSize
-    return x_min, y_max, x_max, y_min
+    return x_min, y_max, x_max, y_min, pixel_size_x, pixel_size_y
 
 
 def get_corners(filename):
@@ -35,7 +35,7 @@ def get_corners(filename):
     Args:
         filename: The path to the input image.
     """
-    x_min, y_max, x_max, y_min = get_projection_window(filename)
+    x_min, y_max, x_max, y_min, _, _ = get_projection_window(filename)
     upper_left = [x_min, y_max]
     bottom_left = [x_min, y_min]
     upper_right = [x_max, y_max]
@@ -101,23 +101,27 @@ def create_water_mask(
     if len(tiles) < 1:
         raise ValueError(f'No water mask tiles found for {tiles}.')
 
-    merged_tif_path = str(tmp_path / 'merged.tif')
-    merged_vrt_path = str(tmp_path / 'merged.vrt')
-    calc_input_file = tiles[0]
+    translate_output_path = str(tmp_path / 'merged.tif')
+    translate_input_path = tiles[0]
+
+    x_min, y_max, x_max, y_min, x_res, y_res = get_projection_window(input_image)
+    projwin = [str(c) for c in [x_min, y_max, x_max, y_min]]
 
     # This is WAY faster than using gdal_merge, because of course it is.
     if len(tiles) > 1:
-        projwin = [str(coord) for coord in get_projection_window(input_image)]
-        build_vrt_command = ['gdalbuildvrt', merged_vrt_path] + tiles
+        translate_input_path = str(tmp_path / 'merged.vrt')
+        build_vrt_command = ['gdalbuildvrt', translate_input_path] + tiles
         subprocess.run(build_vrt_command, check=True)
-        translate_command = ['gdal_translate', '-projwin'] + projwin + [merged_vrt_path, merged_tif_path]
-        subprocess.run(translate_command, check=True)
-        calc_input_file = merged_tif_path
+
+    projwin_option = ['-projwin'] + projwin
+    pixel_size_option = ['-tr', str(x_res), str(y_res)]
+    translate_command = ['gdal_translate'] + pixel_size_option + projwin_option + [translate_input_path, translate_output_path]
+    subprocess.run(translate_command, check=True)
 
     flip_values_command = [
         'gdal_calc.py',
         '-A',
-        calc_input_file,
+        translate_output_path,
         f'--outfile={output_image}',
         '--calc="numpy.abs((A.astype(numpy.int16) + 1) - 2)"',  # Change 1's to 0's and 0's to 1's.
         f'--format={gdal_format}',
