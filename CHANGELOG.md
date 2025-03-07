@@ -8,8 +8,8 @@ and uses [Semantic Versioning](https://semver.org/spec/v2.0.0.html).
 
 ## [2.1.5]
 
-### Changed
-- Using the `--apply-water-mask` option now uses significantly less memory by subsetting the tiles to the desired area.
+### Fixed
+- Using the `--apply-water-mask` option now uses significantly less memory by correctly subsetting the water mask tiles to the desired area.
 
 ## [2.1.4]
 
