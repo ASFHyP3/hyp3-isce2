@@ -115,7 +115,9 @@ def create_water_mask(
 
     projwin_option = ['-projwin'] + projwin
     pixel_size_option = ['-tr', str(x_res), str(y_res)]
-    translate_command = ['gdal_translate'] + pixel_size_option + projwin_option + [translate_input_path, translate_output_path]
+    translate_command = (
+        ['gdal_translate'] + pixel_size_option + projwin_option + [translate_input_path, translate_output_path]
+    )
     subprocess.run(translate_command, check=True)
 
     flip_values_command = [
