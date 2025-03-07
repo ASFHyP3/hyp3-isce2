@@ -12,20 +12,30 @@ gdal.UseExceptions()
 TILE_PATH = '/vsicurl/https://asf-dem-west.s3.amazonaws.com/WATER_MASK/TILES/'
 
 
-def get_corners(filename, tmp_path: Path | None):
+def get_projection_window(filename: Path | str):
+    """Get the projection window info from a GeoTIFF, i.e. [ulx, uly, lrx, lry, xRes, yRes].
+
+    Args:
+        filename: The path to the input image.
+    """
+    ds = gdal.Open(str(filename))
+    geotransform = ds.GetGeoTransform()
+    pixel_size_x = geotransform[1]
+    pixel_size_y = geotransform[5]
+    x_min = geotransform[0]
+    y_max = geotransform[3]
+    x_max = x_min + pixel_size_x * ds.RasterXSize
+    y_min = y_max + pixel_size_y * ds.RasterYSize
+    return x_min, y_max, x_max, y_min, pixel_size_x, pixel_size_y
+
+
+def get_corners(filename):
     """Get all four corners of the given image: [upper_left, bottom_left, upper_right, bottom_right].
 
     Args:
         filename: The path to the input image.
-        tmp_path: An optional path to a temporary directory for temp files.
     """
-    tmp_file = 'tmp.tif' if not tmp_path else str(tmp_path / Path('tmp.tif'))
-    ds = gdal.Warp(tmp_file, filename, dstSRS='EPSG:4326')
-    geotransform = ds.GetGeoTransform()
-    x_min = geotransform[0]
-    x_max = x_min + geotransform[1] * ds.RasterXSize
-    y_max = geotransform[3]
-    y_min = y_max + geotransform[5] * ds.RasterYSize
+    x_min, y_max, x_max, y_min, _, _ = get_projection_window(filename)
     upper_left = [x_min, y_max]
     bottom_left = [x_min, y_min]
     upper_right = [x_max, y_max]
@@ -52,15 +62,14 @@ def coord_to_tile(coord: tuple[float, float]) -> str:
     return lat_part + lon_part + '.tif'
 
 
-def get_tiles(filename: str, tmp_path: Path | None) -> list[str]:
+def get_tiles(filename: str) -> list[str]:
     """Get the AWS vsicurl path's to the tiles necessary to cover the inputted file.
 
     Args:
-        filename: The path to the input file.
-        tmp_path: An optional path to a temporary directory for temp files.
+        filename: The path to the input file (needs to be in EPSG:4326).
     """
     tiles = []
-    corners = get_corners(filename, tmp_path=tmp_path)
+    corners = get_corners(filename)
     for corner in corners:
         tile = TILE_PATH + coord_to_tile(corner)
         if tile not in tiles:
@@ -76,58 +85,45 @@ def create_water_mask(
 ):
     """Create a water mask GeoTIFF with the same geometry as a given input GeoTIFF
 
-    The water mask is assembled from OpenStreetMap data.
+    The water masks are assembled from OpenStreetMap and ESA WorldCover data.
 
     Shoreline data is unbuffered and pixel values of 1 indicate land touches the pixel and 0 indicates there is no
     land in the pixel.
 
     Args:
-        input_image: Path for the input GDAL-compatible image
+        input_image: Path for the input GDAL-compatible image (needs to be in EPSG:4326).
         output_image: Path for the output image
         gdal_format: GDAL format name to create output image as
         tmp_path: An optional path to a temporary directory for temp files.
     """
-    tiles = get_tiles(input_image, tmp_path=tmp_path)
+    tiles = get_tiles(input_image)
 
     if len(tiles) < 1:
         raise ValueError(f'No water mask tiles found for {tiles}.')
 
-    tmp_px_size_path = str(tmp_path / 'tmp_px_size.tif')
-    merged_tif_path = str(tmp_path / 'merged.tif')
-    merged_vrt_path = str(tmp_path / 'merged.vrt')
-    merged_warped_path = str(tmp_path / 'merged_warped.tif')
-    shape_path = str(tmp_path / 'tmp.shp')
+    translate_output_path = str(tmp_path / 'merged.tif')
+    translate_input_path = tiles[0]
 
-    pixel_size = gdal.Warp(tmp_px_size_path, input_image, dstSRS='EPSG:4326').GetGeoTransform()[1]
+    x_min, y_max, x_max, y_min, x_res, y_res = get_projection_window(input_image)
+    projwin = [str(c) for c in [x_min, y_max, x_max, y_min]]
 
     # This is WAY faster than using gdal_merge, because of course it is.
     if len(tiles) > 1:
-        build_vrt_command = ['gdalbuildvrt', merged_vrt_path] + tiles
+        translate_input_path = str(tmp_path / 'merged.vrt')
+        build_vrt_command = ['gdalbuildvrt', translate_input_path] + tiles
         subprocess.run(build_vrt_command, check=True)
-        translate_command = ['gdal_translate', merged_vrt_path, merged_tif_path]
-        subprocess.run(translate_command, check=True)
 
-    shapefile_command = ['gdaltindex', shape_path, input_image]
-    subprocess.run(shapefile_command, check=True)
-
-    warp_filename = merged_tif_path if len(tiles) > 1 else tiles[0]
-
-    gdal.Warp(
-        merged_warped_path,
-        warp_filename,
-        cutlineDSName=shape_path,
-        cropToCutline=True,
-        xRes=pixel_size,
-        yRes=pixel_size,
-        targetAlignedPixels=True,
-        dstSRS='EPSG:4326',
-        format='GTiff',
+    projwin_option = ['-projwin'] + projwin
+    pixel_size_option = ['-tr', str(x_res), str(y_res)]
+    translate_command = (
+        ['gdal_translate'] + pixel_size_option + projwin_option + [translate_input_path, translate_output_path]
     )
+    subprocess.run(translate_command, check=True)
 
     flip_values_command = [
         'gdal_calc.py',
         '-A',
-        merged_warped_path,
+        translate_output_path,
         f'--outfile={output_image}',
         '--calc="numpy.abs((A.astype(numpy.int16) + 1) - 2)"',  # Change 1's to 0's and 0's to 1's.
         f'--format={gdal_format}',
