@@ -106,7 +106,7 @@ def test_get_region_of_interest(tmp_path, orbit):
        |  |            |  |
        +--+------------+  |
           |               |
-          +---------------+    
+          +---------------+
     """
     options = {'descending': [REF_DESC, SEC_DESC], 'ascending': [REF_ASC, SEC_ASC]}
 
