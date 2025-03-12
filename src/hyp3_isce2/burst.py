@@ -317,7 +317,7 @@ def get_region_of_interest(
     intersection = ref_bbox.intersection(sec_bbox)
     bounds = intersection.bounds
 
-    x, y = (0, 1) if is_ascending else (2, 1)
+    x, y = (2, 3) if is_ascending else (0, 1)
     roi = geometry.Point(bounds[x], bounds[y]).buffer(0.005)
     return roi.bounds
 
