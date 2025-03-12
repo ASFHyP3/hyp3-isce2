@@ -89,14 +89,24 @@ def test_get_region_of_interest(tmp_path, orbit):
     This diagram shows the burst layout for a descending orbit (the 0 indicates the region of interest):
           +---------------+
           |               |
-       +--+------------+  |
+       0--+------------+  |
        |  |            |  |
     +--+--+---------+--+--+
     |  |            |  |
-    |  +------------+--0
+    |  +------------+--+
     |               |
     +---------------+
-    The diagram for an ascending orbit is the same, but rotated 180 degrees.
+
+    And for an ascending orbit:
+    +--------------+
+    |              |
+    |  +------------+--0
+    |  |            |  |
+    +--+--+---------+--+--+
+       |  |            |  |
+       +--+------------+  |
+          |               |
+          +---------------+
     """
     options = {'descending': [REF_DESC, SEC_DESC], 'ascending': [REF_ASC, SEC_ASC]}
 
