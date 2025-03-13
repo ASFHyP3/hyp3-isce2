@@ -253,17 +253,23 @@ def oldest_granule_first(g1: str, g2: str) -> tuple[list[str], list[str]]:
     return [g2], [g1]
 
 
+def nullable_granule_list(granule_string: str) -> list[str]:
+    granule_string = granule_string.replace('None', '').strip()
+    granule_list = [granule for granule in granule_string.split(' ') if granule]
+    return granule_list
+
+
 def main():
     """HyP3 entrypoint for the burst TOPS workflow"""
     parser = argparse.ArgumentParser(description=__doc__, formatter_class=argparse.ArgumentDefaultsHelpFormatter)
     parser.add_argument(
         'granules',
-        type=str.split,
+        type=nullable_granule_list,
         nargs='*',
         help='Reference and secondary scene names',
     )
-    parser.add_argument('--reference', type=str.split, nargs='+', help='List of reference scenes"')
-    parser.add_argument('--secondary', type=str.split, nargs='+', help='List of secondary scenes"')
+    parser.add_argument('--reference', type=nullable_granule_list, nargs='+', help='List of reference scenes"')
+    parser.add_argument('--secondary', type=nullable_granule_list, nargs='+', help='List of secondary scenes"')
     parser.add_argument(
         '--looks',
         choices=['20x4', '10x2', '5x1'],
