@@ -306,11 +306,6 @@ def main():
             parser.error('No more than two granules may be provided.')
         reference, secondary = oldest_granule_first(granules[0], granules[1])
 
-    from pprint import pp
-    pp(granules)
-    pp(reference)
-    pp(secondary)
-    sys.exit()
     configure_root_logger()
     log.debug(' '.join(sys.argv))
 
