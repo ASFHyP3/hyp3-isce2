@@ -268,8 +268,8 @@ def main():
         nargs='*',
         help='Reference and secondary scene names',
     )
-    parser.add_argument('--reference', type=nullable_granule_list, nargs='+', help='List of reference scenes"')
-    parser.add_argument('--secondary', type=nullable_granule_list, nargs='+', help='List of secondary scenes"')
+    parser.add_argument('--reference', type=nullable_granule_list, default=[], nargs='+', help='List of reference scenes"')
+    parser.add_argument('--secondary', type=nullable_granule_list, default=[], nargs='+', help='List of secondary scenes"')
     parser.add_argument(
         '--looks',
         choices=['20x4', '10x2', '5x1'],
@@ -287,8 +287,12 @@ def main():
 
     args = parser.parse_args()
 
-    has_granules = args.granules is not None and len(args.granules) > 0
-    has_ref_sec = args.reference is not None and args.secondary is not None
+    granules = [item for sublist in args.granules for item in sublist]
+    reference = [item for sublist in args.reference for item in sublist]
+    secondary = [item for sublist in args.secondary for item in sublist]
+
+    has_granules = len(granules) > 0
+    has_ref_sec = len(reference) > 0 and len(secondary) > 0
     if has_granules and has_ref_sec:
         parser.error('Provide either --reference and --secondary, or the positional granules argument, not both.')
     elif not has_granules and not has_ref_sec:
@@ -298,14 +302,15 @@ def main():
             'The positional argument for granules is deprecated. Please use --reference and --secondary.',
             DeprecationWarning,
         )
-        granules = [item for sublist in args.granules for item in sublist]
         if len(granules) != 2:
             parser.error('No more than two granules may be provided.')
         reference, secondary = oldest_granule_first(granules[0], granules[1])
-    else:
-        reference = [item for sublist in args.reference for item in sublist]
-        secondary = [item for sublist in args.secondary for item in sublist]
 
+    from pprint import pp
+    pp(granules)
+    pp(reference)
+    pp(secondary)
+    sys.exit()
     configure_root_logger()
     log.debug(' '.join(sys.argv))
 
