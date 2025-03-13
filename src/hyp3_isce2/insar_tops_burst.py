@@ -253,17 +253,23 @@ def oldest_granule_first(g1: str, g2: str) -> tuple[list[str], list[str]]:
     return [g2], [g1]
 
 
+def nullable_granule_list(granule_string: str) -> list[str]:
+    granule_string = granule_string.replace('None', '').strip()
+    granule_list = [granule for granule in granule_string.split(' ') if granule]
+    return granule_list
+
+
 def main():
     """HyP3 entrypoint for the burst TOPS workflow"""
     parser = argparse.ArgumentParser(description=__doc__, formatter_class=argparse.ArgumentDefaultsHelpFormatter)
     parser.add_argument(
         'granules',
-        type=str.split,
+        type=nullable_granule_list,
         nargs='*',
         help='Reference and secondary scene names',
     )
-    parser.add_argument('--reference', type=str.split, nargs='+', help='List of reference scenes"')
-    parser.add_argument('--secondary', type=str.split, nargs='+', help='List of secondary scenes"')
+    parser.add_argument('--reference', type=nullable_granule_list, default=[], nargs='+', help='List of reference scenes"')
+    parser.add_argument('--secondary', type=nullable_granule_list, default=[], nargs='+', help='List of secondary scenes"')
     parser.add_argument(
         '--looks',
         choices=['20x4', '10x2', '5x1'],
@@ -281,8 +287,12 @@ def main():
 
     args = parser.parse_args()
 
-    has_granules = args.granules is not None and len(args.granules) > 0
-    has_ref_sec = args.reference is not None and args.secondary is not None
+    granules = [item for sublist in args.granules for item in sublist]
+    reference = [item for sublist in args.reference for item in sublist]
+    secondary = [item for sublist in args.secondary for item in sublist]
+
+    has_granules = len(granules) > 0
+    has_ref_sec = len(reference) > 0 and len(secondary) > 0
     if has_granules and has_ref_sec:
         parser.error('Provide either --reference and --secondary, or the positional granules argument, not both.')
     elif not has_granules and not has_ref_sec:
@@ -292,13 +302,9 @@ def main():
             'The positional argument for granules is deprecated. Please use --reference and --secondary.',
             DeprecationWarning,
         )
-        granules = [item for sublist in args.granules for item in sublist]
         if len(granules) != 2:
             parser.error('No more than two granules may be provided.')
         reference, secondary = oldest_granule_first(granules[0], granules[1])
-    else:
-        reference = [item for sublist in args.reference for item in sublist]
-        secondary = [item for sublist in args.secondary for item in sublist]
 
     configure_root_logger()
     log.debug(' '.join(sys.argv))
