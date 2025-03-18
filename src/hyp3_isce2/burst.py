@@ -303,7 +303,7 @@ def get_region_of_interest(
 ) -> tuple[float, float, float, float]:
     """Get the region of interest for two bursts that will lead to single burst ISCE2 processing.
 
-    For a descending orbit, the roi is in the lower left corner of the two bursts, and for an ascending orbit the roi is
+    For a descending orbit, the roi is in the upper left corner of the two bursts, and for an ascending orbit the roi is
     in the upper right corner.
 
     Args:
@@ -317,7 +317,7 @@ def get_region_of_interest(
     intersection = ref_bbox.intersection(sec_bbox)
     bounds = intersection.bounds
 
-    x, y = (0, 1) if is_ascending else (2, 1)
+    x, y = (2, 3) if is_ascending else (0, 3)
     roi = geometry.Point(bounds[x], bounds[y]).buffer(0.005)
     return roi.bounds
 
