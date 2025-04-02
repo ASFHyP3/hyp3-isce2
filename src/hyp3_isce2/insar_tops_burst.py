@@ -9,9 +9,10 @@ from shutil import copyfile, make_archive
 
 import isce  # noqa: F401
 from burst2safe.burst2safe import burst2safe
+from hyp3lib.dem import prepare_dem_geotiff
 from hyp3lib.util import string_is_true
 from isceobj.TopsProc.runMergeBursts import multilook  # type: ignore[import-not-found]
-from osgeo import gdal
+from osgeo import gdal, ogr
 from s1_orbits import fetch_for_scene
 
 from hyp3_isce2 import packaging, topsapp
@@ -84,15 +85,14 @@ def insar_tops_burst(
     log.info(f'InSAR ROI: {insar_roi}')
     log.info(f'DEM ROI: {dem_roi}')
 
-    dem_path = download_dem_for_isce2(dem_roi, dem_name='glo_30', dem_dir=dem_dir, buffer=0, resample_20m=False)
-    download_aux_cal(aux_cal_dir)
-
+    dem_dir.mkdir(exist_ok=True, parents=True)
+    dem_path = dem_dir / 'full_res.dem.wgs84'
+    dem_path = download_dem_for_isce2(dem_roi, dem_path=dem_path, pixel_size=30)
+    geocode_dem_path = dem_path
     if range_looks == 5:
-        geocode_dem_path = download_dem_for_isce2(
-            dem_roi, dem_name='glo_30', dem_dir=dem_dir, buffer=0, resample_20m=True
-        )
-    else:
-        geocode_dem_path = dem_path
+        geocode_dem_path = dem_path = dem_dir / 'full_res_geocode.dem.wgs84'
+        download_dem_for_isce2(dem_roi, dem_path=geocode_dem_path, pixel_size=20)
+    download_aux_cal(aux_cal_dir)
 
     orbit_dir.mkdir(exist_ok=True, parents=True)
     for granule in (ref_params.granule, sec_params.granule):
