@@ -9,10 +9,9 @@ from shutil import copyfile, make_archive
 
 import isce  # noqa: F401
 from burst2safe.burst2safe import burst2safe
-from hyp3lib.dem import prepare_dem_geotiff
 from hyp3lib.util import string_is_true
 from isceobj.TopsProc.runMergeBursts import multilook  # type: ignore[import-not-found]
-from osgeo import gdal, ogr
+from osgeo import gdal
 from s1_orbits import fetch_for_scene
 
 from hyp3_isce2 import packaging, topsapp
