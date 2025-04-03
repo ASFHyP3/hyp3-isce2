@@ -14,6 +14,7 @@
 # limitations under the License.
 
 import subprocess
+import tempfile
 from pathlib import Path
 
 import numpy as np
@@ -66,7 +67,7 @@ def distance_meters_to_degrees(distance_meters, latitude):
     return np.round(distance_degrees_lon, 15), np.round(distance_degrees_lat, 15)
 
 
-def download_dem_for_isce2(extent: list | tuple, dem_path: Path | None, pixel_size: float) -> Path:
+def download_dem_for_isce2(extent: tuple[float, float, float, float], dem_path: Path, pixel_size: float) -> Path:
     """Download the given DEM for the given extent.
 
     Args:
@@ -77,16 +78,16 @@ def download_dem_for_isce2(extent: list | tuple, dem_path: Path | None, pixel_si
     Returns:
         The path to the downloaded DEM.
     """
-    tmp_dem = dem_path.with_suffix('.tif')
-    prepare_dem_geotiff(
-        str(tmp_dem),
-        ogr.CreateGeometryFromWkb(box(*extent).wkb),
-        epsg_code=4326,
-        pixel_size=distance_meters_to_degrees(pixel_size, extent[1])[0],
-        height_above_ellipsoid=True,
-    )
-    gdal.Translate(str(dem_path), str(tmp_dem), format='ISCE')
+    with tempfile.NamedTemporaryFile(suffix='.tif') as tmp_dem:
+        prepare_dem_geotiff(
+            str(tmp_dem),
+            ogr.CreateGeometryFromWkb(box(*extent).wkb),
+            epsg_code=4326,
+            pixel_size=distance_meters_to_degrees(pixel_size, extent[1])[0],
+            height_above_ellipsoid=True,
+        )
+        gdal.Translate(str(dem_path), str(tmp_dem), format='ISCE')
+
     xml_path = tag_dem_xml_as_ellipsoidal(dem_path)
     fix_image_xml(xml_path)
-    tmp_dem.unlink()
     return dem_path
