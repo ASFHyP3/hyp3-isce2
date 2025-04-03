@@ -80,8 +80,8 @@ def download_dem_for_isce2(extent: tuple[float, float, float, float], dem_path: 
     """
     with tempfile.NamedTemporaryFile(suffix='.tif') as tmp_dem:
         prepare_dem_geotiff(
-            str(tmp_dem),
-            ogr.CreateGeometryFromWkb(box(*extent).wkb),
+            tmp_dem,
+            ogr.CreateGeometryFromWkb(box(*extent).wkb).buffer(0.2),
             epsg_code=4326,
             pixel_size=distance_meters_to_degrees(pixel_size, extent[1])[0],
             height_above_ellipsoid=True,
