@@ -370,6 +370,8 @@ def make_parameter_file(
     multilook_position: BurstPosition | None = None,
     dem_name: str = 'GLO_30',
     dem_resolution: int = 30,
+    reference_safe: str | None = None,
+    secondary_safe: str | None = None,
 ) -> None:
     """Create a parameter file for the output product
 
@@ -397,8 +399,10 @@ def make_parameter_file(
     else:
         ref_tag = reference_scene[-4::]
         sec_tag = secondary_scene[-4::]
-    reference_safe = [file for file in os.listdir('.') if file.endswith(f'{ref_tag}.SAFE')][0]
-    secondary_safe = [file for file in os.listdir('.') if file.endswith(f'{sec_tag}.SAFE')][0]
+        reference_safe = [file for file in os.listdir('.') if file.endswith(f'{ref_tag}.SAFE')][0]
+        secondary_safe = [file for file in os.listdir('.') if file.endswith(f'{sec_tag}.SAFE')][0]
+
+    assert reference_safe and secondary_safe
 
     ref_annotation_path = f'{reference_safe}/annotation/'
     ref_annotation = [file for file in os.listdir(ref_annotation_path) if os.path.isfile(ref_annotation_path + file)][0]

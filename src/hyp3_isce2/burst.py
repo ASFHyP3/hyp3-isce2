@@ -270,7 +270,7 @@ def spoof_safe(burst: BurstMetadata, burst_tiff_path: Path, base_path: Path = Pa
     return safe_path
 
 
-def get_isce2_burst_bbox(params: BurstParams, base_dir: Path | None = None) -> geometry.Polygon:
+def get_isce2_burst_bbox(safe: str, swath: int, polarization: str, base_dir: Path | None = None) -> geometry.Polygon:
     """Get the bounding box of a Sentinel-1 burst using ISCE2.
     Using ISCE2 directly ensures that the bounding box is the same as the one used by ISCE2 for processing.
 
@@ -287,11 +287,11 @@ def get_isce2_burst_bbox(params: BurstParams, base_dir: Path | None = None) -> g
 
     s1_obj = Sentinel1()
     s1_obj.configure()
-    s1_obj.polarization = params.polarization.lower()
-    s1_obj.safe = [str(base_dir / f'{params.granule}.SAFE')]
-    s1_obj.swathNumber = int(params.swath[-1])
+    s1_obj.polarization = polarization.lower()
+    s1_obj.safe = [safe]
+    s1_obj.swathNumber = swath
     s1_obj.parse()
-    snwe = s1_obj.product.bursts[params.burst_number].getBbox()
+    snwe = s1_obj.product.getBbox()
 
     # convert from south, north, west, east -> minx, miny, maxx, maxy
     bbox = geometry.box(snwe[2], snwe[0], snwe[3], snwe[1])
@@ -317,7 +317,7 @@ def get_region_of_interest(
     intersection = ref_bbox.intersection(sec_bbox)
     bounds = intersection.bounds
 
-    x, y = (2, 3) if is_ascending else (0, 3)
+    x, y = (0, 1) if is_ascending else (0, 3)
     roi = geometry.Point(bounds[x], bounds[y]).buffer(0.005)
     return roi.bounds
 
