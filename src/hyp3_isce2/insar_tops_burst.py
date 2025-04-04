@@ -16,10 +16,7 @@ from s1_orbits import fetch_for_scene
 
 from hyp3_isce2 import packaging, topsapp
 from hyp3_isce2.burst import (
-    download_bursts,
-    get_burst_params,
     get_isce2_burst_bbox,
-    get_region_of_interest,
     multilook_radar_merge_inputs,
     validate_bursts,
 )
@@ -207,7 +204,7 @@ def insar_tops_single_burst(
         multilook_position=multilook_position,
         apply_water_mask=apply_water_mask,
         reference_safe=reference_safe_path,
-        secondary_safe=secondary_safe_path
+        secondary_safe=secondary_safe_path,
     )
     output_zip = make_archive(base_name=product_name, format='zip', base_dir=product_name)
 
