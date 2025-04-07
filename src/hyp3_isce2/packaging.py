@@ -386,6 +386,7 @@ def make_parameter_file(
         dem_resolution: Resolution of the DEM
         reference_safe: The name of the reference SAFE file (only necessary for single-burst)
         secondary_safe: The name of the reference SAFE file (only necessary for single-burst)
+
     returns:
         None
     """
