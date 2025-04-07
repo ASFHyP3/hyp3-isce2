@@ -298,30 +298,6 @@ def get_isce2_burst_bbox(safe: str, swath: int, polarization: str, base_dir: Pat
     return bbox
 
 
-def get_region_of_interest(
-    ref_bbox: geometry.Polygon, sec_bbox: geometry.Polygon, is_ascending: bool = True
-) -> tuple[float, float, float, float]:
-    """Get the region of interest for two bursts that will lead to single burst ISCE2 processing.
-
-    For a descending orbit, the roi is in the upper left corner of the two bursts, and for an ascending orbit the roi is
-    in the upper right corner.
-
-    Args:
-        ref_bbox: The reference burst's bounding box.
-        sec_bbox: The secondary burst's bounding box.
-        is_ascending: Whether the orbit is ascending or descending.
-
-    Returns:
-        The region of interest as a tuple of (minx, miny, maxx, maxy).
-    """
-    intersection = ref_bbox.intersection(sec_bbox)
-    bounds = intersection.bounds
-
-    x, y = (0, 1) if is_ascending else (0, 3)
-    roi = geometry.Point(bounds[x], bounds[y]).buffer(0.005)
-    return roi.bounds
-
-
 def get_asf_session() -> requests.Session:
     """Get a requests session with an ASF URS cookie.
 

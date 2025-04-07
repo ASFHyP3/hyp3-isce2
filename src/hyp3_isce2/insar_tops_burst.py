@@ -45,7 +45,7 @@ def insar_tops_burst(
     azimuth_looks: int = 4,
     range_looks: int = 20,
     apply_water_mask: bool = False,
-) -> Path:
+) -> tuple[Path, Path]:
     """Create a burst interferogram
 
     Args:
@@ -57,7 +57,7 @@ def insar_tops_burst(
         apply_water_mask: Whether to apply a pre-unwrap water mask
 
     Returns:
-        Path to results directory
+        Paths to reference and secondary safes
     """
     orbit_dir = Path('orbits')
     aux_cal_dir = Path('aux_cal')
@@ -203,8 +203,8 @@ def insar_tops_single_burst(
         range_looks=range_looks,
         multilook_position=multilook_position,
         apply_water_mask=apply_water_mask,
-        reference_safe=reference_safe_path,
-        secondary_safe=secondary_safe_path,
+        reference_safe=reference_safe_path.name,
+        secondary_safe=secondary_safe_path.name,
     )
     output_zip = make_archive(base_name=product_name, format='zip', base_dir=product_name)
 
