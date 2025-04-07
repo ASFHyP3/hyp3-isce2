@@ -9,7 +9,7 @@ and uses [Semantic Versioning](https://semver.org/spec/v2.0.0.html).
 ## 2.2.6
 
 ### Changed
-- The `insar_tops_single_burst` workflow now uses [burst2safe](https://github.com/ASFHyP3/burst2safe) to eliminate the use of a region of interest with ISCE2, which was causing a [bug where multiple vrts would be cropped by ISCE2](https://github.com/ASFHyP3/hyp3-isce2/issues/165).
+- The `insar_tops_single_burst` workflow now uses [burst2safe](https://github.com/ASFHyP3/burst2safe) to eliminate the use of a region of interest with single-burst jobs, which was causing a [bug where multiple vrts would be cropped by ISCE2](https://github.com/ASFHyP3/hyp3-isce2/issues/165).
 
 ## [2.1.6]
 
