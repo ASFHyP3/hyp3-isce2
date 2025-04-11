@@ -400,7 +400,7 @@ def make_parameter_file(
     else:
         ref_tag = reference_scene[-4::]
         sec_tag = secondary_scene[-4::]
-    
+
     if reference_safe is None:
         reference_safe = [file for file in os.listdir('.') if file.endswith(f'{ref_tag}.SAFE')][0]
         secondary_safe = [file for file in os.listdir('.') if file.endswith(f'{sec_tag}.SAFE')][0]
