@@ -384,8 +384,8 @@ def make_parameter_file(
         multilook_position: Burst position for multilooked radar geometry products
         dem_name: Name of the DEM that is use
         dem_resolution: Resolution of the DEM
-        reference_safe: The name of the reference SAFE file (only necessary for single-burst)
-        secondary_safe: The name of the reference SAFE file (only necessary for single-burst)
+        reference_safe: The name of the reference SAFE directory. Optional; will look for a `.SAFE` directory matching `reference_scene`  if not provided.
+        secondary_safe: The name of the reference SAFE directory. Optional; will look for a `.SAFE` directory matching `secondary_scene`  if not provided.
 
     returns:
         None
