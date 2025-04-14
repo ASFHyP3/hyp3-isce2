@@ -23,6 +23,7 @@ dependencies = [
   "numpy",
   "rasterio",
   "shapely",
+  "pyproj",
   "jinja2",
   "asf_search>=6.4.0",
   "gdal",

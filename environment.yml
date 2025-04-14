@@ -9,6 +9,7 @@ dependencies:
   - isce2>=2.6.3
   - rasterio
   - shapely
+  - pyproj
   - jinja2
   - asf_search>=6.4.0
   - gdal
