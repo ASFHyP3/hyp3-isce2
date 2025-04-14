@@ -14,7 +14,7 @@ def test_tag_dem_xml_as_ellipsoidal(tmp_path):
 
     root = etree.parse(tagged_xml_path).getroot()
     reference_value = root.find("./property[@name='reference']/value")
-    assert reference_value is not None 
+    assert reference_value is not None
     assert reference_value.text == 'WGS84'
     reference_doc = root.find("./property[@name='reference']/doc")
     assert reference_doc is not None
