@@ -86,7 +86,7 @@ def insar_tops_burst(
 
     dem_dir.mkdir(exist_ok=True, parents=True)
     dem_path = dem_dir / 'full_res.dem.wgs84'
-    dem_path = download_dem_for_isce2(dem_roi, dem_path=dem_path, pixel_size=30)
+    download_dem_for_isce2(dem_roi, dem_path=dem_path, pixel_size=30)
     geocode_dem_path = dem_path
     if range_looks == 5:
         geocode_dem_path = dem_path = dem_dir / 'full_res_geocode.dem.wgs84'

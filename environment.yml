@@ -7,7 +7,6 @@ dependencies:
   - numpy
   - pip
   - isce2>=2.6.3
-  - dem_stitcher>=2.5.8
   - rasterio
   - shapely
   - jinja2
@@ -15,6 +14,8 @@ dependencies:
   - gdal
   - opencv
   - burst2safe
+  - hyp3lib>=3,<4
+  - s1_orbits
   # For packaging, and testing
   - setuptools
   - setuptools_scm
@@ -23,8 +24,5 @@ dependencies:
   - pytest-console-scripts
   - pytest-cov
   - pytest-mock
-  # For running
-  - hyp3lib>=3,<4
-  - s1_orbits
   - pip:
     - -r requirements-static.txt
