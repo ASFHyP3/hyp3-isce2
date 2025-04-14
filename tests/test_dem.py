@@ -13,8 +13,12 @@ def test_tag_dem_xml_as_ellipsoidal(tmp_path):
     tagged_xml_path = dem.tag_dem_xml_as_ellipsoidal(dem_path)
 
     root = etree.parse(tagged_xml_path).getroot()
-    assert root.find("./property[@name='reference']/value").text == 'WGS84'
-    assert root.find("./property[@name='reference']/doc").text == 'Geodetic datum'
+    reference_value = root.find("./property[@name='reference']/value")
+    assert reference_value is not None 
+    assert reference_value.text == 'WGS84'
+    reference_doc = root.find("./property[@name='reference']/doc")
+    assert reference_doc is not None
+    assert reference_doc.text == 'Geodetic datum'
 
 
 def test_distance_meters_to_degrees():
