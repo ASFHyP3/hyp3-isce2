@@ -54,7 +54,7 @@ class TopsappConfig:
         aux_cal_directory: str,
         dem_filename: str,
         geocode_dem_filename: str,
-        roi: Sequence[float],
+        roi: Sequence[float] | None = None,
         swaths: int | Iterable[int] = (1, 2, 3),
         azimuth_looks: int = 4,
         range_looks: int = 20,
@@ -65,12 +65,12 @@ class TopsappConfig:
         self.polarization = polarization
         self.orbit_directory = orbit_directory
         self.aux_cal_directory = aux_cal_directory
-        self.roi = [roi[1], roi[3], roi[0], roi[2]]
         self.dem_filename = dem_filename
         self.geocode_dem_filename = geocode_dem_filename
         self.azimuth_looks = azimuth_looks
         self.range_looks = range_looks
         self.do_unwrap = do_unwrap
+        self.roi = [roi[1], roi[3], roi[0], roi[2]] if roi else roi
 
         if isinstance(swaths, int):
             self.swaths = [swaths]
@@ -93,7 +93,15 @@ class TopsappConfig:
             The rendered template
         """
         with open(TEMPLATE_DIR / 'topsapp.xml') as file:
-            template = Template(file.read())
+            if not self.roi:
+                lines = file.readlines()
+                for i in range(len(lines)):
+                    if 'roi' in lines[i]:
+                        lines.pop(i)
+                        break
+                template = Template(''.join(lines))
+            else:
+                template = Template(file.read())
         return template.render(self.__dict__)
 
     def write_template(self, filename: str | Path = 'topsApp.xml') -> Path:

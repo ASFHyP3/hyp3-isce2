@@ -100,11 +100,11 @@ The basic steps in Sentinel-1 Burst InSAR processing are as follows:
 ----------------
 The detailed process, including the calls to ISCE2 software, is as follows:
 
-The prepare-processing and InSAR processing are combined in the insar_tps_burst function.
+The prepare-processing and InSAR processing are combined in the insar_tops_burst function.
 
 ## Pre-processing ##
- - download_bursts: Download the bursts according to reference and secondary parameters and re-create a SAFE-style directory
- - get_region_of_interest: Calculate the intersection area
+ - burst2safe: Download reference and secondary SAFE files containing only the desired bursts
+ - get_isce2_burst_bbox: Get the burst bounding boxes for the DEM region of interest
  - download_dem_for_isce2 : Download the DEM file
  - download_aux_cal: Download: the aux cal file
  - downloadSentinelOrbitFile: Download the orbit file
