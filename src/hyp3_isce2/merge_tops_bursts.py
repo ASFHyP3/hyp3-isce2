@@ -1175,7 +1175,7 @@ def prepare_products(directory: Path) -> None:
         multilooked_swath_obj = modify_for_multilook(swath_products, swath_obj)
         multilooked_swath_obj.write_xml()
 
-        spoof_isce2_setup(swath_products, swath_obj)
+        spoof_isce2_setup(swath_products)
         swath_objs.append(copy.deepcopy(swath_obj))
         del swath_obj
 

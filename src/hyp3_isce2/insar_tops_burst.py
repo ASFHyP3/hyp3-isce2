@@ -16,10 +16,7 @@ from s1_orbits import fetch_for_scene
 
 from hyp3_isce2 import packaging, topsapp
 from hyp3_isce2.burst import (
-    download_bursts,
-    get_burst_params,
     get_isce2_burst_bbox,
-    get_region_of_interest,
     multilook_radar_merge_inputs,
     validate_bursts,
 )
@@ -48,7 +45,7 @@ def insar_tops_burst(
     azimuth_looks: int = 4,
     range_looks: int = 20,
     apply_water_mask: bool = False,
-) -> Path:
+) -> tuple[Path, Path]:
     """Create a burst interferogram
 
     Args:
@@ -60,28 +57,27 @@ def insar_tops_burst(
         apply_water_mask: Whether to apply a pre-unwrap water mask
 
     Returns:
-        Path to results directory
+        Paths to reference and secondary safes
     """
     orbit_dir = Path('orbits')
     aux_cal_dir = Path('aux_cal')
     dem_dir = Path('dem')
 
-    ref_params = get_burst_params(reference_scene)
-    sec_params = get_burst_params(secondary_scene)
+    reference_safe_path = burst2safe([reference_scene], all_anns=True)
+    reference_safe = reference_safe_path.name.split('.')[0]
+    secondary_safe_path = burst2safe([secondary_scene], all_anns=True)
+    secondary_safe = secondary_safe_path.name.split('.')[0]
 
-    ref_metadata, _ = download_bursts([ref_params, sec_params])
+    polarization = reference_scene.split('_')[4]
 
-    is_ascending = ref_metadata.orbit_direction == 'ascending'
-    ref_footprint = get_isce2_burst_bbox(ref_params)
-    sec_footprint = get_isce2_burst_bbox(sec_params)
+    ref_footprint = get_isce2_burst_bbox(str(reference_safe_path), swath_number, polarization)
+    sec_footprint = get_isce2_burst_bbox(str(secondary_safe_path), swath_number, polarization)
 
-    insar_roi = get_region_of_interest(ref_footprint, sec_footprint, is_ascending=is_ascending)
     dem_roi = ref_footprint.intersection(sec_footprint).bounds
 
     if abs(dem_roi[0] - dem_roi[2]) > 180.0 and dem_roi[0] * dem_roi[2] < 0.0:
         raise ValueError('Products that cross the anti-meridian are not currently supported.')
 
-    log.info(f'InSAR ROI: {insar_roi}')
     log.info(f'DEM ROI: {dem_roi}')
 
     dem_dir.mkdir(exist_ok=True, parents=True)
@@ -94,18 +90,17 @@ def insar_tops_burst(
     download_aux_cal(aux_cal_dir)
 
     orbit_dir.mkdir(exist_ok=True, parents=True)
-    for granule in (ref_params.granule, sec_params.granule):
+    for granule in (reference_safe, secondary_safe):
         log.info(f'Downloading orbit file for {granule}')
         orbit_file = fetch_for_scene(granule, dir=orbit_dir)
         log.info(f'Got orbit file {orbit_file} from s1_orbits')
 
     config = topsapp.TopsappConfig(
-        reference_safe=f'{ref_params.granule}.SAFE',
-        secondary_safe=f'{sec_params.granule}.SAFE',
-        polarization=ref_params.polarization,
+        reference_safe=reference_safe_path,
+        secondary_safe=secondary_safe_path,
+        polarization=polarization,
         orbit_directory=str(orbit_dir),
         aux_cal_directory=str(aux_cal_dir),
-        roi=insar_roi,
         dem_filename=str(dem_path),
         geocode_dem_filename=str(geocode_dem_path),
         swaths=swath_number,
@@ -147,7 +142,7 @@ def insar_tops_burst(
     copyfile('merged/z.rdr.full.xml', 'merged/z.rdr.full.vrt.xml')
     topsapp.run_topsapp(start='geocode', end='geocode', config_xml=config_path)
 
-    return Path('merged')
+    return reference_safe_path, secondary_safe_path
 
 
 def insar_tops_single_burst(
@@ -163,7 +158,7 @@ def insar_tops_single_burst(
 
     log.info('Begin ISCE2 TopsApp run')
 
-    insar_tops_burst(
+    reference_safe_path, secondary_safe_path = insar_tops_burst(
         reference_scene=reference,
         secondary_scene=secondary,
         azimuth_looks=azimuth_looks,
@@ -207,6 +202,8 @@ def insar_tops_single_burst(
         range_looks=range_looks,
         multilook_position=multilook_position,
         apply_water_mask=apply_water_mask,
+        reference_safe=reference_safe_path.name,
+        secondary_safe=secondary_safe_path.name,
     )
     output_zip = make_archive(base_name=product_name, format='zip', base_dir=product_name)
 

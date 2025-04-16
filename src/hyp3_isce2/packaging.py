@@ -370,6 +370,8 @@ def make_parameter_file(
     multilook_position: BurstPosition | None = None,
     dem_name: str = 'GLO_30',
     dem_resolution: int = 30,
+    reference_safe: str | None = None,
+    secondary_safe: str | None = None,
 ) -> None:
     """Create a parameter file for the output product
 
@@ -382,6 +384,8 @@ def make_parameter_file(
         multilook_position: Burst position for multilooked radar geometry products
         dem_name: Name of the DEM that is use
         dem_resolution: Resolution of the DEM
+        reference_safe: The name of the reference SAFE directory. Optional; will look for a `.SAFE` directory matching `reference_scene` if not provided.
+        secondary_safe: The name of the reference SAFE directory. Optional; will look for a `.SAFE` directory matching `secondary_scene` if not provided.
 
     returns:
         None
@@ -390,19 +394,23 @@ def make_parameter_file(
     SPACECRAFT_HEIGHT = 693000.0
     EARTH_RADIUS = 6337286.638938101
 
-    parser = etree.XMLParser(encoding='utf-8', recover=True)
     if 'BURST' in reference_scene:
         ref_tag = reference_scene[-10:-6]
         sec_tag = secondary_scene[-10:-6]
     else:
         ref_tag = reference_scene[-4::]
         sec_tag = secondary_scene[-4::]
-    reference_safe = [file for file in os.listdir('.') if file.endswith(f'{ref_tag}.SAFE')][0]
-    secondary_safe = [file for file in os.listdir('.') if file.endswith(f'{sec_tag}.SAFE')][0]
+
+    if reference_safe is None:
+        reference_safe = [file for file in os.listdir('.') if file.endswith(f'{ref_tag}.SAFE')][0]
+        secondary_safe = [file for file in os.listdir('.') if file.endswith(f'{sec_tag}.SAFE')][0]
+
+    assert reference_safe and secondary_safe
 
     ref_annotation_path = f'{reference_safe}/annotation/'
     ref_annotation = [file for file in os.listdir(ref_annotation_path) if os.path.isfile(ref_annotation_path + file)][0]
 
+    parser = etree.XMLParser(encoding='utf-8', recover=True)
     ref_manifest_xml = etree.parse(f'{reference_safe}/manifest.safe', parser)
     sec_manifest_xml = etree.parse(f'{secondary_safe}/manifest.safe', parser)
     ref_annotation_xml = etree.parse(f'{ref_annotation_path}{ref_annotation}', parser)
