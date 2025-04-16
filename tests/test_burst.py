@@ -5,10 +5,8 @@ from datetime import datetime
 from pathlib import Path
 from unittest.mock import patch
 
-import asf_search
 import numpy as np
 import pytest
-from lxml import etree
 
 from hyp3_isce2 import burst, utils
 
@@ -40,12 +38,6 @@ SEC_ASC = burst.BurstParams(
 )
 
 
-def load_metadata(metadata):
-    metadata_path = Path(__file__).parent.absolute() / 'data' / metadata
-    xml = etree.parse(metadata_path).getroot()
-    return xml
-
-
 def make_test_image(output_path, array=None):
     parent = Path(output_path).parent
     if not parent.exists():
@@ -58,91 +50,6 @@ def make_test_image(output_path, array=None):
     array = array.astype(np.float32)
     img_obj = utils.create_image(output_path, array.shape[1], access_mode='write', action='create')
     utils.write_isce2_image_from_obj(img_obj, array)
-
-
-@pytest.mark.parametrize(
-    'pattern',
-    (
-        '*SAFE',
-        '*SAFE/annotation/*xml',
-        '*SAFE/annotation/calibration/calibration*xml',
-        '*SAFE/annotation/calibration/noise*xml',
-        '*SAFE/measurement/*tiff',
-    ),
-)
-def test_spoof_safe(tmp_path, mocker, pattern):
-    mock_tiff = tmp_path / 'test.tiff'
-    mock_tiff.touch()
-
-    ref_burst = burst.BurstMetadata(load_metadata('reference_descending.xml'), REF_DESC)
-    burst.spoof_safe(ref_burst, mock_tiff, tmp_path)
-    assert len(list(tmp_path.glob(pattern))) == 1
-
-
-def mock_asf_search_results(
-    slc_name: str, subswath: str, polarization: str, burst_index: int
-) -> asf_search.ASFSearchResults:
-    product = asf_search.ASFProduct()
-    product.umm = {'InputGranules': [slc_name]}
-    product.properties.update(
-        {
-            'burst': {'subswath': subswath, 'burstIndex': burst_index},
-            'polarization': polarization,
-        }
-    )
-    results = asf_search.ASFSearchResults([product])
-    results.searchComplete = True
-    return results
-
-
-def test_get_burst_params_08F8():
-    with patch.object(asf_search, 'search') as mock_search:
-        mock_search.return_value = mock_asf_search_results(
-            slc_name='S1A_IW_SLC__1SDV_20230526T190821_20230526T190847_048709_05DBA8_08F8-SLC',
-            subswath='IW3',
-            polarization='VV',
-            burst_index=8,
-        )
-        assert burst.get_burst_params('S1_346041_IW3_20230526T190843_VV_08F8-BURST') == burst.BurstParams(
-            granule='S1A_IW_SLC__1SDV_20230526T190821_20230526T190847_048709_05DBA8_08F8',
-            swath='IW3',
-            polarization='VV',
-            burst_number=8,
-        )
-        mock_search.assert_called_once_with(product_list=['S1_346041_IW3_20230526T190843_VV_08F8-BURST'])
-
-
-def test_get_burst_params_1B3B():
-    with patch.object(asf_search, 'search') as mock_search:
-        mock_search.return_value = mock_asf_search_results(
-            slc_name='S1A_EW_SLC__1SDH_20230526T143200_20230526T143303_048706_05DB92_1B3B-SLC',
-            subswath='EW5',
-            polarization='HH',
-            burst_index=19,
-        )
-        assert burst.get_burst_params('S1_308695_EW5_20230526T143259_HH_1B3B-BURST') == burst.BurstParams(
-            granule='S1A_EW_SLC__1SDH_20230526T143200_20230526T143303_048706_05DB92_1B3B',
-            swath='EW5',
-            polarization='HH',
-            burst_number=19,
-        )
-        mock_search.assert_called_with(product_list=['S1_308695_EW5_20230526T143259_HH_1B3B-BURST'])
-
-
-def test_get_burst_params_burst_does_not_exist():
-    with patch.object(asf_search, 'search') as mock_search:
-        mock_search.return_value = []
-        with pytest.raises(ValueError, match=r'.*failed to find.*'):
-            burst.get_burst_params('this burst does not exist')
-        mock_search.assert_called_once_with(product_list=['this burst does not exist'])
-
-
-def test_get_burst_params_multiple_results():
-    with patch.object(asf_search, 'search') as mock_search:
-        mock_search.return_value = ['foo', 'bar']
-        with pytest.raises(ValueError, match=r'.*found multiple results.*'):
-            burst.get_burst_params('there are multiple copies of this burst')
-        mock_search.assert_called_once_with(product_list=['there are multiple copies of this burst'])
 
 
 def test_num_swath_pol():

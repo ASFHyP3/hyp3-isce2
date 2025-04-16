@@ -1,14 +1,11 @@
 import copy
 import logging
 import re
-import shutil
 import time
-from concurrent.futures import ThreadPoolExecutor
 from dataclasses import dataclass
 from datetime import datetime, timedelta
 from pathlib import Path
 
-import asf_search
 import numpy as np
 import requests
 from isceobj.Sensor.TOPS.Sentinel1 import Sentinel1  # type: ignore[import-not-found]
@@ -190,86 +187,6 @@ def download_metadata(
     return metadata
 
 
-def download_burst(
-    asf_session: requests.Session,
-    burst_params: BurstParams,
-    out_file: Path | str | None = None,
-) -> Path:
-    """Download a burst geotiff.
-
-    Args:
-        asf_session: A requests session with an ASF URS cookie.
-        burst_params: The burst search parameters.
-        out_file: The path to save the geotiff to (if desired).
-
-    Returns:
-        The path to the saved geotiff file.
-    """
-    content = download_from_extractor(asf_session, burst_params, 'geotiff')
-
-    if not out_file:
-        out_file = (
-            f'{burst_params.granule}_{burst_params.swath}_{burst_params.polarization}_{burst_params.burst_number}.tiff'
-        ).lower()
-
-    with open(out_file, 'wb') as f:
-        f.write(content)
-
-    return Path(out_file)
-
-
-def spoof_safe(burst: BurstMetadata, burst_tiff_path: Path, base_path: Path = Path()) -> Path:
-    """Spoof a Sentinel-1 SAFE file for a burst.
-
-    The created SAFE file will be saved to the base_path directory. The SAFE will have the following structure:
-    SLC.SAFE/
-    ├── manifest.safe
-    ├── measurement/
-    │   └── burst.tif
-    └── annotation/
-        ├── annotation.xml
-        └── calibration/
-            ├── calibration.xml
-            └── noise.xml
-
-    Args:
-        burst: The burst metadata.
-        burst_tiff_path: The path to the burst geotiff.
-        base_path: The path to save the SAFE file to.
-
-    Returns:
-        The path to the saved SAFE file.
-    """
-    safe_path = base_path / f'{burst.safe_name}.SAFE'
-    annotation_path = safe_path / 'annotation'
-    calibration_path = safe_path / 'annotation' / 'calibration'
-    measurement_path = safe_path / 'measurement'
-
-    paths = [annotation_path, calibration_path, measurement_path]
-    for path in paths:
-        path.mkdir(parents=True, exist_ok=True)
-
-    encoding = 'UTF-8'
-    xml_dec = True
-
-    filepaths: list[Path] = [
-        annotation_path / burst.annotation_name,
-        calibration_path / burst.calibration_name,
-        calibration_path / burst.noise_name,
-        safe_path / 'manifest.safe',
-    ]
-
-    elements: list[etree._Element | None] = [burst.annotation, burst.calibration, burst.noise, burst.manifest]
-
-    for filepath, element in zip(filepaths, elements):
-        assert isinstance(element, etree._Element)
-        etree.ElementTree(element).write(filepath, encoding=encoding, xml_declaration=xml_dec)
-
-    shutil.move(str(burst_tiff_path), str(measurement_path / burst.measurement_name))
-
-    return safe_path
-
-
 def get_isce2_burst_bbox(safe: str, swath: int, polarization: str, base_dir: Path | None = None) -> geometry.Polygon:
     """Get the bounding box of a Sentinel-1 burst using ISCE2.
     Using ISCE2 directly ensures that the bounding box is the same as the one used by ISCE2 for processing.
@@ -316,56 +233,6 @@ def get_asf_session() -> requests.Session:
     response = session.get('https://urs.earthdata.nasa.gov/oauth/authorize', params=payload)
     response.raise_for_status()
     return session
-
-
-def download_bursts(param_list: list[BurstParams]) -> list[BurstMetadata]:
-    """Download bursts in parallel and creates SAFE files.
-
-    For each burst:
-        1. Download metadata
-        2. Download geotiff
-        3. Create BurstMetadata object
-        4. Create directory structure
-        5. Write metadata
-        6. Move geotiff to correct directory
-
-    Args:
-        param_list: An iterator of burst search parameters.
-
-    Returns:
-        A list of BurstMetadata objects.
-    """
-    with get_asf_session() as asf_session:
-        with ThreadPoolExecutor(max_workers=10) as executor:
-            xml_futures = [executor.submit(download_metadata, asf_session, params) for params in param_list]
-            tiff_futures = [executor.submit(download_burst, asf_session, params) for params in param_list]
-            metadata_xmls = [future.result() for future in xml_futures]
-            burst_paths = [future.result() for future in tiff_futures]
-
-    bursts = []
-    for params, metadata_xml, burst_path in zip(param_list, metadata_xmls, burst_paths):
-        burst = BurstMetadata(metadata_xml, params)
-        spoof_safe(burst, burst_path)
-        bursts.append(burst)
-    log.info('SAFEs created!')
-
-    return bursts
-
-
-def get_burst_params(scene_name: str) -> BurstParams:
-    results = asf_search.search(product_list=[scene_name])
-
-    if len(results) == 0:
-        raise ValueError(f'ASF Search failed to find {scene_name}.')
-    if len(results) > 1:
-        raise ValueError(f'ASF Search found multiple results for {scene_name}.')
-
-    return BurstParams(
-        granule=results[0].umm['InputGranules'][0].split('-')[0],
-        swath=results[0].properties['burst']['subswath'],
-        polarization=results[0].properties['polarization'],
-        burst_number=results[0].properties['burst']['burstIndex'],
-    )
 
 
 def _num_swath_pol(scene: str) -> str:
