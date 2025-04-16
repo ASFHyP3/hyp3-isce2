@@ -6,7 +6,7 @@ hyp3_isce2.burst module.
 Example 1: Downloading metadata for a pair of ascending/descending bursts
             (these are the metadata files used in the test suite.)
 
-Example 2: Downloading a pair of ascending/descending bursts and spoofing a SAFE
+Example 2: Downloading a pair of bursts as spoofed SAFEs
 """
 
 from burst2safe import burst2safe
