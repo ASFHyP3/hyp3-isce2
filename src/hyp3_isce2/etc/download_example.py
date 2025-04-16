@@ -56,4 +56,5 @@ with get_asf_session() as session:
 ref = 'S1_136231_IW2_20200604T022312_VV_7C85-BURST'
 sec = 'S1_136231_IW2_20200616T022313_VV_5D11-BURST'
 
-burst2safe.burst2safe([ref, sec], polarizations=['VV'], all_anns=True)
+burst2safe.burst2safe([ref])
+burst2safe.burst2safe([sec])
