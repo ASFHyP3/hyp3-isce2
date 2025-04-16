@@ -39,12 +39,6 @@ SEC_ASC = burst.BurstParams(
 )
 
 
-def load_metadata(metadata):
-    metadata_path = Path(__file__).parent.absolute() / 'data' / metadata
-    xml = etree.parse(metadata_path).getroot()
-    return xml
-
-
 def make_test_image(output_path, array=None):
     parent = Path(output_path).parent
     if not parent.exists():
