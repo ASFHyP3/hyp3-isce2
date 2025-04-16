@@ -7,7 +7,6 @@ from unittest.mock import patch
 
 import numpy as np
 import pytest
-from lxml import etree
 
 from hyp3_isce2 import burst, utils
 
