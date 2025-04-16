@@ -80,14 +80,14 @@ def download_dem_for_isce2(extent: tuple[float, float, float, float], dem_path: 
     """
     with tempfile.NamedTemporaryFile(suffix='.tif') as tmp_dem:
         prepare_dem_geotiff(
-            tmp_dem,
+            Path(tmp_dem.name),
             ogr.CreateGeometryFromWkb(box(*extent).wkb),
             epsg_code=4326,
             pixel_size=distance_meters_to_degrees(pixel_size, extent[1])[0],
             buffer_size_in_degrees=0.2,
             height_above_ellipsoid=True,
         )
-        gdal.Translate(str(dem_path), str(tmp_dem), format='ISCE')
+        gdal.Translate(str(dem_path), tmp_dem.name, format='ISCE')
 
     xml_path = tag_dem_xml_as_ellipsoidal(dem_path)
     fix_image_xml(xml_path)
