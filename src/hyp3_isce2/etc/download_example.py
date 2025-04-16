@@ -9,9 +9,10 @@ Example 1: Downloading metadata for a pair of ascending/descending bursts
 Example 2: Downloading a pair of ascending/descending bursts and spoofing a SAFE
 """
 
+from burst2safe import burst2safe
+
 from hyp3_isce2.burst import (
     BurstParams,
-    download_bursts,
     download_metadata,
     get_asf_session,
 )
@@ -51,5 +52,8 @@ with get_asf_session() as session:
     download_metadata(session, sec_desc, 'secondary_descending.xml')
 
 # Example 2
-# Download with SAFE spoofing
-download_bursts([ref_desc, sec_desc])
+# Download with the burst2safe package
+ref = 'S1_136231_IW2_20200604T022312_VV_7C85-BURST'
+sec = 'S1_136231_IW2_20200616T022313_VV_5D11-BURST'
+
+burst2safe.burst2safe([ref, sec], polarizations=['VV'], all_anns=True)
