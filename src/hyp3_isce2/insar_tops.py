@@ -64,7 +64,7 @@ def insar_tops(
     download_dem_for_isce2(roi, dem_path=dem_path, pixel_size=30.0)
     geocode_dem_path = dem_path
     if range_looks == 5:
-        geocode_dem_path = dem_path = dem_dir / 'full_res_geocode.dem.wgs84'
+        geocode_dem_path = dem_dir / 'full_res_geocode.dem.wgs84'
         download_dem_for_isce2(roi, dem_path=geocode_dem_path, pixel_size=20.0)
 
     download_aux_cal(aux_cal_dir)
