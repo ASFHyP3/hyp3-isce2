@@ -80,15 +80,14 @@ def insar_tops_burst(
 
     log.info(f'DEM ROI: {dem_roi}')
 
-    dem_path = download_dem_for_isce2(dem_roi, dem_name='glo_30', dem_dir=dem_dir, buffer=0, resample_20m=False)
-    download_aux_cal(aux_cal_dir)
-
+    dem_dir.mkdir(exist_ok=True, parents=True)
+    dem_path = dem_dir / 'full_res.dem.wgs84'
+    download_dem_for_isce2(dem_roi, dem_path=dem_path, pixel_size=30.0)
+    geocode_dem_path = dem_path
     if range_looks == 5:
-        geocode_dem_path = download_dem_for_isce2(
-            dem_roi, dem_name='glo_30', dem_dir=dem_dir, buffer=0, resample_20m=True
-        )
-    else:
-        geocode_dem_path = dem_path
+        geocode_dem_path = dem_dir / 'full_res_geocode.dem.wgs84'
+        download_dem_for_isce2(dem_roi, dem_path=geocode_dem_path, pixel_size=20.0)
+    download_aux_cal(aux_cal_dir)
 
     orbit_dir.mkdir(exist_ok=True, parents=True)
     for granule in (reference_safe, secondary_safe):

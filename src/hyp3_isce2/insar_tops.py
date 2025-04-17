@@ -59,7 +59,14 @@ def insar_tops(
     roi = slc.get_dem_bounds(ref_dir, sec_dir)
     log.info(f'DEM ROI: {roi}')
 
-    dem_path = download_dem_for_isce2(roi, dem_name='glo_30', dem_dir=dem_dir, buffer=0)
+    dem_dir.mkdir(exist_ok=True, parents=True)
+    dem_path = dem_dir / 'full_res.dem.wgs84'
+    download_dem_for_isce2(roi, dem_path=dem_path, pixel_size=30.0)
+    geocode_dem_path = dem_path
+    if range_looks == 5:
+        geocode_dem_path = dem_dir / 'full_res_geocode.dem.wgs84'
+        download_dem_for_isce2(roi, dem_path=geocode_dem_path, pixel_size=20.0)
+
     download_aux_cal(aux_cal_dir)
 
     orbit_dir.mkdir(exist_ok=True, parents=True)
@@ -75,7 +82,7 @@ def insar_tops(
         orbit_directory=str(orbit_dir),
         aux_cal_directory=str(aux_cal_dir),
         dem_filename=str(dem_path),
-        geocode_dem_filename=str(dem_path),
+        geocode_dem_filename=str(geocode_dem_path),
         roi=roi,
         swaths=swaths,
         azimuth_looks=azimuth_looks,
