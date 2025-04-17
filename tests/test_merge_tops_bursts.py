@@ -227,12 +227,12 @@ def test_download_dem_for_multiple_bursts(annotation_manifest_dirs, burst_produc
     base_dir = annotation_manifest_dirs[0].parent
     s1_obj = merge.create_burst_cropped_s1_obj(2, [burst_product1], 'VV', base_dir=base_dir)
     with patch('hyp3_isce2.merge_tops_bursts.download_dem_for_isce2') as mock_download:
-        mock_download.return_value = None
-        merge.download_dem_for_multiple_bursts([s1_obj])
-        assert mock_download.call_count == 1
-        assert isinstance(mock_download.call_args[0][0], tuple)
-        assert len(mock_download.call_args[0][0]) == 4
-        assert mock_download.call_args[1]['dem_name'] == 'glo_30'
+        merge.download_dem_for_multiple_bursts([s1_obj], base_dir)
+        mock_download.assert_called_once_with(
+            (53.07855985074144, 27.491831927404057, 54.15684468161031, 27.847161580403128),
+            base_dir / 'full_res.dem.wgs84',
+            pixel_size=30.0,
+        )
 
 
 @pytest.mark.parametrize(

@@ -15,7 +15,7 @@ dependencies:
   - gdal
   - opencv
   - burst2safe
-  - hyp3lib>=3,<4
+  - hyp3lib>=3.2,<4
   - s1_orbits
   # For packaging, and testing
   - setuptools
