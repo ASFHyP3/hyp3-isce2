@@ -396,13 +396,18 @@ def make_parameter_file(
 
     if 'BURST' in reference_scene:
         ref_tag = reference_scene[-10:-6]
+        sec_tag = secondary_scene[-10:-6]
     else:
         ref_tag = reference_scene[-4::]
+        sec_tag = secondary_scene[-4::]
 
     if reference_safe is None:
         reference_safe_list = list(Path.cwd().glob(f'*{ref_tag}.SAFE'))
         assert len(reference_safe_list) == 1, f'Expected one reference SAFE, found {len(reference_safe_list)}'
         reference_safe = reference_safe[0]
+        secondary_safe_list = list(Path.cwd().glob(f'*{sec_tag}.SAFE'))
+        assert len(secondary_safe_list) == 1, f'Expected one secondary SAFE, found {len(secondary_safe_list)}'
+        secondary_safe = secondary_safe_list[0]
 
     ref_annotation_path = reference_safe / 'annotation'
     swath = reference_scene.split('_')[2].lower()
