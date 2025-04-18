@@ -11,6 +11,9 @@ and uses [Semantic Versioning](https://semver.org/spec/v2.0.0.html).
 ### Changed
 - Switched to using hyp3-lib for DEM downloading, in line with our HyP3-GAMMA plugin.
 
+### Fixed
+- Bug that led to the wrong swath annotation file being used to populate output parameter file.
+
 ## [2.2.0]
 
 ### Changed
