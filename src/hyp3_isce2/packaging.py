@@ -1,4 +1,4 @@
-import os
+# import os
 import subprocess
 from dataclasses import dataclass
 from datetime import datetime, timezone
@@ -396,24 +396,24 @@ def make_parameter_file(
 
     if 'BURST' in reference_scene:
         ref_tag = reference_scene[-10:-6]
-        sec_tag = secondary_scene[-10:-6]
     else:
         ref_tag = reference_scene[-4::]
-        sec_tag = secondary_scene[-4::]
 
     if reference_safe is None:
-        reference_safe = [file for file in os.listdir('.') if file.endswith(f'{ref_tag}.SAFE')][0]
-        secondary_safe = [file for file in os.listdir('.') if file.endswith(f'{sec_tag}.SAFE')][0]
+        reference_safe_list = list(Path.cwd().glob(f'*{ref_tag}.SAFE'))
+        assert len(reference_safe_list) == 1, f'Expected one reference SAFE, found {len(reference_safe_list)}'
+        reference_safe = reference_safe[0]
 
-    assert reference_safe and secondary_safe
-
-    ref_annotation_path = f'{reference_safe}/annotation/'
-    ref_annotation = [file for file in os.listdir(ref_annotation_path) if os.path.isfile(ref_annotation_path + file)][0]
+    ref_annotation_path = reference_safe / 'annotation'
+    swath = reference_scene.split('_')[2].lower()
+    annotation_list = list(ref_annotation_path.glob(f's1[a-z]-{swath}*xml'))
+    assert len(annotation_list) == 1, f'Expected one annotation file, found {len(annotation_list)}'
+    ref_annotation_path = str(annotation_list[0])
 
     parser = etree.XMLParser(encoding='utf-8', recover=True)
     ref_manifest_xml = etree.parse(f'{reference_safe}/manifest.safe', parser)
     sec_manifest_xml = etree.parse(f'{secondary_safe}/manifest.safe', parser)
-    ref_annotation_xml = etree.parse(f'{ref_annotation_path}{ref_annotation}', parser)
+    ref_annotation_xml = etree.parse(str(ref_annotation_path), parser)
     topsProc_xml = etree.parse('topsProc.xml', parser)
     topsApp_xml = etree.parse('topsApp.xml', parser)
 
