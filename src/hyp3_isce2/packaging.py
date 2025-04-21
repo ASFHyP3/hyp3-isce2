@@ -361,16 +361,17 @@ def find_available_swaths(base_dir: Path | str) -> list[str]:
 
 def make_parameter_file(
     out_path: Path,
-    reference_scene: str,
-    secondary_scene: str,
+    reference_scenes: list[str],
+    secondary_scenes: list[str],
     azimuth_looks: int,
     range_looks: int,
     apply_water_mask: bool,
+    reference_manifest_path: Path,
+    secondary_manifest_path: Path,
+    reference_annotation_path: Path,
     multilook_position: BurstPosition | None = None,
     dem_name: str = 'GLO_30',
     dem_resolution: int = 30,
-    reference_safe: str | None = None,
-    secondary_safe: str | None = None,
 ) -> None:
     """Create a parameter file for the output product
 
@@ -383,41 +384,15 @@ def make_parameter_file(
         multilook_position: Burst position for multilooked radar geometry products
         dem_name: Name of the DEM that is use
         dem_resolution: Resolution of the DEM
-        reference_safe: The name of the reference SAFE directory. Optional; will look for a `.SAFE` directory matching `reference_scene` if not provided.
-        secondary_safe: The name of the reference SAFE directory. Optional; will look for a `.SAFE` directory matching `secondary_scene` if not provided.
-
-    returns:
-        None
     """
     SPEED_OF_LIGHT = 299792458.0
     SPACECRAFT_HEIGHT = 693000.0
     EARTH_RADIUS = 6337286.638938101
 
-    if 'BURST' in reference_scene:
-        ref_tag = reference_scene[-10:-6]
-        sec_tag = secondary_scene[-10:-6]
-    else:
-        ref_tag = reference_scene[-4::]
-        sec_tag = secondary_scene[-4::]
-
-    if reference_safe is None:
-        reference_safe_list = list(Path.cwd().glob(f'*{ref_tag}.SAFE'))
-        assert len(reference_safe_list) == 1, f'Expected one reference SAFE, found {len(reference_safe_list)}'
-        reference_safe = reference_safe[0]
-        secondary_safe_list = list(Path.cwd().glob(f'*{sec_tag}.SAFE'))
-        assert len(secondary_safe_list) == 1, f'Expected one secondary SAFE, found {len(secondary_safe_list)}'
-        secondary_safe = secondary_safe_list[0]
-
-    ref_annotation_path = reference_safe / 'annotation'
-    swath = reference_scene.split('_')[2].lower()
-    annotation_list = list(ref_annotation_path.glob(f's1[a-z]-{swath}*xml'))
-    assert len(annotation_list) == 1, f'Expected one annotation file, found {len(annotation_list)}'
-    ref_annotation_path = str(annotation_list[0])
-
     parser = etree.XMLParser(encoding='utf-8', recover=True)
-    ref_manifest_xml = etree.parse(f'{reference_safe}/manifest.safe', parser)
-    sec_manifest_xml = etree.parse(f'{secondary_safe}/manifest.safe', parser)
-    ref_annotation_xml = etree.parse(str(ref_annotation_path), parser)
+    ref_manifest_xml = etree.parse(str(reference_manifest_path), parser)
+    sec_manifest_xml = etree.parse(str(secondary_manifest_path), parser)
+    ref_annotation_xml = etree.parse(str(reference_annotation_path), parser)
     topsProc_xml = etree.parse('topsProc.xml', parser)
     topsApp_xml = etree.parse('topsApp.xml', parser)
 
@@ -450,8 +425,8 @@ def make_parameter_file(
     utc_time = ((int(s[0]) * 60 + int(s[1])) * 60) + float(s[2])
 
     parameter_file = ParameterFile(
-        reference_granule=reference_scene,
-        secondary_granule=secondary_scene,
+        reference_granule=', '.join(reference_scenes),
+        secondary_granule=', '.join(secondary_scenes),
         reference_orbit_direction=ref_orbit_direction,
         reference_orbit_number=ref_orbit_number,
         secondary_orbit_direction=sec_orbit_direction,
