@@ -204,12 +204,12 @@ def insar_tops_packaged(
         Path(f'{product_name}/{product_name}.txt'),
         reference_scenes=reference_scenes,
         secondary_scenes=secondary_scenes,
+        reference_safe_path=Path(f'{reference}.SAFE'),
+        secondary_safe_path=Path(f'{secondary}.SAFE'),
+        processing_path=Path.cwd(),
         azimuth_looks=azimuth_looks,
         range_looks=range_looks,
         apply_water_mask=apply_water_mask,
-        reference_manifest_path=Path(f'{reference}.SAFE/manifest.safe'),
-        secondary_manifest_path=Path(f'{secondary}.SAFE/manifest.safe'),
-        reference_annotation_path=sorted(Path(f'{reference}.SAFE/annotation').glob('s1*.xml'))[0],
     )
     output_zip = make_archive(base_name=product_name, format='zip', base_dir=product_name)
     if bucket:

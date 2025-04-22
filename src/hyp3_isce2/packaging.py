@@ -363,12 +363,12 @@ def make_parameter_file(
     out_path: Path,
     reference_scenes: list[str],
     secondary_scenes: list[str],
+    reference_safe_path: Path,
+    secondary_safe_path: Path,
+    processing_path: Path,
     azimuth_looks: int,
     range_looks: int,
     apply_water_mask: bool,
-    reference_manifest_path: Path,
-    secondary_manifest_path: Path,
-    reference_annotation_path: Path,
     multilook_position: BurstPosition | None = None,
     dem_name: str = 'GLO_30',
     dem_resolution: int = 30,
@@ -379,11 +379,11 @@ def make_parameter_file(
         out_path: path to output the parameter file
         reference_scenes: List of reference scene names (full SLC or burst names)
         secondary_scene: List of secondary scene names (full SLC or burst names)
+        reference_safe_path: Path to the reference SAFE directory
+        secondary_safe_path: Path to the secondary SAFE directory
+        processing_path: Path to the processing directory
         azimuth_looks: Number of azimuth looks
         range_looks: Number of range looks
-        reference_manifest_path: Path to the reference manifest file
-        secondary_manifest_path: Path to the secondary manifest file
-        reference_annotation_path: Path to the reference annotation file
         multilook_position: Burst position for multilooked radar geometry products
         dem_name: Name of the DEM that is use
         dem_resolution: Resolution of the DEM
@@ -393,11 +393,12 @@ def make_parameter_file(
     EARTH_RADIUS = 6337286.638938101
 
     parser = etree.XMLParser(encoding='utf-8', recover=True)
-    ref_manifest_xml = etree.parse(str(reference_manifest_path), parser)
-    sec_manifest_xml = etree.parse(str(secondary_manifest_path), parser)
+    reference_annotation_path = sorted((reference_safe_path / 'annotation').glob('s1*.xml'))[0]
+    ref_manifest_xml = etree.parse(str(reference_safe_path / 'manifest.safe'), parser)
+    sec_manifest_xml = etree.parse(str(secondary_safe_path / 'manifest.safe'), parser)
     ref_annotation_xml = etree.parse(str(reference_annotation_path), parser)
-    topsProc_xml = etree.parse('topsProc.xml', parser)
-    topsApp_xml = etree.parse('topsApp.xml', parser)
+    topsProc_xml = etree.parse(str(processing_path / 'topsProc.xml'), parser)
+    topsApp_xml = etree.parse(str(processing_path /'topsApp.xml'), parser)
 
     safe = '{http://www.esa.int/safe/sentinel-1.0}'
     s1 = '{http://www.esa.int/safe/sentinel-1.0/sentinel-1}'

@@ -198,13 +198,13 @@ def insar_tops_single_burst(
         Path(f'{product_name}/{product_name}.txt'),
         reference_scenes=[reference],
         secondary_scenes=[secondary],
+        reference_safe_path=reference_safe_path,
+        secondary_safe_path=secondary_safe_path,
+        processing_path=Path.cwd(),
         azimuth_looks=azimuth_looks,
         range_looks=range_looks,
         multilook_position=multilook_position,
         apply_water_mask=apply_water_mask,
-        reference_manifest_path=reference_safe_path / 'manifest.safe',
-        secondary_manifest_path=secondary_safe_path / 'manifest.safe',
-        reference_annotation_path=sorted(reference_safe_path.glob('s1*.xml'))[0],
     )
     output_zip = make_archive(base_name=product_name, format='zip', base_dir=product_name)
 
