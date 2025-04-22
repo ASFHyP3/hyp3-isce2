@@ -147,7 +147,7 @@ def insar_tops_packaged(
         azimuth_looks: Number of azimuth looks
         range_looks: Number of range looks
         apply_water_mask: Apply water mask to unwrapped phase
-        reference_bursts: Names of the reference burstst hat comprise the reference SLC
+        reference_bursts: Names of the reference bursts that comprise the reference SLC
         secondary_bursts: Names of the secondary bursts that comprise the secondary SLC
         bucket: AWS S3 bucket to upload the final product to
         bucket_prefix: Bucket prefix to prefix to use when uploading the final product
