@@ -377,10 +377,13 @@ def make_parameter_file(
 
     Args:
         out_path: path to output the parameter file
-        reference_scene: Reference burst name
-        secondary_scene: Secondary burst name
+        reference_scenes: List of reference scene names (full SLC or burst names)
+        secondary_scene: List of secondary scene names (full SLC or burst names)
         azimuth_looks: Number of azimuth looks
         range_looks: Number of range looks
+        reference_manifest_path: Path to the reference manifest file
+        secondary_manifest_path: Path to the secondary manifest file
+        reference_annotation_path: Path to the reference annotation file
         multilook_position: Burst position for multilooked radar geometry products
         dem_name: Name of the DEM that is use
         dem_resolution: Resolution of the DEM

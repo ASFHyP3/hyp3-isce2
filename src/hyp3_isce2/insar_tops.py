@@ -132,6 +132,8 @@ def insar_tops_packaged(
     azimuth_looks: int = 4,
     range_looks: int = 20,
     apply_water_mask: bool = True,
+    reference_bursts=None,
+    secondary_bursts=None,
     bucket: str | None = None,
     bucket_prefix: str = '',
 ) -> None:
@@ -145,6 +147,8 @@ def insar_tops_packaged(
         azimuth_looks: Number of azimuth looks
         range_looks: Number of range looks
         apply_water_mask: Apply water mask to unwrapped phase
+        reference_bursts: Names of the reference burstst hat comprise the reference SLC
+        secondary_bursts: Names of the secondary bursts that comprise the secondary SLC
         bucket: AWS S3 bucket to upload the final product to
         bucket_prefix: Bucket prefix to prefix to use when uploading the final product
 
@@ -184,6 +188,8 @@ def insar_tops_packaged(
     if apply_water_mask:
         packaging.water_mask(unwrapped_phase, f'{product_name}/{product_name}_water_mask.tif')
 
+    reference_scenes = [reference] if reference_bursts is None else reference_bursts
+    secondary_scenes = [secondary] if secondary_bursts is None else secondary_bursts
     make_browse_image(unwrapped_phase, f'{product_name}/{product_name}_unw_phase.png')
     packaging.make_readme(
         product_dir=product_dir,
@@ -196,11 +202,14 @@ def insar_tops_packaged(
     )
     packaging.make_parameter_file(
         Path(f'{product_name}/{product_name}.txt'),
-        reference_scene=reference,
-        secondary_scene=secondary,
+        reference_scenes=reference_scenes,
+        secondary_scenes=secondary_scenes,
         azimuth_looks=azimuth_looks,
         range_looks=range_looks,
         apply_water_mask=apply_water_mask,
+        reference_manifest_path=Path(f'{reference}.SAFE/manifest.safe'),
+        secondary_manifest_path=Path(f'{secondary}.SAFE/manifest.safe'),
+        reference_annotation_path=sorted(Path(f'{reference}.SAFE/annotation').glob('s1*.xml'))[0],
     )
     output_zip = make_archive(base_name=product_name, format='zip', base_dir=product_name)
     if bucket:
