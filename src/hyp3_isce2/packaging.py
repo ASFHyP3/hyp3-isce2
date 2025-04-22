@@ -393,7 +393,7 @@ def make_parameter_file(
     EARTH_RADIUS = 6337286.638938101
 
     parser = etree.XMLParser(encoding='utf-8', recover=True)
-    reference_annotation_path = sorted((reference_safe_path / 'annotation').glob('s1*.xml'))[0]
+    reference_annotation_path = min((reference_safe_path / 'annotation').glob('s1*.xml'))
     ref_manifest_xml = etree.parse(str(reference_safe_path / 'manifest.safe'), parser)
     sec_manifest_xml = etree.parse(str(secondary_safe_path / 'manifest.safe'), parser)
     ref_annotation_xml = etree.parse(str(reference_annotation_path), parser)
