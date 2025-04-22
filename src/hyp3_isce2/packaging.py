@@ -398,7 +398,7 @@ def make_parameter_file(
     sec_manifest_xml = etree.parse(str(secondary_safe_path / 'manifest.safe'), parser)
     ref_annotation_xml = etree.parse(str(reference_annotation_path), parser)
     topsProc_xml = etree.parse(str(processing_path / 'topsProc.xml'), parser)
-    topsApp_xml = etree.parse(str(processing_path /'topsApp.xml'), parser)
+    topsApp_xml = etree.parse(str(processing_path / 'topsApp.xml'), parser)
 
     safe = '{http://www.esa.int/safe/sentinel-1.0}'
     s1 = '{http://www.esa.int/safe/sentinel-1.0/sentinel-1}'
