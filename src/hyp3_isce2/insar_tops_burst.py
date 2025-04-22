@@ -196,14 +196,15 @@ def insar_tops_single_burst(
     )
     packaging.make_parameter_file(
         Path(f'{product_name}/{product_name}.txt'),
-        reference_scene=reference,
-        secondary_scene=secondary,
+        reference_scenes=[reference],
+        secondary_scenes=[secondary],
+        reference_safe_path=reference_safe_path,
+        secondary_safe_path=secondary_safe_path,
+        processing_path=Path.cwd(),
         azimuth_looks=azimuth_looks,
         range_looks=range_looks,
         multilook_position=multilook_position,
         apply_water_mask=apply_water_mask,
-        reference_safe=reference_safe_path.name,
-        secondary_safe=secondary_safe_path.name,
     )
     output_zip = make_archive(base_name=product_name, format='zip', base_dir=product_name)
 
@@ -239,6 +240,8 @@ def insar_tops_multi_burst(
         apply_water_mask=apply_water_mask,
         bucket=bucket,
         bucket_prefix=bucket_prefix,
+        reference_bursts=reference,
+        secondary_bursts=secondary,
     )
     log.info('ISCE2 TopsApp run completed successfully')
 
