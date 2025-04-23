@@ -24,8 +24,8 @@ def test_get_pixel_size():
 
 
 def test_make_parameter_file(test_data_dir, tmp_path):
-    parameter_file = tmp_path / 'parameters.txt'
-    data_dir = test_data_dir / 'packaging'
+    parameter_file = tmp_path / 'slc_parameters.txt'
+    data_dir = test_data_dir / 'packaging/slc/'
     packaging.make_parameter_file(
         out_path=parameter_file,
         reference_scenes=['S1A_IW_SLC__1SDV_20250406T022008_20250406T022035_058630_07421F_93A7'],
@@ -68,5 +68,52 @@ def test_make_parameter_file(test_data_dir, tmp_path):
             'Unwrapping type: snaphu_mcf',
             'Speckle filter: yes',
             'Water mask: no\n',
+        ]
+    )
+
+    parameter_file = tmp_path / 'single_burst_parameters.txt'
+    data_dir = test_data_dir / 'packaging/single_burst/'
+    packaging.make_parameter_file(
+        out_path=parameter_file,
+        reference_scenes=['S1_372326_IW3_20180628T151555_VV_4673-BURST'],
+        secondary_scenes=['S1_372326_IW3_20190705T151602_VV_D62F-BURST'],
+        azimuth_looks=10,
+        range_looks=2,
+        apply_water_mask=True,
+        reference_safe_path=data_dir / 'S1B_IW_SLC__1SSV_20180628T151555_20180628T151555_011575_015476_33AD.SAFE',
+        secondary_safe_path=data_dir / 'S1B_IW_SLC__1SSV_20190705T151602_20190705T151602_017000_01FFC4_26ED.SAFE',
+        processing_path=data_dir,
+        multilook_position=None,
+        dem_name='GLO_30',
+        dem_resolution=30,
+    )
+    assert parameter_file.exists()
+    assert parameter_file.read_text() == '\n'.join(
+        [
+            'Reference Granule: S1_372326_IW3_20180628T151555_VV_4673-BURST',
+            'Secondary Granule: S1_372326_IW3_20190705T151602_VV_D62F-BURST',
+            'Reference Pass Direction: DESCENDING',
+            'Reference Orbit Number: 11575',
+            'Secondary Pass Direction: DESCENDING',
+            'Secondary Orbit Number: 17000',
+            'Baseline: 7.636373874371554',
+            'UTC time: 54955.501598',
+            'Heading: -163.184113207136',
+            'Spacecraft height: 693000.0',
+            'Earth radius at nadir: 6337286.638938101',
+            'Slant range near: 802590.1853264123',
+            'Slant range center: 827292.8619908537',
+            'Slant range far: 851995.5386552949',
+            'Range looks: 2',
+            'Azimuth looks: 10',
+            'INSAR phase filter: yes',
+            'Phase filter parameter: 0.5',
+            'Range bandpass filter: no',
+            'Azimuth bandpass filter: no',
+            'DEM source: GLO_30',
+            'DEM resolution (m): 30',
+            'Unwrapping type: snaphu_mcf',
+            'Speckle filter: yes',
+            'Water mask: yes\n',
         ]
     )
