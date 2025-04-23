@@ -359,6 +359,16 @@ def find_available_swaths(base_dir: Path | str) -> list[str]:
     return swaths
 
 
+def get_baseline_perp(topsProc_xml: etree._ElementTree) -> float:
+    for swath in [1, 2, 3]:
+        bperp_element = topsProc_xml.find(f'.//IW-{swath}_Bperp_at_midrange_for_first_common_burst')
+        if bperp_element is not None:
+            return float(bperp_element.text)
+
+    if bperp_element is None:
+        raise ValueError('No Bperp found in topsProc.xml')
+
+
 def make_parameter_file(
     out_path: Path,
     reference_scenes: list[str],
@@ -408,7 +418,6 @@ def make_parameter_file(
 
     ref_orbit_number: str = ref_manifest_xml.find(orbit_number_query).text  # type: ignore[assignment, union-attr]
     ref_orbit_direction: str = ref_manifest_xml.find(orbit_direction_query).text  # type: ignore[assignment, union-attr]
-    min_swath: str = ref_annotation_xml.find('.//adsHeader/swath').text  # type: ignore[assignment, union-attr]
     sec_orbit_number: str = sec_manifest_xml.find(orbit_number_query).text  # type: ignore[assignment, union-attr]
     sec_orbit_direction: str = sec_manifest_xml.find(orbit_direction_query).text  # type: ignore[assignment, union-attr]
     ref_heading = float(ref_annotation_xml.find('.//platformHeading').text)  # type: ignore[arg-type, union-attr]
@@ -416,9 +425,10 @@ def make_parameter_file(
     slant_range_time = float(ref_annotation_xml.find('.//slantRangeTime').text)  # type: ignore[arg-type, union-attr]
     range_sampling_rate = float(ref_annotation_xml.find('.//rangeSamplingRate').text)  # type: ignore[arg-type, union-attr]
     number_samples = int(ref_annotation_xml.find('.//swathTiming/samplesPerBurst').text)  # type: ignore[arg-type, union-attr]
-    baseline_perp: str = topsProc_xml.find(f'.//IW-{int(min_swath[2])}_Bperp_at_midrange_for_first_common_burst').text  # type: ignore[assignment, union-attr]
     unwrapper_type: str = topsApp_xml.find('.//property[@name="unwrapper name"]').text  # type: ignore[assignment, union-attr]
     phase_filter_strength: str = topsApp_xml.find('.//property[@name="filter strength"]').text  # type: ignore[assignment, union-attr]
+
+    baseline_perp = get_baseline_perp(topsProc_xml)
 
     slant_range_near = float(slant_range_time) * SPEED_OF_LIGHT / 2
     range_pixel_spacing = SPEED_OF_LIGHT / (2 * range_sampling_rate)
