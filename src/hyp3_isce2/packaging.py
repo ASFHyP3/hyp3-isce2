@@ -363,10 +363,11 @@ def get_baseline_perp(topsProc_xml: etree._ElementTree) -> float:
     for swath in [1, 2, 3]:
         bperp_element = topsProc_xml.find(f'.//IW-{swath}_Bperp_at_midrange_for_first_common_burst')
         if bperp_element is not None:
-            return float(bperp_element.text)
+            bperp_txt = bperp_element.text
+            assert bperp_txt is not None
+            return float(bperp_txt)
 
-    if bperp_element is None:
-        raise ValueError('No Bperp found in topsProc.xml')
+    raise ValueError('No Bperp found in topsProc.xml')
 
 
 def make_parameter_file(
