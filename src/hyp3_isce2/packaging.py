@@ -378,7 +378,7 @@ def make_parameter_file(
     Args:
         out_path: path to output the parameter file
         reference_scenes: List of reference scene names (full SLC or burst names)
-        secondary_scene: List of secondary scene names (full SLC or burst names)
+        secondary_scenes: List of secondary scene names (full SLC or burst names)
         reference_safe_path: Path to the reference SAFE directory
         secondary_safe_path: Path to the secondary SAFE directory
         processing_path: Path to the processing directory

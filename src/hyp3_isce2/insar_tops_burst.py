@@ -63,9 +63,9 @@ def insar_tops_burst(
     aux_cal_dir = Path('aux_cal')
     dem_dir = Path('dem')
 
-    reference_safe_path = burst2safe([reference_scene], all_anns=True)
+    reference_safe_path = burst2safe([reference_scene])
     reference_safe = reference_safe_path.name.split('.')[0]
-    secondary_safe_path = burst2safe([secondary_scene], all_anns=True)
+    secondary_safe_path = burst2safe([secondary_scene])
     secondary_safe = secondary_safe_path.name.split('.')[0]
 
     polarization = reference_scene.split('_')[4]
