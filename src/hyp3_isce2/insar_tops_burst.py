@@ -63,9 +63,9 @@ def insar_tops_burst(
     aux_cal_dir = Path('aux_cal')
     dem_dir = Path('dem')
 
-    reference_safe_path = burst2safe([reference_scene], all_anns=True)
+    reference_safe_path = burst2safe([reference_scene])
     reference_safe = reference_safe_path.name.split('.')[0]
-    secondary_safe_path = burst2safe([secondary_scene], all_anns=True)
+    secondary_safe_path = burst2safe([secondary_scene])
     secondary_safe = secondary_safe_path.name.split('.')[0]
 
     polarization = reference_scene.split('_')[4]
@@ -80,15 +80,14 @@ def insar_tops_burst(
 
     log.info(f'DEM ROI: {dem_roi}')
 
-    dem_path = download_dem_for_isce2(dem_roi, dem_name='glo_30', dem_dir=dem_dir, buffer=0, resample_20m=False)
-    download_aux_cal(aux_cal_dir)
-
+    dem_dir.mkdir(exist_ok=True, parents=True)
+    dem_path = dem_dir / 'full_res.dem.wgs84'
+    download_dem_for_isce2(dem_roi, dem_path=dem_path, pixel_size=30.0)
+    geocode_dem_path = dem_path
     if range_looks == 5:
-        geocode_dem_path = download_dem_for_isce2(
-            dem_roi, dem_name='glo_30', dem_dir=dem_dir, buffer=0, resample_20m=True
-        )
-    else:
-        geocode_dem_path = dem_path
+        geocode_dem_path = dem_dir / 'full_res_geocode.dem.wgs84'
+        download_dem_for_isce2(dem_roi, dem_path=geocode_dem_path, pixel_size=20.0)
+    download_aux_cal(aux_cal_dir)
 
     orbit_dir.mkdir(exist_ok=True, parents=True)
     for granule in (reference_safe, secondary_safe):
@@ -197,14 +196,15 @@ def insar_tops_single_burst(
     )
     packaging.make_parameter_file(
         Path(f'{product_name}/{product_name}.txt'),
-        reference_scene=reference,
-        secondary_scene=secondary,
+        reference_scenes=[reference],
+        secondary_scenes=[secondary],
+        reference_safe_path=reference_safe_path,
+        secondary_safe_path=secondary_safe_path,
+        processing_path=Path.cwd(),
         azimuth_looks=azimuth_looks,
         range_looks=range_looks,
         multilook_position=multilook_position,
         apply_water_mask=apply_water_mask,
-        reference_safe=reference_safe_path.name,
-        secondary_safe=secondary_safe_path.name,
     )
     output_zip = make_archive(base_name=product_name, format='zip', base_dir=product_name)
 
@@ -240,6 +240,8 @@ def insar_tops_multi_burst(
         apply_water_mask=apply_water_mask,
         bucket=bucket,
         bucket_prefix=bucket_prefix,
+        reference_bursts=reference,
+        secondary_bursts=secondary,
     )
     log.info('ISCE2 TopsApp run completed successfully')
 

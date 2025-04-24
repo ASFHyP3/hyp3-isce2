@@ -59,7 +59,14 @@ def insar_tops(
     roi = slc.get_dem_bounds(ref_dir, sec_dir)
     log.info(f'DEM ROI: {roi}')
 
-    dem_path = download_dem_for_isce2(roi, dem_name='glo_30', dem_dir=dem_dir, buffer=0)
+    dem_dir.mkdir(exist_ok=True, parents=True)
+    dem_path = dem_dir / 'full_res.dem.wgs84'
+    download_dem_for_isce2(roi, dem_path=dem_path, pixel_size=30.0)
+    geocode_dem_path = dem_path
+    if range_looks == 5:
+        geocode_dem_path = dem_dir / 'full_res_geocode.dem.wgs84'
+        download_dem_for_isce2(roi, dem_path=geocode_dem_path, pixel_size=20.0)
+
     download_aux_cal(aux_cal_dir)
 
     orbit_dir.mkdir(exist_ok=True, parents=True)
@@ -75,7 +82,7 @@ def insar_tops(
         orbit_directory=str(orbit_dir),
         aux_cal_directory=str(aux_cal_dir),
         dem_filename=str(dem_path),
-        geocode_dem_filename=str(dem_path),
+        geocode_dem_filename=str(geocode_dem_path),
         roi=roi,
         swaths=swaths,
         azimuth_looks=azimuth_looks,
@@ -125,6 +132,8 @@ def insar_tops_packaged(
     azimuth_looks: int = 4,
     range_looks: int = 20,
     apply_water_mask: bool = True,
+    reference_bursts=None,
+    secondary_bursts=None,
     bucket: str | None = None,
     bucket_prefix: str = '',
 ) -> None:
@@ -138,6 +147,8 @@ def insar_tops_packaged(
         azimuth_looks: Number of azimuth looks
         range_looks: Number of range looks
         apply_water_mask: Apply water mask to unwrapped phase
+        reference_bursts: Names of the reference bursts that comprise the reference SLC
+        secondary_bursts: Names of the secondary bursts that comprise the secondary SLC
         bucket: AWS S3 bucket to upload the final product to
         bucket_prefix: Bucket prefix to prefix to use when uploading the final product
 
@@ -177,6 +188,8 @@ def insar_tops_packaged(
     if apply_water_mask:
         packaging.water_mask(unwrapped_phase, f'{product_name}/{product_name}_water_mask.tif')
 
+    reference_scenes = [reference] if reference_bursts is None else reference_bursts
+    secondary_scenes = [secondary] if secondary_bursts is None else secondary_bursts
     make_browse_image(unwrapped_phase, f'{product_name}/{product_name}_unw_phase.png')
     packaging.make_readme(
         product_dir=product_dir,
@@ -189,8 +202,11 @@ def insar_tops_packaged(
     )
     packaging.make_parameter_file(
         Path(f'{product_name}/{product_name}.txt'),
-        reference_scene=reference,
-        secondary_scene=secondary,
+        reference_scenes=reference_scenes,
+        secondary_scenes=secondary_scenes,
+        reference_safe_path=Path(f'{reference}.SAFE'),
+        secondary_safe_path=Path(f'{secondary}.SAFE'),
+        processing_path=Path.cwd(),
         azimuth_looks=azimuth_looks,
         range_looks=range_looks,
         apply_water_mask=apply_water_mask,

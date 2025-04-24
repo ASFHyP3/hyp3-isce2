@@ -456,7 +456,8 @@ def download_dem_for_multiple_bursts(s1_objs: Iterable[Sentinel1BurstSelect], ba
     for s1_obj in s1_objs:
         burst_objs += s1_obj.product.bursts
     dem_roi = get_scene_roi(burst_objs)
-    download_dem_for_isce2(dem_roi, dem_name='glo_30', dem_dir=base_dir, buffer=0, resample_20m=False)
+    dem_path = base_dir / 'full_res.dem.wgs84'
+    download_dem_for_isce2(dem_roi, dem_path, pixel_size=30.0)
 
 
 def translate_image(in_path: str, out_path: str, image_type: str) -> None:

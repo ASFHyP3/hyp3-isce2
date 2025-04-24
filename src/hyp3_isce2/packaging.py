@@ -1,4 +1,3 @@
-import os
 import subprocess
 from dataclasses import dataclass
 from datetime import datetime, timezone
@@ -360,62 +359,57 @@ def find_available_swaths(base_dir: Path | str) -> list[str]:
     return swaths
 
 
+def get_baseline_perp(topsProc_xml: etree._ElementTree) -> float:
+    for swath in [1, 2, 3]:
+        bperp_element = topsProc_xml.find(f'.//IW-{swath}_Bperp_at_midrange_for_first_common_burst')
+        if bperp_element is not None:
+            bperp_txt = bperp_element.text
+            assert bperp_txt is not None
+            return float(bperp_txt)
+
+    raise ValueError('No Bperp found in topsProc.xml')
+
+
 def make_parameter_file(
     out_path: Path,
-    reference_scene: str,
-    secondary_scene: str,
+    reference_scenes: list[str],
+    secondary_scenes: list[str],
+    reference_safe_path: Path,
+    secondary_safe_path: Path,
+    processing_path: Path,
     azimuth_looks: int,
     range_looks: int,
     apply_water_mask: bool,
     multilook_position: BurstPosition | None = None,
     dem_name: str = 'GLO_30',
     dem_resolution: int = 30,
-    reference_safe: str | None = None,
-    secondary_safe: str | None = None,
 ) -> None:
     """Create a parameter file for the output product
 
     Args:
         out_path: path to output the parameter file
-        reference_scene: Reference burst name
-        secondary_scene: Secondary burst name
+        reference_scenes: List of reference scene names (full SLC or burst names)
+        secondary_scenes: List of secondary scene names (full SLC or burst names)
+        reference_safe_path: Path to the reference SAFE directory
+        secondary_safe_path: Path to the secondary SAFE directory
+        processing_path: Path to the processing directory
         azimuth_looks: Number of azimuth looks
         range_looks: Number of range looks
         multilook_position: Burst position for multilooked radar geometry products
         dem_name: Name of the DEM that is use
         dem_resolution: Resolution of the DEM
-        reference_safe: The name of the reference SAFE directory. Optional; will look for a `.SAFE` directory matching `reference_scene` if not provided.
-        secondary_safe: The name of the reference SAFE directory. Optional; will look for a `.SAFE` directory matching `secondary_scene` if not provided.
-
-    returns:
-        None
     """
     SPEED_OF_LIGHT = 299792458.0
     SPACECRAFT_HEIGHT = 693000.0
     EARTH_RADIUS = 6337286.638938101
 
-    if 'BURST' in reference_scene:
-        ref_tag = reference_scene[-10:-6]
-        sec_tag = secondary_scene[-10:-6]
-    else:
-        ref_tag = reference_scene[-4::]
-        sec_tag = secondary_scene[-4::]
-
-    if reference_safe is None:
-        reference_safe = [file for file in os.listdir('.') if file.endswith(f'{ref_tag}.SAFE')][0]
-        secondary_safe = [file for file in os.listdir('.') if file.endswith(f'{sec_tag}.SAFE')][0]
-
-    assert reference_safe and secondary_safe
-
-    ref_annotation_path = f'{reference_safe}/annotation/'
-    ref_annotation = [file for file in os.listdir(ref_annotation_path) if os.path.isfile(ref_annotation_path + file)][0]
-
     parser = etree.XMLParser(encoding='utf-8', recover=True)
-    ref_manifest_xml = etree.parse(f'{reference_safe}/manifest.safe', parser)
-    sec_manifest_xml = etree.parse(f'{secondary_safe}/manifest.safe', parser)
-    ref_annotation_xml = etree.parse(f'{ref_annotation_path}{ref_annotation}', parser)
-    topsProc_xml = etree.parse('topsProc.xml', parser)
-    topsApp_xml = etree.parse('topsApp.xml', parser)
+    reference_annotation_path = min((reference_safe_path / 'annotation').glob('s1*.xml'))
+    ref_manifest_xml = etree.parse(str(reference_safe_path / 'manifest.safe'), parser)
+    sec_manifest_xml = etree.parse(str(secondary_safe_path / 'manifest.safe'), parser)
+    ref_annotation_xml = etree.parse(str(reference_annotation_path), parser)
+    topsProc_xml = etree.parse(str(processing_path / 'topsProc.xml'), parser)
+    topsApp_xml = etree.parse(str(processing_path / 'topsApp.xml'), parser)
 
     safe = '{http://www.esa.int/safe/sentinel-1.0}'
     s1 = '{http://www.esa.int/safe/sentinel-1.0/sentinel-1}'
@@ -432,10 +426,10 @@ def make_parameter_file(
     slant_range_time = float(ref_annotation_xml.find('.//slantRangeTime').text)  # type: ignore[arg-type, union-attr]
     range_sampling_rate = float(ref_annotation_xml.find('.//rangeSamplingRate').text)  # type: ignore[arg-type, union-attr]
     number_samples = int(ref_annotation_xml.find('.//swathTiming/samplesPerBurst').text)  # type: ignore[arg-type, union-attr]
-    min_swath = find_available_swaths(Path.cwd())[0]
-    baseline_perp: str = topsProc_xml.find(f'.//IW-{int(min_swath[2])}_Bperp_at_midrange_for_first_common_burst').text  # type: ignore[assignment, union-attr]
     unwrapper_type: str = topsApp_xml.find('.//property[@name="unwrapper name"]').text  # type: ignore[assignment, union-attr]
     phase_filter_strength: str = topsApp_xml.find('.//property[@name="filter strength"]').text  # type: ignore[assignment, union-attr]
+
+    baseline_perp = get_baseline_perp(topsProc_xml)
 
     slant_range_near = float(slant_range_time) * SPEED_OF_LIGHT / 2
     range_pixel_spacing = SPEED_OF_LIGHT / (2 * range_sampling_rate)
@@ -446,8 +440,8 @@ def make_parameter_file(
     utc_time = ((int(s[0]) * 60 + int(s[1])) * 60) + float(s[2])
 
     parameter_file = ParameterFile(
-        reference_granule=reference_scene,
-        secondary_granule=secondary_scene,
+        reference_granule=', '.join(reference_scenes),
+        secondary_granule=', '.join(secondary_scenes),
         reference_orbit_direction=ref_orbit_direction,
         reference_orbit_number=ref_orbit_number,
         secondary_orbit_direction=sec_orbit_direction,

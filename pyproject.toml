@@ -21,13 +21,13 @@ classifiers=[
 ]
 dependencies = [
   "numpy",
-  "dem_stitcher>=2.5.8",
   "rasterio",
   "shapely",
+  "pyproj",
   "jinja2",
   "asf_search>=6.4.0",
   "gdal",
-  "hyp3lib>=3,<4",
+  "hyp3lib>=3.2,<4",
   "s1_orbits",
   "burst2safe"
   # Conda-forge only dependencies are listed below

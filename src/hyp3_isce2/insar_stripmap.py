@@ -57,7 +57,10 @@ def insar_stripmap(reference_scene: str, secondary_scene: str) -> Path:
     polygons = [Polygon(product.geometry['coordinates'][0]) for product in products]
     insar_roi = polygons[0].intersection(polygons[1]).bounds
 
-    dem_path = download_dem_for_isce2(insar_roi, dem_name='glo_30', dem_dir=Path('dem'), buffer=0)
+    dem_dir = Path('dem')
+    dem_dir.mkdir(parents=True, exist_ok=True)
+    dem_path = dem_dir / 'full_res.dem.wgs84'
+    download_dem_for_isce2(insar_roi, dem_path, pixel_size=30.0)
 
     urls = [product.properties['url'] for product in products]
     asf_search.download_urls(urls=urls, path=os.getcwd(), processes=2)
