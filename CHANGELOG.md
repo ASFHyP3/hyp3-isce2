@@ -6,14 +6,64 @@ The format is based on [Keep a Changelog](https://keepachangelog.com/en/1.0.0/),
 and this project adheres to [PEP 440](https://www.python.org/dev/peps/pep-0440/)
 and uses [Semantic Versioning](https://semver.org/spec/v2.0.0.html).
 
-## [3.0.0]
-### Added
-- New funcionality to process multi bursts with `insar_tops_burst`.
-- The `--reference` and `--secondary` command-line options to indicate the reference and secondary bursts.
-- `burst2safe` is now called to get SAFE files from bursts.
+## [2.3.1]
+
 ### Changed
-- Product name has changed to indicate relative orbit, lon/lat extent and reference and secondary dates.
-  
+- Upgraded to hyp3lib v4.
+
+## [2.3.0]
+
+### Changed
+- Switched to using hyp3-lib for DEM downloading, in line with our HyP3-GAMMA plugin.
+
+### Fixed
+- Bug that led to the wrong swath annotation file being used to populate output parameter file.
+
+## [2.2.0]
+
+### Changed
+- The `insar_tops_single_burst` workflow now uses [burst2safe](https://github.com/ASFHyP3/burst2safe) to eliminate the use of a region of interest with single-burst jobs, which was causing a [bug where multiple vrts would be cropped by ISCE2](https://github.com/ASFHyP3/hyp3-isce2/issues/165).
+
+## [2.1.6]
+
+### Fixed
+- Fixed a [region of interest bug](https://github.com/ASFHyP3/hyp3-isce2/issues/165) that caused `ValueError: There should only be 2 VRT files` when there should not have been multiple VRTs.
+
+## [2.1.5]
+
+### Fixed
+- Using the `--apply-water-mask` option now uses significantly less memory by correctly subsetting the water mask tiles to the desired area.
+
+## [2.1.4]
+
+### Changed
+- Improved error messages for validating the reference and secondary scenes passed to the `insar_tops_burst` workflow.
+
+### Fixed
+- Refined temporal requirements for scenes passed to the `insar_tops_burst` workflow, to allow the acquisition to cross midnight. Previously, the reference scenes were required to fall on one calendar day and the secondary scenes on a different calendar day. Now, each list of scenes must fall within a two-minute temporal window (with reference older than secondary, as before).
+- Removed the unused `swaths` parameter from the `hyp3_isce2.insar_tops_burst.insar_tops_multi_burst` function.
+- The `insar_tops_burst` workflow now validates the reference and secondary scenes immediately after parsing CLI args. Fixes <https://github.com/ASFHyP3/hyp3-isce2/issues/278>, in which the wrong error message was displayed if one reference scene and multiple secondary scenes were provided.
+
+## [2.1.3]
+### Changed
+- Updated download URLs for Sentinel-1 AUX_CAL files.
+
+## [2.1.2]
+### Added
+- Added `mypy` type checker to the [`static-analysis`](https://github.com/ASFHyP3/hyp3-isce2/blob/develop/.github/workflows/static-analysis.yml) workflow.
+
+## [2.1.1]
+### Changed
+- The [`static-analysis`](https://github.com/ASFHyP3/hyp3-isce2/blob/develop/.github/workflows/static-analysis.yml) workflow now uses `ruff` rather than `flake8`.
+
+## [2.1.0]
+### Added
+- The ability for the `insar_tops_burst` workflow to support processing multiple bursts as one SLC.
+
+### Changed
+- The interface for `insar_tops_burst` so that it takes `--reference` and `--secondary` granule lists. The positional `granules` argument is now optional and deprecated.
+- Moved HyP3 product packaging functionality out of `insar_tops_burst.py` and to a new `packaging.py` so that both `insar_tops` and `insar_tops_burst` can use it.
+
 ## [2.0.0]
 ### Changed
 - Orbit files are now retrieved using the [s1-orbits](https://github.com/ASFHyP3/sentinel1-orbits-py) library.

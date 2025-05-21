@@ -5,10 +5,12 @@ on: push
 jobs:
   call-secrets-analysis-workflow:
     # Docs: https://github.com/ASFHyP3/actions
-    uses: ASFHyP3/actions/.github/workflows/reusable-secrets-analysis.yml@v0.11.2
+    uses: ASFHyP3/actions/.github/workflows/reusable-secrets-analysis.yml@v0.19.0
 
-  call-flake8-workflow:
+  call-ruff-workflow:
     # Docs: https://github.com/ASFHyP3/actions
-    uses: ASFHyP3/actions/.github/workflows/reusable-flake8.yml@v0.11.2
-    with:
-      local_package_names: hyp3_isce2
+    uses: ASFHyP3/actions/.github/workflows/reusable-ruff.yml@v0.19.0
+
+  call-mypy-workflow:
+    # Docs: https://github.com/ASFHyP3/actions
+    uses: ASFHyP3/actions/.github/workflows/reusable-mypy.yml@v0.19.0

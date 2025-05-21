@@ -1,0 +1,33 @@
+<?xml version="1.0" encoding="UTF-8"?>
+<topsApp>
+  <component name="topsinsar">
+    <component name="reference">
+      <property name="orbit directory">orbits</property>
+      <property name="auxiliary data directory">aux_cal</property>
+      <property name="output directory">reference</property>
+      <property name="safe">/home/asjohnston/tmp/isce/S1B_IW_SLC__1SSV_20180628T151555_20180628T151555_011575_015476_33AD.SAFE</property>
+      <property name="polarization">vv</property>
+    </component>
+    <component name="secondary">
+      <property name="orbit directory">orbits</property>
+      <property name="auxiliary data directory">aux_cal</property>
+      <property name="output directory">secondary</property>
+      <property name="safe">/home/asjohnston/tmp/isce/S1B_IW_SLC__1SSV_20190705T151602_20190705T151602_017000_01FFC4_26ED.SAFE</property>
+      <property name="polarization">vv</property>
+    </component>
+    <property name="swaths">[3]</property>
+    <property name="range looks">10</property>
+    <property name="azimuth looks">2</property>
+    <property name="filter strength">0.5</property>
+    <property name="demFilename">dem/full_res.dem.wgs84</property>
+    <property name="geocodeDemFilename">dem/full_res.dem.wgs84</property>
+    <property name="do unwrap">True</property>
+    <property name="unwrapper name">snaphu_mcf</property>
+    <property name="do ionosphere correction">False</property>
+    <property name="apply ionosphere correction">False</property>
+    <property name="do ESD">False</property>
+    <property name="ESD coherence threshold">0.7</property>
+    <property name="use virtual files">True</property>
+    <property name="geocode list">['merged/phsig.cor', 'merged/filt_topophase.unw', 'merged/los.rdr', 'merged/filt_topophase.flat', 'merged/topophase.cor', 'merged/filt_topophase.unw.conncomp']</property>
+  </component>
+</topsApp>

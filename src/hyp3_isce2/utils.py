@@ -3,12 +3,11 @@ import subprocess
 from dataclasses import dataclass
 from datetime import datetime
 from pathlib import Path
-from typing import Optional
 
-import isceobj
+import isceobj  # type: ignore[import-not-found]
 import numpy as np
-from isceobj.Util.ImageUtil.ImageLib import loadImage
-from iscesys.Component.ProductManager import ProductManager
+from isceobj.Util.ImageUtil.ImageLib import loadImage  # type: ignore[import-not-found]
+from iscesys.Component.ProductManager import ProductManager  # type: ignore[import-not-found]
 from osgeo import gdal, osr
 
 
@@ -19,9 +18,8 @@ class GDALConfigManager:
     """Context manager for setting GDAL config options temporarily"""
 
     def __init__(self, **options):
-        """
-        Args:
-            **options: GDAL Config `option=value` keyword arguments.
+        """Args:
+        **options: GDAL Config `option=value` keyword arguments.
         """
         self.options = options.copy()
         self._previous_options = {}
@@ -65,15 +63,15 @@ class ParameterFile:
     unwrapping_type: str
     speckle_filter: bool
     water_mask: bool
-    radar_n_lines: Optional[int] = None
-    radar_n_samples: Optional[int] = None
-    radar_first_valid_line: Optional[int] = None
-    radar_n_valid_lines: Optional[int] = None
-    radar_first_valid_sample: Optional[int] = None
-    radar_n_valid_samples: Optional[int] = None
-    multilook_azimuth_time_interval: Optional[float] = None
-    multilook_range_pixel_size: Optional[float] = None
-    radar_sensing_stop: Optional[datetime] = None
+    radar_n_lines: int | None = None
+    radar_n_samples: int | None = None
+    radar_first_valid_line: int | None = None
+    radar_n_valid_lines: int | None = None
+    radar_first_valid_sample: int | None = None
+    radar_n_valid_samples: int | None = None
+    multilook_azimuth_time_interval: float | None = None
+    multilook_range_pixel_size: float | None = None
+    radar_sensing_stop: datetime | None = None
 
     def __str__(self):
         output_strings = [
@@ -115,7 +113,7 @@ class ParameterFile:
                 f'Radar n valid samples: {self.radar_n_valid_samples}\n',
                 f'Multilook azimuth time interval: {self.multilook_azimuth_time_interval}\n',
                 f'Multilook range pixel size: {self.multilook_range_pixel_size}\n',
-                f'Radar sensing stop: {datetime.strftime(self.radar_sensing_stop, "%Y-%m-%dT%H:%M:%S.%f")}\n',
+                f'Radar sensing stop: {datetime.strftime(self.radar_sensing_stop, "%Y-%m-%dT%H:%M:%S.%f")}\n',  # type: ignore[arg-type]
             ]
             output_strings += radar_data
 
@@ -179,12 +177,6 @@ def make_browse_image(input_tif: str, output_png: str) -> None:
         )
 
 
-def oldest_granule_first(g1, g2):
-    if g1[14:29] <= g2[14:29]:
-        return g1, g2
-    return g2, g1
-
-
 def load_isce2_image(in_path) -> tuple[isceobj.Image, np.ndarray]:
     """Read an ISCE2 image file and return the image object and array.
 
@@ -203,7 +195,7 @@ def load_isce2_image(in_path) -> tuple[isceobj.Image, np.ndarray]:
             shape = (image_obj.bands, image_obj.length, image_obj.width)
             new_array = np.zeros(shape, dtype=image_obj.toNumpyDataType())
             for i in range(image_obj.bands):
-                new_array[i, :, :] = array[i:: image_obj.bands]
+                new_array[i, :, :] = array[i :: image_obj.bands]
             array = new_array.copy()
         else:
             raise NotImplementedError('Non-BIL reading is not implemented')
@@ -217,7 +209,13 @@ def write_isce2_image(output_path: str, array: np.ndarray) -> None:
         output_path: The path to the output image file.
         array: The array to write to the file.
     """
-    data_type_dic = {'float32': 'FLOAT', 'float64': 'DOUBLE', 'int32': 'INT', 'complex64': 'CFLOAT', 'int8': 'BYTE'}
+    data_type_dic = {
+        'float32': 'FLOAT',
+        'float64': 'DOUBLE',
+        'int32': 'INT',
+        'complex64': 'CFLOAT',
+        'int8': 'BYTE',
+    }
 
     data_type = data_type_dic[str(array.dtype)]
 
@@ -259,7 +257,12 @@ def get_geotransform_from_dataset(dataset: isceobj.Image) -> tuple:
 
 
 def resample_to_radar(
-    mask: np.ndarray, lat: np.ndarray, lon: np.ndarray, geotransform: tuple, data_type: type, outshape: tuple[int, int]
+    mask: np.ndarray,
+    lat: np.ndarray,
+    lon: np.ndarray,
+    geotransform: tuple,
+    data_type: type,
+    outshape: tuple[int, int],
 ) -> np.ndarray:
     """Resample a geographic image to radar coordinates using a nearest neighbor method.
     The latin and lonin images are used to map from geographic to radar coordinates.
@@ -275,8 +278,12 @@ def resample_to_radar(
     Returns:
         resampled_image: The resampled image array
     """
-
-    start_lon, delta_lon, start_lat, delta_lat = geotransform[0], geotransform[1], geotransform[3], geotransform[5]
+    start_lon, delta_lon, start_lat, delta_lat = (
+        geotransform[0],
+        geotransform[1],
+        geotransform[3],
+        geotransform[5],
+    )
 
     lati = np.clip((((lat - start_lat) / delta_lat) + 0.5).astype(int), 0, mask.shape[0] - 1)
     loni = np.clip((((lon - start_lon) / delta_lon) + 0.5).astype(int), 0, mask.shape[1] - 1)
@@ -335,7 +342,15 @@ def image_math(image_a_path: str, image_b_path: str, out_path: str, expression: 
         out_path: The path to the output image.
         expression: The expression to pass to imageMath.py.
     """
-    cmd = ['imageMath.py', f'--a={image_a_path}', f'--b={image_b_path}', '-o', f'{out_path}', '--eval', expression]
+    cmd = [
+        'imageMath.py',
+        f'--a={image_a_path}',
+        f'--b={image_b_path}',
+        '-o',
+        f'{out_path}',
+        '--eval',
+        expression,
+    ]
     subprocess.run(cmd, check=True)
 
 
@@ -368,7 +383,7 @@ def write_isce2_image_from_obj(image_obj, array):
             shape = (image_obj.length * image_obj.bands, image_obj.width)
             new_array = np.zeros(shape, dtype=image_obj.toNumpyDataType())
             for i in range(image_obj.bands):
-                new_array[i:: image_obj.bands] = array[i, :, :]
+                new_array[i :: image_obj.bands] = array[i, :, :]
             array = new_array.copy()
         else:
             raise NotImplementedError('Non-BIL writing is not implemented')
@@ -378,7 +393,7 @@ def write_isce2_image_from_obj(image_obj, array):
 
 def create_image(
     out_path: str,
-    width: Optional[int] = None,
+    width: int | None = None,
     access_mode: str = 'read',
     image_subtype: str = 'default',
     action: str = 'create',

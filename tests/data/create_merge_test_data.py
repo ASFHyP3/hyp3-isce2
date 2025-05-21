@@ -27,7 +27,7 @@ def create_product(tmp_path: Path, out_path: Path, granule1: str, granule2: str)
     shutil.rmtree(result_directory.parent)
 
 
-def replace_geotiff_data(geotiff_path: str, stock_value: float) -> None:
+def replace_geotiff_data(geotiff_path: str, stock_value: complex) -> None:
     """Load a geotiff file, swap the non-zero data for all ones and resave."""
     ds = gdal.Open(geotiff_path, gdal.GA_Update)
     band = ds.GetRasterBand(1)
@@ -42,14 +42,20 @@ def create_test_products():
     out_dir = Path.cwd() / 'merge'
 
     pairs = [
-        ['S1_136231_IW2_20200604T022312_VV_7C85-BURST', 'S1_136231_IW2_20200616T022313_VV_5D11-BURST'],
-        ['S1_136232_IW2_20200604T022315_VV_7C85-BURST', 'S1_136232_IW2_20200616T022316_VV_5D11-BURST'],
+        [
+            'S1_136231_IW2_20200604T022312_VV_7C85-BURST',
+            'S1_136231_IW2_20200616T022313_VV_5D11-BURST',
+        ],
+        [
+            'S1_136232_IW2_20200604T022315_VV_7C85-BURST',
+            'S1_136232_IW2_20200616T022316_VV_5D11-BURST',
+        ],
     ]
     for granule1, granule2 in pairs:
         create_product(Path.cwd() / 'tmp', out_dir, granule1, granule2)
 
     ifgs = out_dir.glob('./*/*_wrapped_phase_rdr.tif')
-    value = (1 + 0j)
+    value = 1 + 0j
     for ifg in ifgs:
         value += (0 + 1j) * np.pi / 2
         replace_geotiff_data(str(ifg), value)

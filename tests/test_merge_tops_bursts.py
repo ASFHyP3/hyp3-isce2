@@ -1,4 +1,5 @@
 """Tests for hyp3_isce2.merge_tops_bursts module, use single quotes"""
+
 from copy import deepcopy
 from dataclasses import dataclass
 from datetime import datetime
@@ -6,7 +7,7 @@ from pathlib import Path
 from unittest.mock import patch
 
 import asf_search
-import isceobj  # noqa: I100
+import isceobj  # type: ignore[import-not-found]
 import lxml.etree as ET
 import numpy as np
 import pytest
@@ -33,7 +34,11 @@ def mock_asf_search_results(
     }
     product.properties.update(
         {
-            'burst': {'subswath': subswath, 'burstIndex': burst_index, 'relativeBurstID': burst_id},
+            'burst': {
+                'subswath': subswath,
+                'burstIndex': burst_index,
+                'relativeBurstID': burst_id,
+            },
             'polarization': polarization,
             'url': f'https://foo.com/{slc_name}/baz.zip',
             'pathNumber': path_number,
@@ -46,7 +51,10 @@ def mock_asf_search_results(
 
 def create_test_geotiff(output_file, dtype='float', n_bands=1):
     """Create a test geotiff for testing"""
-    opts = {'float': (np.float64, gdal.GDT_Float64), 'cfloat': (np.complex64, gdal.GDT_CFloat32)}
+    opts = {
+        'float': (np.float64, gdal.GDT_Float64),
+        'cfloat': (np.complex64, gdal.GDT_CFloat32),
+    }
     np_dtype, gdal_dtype = opts[dtype]
     data = np.ones((10, 10), dtype=np_dtype)
     geotransform = [0.0, 1.0, 0.0, 0.0, 0.0, 1.0]
@@ -64,7 +72,10 @@ def create_test_geotiff(output_file, dtype='float', n_bands=1):
 
 def test_to_burst_params(burst_product1):
     assert burst_product1.to_burst_params() == burst_utils.BurstParams(
-        'S1A_IW_SLC__1SDV_20200604T022251_20200604T022318_032861_03CE65_7C85', 'IW2', 'VV', 7
+        'S1A_IW_SLC__1SDV_20200604T022251_20200604T022318_032861_03CE65_7C85',
+        'IW2',
+        'VV',
+        7,
     )
 
 
@@ -73,7 +84,12 @@ def test_get_burst_metadata(test_merge_dir, burst_product1):
 
     with patch('hyp3_isce2.merge_tops_bursts.asf_search.granule_search') as mock_search:
         mock_search.return_value = mock_asf_search_results(
-            'S1A_IW_SLC__1SDV_20200604T022251_20200604T022318_032861_03CE65_7C85', 'IW2', 'VV', 7, 136231, 64
+            'S1A_IW_SLC__1SDV_20200604T022251_20200604T022318_032861_03CE65_7C85',
+            'IW2',
+            'VV',
+            7,
+            136231,
+            64,
         )
         product = merge.get_burst_metadata([product_path])[0]
 
@@ -87,7 +103,10 @@ def test_prep_metadata_dirs(tmp_path):
 
 
 def test_download_metadata_xmls(monkeypatch, tmp_path, test_data_dir):
-    params = [burst_utils.BurstParams('foo', 'IW1', 'VV', 1), burst_utils.BurstParams('foo', 'IW2', 'VV', 0)]
+    params = [
+        burst_utils.BurstParams('foo', 'IW1', 'VV', 1),
+        burst_utils.BurstParams('foo', 'IW2', 'VV', 0),
+    ]
     sample_xml = ET.parse(test_data_dir / 'reference_descending.xml').getroot()
 
     with patch('hyp3_isce2.merge_tops_bursts.burst_utils.get_asf_session') as mock_session:
@@ -105,7 +124,12 @@ def test_download_metadata_xmls(monkeypatch, tmp_path, test_data_dir):
 def test_get_scene_roi(test_s1_obj):
     bursts = test_s1_obj.product.bursts
     roi = merge.get_scene_roi(bursts)
-    golden_roi = (53.045079513806, 27.325111859227817, 54.15684468161031, 27.847161580403135)
+    golden_roi = (
+        53.045079513806,
+        27.325111859227817,
+        54.15684468161031,
+        27.847161580403135,
+    )
     assert np.all(np.isclose(roi, golden_roi))
 
 
@@ -133,7 +157,10 @@ def test_Sentinel1BurstSelect(annotation_manifest_dirs, tmp_path, burst_product1
     assert test1_obj.product.bursts[0].burstStartUTC == test1_utc[0]
 
     test2_obj = deepcopy(s1_obj)
-    test2_utc = [datetime(2020, 6, 4, 2, 22, 57, 414185), datetime(2020, 6, 4, 2, 22, 54, 655908)]
+    test2_utc = [
+        datetime(2020, 6, 4, 2, 22, 57, 414185),
+        datetime(2020, 6, 4, 2, 22, 54, 655908),
+    ]
     test2_obj.select_bursts(test2_utc)
     assert len(test2_obj.product.bursts) == 2
     assert test2_obj.product.bursts[0].burstStartUTC < test2_obj.product.bursts[1].burstStartUTC
@@ -200,15 +227,18 @@ def test_download_dem_for_multiple_bursts(annotation_manifest_dirs, burst_produc
     base_dir = annotation_manifest_dirs[0].parent
     s1_obj = merge.create_burst_cropped_s1_obj(2, [burst_product1], 'VV', base_dir=base_dir)
     with patch('hyp3_isce2.merge_tops_bursts.download_dem_for_isce2') as mock_download:
-        mock_download.return_value = None
-        merge.download_dem_for_multiple_bursts([s1_obj])
-        assert mock_download.call_count == 1
-        assert isinstance(mock_download.call_args[0][0], tuple)
-        assert len(mock_download.call_args[0][0]) == 4
-        assert mock_download.call_args[1]['dem_name'] == 'glo_30'
+        merge.download_dem_for_multiple_bursts([s1_obj], base_dir)
+        mock_download.assert_called_once_with(
+            (53.07855985074144, 27.491831927404057, 54.15684468161031, 27.847161580403128),
+            base_dir / 'full_res.dem.wgs84',
+            pixel_size=30.0,
+        )
 
 
-@pytest.mark.parametrize('isce_type,dtype,n_bands', [['ifg', 'cfloat', 1], ['lat', 'float', 1], ['los', 'float', 2]])
+@pytest.mark.parametrize(
+    'isce_type,dtype,n_bands',
+    [['ifg', 'cfloat', 1], ['lat', 'float', 1], ['los', 'float', 2]],
+)
 def test_translate_image(isce_type, dtype, n_bands, tmp_path):
     test_tiff = tmp_path / 'test.tif'
     create_test_geotiff(str(test_tiff), dtype, n_bands)
@@ -226,8 +256,7 @@ def test_spoof_isce2_setup(annotation_manifest_dirs, burst_product1):
     tmp_product = deepcopy(burst_product1)
     tmp_product.isce2_burst_number = 1
     base_dir = annotation_manifest_dirs[0].parent
-    s1_obj = merge.create_burst_cropped_s1_obj(2, [tmp_product], 'VV', base_dir=base_dir)
-    merge.spoof_isce2_setup([tmp_product], s1_obj, base_dir=base_dir)
+    merge.spoof_isce2_setup([tmp_product], base_dir=base_dir)
 
     fine_ifg_dir = base_dir / 'fine_interferogram' / 'IW2'
     assert fine_ifg_dir.is_dir()
@@ -241,11 +270,11 @@ def test_spoof_isce2_setup(annotation_manifest_dirs, burst_product1):
 def test_get_swath_list(tmp_path):
     test_dir = tmp_path / 'test'
     test_dir.mkdir()
-    assert merge.get_swath_list(str(test_dir)) == []
+    assert merge.get_swath_list(test_dir) == []
 
     for x in [1, 2, 3]:
         (test_dir / f'IW{x}').mkdir()
-    assert merge.get_swath_list(str(test_dir)) == [1, 2, 3]
+    assert merge.get_swath_list(test_dir) == [1, 2, 3]
 
 
 def test_get_merged_orbit(test_s1_obj):
@@ -275,7 +304,7 @@ def test_goldstein_werner_filter(tmp_path):
     array = np.ones((10, 10), dtype=np.complex64)
     utils.write_isce2_image(str(in_path), array)
     utils.write_isce2_image(str(coh_path), array.astype(np.float32))
-    merge.goldstein_werner_filter(str(in_path), str(out_path), str(coh_path))
+    merge.goldstein_werner_filter(in_path, out_path, coh_path)
     assert out_path.exists()
     assert (out_path.parent / f'{out_path.name}.xml').exists()
     assert (out_path.parent / f'{out_path.name}.vrt').exists()
@@ -321,7 +350,7 @@ def test_snaphu_unwrap(test_s1_obj, test_data_dir, tmp_path):
     array = np.ones((100, 100), dtype=np.complex64)
     utils.write_isce2_image(str(filt_path), array)
     utils.write_isce2_image(str(coh_path), array.astype(np.float32))
-    merge.snaphu_unwrap(2, 2, str(coh_path), base_dir=merge_dir)
+    merge.snaphu_unwrap(2, 2, coh_path, base_dir=merge_dir)
 
     assert (merge_dir / 'filt_topophase.unw').exists()
     assert (merge_dir / 'filt_topophase.unw.xml').exists()
@@ -341,7 +370,7 @@ def test_geocode_products(test_data_dir, tmp_path, test_s1_obj):
     array = np.ones((377, 1272), dtype=np.float32)
     utils.write_isce2_image(str(unw_path), array)
     utils.write_isce2_image(str(dem_path), array)
-    merge.geocode_products(1, 1, str(dem_path), base_dir=merge_dir, to_be_geocoded=[str(unw_path)])
+    merge.geocode_products(1, 1, dem_path, base_dir=merge_dir, to_be_geocoded=[str(unw_path)])
 
     assert (merge_dir / 'filt_topophase.unw.geo').exists()
     assert (merge_dir / 'filt_topophase.unw.geo.xml').exists()

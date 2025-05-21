@@ -7,19 +7,17 @@ dependencies:
   - numpy
   - pip
   - isce2>=2.6.3
-  - dem_stitcher>=2.5.8
   - rasterio
   - shapely
+  - pyproj
   - jinja2
   - asf_search>=6.4.0
   - gdal
   - opencv
   - burst2safe
+  - hyp3lib>=4,<5
+  - s1_orbits
   # For packaging, and testing
-  - flake8
-  - flake8-import-order
-  - flake8-blind-except
-  - flake8-builtins
   - setuptools
   - setuptools_scm
   - wheel
@@ -27,6 +25,5 @@ dependencies:
   - pytest-console-scripts
   - pytest-cov
   - pytest-mock
-  # For running
-  - hyp3lib>=3,<4
-  - s1_orbits
+  - pip:
+    - -r requirements-static.txt

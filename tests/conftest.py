@@ -37,13 +37,21 @@ def annotation_manifest_dirs(tmp_path, test_data_dir):
     annotation_dir, manifest_dir = merge.prep_metadata_dirs(tmp_path)
     sample_xml = ET.parse(test_data_dir / 'reference_descending.xml').getroot()
 
-    et_args = {'encoding': 'UTF-8', 'xml_declaration': True}
     param = burst_utils.BurstParams(
-        'S1A_IW_SLC__1SDV_20200604T022251_20200604T022318_032861_03CE65_7C85', 'IW2', 'VV', 1
+        'S1A_IW_SLC__1SDV_20200604T022251_20200604T022318_032861_03CE65_7C85',
+        'IW2',
+        'VV',
+        1,
     )
     burst_metadata = burst_utils.BurstMetadata(sample_xml, param)
-    ET.ElementTree(burst_metadata.annotation).write(annotation_dir / burst_metadata.annotation_name, **et_args)
-    ET.ElementTree(burst_metadata.manifest).write(manifest_dir / f'{burst_metadata.safe_name}.xml', **et_args)
+    assert isinstance(burst_metadata.annotation, ET._Element)
+    assert isinstance(burst_metadata.manifest, ET._Element)
+    ET.ElementTree(burst_metadata.annotation).write(
+        annotation_dir / burst_metadata.annotation_name, encoding='UTF-8', xml_declaration=True
+    )
+    ET.ElementTree(burst_metadata.manifest).write(
+        manifest_dir / f'{burst_metadata.safe_name}.xml', encoding='UTF-8', xml_declaration=True
+    )
     return annotation_dir, manifest_dir
 
 
@@ -132,5 +140,5 @@ def isce2_merge_setup(annotation_manifest_dirs, burst_products):
     multilooked_swath_obj = merge.modify_for_multilook(burst_products, s1_obj, save_dir)
     multilooked_swath_obj.write_xml()
 
-    merge.spoof_isce2_setup(burst_products, s1_obj, base_dir=base_dir)
+    merge.spoof_isce2_setup(burst_products, base_dir=base_dir)
     return base_dir

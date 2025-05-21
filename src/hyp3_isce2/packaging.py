@@ -1,11 +1,8 @@
-import glob
-import os
 import subprocess
 from dataclasses import dataclass
 from datetime import datetime, timezone
 from pathlib import Path
 from secrets import token_hex
-from typing import Iterable, Optional
 
 import isce
 import numpy as np
@@ -26,8 +23,8 @@ from hyp3_isce2.utils import ParameterFile, get_projection, utm_from_lon_lat
 class ISCE2Dataset:
     name: str
     suffix: str
-    band: Iterable[int]
-    dtype: Optional[int] = gdalconst.GDT_Float32
+    band: int | list[int]
+    dtype: int = gdalconst.GDT_Float32
 
 
 def get_pixel_size(looks: str) -> float:
@@ -40,7 +37,7 @@ def find_product(pattern: str) -> str:
     Args:
         pattern: Glob pattern for file
 
-    Returns
+    Returns:
         Path to file
     """
     search = Path.cwd().glob(pattern)
@@ -48,13 +45,20 @@ def find_product(pattern: str) -> str:
     return product
 
 
-def get_product_name(reference: str, secondary: str, pixel_spacing: int, slc: bool = True) -> str:
+def get_product_name(
+    reference: str,
+    secondary: str,
+    pixel_spacing: int,
+    polarization: str | None = None,
+    slc: bool = True,
+) -> str:
     """Get the name of the interferogram product.
 
     Args:
         reference: The reference burst name.
         secondary: The secondary burst name.
         pixel_spacing: The spacing of the pixels in the output image.
+        polarization: The polarization of the input data. Only required for SLCs.
         slc: Whether the input scenes are SLCs or bursts.
 
     Returns:
@@ -69,18 +73,33 @@ def get_product_name(reference: str, secondary: str, pixel_spacing: int, slc: bo
         platform = reference_split[0]
         reference_date = reference_split[5][0:8]
         secondary_date = secondary_split[5][0:8]
-        polarization = os.path.basename(glob.glob(f'{reference}.SAFE/annotation/s1*')[0]).split('-')[3].upper()
+        if not polarization:
+            raise ValueError('Polarization is required for SLCs')
+        elif polarization not in ['VV', 'VH', 'HV', 'HH']:
+            raise ValueError('Polarization must be one of VV, VH, HV, or HH')
         ref_manifest_xml = etree.parse(f'{reference}.SAFE/manifest.safe', parser)
         metadata_path = './/metadataObject[@ID="measurementOrbitReference"]//xmlData//'
         relative_orbit_number_query = metadata_path + safe + 'relativeOrbitNumber'
-        orbit_number = ref_manifest_xml.find(relative_orbit_number_query).text.zfill(3)
+        orbit_number = ref_manifest_xml.find(relative_orbit_number_query).text.zfill(3)  # type: ignore[union-attr]
         footprint = get_geometry_from_manifest(Path(f'{reference}.SAFE/manifest.safe'))
         lons, lats = footprint.exterior.coords.xy
-        def lat_string(lat): return ('N' if lat >= 0 else 'S') + f"{('%.1f' % np.abs(lat)).zfill(4)}".replace('.', '_')
-        def lon_string(lon): return ('E' if lon >= 0 else 'W') + f"{('%.1f' % np.abs(lon)).zfill(5)}".replace('.', '_')
+
+        def lat_string(lat):
+            return ('N' if lat >= 0 else 'S') + f'{("%.1f" % np.abs(lat)).zfill(4)}'.replace('.', '_')  # noqa: UP031
+
+        def lon_string(lon):
+            return ('E' if lon >= 0 else 'W') + f'{("%.1f" % np.abs(lon)).zfill(5)}'.replace('.', '_')  # noqa: UP031
+
         lat_lims = [lat_string(lat) for lat in [np.min(lats), np.max(lats)]]
         lon_lims = [lon_string(lon) for lon in [np.min(lons), np.max(lons)]]
-        name_parts = [platform, orbit_number, lon_lims[0], lat_lims[0], lon_lims[1], lat_lims[1]]
+        name_parts = [
+            platform,
+            orbit_number,
+            lon_lims[0],
+            lat_lims[0],
+            lon_lims[1],
+            lat_lims[1],
+        ]
     else:
         platform = reference_split[0]
         burst_id = reference_split[1]
@@ -90,7 +109,7 @@ def get_product_name(reference: str, secondary: str, pixel_spacing: int, slc: bo
         polarization = reference_split[4]
         name_parts = [platform, burst_id, image_plus_swath]
     product_type = 'INT'
-    pixel_spacing = str(int(pixel_spacing))
+    pixel_spacing_str = str(int(pixel_spacing))
     product_id = token_hex(2).upper()
     product_name = '_'.join(
         name_parts
@@ -98,7 +117,7 @@ def get_product_name(reference: str, secondary: str, pixel_spacing: int, slc: bo
             reference_date,
             secondary_date,
             polarization,
-            product_type + pixel_spacing,
+            product_type + pixel_spacing_str,
             product_id,
         ]
     )
@@ -106,7 +125,12 @@ def get_product_name(reference: str, secondary: str, pixel_spacing: int, slc: bo
     return product_name
 
 
-def translate_outputs(product_name: str, pixel_size: float, include_radar: bool = False, use_multilooked=False) -> None:
+def translate_outputs(
+    product_name: str,
+    pixel_size: float,
+    include_radar: bool = False,
+    use_multilooked=False,
+) -> None:
     """Translate ISCE outputs to a standard GTiff format with a UTM projection.
     Assume you are in the top level of an ISCE run directory
 
@@ -116,7 +140,6 @@ def translate_outputs(product_name: str, pixel_size: float, include_radar: bool 
         include_radar: Flag to include the full resolution radar geometry products in the output
         use_multilooked: Flag to use multilooked versions of the radar geometry products
     """
-
     src_ds = gdal.Open('merged/filt_topophase.unw.geo')
     src_geotransform = src_ds.GetGeoTransform()
     src_projection = src_ds.GetProjection()
@@ -234,7 +257,6 @@ def convert_raster_from_isce2_gdal(input_image, ref_image, output_image):
         ref_image: output geotiff file name
         output_image: water mask file name
     """
-
     ref_ds = gdal.Open(ref_image)
 
     gt = ref_ds.GetGeoTransform()
@@ -270,7 +292,6 @@ def water_mask(unwrapped_phase: str, water_mask: str) -> None:
         unwrapped_phase: The unwrapped phase file
         water_mask: The water mask file
     """
-
     convert_raster_from_isce2_gdal('water_mask.wgs84', unwrapped_phase, water_mask)
     cmd = (
         'gdal_calc.py '
@@ -338,14 +359,28 @@ def find_available_swaths(base_dir: Path | str) -> list[str]:
     return swaths
 
 
+def get_baseline_perp(topsProc_xml: etree._ElementTree) -> float:
+    for swath in [1, 2, 3]:
+        bperp_element = topsProc_xml.find(f'.//IW-{swath}_Bperp_at_midrange_for_first_common_burst')
+        if bperp_element is not None:
+            bperp_txt = bperp_element.text
+            assert bperp_txt is not None
+            return float(bperp_txt)
+
+    raise ValueError('No Bperp found in topsProc.xml')
+
+
 def make_parameter_file(
     out_path: Path,
-    reference_scene: str,
-    secondary_scene: str,
+    reference_scenes: list[str],
+    secondary_scenes: list[str],
+    reference_safe_path: Path,
+    secondary_safe_path: Path,
+    processing_path: Path,
     azimuth_looks: int,
     range_looks: int,
     apply_water_mask: bool,
-    multilook_position: Optional[BurstPosition] = None,
+    multilook_position: BurstPosition | None = None,
     dem_name: str = 'GLO_30',
     dem_resolution: int = 30,
 ) -> None:
@@ -353,39 +388,28 @@ def make_parameter_file(
 
     Args:
         out_path: path to output the parameter file
-        reference_scene: Reference burst name
-        secondary_scene: Secondary burst name
+        reference_scenes: List of reference scene names (full SLC or burst names)
+        secondary_scenes: List of secondary scene names (full SLC or burst names)
+        reference_safe_path: Path to the reference SAFE directory
+        secondary_safe_path: Path to the secondary SAFE directory
+        processing_path: Path to the processing directory
         azimuth_looks: Number of azimuth looks
         range_looks: Number of range looks
         multilook_position: Burst position for multilooked radar geometry products
         dem_name: Name of the DEM that is use
         dem_resolution: Resolution of the DEM
-
-    returns:
-        None
     """
     SPEED_OF_LIGHT = 299792458.0
     SPACECRAFT_HEIGHT = 693000.0
     EARTH_RADIUS = 6337286.638938101
 
     parser = etree.XMLParser(encoding='utf-8', recover=True)
-    if 'BURST' in reference_scene:
-        ref_tag = reference_scene[-10:-6]
-        sec_tag = secondary_scene[-10:-6]
-    else:
-        ref_tag = reference_scene[-4::]
-        sec_tag = secondary_scene[-4::]
-    reference_safe = [file for file in os.listdir('.') if file.endswith(f'{ref_tag}.SAFE')][0]
-    secondary_safe = [file for file in os.listdir('.') if file.endswith(f'{sec_tag}.SAFE')][0]
-
-    ref_annotation_path = f'{reference_safe}/annotation/'
-    ref_annotation = [file for file in os.listdir(ref_annotation_path) if os.path.isfile(ref_annotation_path + file)][0]
-
-    ref_manifest_xml = etree.parse(f'{reference_safe}/manifest.safe', parser)
-    sec_manifest_xml = etree.parse(f'{secondary_safe}/manifest.safe', parser)
-    ref_annotation_xml = etree.parse(f'{ref_annotation_path}{ref_annotation}', parser)
-    topsProc_xml = etree.parse('topsProc.xml', parser)
-    topsApp_xml = etree.parse('topsApp.xml', parser)
+    reference_annotation_path = min((reference_safe_path / 'annotation').glob('s1*.xml'))
+    ref_manifest_xml = etree.parse(str(reference_safe_path / 'manifest.safe'), parser)
+    sec_manifest_xml = etree.parse(str(secondary_safe_path / 'manifest.safe'), parser)
+    ref_annotation_xml = etree.parse(str(reference_annotation_path), parser)
+    topsProc_xml = etree.parse(str(processing_path / 'topsProc.xml'), parser)
+    topsApp_xml = etree.parse(str(processing_path / 'topsApp.xml'), parser)
 
     safe = '{http://www.esa.int/safe/sentinel-1.0}'
     s1 = '{http://www.esa.int/safe/sentinel-1.0/sentinel-1}'
@@ -393,19 +417,19 @@ def make_parameter_file(
     orbit_number_query = metadata_path + safe + 'orbitNumber'
     orbit_direction_query = metadata_path + safe + 'extension//' + s1 + 'pass'
 
-    ref_orbit_number = ref_manifest_xml.find(orbit_number_query).text
-    ref_orbit_direction = ref_manifest_xml.find(orbit_direction_query).text
-    sec_orbit_number = sec_manifest_xml.find(orbit_number_query).text
-    sec_orbit_direction = sec_manifest_xml.find(orbit_direction_query).text
-    ref_heading = float(ref_annotation_xml.find('.//platformHeading').text)
-    ref_time = ref_annotation_xml.find('.//productFirstLineUtcTime').text
-    slant_range_time = float(ref_annotation_xml.find('.//slantRangeTime').text)
-    range_sampling_rate = float(ref_annotation_xml.find('.//rangeSamplingRate').text)
-    number_samples = int(ref_annotation_xml.find('.//swathTiming/samplesPerBurst').text)
-    min_swath = find_available_swaths(Path.cwd())[0]
-    baseline_perp = topsProc_xml.find(f'.//IW-{int(min_swath[2])}_Bperp_at_midrange_for_first_common_burst').text
-    unwrapper_type = topsApp_xml.find('.//property[@name="unwrapper name"]').text
-    phase_filter_strength = topsApp_xml.find('.//property[@name="filter strength"]').text
+    ref_orbit_number: str = ref_manifest_xml.find(orbit_number_query).text  # type: ignore[assignment, union-attr]
+    ref_orbit_direction: str = ref_manifest_xml.find(orbit_direction_query).text  # type: ignore[assignment, union-attr]
+    sec_orbit_number: str = sec_manifest_xml.find(orbit_number_query).text  # type: ignore[assignment, union-attr]
+    sec_orbit_direction: str = sec_manifest_xml.find(orbit_direction_query).text  # type: ignore[assignment, union-attr]
+    ref_heading = float(ref_annotation_xml.find('.//platformHeading').text)  # type: ignore[arg-type, union-attr]
+    ref_time: str = ref_annotation_xml.find('.//productFirstLineUtcTime').text  # type: ignore[assignment, union-attr]
+    slant_range_time = float(ref_annotation_xml.find('.//slantRangeTime').text)  # type: ignore[arg-type, union-attr]
+    range_sampling_rate = float(ref_annotation_xml.find('.//rangeSamplingRate').text)  # type: ignore[arg-type, union-attr]
+    number_samples = int(ref_annotation_xml.find('.//swathTiming/samplesPerBurst').text)  # type: ignore[arg-type, union-attr]
+    unwrapper_type: str = topsApp_xml.find('.//property[@name="unwrapper name"]').text  # type: ignore[assignment, union-attr]
+    phase_filter_strength: str = topsApp_xml.find('.//property[@name="filter strength"]').text  # type: ignore[assignment, union-attr]
+
+    baseline_perp = get_baseline_perp(topsProc_xml)
 
     slant_range_near = float(slant_range_time) * SPEED_OF_LIGHT / 2
     range_pixel_spacing = SPEED_OF_LIGHT / (2 * range_sampling_rate)
@@ -416,8 +440,8 @@ def make_parameter_file(
     utc_time = ((int(s[0]) * 60 + int(s[1])) * 60) + float(s[2])
 
     parameter_file = ParameterFile(
-        reference_granule=reference_scene,
-        secondary_granule=secondary_scene,
+        reference_granule=', '.join(reference_scenes),
+        secondary_granule=', '.join(secondary_scenes),
         reference_orbit_direction=ref_orbit_direction,
         reference_orbit_number=ref_orbit_number,
         secondary_orbit_direction=sec_orbit_direction,

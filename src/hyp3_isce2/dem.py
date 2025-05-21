@@ -14,13 +14,17 @@
 # limitations under the License.
 
 import subprocess
+import tempfile
 from pathlib import Path
 
-import dem_stitcher
 import numpy as np
-import rasterio
+from hyp3lib.dem import prepare_dem_geotiff
 from lxml import etree
+from osgeo import gdal, ogr
 from shapely.geometry import box
+
+
+gdal.UseExceptions()
 
 
 def tag_dem_xml_as_ellipsoidal(dem_path: Path) -> str:
@@ -28,9 +32,9 @@ def tag_dem_xml_as_ellipsoidal(dem_path: Path) -> str:
     assert Path(xml_path).exists()
     root = etree.parse(xml_path).getroot()
 
-    element = etree.Element("property", name='reference')
-    etree.SubElement(element, "value").text = "WGS84"
-    etree.SubElement(element, "doc").text = "Geodetic datum"
+    element = etree.Element('property', name='reference')
+    etree.SubElement(element, 'value').text = 'WGS84'
+    etree.SubElement(element, 'doc').text = 'Geodetic datum'
 
     root.insert(0, element)
     with open(xml_path, 'wb') as file:
@@ -43,23 +47,13 @@ def fix_image_xml(xml_path: str) -> None:
     subprocess.run(cmd, check=True)
 
 
-def buffer_extent(extent: list, buffer: float) -> list:
-    extent_geo = box(*extent)
-    extent_buffered = list(extent_geo.buffer(buffer).bounds)
-    return [
-        np.floor(extent_buffered[0]),
-        np.floor(extent_buffered[1]),
-        np.ceil(extent_buffered[2]),
-        np.ceil(extent_buffered[3])
-    ]
-
-
 def distance_meters_to_degrees(distance_meters, latitude):
     """Convert a distance from meters to degrees in longitude and latitude
 
     Args:
         distance_meters: Arc length in meters.
         latitude: The line of latitude at which the calculation takes place.
+
     Returns:
         The length in degrees for longitude and latitude, respectively.
     """
@@ -73,64 +67,28 @@ def distance_meters_to_degrees(distance_meters, latitude):
     return np.round(distance_degrees_lon, 15), np.round(distance_degrees_lat, 15)
 
 
-def download_dem_for_isce2(
-        extent: list,
-        dem_name: str = 'glo_30',
-        dem_dir: Path = None,
-        buffer: float = .4,
-        resample_20m: bool = False
-) -> Path:
+def download_dem_for_isce2(extent: tuple[float, float, float, float], dem_path: Path, pixel_size: float) -> Path:
     """Download the given DEM for the given extent.
 
     Args:
         extent: A list [xmin, ymin, xmax, ymax] for epsg:4326 (i.e. (x, y) = (lon, lat)).
-        dem_name: One of the names from `dem_stitcher`.
-        dem_dir: The output directory.
-        buffer: The extent buffer in degrees, by default .4, which is about 44 km at the equator
-                (or about 2.5 bursts at the equator).
-        resample_20m: Whether or not the DEM should be resampled to 20 meters.
+        dem_path: The path to write the DEM to.
+        resolution: The resolution of the DEM in meters.
+
     Returns:
         The path to the downloaded DEM.
     """
-    dem_dir = dem_dir or Path('.')
-    dem_dir.mkdir(exist_ok=True, parents=True)
-
-    extent_buffered = buffer_extent(extent, buffer)
-
-    if resample_20m:
-        res_degrees = distance_meters_to_degrees(20.0, extent_buffered[1])
-        dem_array, dem_profile = dem_stitcher.stitch_dem(
-            extent_buffered,
-            dem_name,
-            dst_ellipsoidal_height=True,
-            dst_area_or_point='Point',
-            n_threads_downloading=5,
-            dst_resolution=res_degrees
+    with tempfile.NamedTemporaryFile(suffix='.tif') as tmp_dem:
+        prepare_dem_geotiff(
+            Path(tmp_dem.name),
+            ogr.CreateGeometryFromWkb(box(*extent).wkb),
+            epsg_code=4326,
+            pixel_size=distance_meters_to_degrees(pixel_size, extent[1])[0],
+            buffer_size_in_degrees=0.2,
+            height_above_ellipsoid=True,
         )
-        dem_path = dem_dir / 'full_res_geocode.dem.wgs84'
-    else:
-        dem_array, dem_profile = dem_stitcher.stitch_dem(
-            extent_buffered,
-            dem_name,
-            dst_ellipsoidal_height=True,
-            dst_area_or_point='Point',
-            n_threads_downloading=5,
-        )
-        dem_path = dem_dir / 'full_res.dem.wgs84'
-
-    dem_array[np.isnan(dem_array)] = 0.
-
-    dem_profile['nodata'] = None
-    dem_profile['driver'] = 'ISCE'
-
-    # remove keys that do not work with ISCE gdal format
-    for key in ['blockxsize', 'blockysize', 'compress', 'interleave', 'tiled']:
-        del dem_profile[key]
-
-    with rasterio.open(dem_path, 'w', **dem_profile) as ds:
-        ds.write(dem_array, 1)
+        gdal.Translate(str(dem_path), tmp_dem.name, format='ISCE')
 
     xml_path = tag_dem_xml_as_ellipsoidal(dem_path)
     fix_image_xml(xml_path)
-
     return dem_path

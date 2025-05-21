@@ -4,12 +4,11 @@ import shutil
 from pathlib import Path
 from unittest.mock import patch
 
+import isceobj  # type: ignore[import-not-found]
 import numpy as np
 from osgeo import gdal
 
 import hyp3_isce2.utils as utils
-
-import isceobj  # noqa
 
 
 gdal.UseExceptions()
@@ -54,13 +53,6 @@ def test_gdal_config_manager():
     assert gdal.GetConfigOption('OPTION4') == 'VALUE4'
 
 
-def test_oldest_granule_first():
-    oldest = 'S1_249434_IW1_20230511T170732_VV_07DE-BURST'
-    latest = 'S1_249434_IW1_20230523T170733_VV_8850-BURST'
-    assert utils.oldest_granule_first(oldest, latest) == (oldest, latest)
-    assert utils.oldest_granule_first(latest, oldest) == (oldest, latest)
-
-
 def test_make_browse_image():
     input_tif = 'tests/data/test_geotiff.tif'
     output_png = 'tests/data/test_browse_image2.png'
@@ -70,7 +62,12 @@ def test_make_browse_image():
 
 
 def check_correctness_of_resample(mask, lat, lon, geotransform, data_type, outshape):
-    x, x_res, y, y_res = geotransform[0], geotransform[1], geotransform[3], geotransform[5]
+    x, x_res, y, y_res = (
+        geotransform[0],
+        geotransform[1],
+        geotransform[3],
+        geotransform[5],
+    )
     rows = len(lat[:, 0])
     cols = len(lat[0, :])
     mask_rows = len(mask[:, 0])
@@ -163,14 +160,22 @@ def test_create_image(tmp_path):
         # test ifg in create, finalize, and load modes
         path_c = path + '/img_via_create'
         img_c = utils.create_image(
-            path_c, width=width, access_mode='write', image_subtype=image_subtype, action='create'
+            path_c,
+            width=width,
+            access_mode='write',
+            image_subtype=image_subtype,
+            action='create',
         )
         assert Path(img_c.getFilename()).is_file()
 
         path_f = path + '/img_via_finalize'
         shutil.copy(out_path, path_f)
         img_f = utils.create_image(
-            path_f, width=width, access_mode='read', image_subtype=image_subtype, action='finalize'
+            path_f,
+            width=width,
+            access_mode='read',
+            image_subtype=image_subtype,
+            action='finalize',
         )
         assert Path(img_f.getFilename()).is_file()
         assert Path(img_f.getFilename() + '.vrt').is_file()

@@ -1,9 +1,10 @@
+from collections.abc import Iterable, Sequence
 from pathlib import Path
-from typing import Iterable, Sequence, Union
 
 from isce.applications.topsApp import TopsInSAR
 from jinja2 import Template
 from osgeo import gdal
+
 
 gdal.UseExceptions()
 
@@ -41,7 +42,7 @@ TOPSAPP_GEOCODE_LIST = [
 ]
 
 
-class TopsappBurstConfig:
+class TopsappConfig:
     """Configuration for a topsApp.py run"""
 
     def __init__(
@@ -53,8 +54,8 @@ class TopsappBurstConfig:
         aux_cal_directory: str,
         dem_filename: str,
         geocode_dem_filename: str,
-        roi: Sequence[float],
-        swaths: Union[int, Iterable[int]] = (1, 2, 3),
+        roi: Sequence[float] | None = None,
+        swaths: int | Iterable[int] = (1, 2, 3),
         azimuth_looks: int = 4,
         range_looks: int = 20,
         do_unwrap: bool = True,
@@ -64,12 +65,12 @@ class TopsappBurstConfig:
         self.polarization = polarization
         self.orbit_directory = orbit_directory
         self.aux_cal_directory = aux_cal_directory
-        self.roi = [roi[1], roi[3], roi[0], roi[2]]
         self.dem_filename = dem_filename
         self.geocode_dem_filename = geocode_dem_filename
         self.azimuth_looks = azimuth_looks
         self.range_looks = range_looks
         self.do_unwrap = do_unwrap
+        self.roi = [roi[1], roi[3], roi[0], roi[2]] if roi else roi
 
         if isinstance(swaths, int):
             self.swaths = [swaths]
@@ -91,11 +92,19 @@ class TopsappBurstConfig:
         Returns:
             The rendered template
         """
-        with open(TEMPLATE_DIR / 'topsapp.xml', 'r') as file:
-            template = Template(file.read())
+        with open(TEMPLATE_DIR / 'topsapp.xml') as file:
+            if not self.roi:
+                lines = file.readlines()
+                for i in range(len(lines)):
+                    if 'roi' in lines[i]:
+                        lines.pop(i)
+                        break
+                template = Template(''.join(lines))
+            else:
+                template = Template(file.read())
         return template.render(self.__dict__)
 
-    def write_template(self, filename: Union[str, Path] = 'topsApp.xml') -> Path:
+    def write_template(self, filename: str | Path = 'topsApp.xml') -> Path:
         """Write the topsApp.py jinja2 template to a file
 
         Args:
@@ -135,8 +144,13 @@ def swap_burst_vrts():
         del base
 
 
-def run_topsapp_burst(dostep: str = '', start: str = '', end: str = '', config_xml: Path = Path('topsApp.xml')):
-    """Run topsApp.py for a burst pair with the desired steps and config file
+def run_topsapp(
+    dostep: str = '',
+    start: str = '',
+    end: str = '',
+    config_xml: Path = Path('topsApp.xml'),
+):
+    """Run topsApp.py for a granule pair with the desired steps and config file
 
     Args:
         dostep: The step to run
@@ -150,7 +164,7 @@ def run_topsapp_burst(dostep: str = '', start: str = '', end: str = '', config_x
         ValueError: If the step is not a valid step (see TOPSAPP_STEPS)
     """
     if not config_xml.exists():
-        raise IOError(f'The config file {config_xml} does not exist!')
+        raise OSError(f'The config file {config_xml} does not exist!')
 
     if dostep and (start or end):
         raise ValueError('If dostep is specified, start and stop cannot be used')
