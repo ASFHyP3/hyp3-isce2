@@ -103,13 +103,13 @@ def test_validate_bursts_num_swath_pol():
 
     with pytest.raises(
         ValueError,
-        match=r'^Number \+ swath \+ polarization identifier does not match for reference scene S1_000001_IW2_20200101T000001_VV_0000\-BURST and secondary scenes',
+        match=r'^Orbit number, swath, or polarization for reference scene S1_000001_IW2_20200101T000001_VV_0000\-BURST does not match any secondary scenes.',
     ):
         # Different number
         burst.validate_bursts(
             [
-                'S1_000000_IW1_20200101T000000_VV_0000-BURST',
                 'S1_000001_IW2_20200101T000001_VV_0000-BURST',
+                'S1_000000_IW1_20200101T000000_VV_0000-BURST',
             ],
             [
                 'S1_000000_IW1_20200201T000000_VV_0000-BURST',
@@ -117,14 +117,14 @@ def test_validate_bursts_num_swath_pol():
             ],
         )
 
-    with pytest.raises(ValueError, match=r'^Number \+ swath \+ polarization identifier does not match for .*'):
+    with pytest.raises(ValueError, match=r'^Orbit number, swath, or polarization for reference scene .*'):
         # Different swath
         burst.validate_bursts(
             ['S1_000000_IW1_20200101T000000_VV_0000-BURST'],
             ['S1_000000_IW2_20200201T000000_VV_0000-BURST'],
         )
 
-    with pytest.raises(ValueError, match=r'^Number \+ swath \+ polarization identifier does not match for .*'):
+    with pytest.raises(ValueError, match=r'^Orbit number, swath, or polarization for reference scene .*'):
         # Different pol
         burst.validate_bursts(
             ['S1_000000_IW1_20200101T000000_VV_0000-BURST'],
@@ -134,8 +134,8 @@ def test_validate_bursts_num_swath_pol():
     with pytest.raises(ValueError, match=r'^Scenes must have the same polarization. Polarizations present: VH, VV$'):
         burst.validate_bursts(
             [
-                'S1_000000_IW1_20200101T000000_VV_0000-BURST',
                 'S1_000000_IW1_20200101T000000_VH_0000-BURST',
+                'S1_000000_IW1_20200101T000000_VV_0000-BURST',
             ],
             [
                 'S1_000000_IW1_20200201T000000_VV_0000-BURST',
