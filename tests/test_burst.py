@@ -103,7 +103,7 @@ def test_validate_bursts_num_swath_pol():
 
     with pytest.raises(
         ValueError,
-        match=r'^Number \+ swath \+ polarization identifier does not match for reference scene S1_000001_IW2_20200101T000001_VV_0000\-BURST and secondary scene S1_000002_IW2_20200201T000001_VV_0000\-BURST$',
+        match=r'^Number \+ swath \+ polarization identifier does not match for reference scene S1_000001_IW2_20200101T000001_VV_0000\-BURST and secondary scenes',
     ):
         # Different number
         burst.validate_bursts(
