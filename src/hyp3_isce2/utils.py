@@ -169,7 +169,7 @@ def make_browse_image(input_tif: str, output_png: str) -> None:
             stats = gdal.Info(input_tif, format='json', stats=True)['stac']['raster:bands'][0]['stats']
         except RuntimeError as error:
             if 'no valid pixels' in str(error):
-                stats = {'minimum':0, 'maximum':0}
+                stats = {'minimum': 0, 'maximum': 0}
             else:
                 raise
         gdal.Translate(
