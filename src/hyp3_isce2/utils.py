@@ -165,7 +165,13 @@ def extent_from_geotransform(geotransform: tuple, x_size: int, y_size: int) -> t
 
 def make_browse_image(input_tif: str, output_png: str) -> None:
     with GDALConfigManager(GDAL_PAM_ENABLED='NO'):
-        stats = gdal.Info(input_tif, format='json', stats=True)['stac']['raster:bands'][0]['stats']
+        try:
+            stats = gdal.Info(input_tif, format='json', stats=True)['stac']['raster:bands'][0]['stats']
+        except RuntimeError as error:
+            if 'no valid pixels' in str(error):
+                stats = {'minimum':0, 'maximum':0}
+            else:
+                raise
         gdal.Translate(
             destName=output_png,
             srcDS=input_tif,
