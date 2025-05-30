@@ -59,6 +59,9 @@ def test_make_browse_image():
     utils.make_browse_image(input_tif, output_png)
     assert open(output_png, 'rb').read() == open('tests/data/test_browse_image.png', 'rb').read()
     os.remove(output_png)
+
+
+def test_make_browse_image_geotiff_all_nodata():
     input_empty = 'tests/data/test_empty.tif'
     output_png = 'tests/data/test_browse_empty2.png'
     utils.make_browse_image(input_empty, output_png)
