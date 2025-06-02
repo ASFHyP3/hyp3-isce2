@@ -13,6 +13,7 @@ and uses [Semantic Versioning](https://semver.org/spec/v2.0.0.html).
 
 ### Fixed
 - Allows bursts in water with water mask fixing issue <https://github.com/ASFHyP3/hyp3-isce2/issues/211>.
+- Bug for `insar_tops` as it searched for `burst_01.int.vrt` even when it was not a common burst with the secondary scene
 
 ## [2.3.1]
 
