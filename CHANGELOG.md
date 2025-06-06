@@ -10,6 +10,7 @@ and uses [Semantic Versioning](https://semver.org/spec/v2.0.0.html).
 
 ### Changed
 - Burst validator now accepts reference and secondary lists in any order with respect to burst number, swath and polarization.
+- Throws UserWarning instead of ResourceWarning when using `granules` flag
 
 ### Fixed
 - Allows bursts in water with water mask fixing issue <https://github.com/ASFHyP3/hyp3-isce2/issues/211>.
