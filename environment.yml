@@ -14,7 +14,7 @@ dependencies:
   - asf_search>=6.4.0
   - gdal
   - opencv
-  - burst2safe
+  - burst2safe>=1.4.5
   - hyp3lib>=4,<5
   - s1_orbits
   # For packaging, and testing
