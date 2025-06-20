@@ -13,7 +13,7 @@ and uses [Semantic Versioning](https://semver.org/spec/v2.0.0.html).
 - Pinned to `burst2safe>=1.4.5` to address https://github.com/ASFHyP3/burst2safe/issues/170.
 
 ### Fixed
-- Allow scenes over water when water masking is applied. Fixes https://github.com/ASFHyP3/hyp3-isce2/issues/211.
+- Allow scenes over water when water masking is applied. Fixes https://github.com/ASFHyP3/hyp3-isce2/issues/211 and https://github.com/ASFHyP3/hyp3-isce2/issues/247.
 
 ## [2.3.1]
 
