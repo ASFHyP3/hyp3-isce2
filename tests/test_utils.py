@@ -61,12 +61,11 @@ def test_make_browse_image():
     os.remove(output_png)
 
 
-def test_make_browse_image_geotiff_all_nodata():
+def test_make_browse_image_geotiff_all_nodata(tmp_path):
     input_empty = 'tests/data/test_empty.tif'
-    output_png = 'tests/data/test_browse_empty2.png'
+    output_png = str(tmp_path / 'output.png')
     utils.make_browse_image(input_empty, output_png)
     assert open(output_png, 'rb').read() == open('tests/data/test_browse_empty.png', 'rb').read()
-    os.remove(output_png)
 
 
 def check_correctness_of_resample(mask, lat, lon, geotransform, data_type, outshape):
