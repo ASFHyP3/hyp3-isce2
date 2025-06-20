@@ -6,17 +6,6 @@ The format is based on [Keep a Changelog](https://keepachangelog.com/en/1.0.0/),
 and this project adheres to [PEP 440](https://www.python.org/dev/peps/pep-0440/)
 and uses [Semantic Versioning](https://semver.org/spec/v2.0.0.html).
 
-## [2.3.2]
-
-### Changed
-- Burst validator now accepts reference and secondary lists in any order with respect to burst number, swath and polarization.
-- Pinned to `burst2safe>=1.4.5` to address https://github.com/ASFHyP3/burst2safe/issues/170.
-- Throws UserWarning instead of ResourceWarning when using `granules` flag
-
-### Fixed
-- Allows bursts in water with water mask fixing issue <https://github.com/ASFHyP3/hyp3-isce2/issues/211>.
-- Bug for `insar_tops` as it searched for `burst_01.int.vrt` even when it was not a common burst with the secondary scene
-
 ## [2.3.1]
 
 ### Changed
