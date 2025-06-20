@@ -10,6 +10,7 @@ and uses [Semantic Versioning](https://semver.org/spec/v2.0.0.html).
 
 ### Changed
 - Burst validator now accepts reference and secondary lists in any order with respect to burst number, swath and polarization.
+- Pinned to `burst2safe>=1.4.5` to address https://github.com/ASFHyP3/burst2safe/issues/170.
 - Throws UserWarning instead of ResourceWarning when using `granules` flag
 
 ### Fixed
