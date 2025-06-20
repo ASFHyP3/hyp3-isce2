@@ -289,7 +289,7 @@ def main():
     elif has_granules:
         warnings.warn(
             'The positional argument for granules is deprecated. Please use --reference and --secondary.',
-            DeprecationWarning,
+            UserWarning,
         )
         granules = [item for sublist in args.granules for item in sublist]
         if len(granules) != 2:
