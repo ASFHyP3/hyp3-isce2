@@ -96,16 +96,16 @@ def test_validate_bursts_num_swath_pol():
             'S1_000001_IW2_20200101T000001_VV_0000-BURST',
         ],
         [
-            'S1_000000_IW1_20200201T000000_VV_0000-BURST',
             'S1_000001_IW2_20200201T000001_VV_0000-BURST',
+            'S1_000000_IW1_20200201T000000_VV_0000-BURST',
         ],
     )
 
     with pytest.raises(
         ValueError,
-        match=r'^Burst number, swath, or polarization for reference scene S1_000001_IW2_20200101T000001_VV_0000\-BURST does not match any secondary scenes.',
+        match=r'^Burst number \+ swath \+ polarization identifiers must be the same for reference scenes and secondary scenes$',
     ):
-        # Different number
+        # Different burst number
         burst.validate_bursts(
             [
                 'S1_000001_IW2_20200101T000001_VV_0000-BURST',
@@ -117,18 +117,39 @@ def test_validate_bursts_num_swath_pol():
             ],
         )
 
-    with pytest.raises(ValueError, match=r'^Burst number, swath, or polarization for reference scene .*'):
+    with pytest.raises(
+        ValueError,
+        match=r'^Burst number \+ swath \+ polarization identifiers must be the same for reference scenes and secondary scenes$',
+    ):
         # Different swath
         burst.validate_bursts(
             ['S1_000000_IW1_20200101T000000_VV_0000-BURST'],
             ['S1_000000_IW2_20200201T000000_VV_0000-BURST'],
         )
 
-    with pytest.raises(ValueError, match=r'^Burst number, swath, or polarization for reference scene .*'):
+    with pytest.raises(
+        ValueError,
+        match=r'^Burst number \+ swath \+ polarization identifiers must be the same for reference scenes and secondary scenes$',
+    ):
         # Different pol
         burst.validate_bursts(
             ['S1_000000_IW1_20200101T000000_VV_0000-BURST'],
             ['S1_000000_IW1_20200201T000000_VH_0000-BURST'],
+        )
+
+    with pytest.raises(
+        ValueError,
+        match=r'^Each reference scene must have a unique burst number \+ swath \+ polarization identifier$',
+    ):
+        burst.validate_bursts(
+            [
+                'S1_000000_IW1_20200101T000000_VV_0000-BURST',
+                'S1_000000_IW1_20200101T000001_VV_0000-BURST',
+            ],
+            [
+                'S1_000000_IW1_20200201T000000_VV_0000-BURST',
+                'S1_000000_IW1_20200201T000002_VV_0000-BURST',
+            ],
         )
 
     with pytest.raises(ValueError, match=r'^Scenes must have the same polarization. Polarizations present: VH, VV$'):
@@ -147,11 +168,11 @@ def test_validate_bursts_num_swath_pol():
         burst.validate_bursts(
             [
                 'S1_000000_IW1_20200101T000000_VH_0000-BURST',
-                'S1_000000_IW1_20200101T000000_VH_0000-BURST',
+                'S1_000000_IW2_20200101T000000_VH_0000-BURST',
             ],
             [
                 'S1_000000_IW1_20200201T000000_VH_0000-BURST',
-                'S1_000000_IW1_20200201T000000_VH_0000-BURST',
+                'S1_000000_IW2_20200201T000000_VH_0000-BURST',
             ],
         )
 

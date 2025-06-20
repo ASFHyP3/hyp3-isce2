@@ -266,13 +266,15 @@ def validate_bursts(reference: list[str], secondary: list[str]) -> None:
             f'Must provide the same number of reference and secondary scenes, got {len(reference)} reference and {len(secondary)} secondary'
         )
 
-    secs_nsp = [_num_swath_pol(sec) for sec in secondary]
+    ref_num_swath_pol = {_num_swath_pol(ref) for ref in reference}
+    sec_num_swath_pol = {_num_swath_pol(sec) for sec in secondary}
+    if ref_num_swath_pol != sec_num_swath_pol:
+        raise ValueError(
+            'Burst number + swath + polarization identifiers must be the same for reference scenes and secondary scenes'
+        )
 
-    for ref in reference:
-        if _num_swath_pol(ref) not in secs_nsp:
-            raise ValueError(
-                f'Burst number, swath, or polarization for reference scene {ref} does not match any secondary scenes.'
-            )
+    if len(ref_num_swath_pol) != len(reference):
+        raise ValueError('Each reference scene must have a unique burst number + swath + polarization identifier')
 
     pols = list(set(g.split('_')[4] for g in reference))
 
