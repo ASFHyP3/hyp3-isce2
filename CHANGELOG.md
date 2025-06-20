@@ -9,11 +9,11 @@ and uses [Semantic Versioning](https://semver.org/spec/v2.0.0.html).
 ## [2.3.2]
 
 ### Changed
-- Burst validator now accepts reference and secondary lists in any order with respect to burst number, swath and polarization.
+- Reference and secondary scenes are now accepted in any order, but must still have the same set of burst number + swath + polarization identifiers.
 - Pinned to `burst2safe>=1.4.5` to address https://github.com/ASFHyP3/burst2safe/issues/170.
 
 ### Fixed
-- Allows bursts in water with water mask fixing issue <https://github.com/ASFHyP3/hyp3-isce2/issues/211>.
+- Allow scenes over water when water masking is applied. Fixes https://github.com/ASFHyP3/hyp3-isce2/issues/211.
 
 ## [2.3.1]
 
