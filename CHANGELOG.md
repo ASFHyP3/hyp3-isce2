@@ -9,7 +9,10 @@ and uses [Semantic Versioning](https://semver.org/spec/v2.0.0.html).
 ## [2.3.3]
 
 ### Changed
-- The `insar_tops` now does not look for the radar products in the first burst because sometimes this burst does not overlap with the secondary slc. 
+- The `insar_tops` now does not look for the radar products in the first burst because sometimes this burst does not overlap with the secondary slc.
+
+### Fixed
+- Changed `DeprecationWarning` for `UserWarning` when using `granules` argument with the `insar_tops_burst` workflow. Fixes https://github.com/ASFHyP3/hyp3-isce2/issues/279
 
 ## [2.3.2]
 
