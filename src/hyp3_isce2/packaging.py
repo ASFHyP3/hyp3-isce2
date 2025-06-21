@@ -161,18 +161,18 @@ def translate_outputs(
     if use_multilooked:
         suffix += '.multilooked'
 
-    rdr_datasets = [
-        ISCE2Dataset(
-            find_product(f'fine_interferogram/IW*/burst_{suffix}.int.vrt'),
-            'wrapped_phase_rdr',
-            [1],
-            gdalconst.GDT_CFloat32,
-        ),
-        ISCE2Dataset(find_product(f'geom_reference/IW*/lat_{suffix}.rdr.vrt'), 'lat_rdr', [1]),
-        ISCE2Dataset(find_product(f'geom_reference/IW*/lon_{suffix}.rdr.vrt'), 'lon_rdr', [1]),
-        ISCE2Dataset(find_product(f'geom_reference/IW*/los_{suffix}.rdr.vrt'), 'los_rdr', [1, 2]),
-    ]
     if include_radar:
+        rdr_datasets = [
+            ISCE2Dataset(
+                find_product(f'fine_interferogram/IW*/burst_{suffix}.int.vrt'),
+                'wrapped_phase_rdr',
+                [1],
+                gdalconst.GDT_CFloat32,
+            ),
+            ISCE2Dataset(find_product(f'geom_reference/IW*/lat_{suffix}.rdr.vrt'), 'lat_rdr', [1]),
+            ISCE2Dataset(find_product(f'geom_reference/IW*/lon_{suffix}.rdr.vrt'), 'lon_rdr', [1]),
+            ISCE2Dataset(find_product(f'geom_reference/IW*/los_{suffix}.rdr.vrt'), 'los_rdr', [1, 2]),
+        ]
         datasets += rdr_datasets
 
     for dataset in datasets:

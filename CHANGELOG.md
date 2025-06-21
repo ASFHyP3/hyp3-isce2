@@ -6,6 +6,14 @@ The format is based on [Keep a Changelog](https://keepachangelog.com/en/1.0.0/),
 and this project adheres to [PEP 440](https://www.python.org/dev/peps/pep-0440/)
 and uses [Semantic Versioning](https://semver.org/spec/v2.0.0.html).
 
+## [2.3.3]
+
+### Changed
+- The `insar_tops` now does not look for the radar products in the first burst because sometimes this burst does not overlap with the secondary slc.
+
+### Fixed
+- Changed `DeprecationWarning` for `UserWarning` when using `granules` argument with the `insar_tops_burst` workflow. Fixes https://github.com/ASFHyP3/hyp3-isce2/issues/279
+
 ## [2.3.2]
 
 ### Changed
