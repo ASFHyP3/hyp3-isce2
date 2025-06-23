@@ -27,7 +27,7 @@ dependencies = [
   "jinja2",
   "asf_search>=6.4.0",
   "gdal",
-  "hyp3lib>=3.2,<4",
+  "hyp3lib>=4,<5",
   "s1_orbits",
   "burst2safe>=1.4.5"
   # Conda-forge only dependencies are listed below
