@@ -10,6 +10,7 @@ and uses [Semantic Versioning](https://semver.org/spec/v2.0.0.html).
 
 ### Changed
 - When called from `insar_tops`, `translate_outputs` no longer looks for radar products for the first burst as it might not overlap with the secondary SLC.
+- Pin isce2=2.6.3 to avoid breaking tests when upgrading to 2.6.4
 
 ### Fixed
 - Changed `DeprecationWarning` for `UserWarning` when using `granules` argument with the `insar_tops_burst` workflow. Fixes https://github.com/ASFHyP3/hyp3-isce2/issues/279
