@@ -19,4 +19,4 @@ jobs:
     with:
       local_package_name: hyp3_isce2
       python_versions: >-
-        ["3.10", "3.11"]
+        ["3.10", "3.11", "3.12"]
