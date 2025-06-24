@@ -6,7 +6,7 @@ dependencies:
   - python>=3.10
   - numpy
   - pip
-  - isce2>=2.6.3
+  - isce2=2.6.3
   - rasterio
   - shapely
   - pyproj
