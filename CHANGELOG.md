@@ -9,7 +9,7 @@ and uses [Semantic Versioning](https://semver.org/spec/v2.0.0.html).
 ## [2.4.0]
 
 ### Added
-- Support for processing Sentinel-1C bursts
+- Support for processing Sentinel-1C bursts. Fixes https://github.com/ASFHyP3/hyp3-isce2/issues/309.
 - Python 3.12 support
 
 ### Changed
