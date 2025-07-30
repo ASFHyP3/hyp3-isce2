@@ -6,6 +6,11 @@ The format is based on [Keep a Changelog](https://keepachangelog.com/en/1.0.0/),
 and this project adheres to [PEP 440](https://www.python.org/dev/peps/pep-0440/)
 and uses [Semantic Versioning](https://semver.org/spec/v2.0.0.html).
 
+## [2.4.1]
+
+### Changed
+- Updated `hyp3_isce2.s1_auxcal.S1A_AUX_URL` and `hyp3_isce2.s1_auxcal.S1B_AUX_URL` from `https://sar-mpc.eu/files/S1A_AUX_CAL_20241128.zip` and `https://sar-mpc.eu/files/S1B_AUX_CAL_20241128.zip` to `https://d3g9emy65n853h.cloudfront.net/AUX_CAL/S1A_AUX_CAL_20241128.zip` and `https://d3g9emy65n853h.cloudfront.net/AUX_CAL/S1B_AUX_CAL_20241128.zip`, respectively.
+
 ## [2.4.0]
 
 ### Added
