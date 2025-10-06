@@ -1,4 +1,5 @@
 from re import match
+from unittest.mock import patch
 
 from hyp3_isce2 import packaging
 
@@ -15,6 +16,26 @@ def test_get_product_name():
 
     assert name_20m.startswith('S1_136231_IW2_20200604_20200616_VV_INT20')
     assert name_80m.startswith('S1_136231_IW2_20200604_20200616_VV_INT80')
+
+
+def test_get_product_name_multi_burst(test_data_dir):
+    with patch.object(packaging, 'token_hex') as patched_token_hex:
+        patched_token_hex.return_value = 'ab12'
+
+        reference_safe = str(test_data_dir / 'packaging/multi_burst/S1A_IW_SLC__1SSV_20200604T022307_20200604T022318_032861_03CE65_C158.SAFE')
+        secondary_safe = str(test_data_dir / 'packaging/multi_burst/S1A_IW_SLC__1SSV_20200616T022308_20200616T022319_033036_03D3A3_7466.SAFE')
+
+        product_name = packaging.get_product_name(reference_safe, secondary_safe, pixel_spacing=20)
+        assert product_name == 'S1_064-000000s1n00-136229s2n05-136229s3n04_IW_20200604_20200616_VV_INT20_AB12'
+
+        product_name = packaging.get_product_name(reference_safe, secondary_safe, pixel_spacing=80)
+        assert product_name == 'S1_064-000000s1n00-136229s2n05-136229s3n04_IW_20200604_20200616_VV_INT80_AB12'
+
+        reference_safe = str(test_data_dir / 'packaging/multi_burst/S1A_IW_SLC__1SSV_20220814T125820_20220814T125829_044549_055128_F814.SAFE')
+        secondary_safe = str(test_data_dir / 'packaging/multi_burst/S1A_IW_SLC__1SSV_20220907T125822_20220907T125830_044899_055CF1_B95E.SAFE')
+
+        product_name = packaging.get_product_name(reference_safe, secondary_safe, pixel_spacing=40)
+        assert product_name == 'S1_027-000000s1n00-056069s2n04-000000s3n00_IW_20220814_20220907_VV_INT40_AB12'
 
 
 def test_get_pixel_size():
