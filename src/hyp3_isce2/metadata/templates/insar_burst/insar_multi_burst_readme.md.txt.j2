@@ -1,0 +1,140 @@
+{% extends "insar_burst/insar_burst_base.md.txt.j2" %}
+
+Note to reader: This readme file includes text blocks to extend the insar burst base file.
+Only text included in blocks called in the base file will be included in the output readme.
+We have simple placeholders for readability in this file to indicate where the base file will have its own sections.
+
+{% block header %}
+ASF Sentinel-1 Burst InSAR Data Package (ISCE2)
+===============================================
+
+This folder contains burst-based SAR Interferometry (InSAR) products and their associated files. The source data for
+these products are Sentinel-1 bursts, extracted from Single Look Complex (SLC) products processed by ESA,
+and they were processed using InSAR Scientific Computing Environment version 2 (ISCE2) software.
+
+Refer to
+https://sentiwiki.copernicus.eu/web/s1-mission#S1Mission-InterferometricWideSwathS1-Mission-Interferometric-Wide-Swath
+for more information on Sentinel-1 bursts.
+
+This data was processed by ASF DAAC HyP3 {{ processing_date.year }} using the {{ plugin_name }} plugin version
+{{ plugin_version }} running {{ processor_name }} release {{ processor_version }}.
+Files are projected to {{ projection }}, and the pixel spacing is {{ pixel_spacing|int }} m.
+
+The source bursts for this InSAR product are:
+TODO
+
+Processing Date/Time: {{ processing_date.isoformat(timespec='seconds') }}
+
+The directory name for this product is: {{ product_name }}
+
+The output directory uses the following naming convention:
+TODO
+
+Files contained in the product directory are named using the directory name followed by a tag indicating the file type.
+{% endblock %}
+----------------
+(This is where the base file has the Pixel Spacing section)
+
+----------------
+(This is where the base file has the Using This Data section)
+
+***************
+(This is where the base file has parts 1-8 of the Product Contents)
+
+*************
+{% block burst_insar_processing %}
+# Burst InSAR Processing #
+
+TODO: is everything below up-to-date?
+
+The basic steps in Sentinel-1 Burst InSAR processing are as follows:
+
+*Pre-Processing*
+1. Download the Sentinel SLC burst data
+2. Calculate the intersection area
+3. Download the dem covering the intersection area
+4. Download the aux calibration file
+5. Download the orbit parameter files
+6. Set the Configure file for the InSAR process
+
+*InSAR Processing*
+7. Run topsApp steps 'start' and 'preprocess'
+8. Switch the reference and secondary bursts as necessary
+9. Run topsApp step 'computeBaselines' to 'filter'
+10. Optionally apply the water mask to the wrapped image.
+11. Run topsApp steps 'unwrap' and 'unwrap2stage'
+12. Run step 'geocode'
+
+*Post-Processing*
+13. translate output files to hyp3-gamma format
+14. write the README text file
+15. write the metadata txt file
+16. zip the output files
+17. upload the files to s3
+
+----------------
+The detailed process, including the calls to ISCE2 software, is as follows:
+
+The prepare-processing and InSAR processing are combined in the insar_tops_burst function.
+
+## Pre-processing ##
+ - burst2safe: Download reference and secondary SAFE files containing only the desired bursts
+ - get_isce2_burst_bbox: Get the burst bounding boxes for the DEM region of interest
+ - download_dem_for_isce2 : Download the DEM file
+ - download_aux_cal: Download: the aux cal file
+ - downloadSentinelOrbitFile: Download the orbit file
+ - topsapp.TopsappBurstConfig: Set the configuration file
+
+## InSAR processing ##
+The ISCE2 InSAR processing this product uses includes the following ISCE2 topsApp steps:
+- startup
+- preprocess
+- computeBaselines
+- verifyDEM
+- topo
+- subsetoverlaps
+- coarseoffsets
+- coarseresamp
+- overlapifg
+- prepesd
+- esd
+- rangecoreg
+- fineoffsets
+- fineresamp
+- ion
+- burstifg
+- mergebursts
+- filter
+- unwrap
+- unwrap2stage
+- geocode
+
+These steps are run using these calls within hyp3-isce2:
+- topsapp.run_topsapp_burst(start='startup', end='preprocess', config_xml=config_path): Extract the orbits,
+        IPF (Instrument Processing Facility) version, burst data, and antenna pattern if it is necessary
+- topsapp.swap_burst_vrts(): Switch the reference and secondary bursts to use the burst data download from ASF
+- topsapp.run_topsapp_burst(start='computeBaselines', end='unwrap2stage', config_xml=config_path):
+    Run the remaining processing steps including:
+    - Calculate the perpendicular and parallel baselines
+    - Verify the DEM file to make sure it covers the bursts
+    - Map DEM into the radar coordinates of the reference image. This generates the longitude,
+            latitude, height and LOS angles on a pixel by pixel grid for each burst.
+    - Estimate the azimuth offsets between the input SLCs (The Enhanced Spectral Diversity (ESD) method is NOT used)
+    - Estimate the range offsets between the input SLCS
+    - Coregister the secondary SLC by applying the estimated range and azimuth offsets
+    - Produce the wrapped phase interferogram
+    - If --apply-water-mask is selected, create and apply the water mask to the wrapped interferogram.
+    - Unwrap the wrapped phase interferogram using SNAPHU to produce the wrapped phase interferogram
+- topsapp.run_topsapp_burst(start='geocode', end='geocode', config_xml=config_path): Geocode the output products
+
+## Post-Processing ##
+ - translate_outputs: Convert the outputs of hyp3-isce2 to hyp3-gamma formatted geotiff files
+ - make_readme_file: Produce the readme.md.txt file in the product
+ - make_parameter_file: Produce metadata text file in the product
+ - make_archive: Zip the output files
+ - upload_file_to_s3: Upload the files in the product directory to the s3 bucket
+ {% endblock %}
+
+ -----------
+ (This is where the base file has a S1 Mission section)
+ (This is where the base file has a footer)
