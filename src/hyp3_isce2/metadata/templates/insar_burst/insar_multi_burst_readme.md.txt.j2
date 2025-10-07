@@ -20,8 +20,15 @@ This data was processed by ASF DAAC HyP3 {{ processing_date.year }} using the {{
 {{ plugin_version }} running {{ processor_name }} release {{ processor_version }}.
 Files are projected to {{ projection }}, and the pixel spacing is {{ pixel_spacing|int }} m.
 
-The source bursts for this InSAR product are:
-TODO
+The reference bursts for this InSAR product are:
+{% for ref in reference_scenes %}
+  - {{ ref }}
+{% endfor %}
+
+The secondary bursts for this InSAR product are:
+{% for sec in secondary_scenes %}
+  - {{ sec }}
+{% endfor %}
 
 Processing Date/Time: {{ processing_date.isoformat(timespec='seconds') }}
 

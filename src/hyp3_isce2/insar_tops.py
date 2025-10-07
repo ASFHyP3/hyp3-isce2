@@ -194,8 +194,8 @@ def insar_tops_packaged(
     packaging.make_readme(
         product_dir=product_dir,
         product_name=product_name,
-        reference_scene=reference,
-        secondary_scene=secondary,
+        reference_scene=reference_scenes,
+        secondary_scene=secondary_scenes,
         range_looks=range_looks,
         azimuth_looks=azimuth_looks,
         apply_water_mask=apply_water_mask,
