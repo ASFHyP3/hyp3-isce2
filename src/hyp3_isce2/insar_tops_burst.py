@@ -193,6 +193,7 @@ def insar_tops_single_burst(
         range_looks=range_looks,
         azimuth_looks=azimuth_looks,
         apply_water_mask=apply_water_mask,
+        readme_template_name='insar_burst_readme.md.txt.j2',
     )
     packaging.make_parameter_file(
         Path(f'{product_name}/{product_name}.txt'),

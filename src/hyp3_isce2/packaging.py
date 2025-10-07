@@ -313,6 +313,7 @@ def make_readme(
     range_looks: int,
     azimuth_looks: int,
     apply_water_mask: bool,
+    readme_template_name: str,
 ) -> None:
     wrapped_phase_path = product_dir / f'{product_name}_wrapped_phase.tif'
     info = gdal.Info(str(wrapped_phase_path), format='json')
@@ -338,7 +339,7 @@ def make_readme(
         'dem_pixel_spacing': '30 m',
         'apply_water_mask': apply_water_mask,
     }
-    content = hyp3_isce2.metadata.util.render_template('insar_burst/insar_burst_readme.md.txt.j2', payload)
+    content = hyp3_isce2.metadata.util.render_template(str(Path('insar_burst') / readme_template_name), payload)
 
     output_file = product_dir / f'{product_name}_README.md.txt'
     with open(output_file, 'w') as f:

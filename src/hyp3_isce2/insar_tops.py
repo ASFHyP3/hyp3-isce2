@@ -199,6 +199,8 @@ def insar_tops_packaged(
         range_looks=range_looks,
         azimuth_looks=azimuth_looks,
         apply_water_mask=apply_water_mask,
+        # TODO: is this always the multi-burst workflow?
+        readme_template_name='insar_multi_burst_readme.md.txt.j2',
     )
     packaging.make_parameter_file(
         Path(f'{product_name}/{product_name}.txt'),
