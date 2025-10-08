@@ -67,7 +67,7 @@ def test_get_tiles():
         'tests/data/test_geotiff_4326.tif',
         ['/vsicurl/https://asf-dem-west.s3.amazonaws.com/WATER_MASK/TILES/n30w120.tif'],
     )
-    case_3 = [
+    case_3 = (
         'tests/data/test_geotiff_far_north.tif',
         [
             '/vsicurl/https://asf-dem-west.s3.amazonaws.com/WATER_MASK/TILES/n70w150.tif',
@@ -77,7 +77,7 @@ def test_get_tiles():
             '/vsicurl/https://asf-dem-west.s3.amazonaws.com/WATER_MASK/TILES/n70w145.tif',
             '/vsicurl/https://asf-dem-west.s3.amazonaws.com/WATER_MASK/TILES/n65w145.tif',
         ],
-    ]
+    )
     assert water_mask.get_tiles(case_1[0]) == case_1[1]
     assert water_mask.get_tiles(case_2[0]) == case_2[1]
     assert water_mask.get_tiles(case_3[0]) == case_3[1]
