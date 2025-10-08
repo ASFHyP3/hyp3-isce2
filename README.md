@@ -6,14 +6,9 @@
 The HyP3-ISCE2 plugin provides a set of workflows to process SAR satellite data using the [InSAR Scientific Computing Environment 2](https://github.com/isce-framework/isce2) (ISCE2) software package. This plugin is part of the [Alaska Satellite Facility's](https://asf.alaska.edu) larger HyP3 (Hybrid Plugin Processing Pipeline) system, which is a batch processing pipeline designed for on-demand processing of SAR data.
 
 ## Usage
-The HyP3-ISCE2 plugin provides a set of workflows (accessible directly in Python or via a CLI) that can be used to process SAR data using ISCE2. The workflows currently included in this plugin are:
+The HyP3-ISCE2 plugin provides a workflow (accessible directly in Python or via a CLI) for creating burst-based Sentinel-1 geocoded unwrapped interferogram using ISCE2's TOPS processing workflow.
 
-- `insar_stripmap`: A workflow for creating ALOS-1 geocoded unwrapped interferogram using ISCE2's Stripmap processing workflow
-- `insar_tops`: A workflow for creating full-SLC Sentinel-1 geocoded unwrapped interferogram using ISCE2's TOPS processing workflow
-- `insar_tops_burst`: A workflow for creating burst-based Sentinel-1 geocoded unwrapped interferogram using ISCE2's TOPS processing workflow
----
-
-To run a workflow, simply run `python -m hyp3_isce2 ++process [WORKFLOW_NAME] [WORKFLOW_ARGS]`. For example, to run the `insar_tops_burst` workflow:
+To run the `insar_tops_burst` workflow:
 
 ```
 python -m hyp3_isce2 ++process insar_tops_burst \
@@ -35,42 +30,14 @@ python -m hyp3_isce2 ++process insar_tops_burst \
 
 These commands will both create a Sentinel-1 interferogram that contains a deformation signal related to a 2020 Iranian earthquake.
 
-### Product Merging Utility Usage
-**This feature is under active development and is subject to change!**
-
-Burst InSAR products created using the `insar_tops_burst` workflow can be merged together using the `merge_tops_burst` workflow. This can be useful when the deformation signal you'd like to observe spans multiple bursts. It can be called using the following syntax:
-```
-python -m hyp3_isce2 ++process merge_tops_bursts \
-  PATH_TO_UNZIPPED_PRODUCTS \
-  --apply-water-mask True
-```
-Where `PATH_TO_UNZIPPED_PRODUCTS` is the path to a directory containing unzipped burst InSAR products. For example:
-```bash
-PATH_TO_UNZIPPED_PRODUCTS/
-├─ S1_136232_IW2_20200604_20200616_VV_INT80_663F/
-├─ S1_136231_IW2_20200604_20200616_VV_INT80_529D/
-```
-In order to be merging eligible, all burst products must:
-1. Have the same reference and secondary dates
-1. Have the same polarization
-1. Have the same multilooking
-1. Be from the same relative orbit
-1. Be contiguous
-
-The workflow should through an error if any of these conditions are not met.
-
-**Merging burst InSAR products requires extra data that is not contained in the production HyP3 Burst InSAR products. For the time being, to be merging eligible burst products must be created locally using your own installation of `hyp3-isce2` from the `merge_bursts` branch of this repository!**
-
-As mentioned above this feature is under active development, so we welcome any feedback you have!
-
 ### Options
-To learn about the arguments for each workflow, look at the help documentation 
-(`python -m hyp3_isce2 ++process [WORKFLOW_NAME] --help`).
+To learn about the arguments for the `insar_tops_burst` workflow, look at the help documentation
+(`python -m hyp3_isce2 ++process insar_tops_burst --help`).
 
 #### Looks Option
-When ordering Sentinel-1 Burst InSAR On Demand products, users can choose the number of **looks** (`--looks`) to use 
-in processing, which drives the resolution and pixel spacing of the output products. The available options are 
-20x4, 10x2, or 5x1. The first number indicates the number of looks in range, the second is the number of looks 
+When ordering Sentinel-1 Burst InSAR On Demand products, users can choose the number of **looks** (`--looks`) to use
+in processing, which drives the resolution and pixel spacing of the output products. The available options are
+20x4, 10x2, or 5x1. The first number indicates the number of looks in range, the second is the number of looks
 in azimuth.
 
 The output product pixel spacing depends on the number of looks in azimuth:
@@ -80,30 +47,28 @@ Products with 20x4 looks have a pixel spacing of 80 m, those with 10x2 looks hav
 those with 5x1 looks have a pixel spacing of 20 m.
 
 #### Water Mask Option
-There is always a water mask geotiff file included in the product package, but setting the **apply-water-mask** 
+There is always a water mask geotiff file included in the product package, but setting the **apply-water-mask**
 (`--apply-water-mask`) option to True will apply the mask to the wrapped interferogram prior to phase unwrapping.
 
 ### Earthdata Login Credentials
 
-For all workflows, the user must provide their Earthdata Login credentials in order to download input data.
-If you do not already have an Earthdata account, you can sign up [here](https://urs.earthdata.nasa.gov/home). 
+The user must provide their Earthdata Login credentials in order to download input data.
+If you do not already have an Earthdata account, you can sign up [here](https://urs.earthdata.nasa.gov/home).
 Your credentials can be passed to the workflows via environment variables
 (`EARTHDATA_USERNAME`, `EARTHDATA_PASSWORD`) or via your `.netrc` file. If you haven't set up a `.netrc` file
 before, check out this [guide](https://harmony.earthdata.nasa.gov/docs#getting-started) to get started.
 
 ### Docker Container
-The ultimate goal of this project is to create a docker container that can run ISCE2 workflows within a HyP3 
+The ultimate goal of this project is to create a docker container that can run the `insar_tops_burst` workflow within a HyP3
 deployment. To run the current version of the project's container, use this command:
 ```
 docker run -it --rm \
     -e EARTHDATA_USERNAME=[YOUR_USERNAME_HERE] \
     -e EARTHDATA_PASSWORD=[YOUR_PASSWORD_HERE] \
     ghcr.io/asfhyp3/hyp3-isce2:latest \
-    ++process [WORKFLOW_NAME] \
+    ++process insar_tops_burst \
     [WORKFLOW_ARGS]
 ```
-
-**NOTE** Each workflow can also be accessed via an alternative CLI with the format (`[WORKFLOW_NAME] [WORKFLOW_ARGS]`)
 
 #### Docker Outputs
 
@@ -120,8 +85,8 @@ Append the `--bucket` and `--bucket-prefix` to [WORKFLOW_ARGS]. *Only the final 
 ```
 docker run -it --rm \
     -e AWS_ACCESS_KEY_ID=[YOUR_KEY] \
-    -e AWS_SECRET_ACCESS_KEY=[YOUR_SECRET] \ 
-    -e AWS_SESSION_TOKEN=[YOUR_TOKEN] \ 
+    -e AWS_SECRET_ACCESS_KEY=[YOUR_SECRET] \
+    -e AWS_SESSION_TOKEN=[YOUR_TOKEN] \
     -e EARTHDATA_USERNAME=[YOUR_USERNAME_HERE] \
     -e EARTHDATA_PASSWORD=[YOUR_PASSWORD_HERE] \
     ghcr.io/asfhyp3/hyp3-isce2:latest \

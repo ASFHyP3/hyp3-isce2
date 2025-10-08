@@ -1,18 +1,14 @@
 """Create a full SLC Sentinel-1 geocoded unwrapped interferogram using ISCE2's TOPS processing workflow"""
 
-import argparse
 import logging
-import sys
 from pathlib import Path
 from shutil import copyfile, make_archive
 
-from hyp3lib.util import string_is_true
 from isceobj.TopsProc.runMergeBursts import multilook  # type: ignore[import-not-found]
 from s1_orbits import fetch_for_scene
 
 from hyp3_isce2 import packaging, slc, topsapp
 from hyp3_isce2.dem import download_dem_for_isce2
-from hyp3_isce2.logger import configure_root_logger
 from hyp3_isce2.s1_auxcal import download_aux_cal
 from hyp3_isce2.utils import (
     image_math,
@@ -214,46 +210,3 @@ def insar_tops_packaged(
     output_zip = make_archive(base_name=product_name, format='zip', base_dir=product_name)
     if bucket:
         packaging.upload_product_to_s3(product_dir, output_zip, bucket, bucket_prefix)
-
-
-def main():
-    """HyP3 entrypoint for the SLC TOPS workflow"""
-    parser = argparse.ArgumentParser(description=__doc__, formatter_class=argparse.ArgumentDefaultsHelpFormatter)
-    parser.add_argument('--reference', type=str, help='Reference granule')
-    parser.add_argument('--secondary', type=str, help='Secondary granule')
-    parser.add_argument('--polarization', type=str, default='VV', help='Polarization to use')
-    parser.add_argument(
-        '--looks',
-        choices=['20x4', '10x2', '5x1'],
-        default='20x4',
-        help='Number of looks to take in range and azimuth',
-    )
-    parser.add_argument(
-        '--apply-water-mask',
-        type=string_is_true,
-        default=False,
-        help='Apply a water body mask before unwrapping.',
-    )
-    parser.add_argument('--bucket', help='AWS S3 bucket HyP3 for upload the final product(s)')
-    parser.add_argument('--bucket-prefix', default='', help='Add a bucket prefix to product(s)')
-
-    args = parser.parse_args()
-    configure_root_logger()
-    log.debug(' '.join(sys.argv))
-
-    range_looks, azimuth_looks = [int(looks) for looks in args.looks.split('x')]
-    if args.polarization not in ['VV', 'VH', 'HV', 'HH']:
-        raise ValueError('Polarization must be one of VV, VH, HV, or HH')
-
-    insar_tops_packaged(
-        reference=args.reference,
-        secondary=args.secondary,
-        polarization=args.polarization,
-        azimuth_looks=azimuth_looks,
-        range_looks=range_looks,
-        apply_water_mask=args.apply_water_mask,
-        bucket=args.bucket,
-        bucket_prefix=args.bucket_prefix,
-    )
-
-    log.info('ISCE2 TopsApp run completed successfully')

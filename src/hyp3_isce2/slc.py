@@ -1,14 +1,11 @@
-import json
 import os
 from pathlib import Path
-from subprocess import PIPE, run
 from zipfile import ZipFile
 
 import lxml.etree as ET
 from hyp3lib.fetch import download_file
 from hyp3lib.scene import get_download_url
 from shapely import geometry
-from shapely.geometry.base import BaseGeometry
 from shapely.geometry.polygon import Polygon
 
 
@@ -38,13 +35,6 @@ def unzip_granule(zip_file: Path, remove: bool = False) -> Path:
     if remove:
         os.remove(zip_file)
     return Path(str(safe_dir).strip('/'))
-
-
-def get_geometry_from_kml(kml_file: str) -> BaseGeometry:
-    cmd = f'ogr2ogr -wrapdateline -datelineoffset 20 -f GeoJSON -mapfieldtype DateTime=String /vsistdout {kml_file}'
-    geojson_str = run(cmd.split(' '), stdout=PIPE, check=True).stdout
-    geojson = json.loads(geojson_str)['features'][0]['geometry']
-    return geometry.shape(geojson)
 
 
 def get_geometry_from_manifest(manifest_path: Path):

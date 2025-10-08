@@ -162,31 +162,6 @@ def download_from_extractor(asf_session: requests.Session, burst_params: BurstPa
     return response.content
 
 
-def download_metadata(
-    asf_session: requests.Session,
-    burst_params: BurstParams,
-    out_file: Path | str | None = None,
-) -> etree._Element:
-    """Download burst metadata.
-
-    Args:
-        asf_session: A requests session with an ASF URS cookie.
-        burst_params: The burst search parameters.
-        out_file: The path to save the metadata to (if desired).
-
-    Returns:
-        The metadata as an lxml.etree._Element object
-    """
-    content = download_from_extractor(asf_session, burst_params, 'metadata')
-    metadata = etree.fromstring(content)
-
-    if out_file:
-        with open(out_file, 'wb') as f:
-            f.write(content)
-
-    return metadata
-
-
 def get_isce2_burst_bbox(safe: str, swath: int, polarization: str, base_dir: Path | None = None) -> geometry.Polygon:
     """Get the bounding box of a Sentinel-1 burst using ISCE2.
     Using ISCE2 directly ensures that the bounding box is the same as the one used by ISCE2 for processing.
@@ -213,26 +188,6 @@ def get_isce2_burst_bbox(safe: str, swath: int, polarization: str, base_dir: Pat
     # convert from south, north, west, east -> minx, miny, maxx, maxy
     bbox = geometry.box(snwe[2], snwe[0], snwe[3], snwe[1])
     return bbox
-
-
-def get_asf_session() -> requests.Session:
-    """Get a requests session with an ASF URS cookie.
-
-    requests will automatically use the netrc file:
-    https://requests.readthedocs.io/en/latest/user/authentication/#netrc-authentication
-
-    Returns:
-        A requests session with an ASF URS cookie.
-    """
-    session = requests.Session()
-    payload = {
-        'response_type': 'code',
-        'client_id': 'BO_n7nTIlMljdvU6kRRB3g',
-        'redirect_uri': 'https://auth.asf.alaska.edu/login',
-    }
-    response = session.get('https://urs.earthdata.nasa.gov/oauth/authorize', params=payload)
-    response.raise_for_status()
-    return session
 
 
 def _num_swath_pol(scene: str) -> str:

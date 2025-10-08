@@ -20,9 +20,6 @@ def main():
         '++process',
         choices=[
             'insar_tops_burst',
-            'insar_tops',
-            'insar_stripmap',
-            'merge_tops_bursts',
         ],
         default='insar_tops_burst',
         help='Select the HyP3 entrypoint to use',  # HyP3 entrypoints are specified in `pyproject.toml`
