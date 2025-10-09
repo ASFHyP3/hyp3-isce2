@@ -2,6 +2,7 @@ import subprocess
 from dataclasses import dataclass
 from datetime import datetime, timezone
 from pathlib import Path
+from secrets import token_hex
 
 import isce
 from hyp3lib.aws import upload_file_to_s3
@@ -79,8 +80,7 @@ def get_product_name(
     reference_date = min(_get_burst_date(scene) for scene in reference_scenes)
     secondary_date = max(_get_burst_date(scene) for scene in secondary_scenes)
 
-    product_id = '' # TODO
-
+    product_id = token_hex(2).upper()
     return (
         f'S1_{relative_orbit:03d}_{s1}-{s2}-{s3}_IW_{reference_date}_{secondary_date}'
         f'_{polarization}_INT{pixel_spacing}_{product_id}'
