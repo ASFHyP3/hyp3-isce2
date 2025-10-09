@@ -41,6 +41,13 @@ def find_product(pattern: str) -> str:
     return product
 
 
+def _get_subswath_string(reference_scenes: list[str], swath_number: str) -> str:
+    scenes = [scene for scene in reference_scenes if scene.split('_')[2][2] == swath_number]
+    first_burst_number = min(scenes).split('_')[1] if scenes else '000000'
+    scene_count = len(scenes)
+    return f'{first_burst_number}s{swath_number}n{scene_count:02d}'
+
+
 def get_product_name(
     reference_scenes: list[str],
     secondary_scenes: list[str],
@@ -60,7 +67,11 @@ def get_product_name(
     Returns:
         The name of the interferogram product.
     """
-    return 'myProductName' # FIXME
+    product_id = '' # TODO
+    s1 = _get_subswath_string(reference_scenes, '1')
+    s2 = _get_subswath_string(reference_scenes, '2')
+    s3 = _get_subswath_string(reference_scenes, '3')
+    return f'S1_{relative_orbit:03d}_{s1}-{s2}-{s3}_IW_yyyymmdd_yyyymmdd_{polarization}_INT{pixel_spacing}_{product_id}' # TODO
 
 
 def translate_outputs(
