@@ -24,12 +24,6 @@ def test_utm_from_lon_lat():
     assert utils.utm_from_lon_lat(-360, -1) == 32731
 
 
-def test_extent_from_geotransform():
-    assert utils.extent_from_geotransform((0, 1, 0, 0, 0, -1), 1, 1) == (0, 0, 1, -1)
-    assert utils.extent_from_geotransform((0, 1, 0, 0, 0, -1), 2, 2) == (0, 0, 2, -2)
-    assert utils.extent_from_geotransform((0, 1, 0, 0, 0, -1), 1, 3) == (0, 0, 1, -3)
-
-
 def test_gdal_config_manager():
     gdal.SetConfigOption('OPTION1', 'VALUE1')
     gdal.SetConfigOption('OPTION2', 'VALUE2')
@@ -131,7 +125,7 @@ def test_resample_to_radar():
     resample_with_different_case(30, 10, 10, 10, geotransform)
 
 
-def test_resample_to_radar_io(tmp_path, test_merge_dir):
+def test_resample_to_radar_io(tmp_path):
     out_paths = []
     array = np.ones((10, 10), dtype=np.float32)
     for image_name in ['input', 'lat', 'lon']:
@@ -313,13 +307,3 @@ def test_image_math(tmp_path):
     utils.image_math(in_path1, in_path2, out_path, 'a + b')
     image_obj_out, arrayout = utils.load_isce2_image(out_path)
     assert np.array_equal(array1 + array2, arrayout)
-
-
-def test_read_product_metadata(test_merge_dir):
-    metafile = list(test_merge_dir.glob('S1_136232*/*.txt'))[0]
-    metas = utils.read_product_metadata(metafile)
-    assert metas['ReferenceGranule'] == 'S1_136232_IW2_20200604T022315_VV_7C85-BURST'
-    assert metas['SecondaryGranule'] == 'S1_136232_IW2_20200616T022316_VV_5D11-BURST'
-    assert np.isclose(float(metas['Baseline']), -66.10716474087386)
-    assert int(metas['ReferenceOrbitNumber']) == 32861
-    assert int(metas['SecondaryOrbitNumber']) == 33036

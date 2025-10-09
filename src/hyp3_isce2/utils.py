@@ -143,26 +143,6 @@ def utm_from_lon_lat(lon: float, lat: float) -> int:
     return hemisphere + zone
 
 
-def extent_from_geotransform(geotransform: tuple, x_size: int, y_size: int) -> tuple:
-    """Get the extent and resolution of a GDAL dataset.
-
-    Args:
-        geotransform: GDAL geotransform.
-        x_size: Number of pixels in the x direction.
-        y_size: Number of pixels in the y direction.
-
-    Returns:
-        tuple: Extent of the dataset.
-    """
-    extent = (
-        geotransform[0],
-        geotransform[3],
-        geotransform[0] + geotransform[1] * x_size,
-        geotransform[3] + geotransform[5] * y_size,
-    )
-    return extent
-
-
 def make_browse_image(input_tif: str, output_png: str) -> None:
     with GDALConfigManager(GDAL_PAM_ENABLED='NO'):
         try:
@@ -449,23 +429,6 @@ def create_image(
         image.finalizeImage()
         image.renderHdr()
     return image
-
-
-def read_product_metadata(meta_file_path: str) -> dict:
-    """Read the HyP3-generated metadata file for a HyP3 product
-
-    Args:
-        meta_file_path: The path to the metadata file
-    Returns:
-        A dictionary of metadata values
-    """
-    hyp3_meta = {}
-    with open(meta_file_path) as f:
-        for line in f:
-            key, *values = line.strip().replace(' ', '').split(':')
-            value = ':'.join(values)
-            hyp3_meta[key] = value
-    return hyp3_meta
 
 
 def get_projection(srs_wkt) -> str:
