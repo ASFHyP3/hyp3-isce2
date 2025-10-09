@@ -20,42 +20,22 @@ This data was processed by ASF DAAC HyP3 {{ processing_date.year }} using the {{
 {{ plugin_version }} running {{ processor_name }} release {{ processor_version }}.
 Files are projected to {{ projection }}, and the pixel spacing is {{ pixel_spacing|int }} m.
 
-The source bursts for this InSAR product are:
- - Reference: {{ reference_burst_name }}
- - Secondary: {{ secondary_burst_name }}
+The reference bursts for this InSAR product are:
+{% for ref in reference_scenes %}
+  - {{ ref }}
+{% endfor %}
+
+The secondary bursts for this InSAR product are:
+{% for sec in secondary_scenes %}
+  - {{ sec }}
+{% endfor %}
 
 Processing Date/Time: {{ processing_date.isoformat(timespec='seconds') }}
 
 The directory name for this product is: {{ product_name }}
 
 The output directory uses the following naming convention:
-
-S1_bbbbbb_xxn_yyyymmdd_yyyymmdd_pp_INTzz_cccc
-
-bbbbbb: Relative burst ID values assigned by ESA. Each value identifies a consistent burst footprint; relative burst
-        ID values differ from one subswath to the next.
-
-xxn: Three character combination that represents the acquisition mode and subswath number. The first two characters
-        xx represent the acquisition mode (IW or EW) and the last character identifies the subswath number
-        (1-3 for IW, 1-5 for EW). IW mode indicates Interferometric Wideswath, which acquires a 250 km swath composed
-        of three subswaths. EW mode indicates Extra-Wide Swath, which acquires a 400 km swath composed of 5 subswaths.
-
-yyyymmdd: Date of acquisition of the reference and secondary images, respectively.
-
-pp: Two character combination that represents the mode of radar orientation (polarization) for both signal
-        transmission and reception. The first position represents the transmit orientation mode and the second
-        position represents the receive orientation mode.
-
-    HH: Horizontal Transmit - Horizontal Receive
-    HV: Horizontal Transmit - Vertical Receive
-    VH: Vertical Transmit - Horizontal Receive
-    VV: Vertical Transmit - Vertical Receive
-
-INT: The product type (always INT for InSAR).
-
-zz: The pixel spacing of the output image.
-
-cccc: 4-character unique product identifier.
+TODO
 
 Files contained in the product directory are named using the directory name followed by a tag indicating the file type.
 {% endblock %}
@@ -71,6 +51,8 @@ Files contained in the product directory are named using the directory name foll
 *************
 {% block burst_insar_processing %}
 # Burst InSAR Processing #
+
+TODO: is everything below up-to-date?
 
 The basic steps in Sentinel-1 Burst InSAR processing are as follows:
 
