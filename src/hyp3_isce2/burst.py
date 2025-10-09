@@ -1,9 +1,6 @@
 import logging
 from datetime import datetime, timedelta
 
-from isceobj.Sensor.TOPS.Sentinel1 import Sentinel1  # type: ignore[import-not-found]
-from isceobj.TopsProc.runMergeBursts import multilook  # type: ignore[import-not-found]
-
 
 log = logging.getLogger(__name__)
 
