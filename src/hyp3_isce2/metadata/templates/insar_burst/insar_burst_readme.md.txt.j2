@@ -22,12 +22,12 @@ Files are projected to {{ projection }}, and the pixel spacing is {{ pixel_spaci
 
 The reference bursts for this InSAR product are:
 {% for ref in reference_scenes %}
-  - {{ ref }}
+- {{ ref }}
 {% endfor %}
 
 The secondary bursts for this InSAR product are:
 {% for sec in secondary_scenes %}
-  - {{ sec }}
+- {{ sec }}
 {% endfor %}
 
 Processing Date/Time: {{ processing_date.isoformat(timespec='seconds') }}
