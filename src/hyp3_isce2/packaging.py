@@ -48,6 +48,10 @@ def _get_subswath_string(reference_scenes: list[str], swath_number: str) -> str:
     return f'{first_burst_number}s{swath_number}n{scene_count:02d}'
 
 
+def _get_burst_date(scene: str) -> str:
+    return scene.split('_')[3].split('T')[0]
+
+
 def get_product_name(
     reference_scenes: list[str],
     secondary_scenes: list[str],
@@ -67,11 +71,20 @@ def get_product_name(
     Returns:
         The name of the interferogram product.
     """
-    product_id = '' # TODO
     s1 = _get_subswath_string(reference_scenes, '1')
     s2 = _get_subswath_string(reference_scenes, '2')
     s3 = _get_subswath_string(reference_scenes, '3')
-    return f'S1_{relative_orbit:03d}_{s1}-{s2}-{s3}_IW_yyyymmdd_yyyymmdd_{polarization}_INT{pixel_spacing}_{product_id}' # TODO
+
+    # TODO: test the crossing-midnight edge case for ref/sec date?
+    reference_date = min(_get_burst_date(scene) for scene in reference_scenes)
+    secondary_date = max(_get_burst_date(scene) for scene in secondary_scenes)
+
+    product_id = '' # TODO
+
+    return (
+        f'S1_{relative_orbit:03d}_{s1}-{s2}-{s3}_IW_{reference_date}_{secondary_date}'
+        f'_{polarization}_INT{pixel_spacing}_{product_id}'
+    )
 
 
 def translate_outputs(
