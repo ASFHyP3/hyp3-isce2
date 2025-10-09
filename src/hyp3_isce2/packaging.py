@@ -345,20 +345,6 @@ def make_readme(
         f.write(content)
 
 
-def find_available_swaths(base_dir: Path | str) -> list[str]:
-    """Find the available swaths in the given directory
-
-    Args:
-        base_dir: Path to the directory containing the swaths
-
-    Returns:
-        List of available swaths
-    """
-    geom_dir = Path(base_dir) / 'geom_reference'
-    swaths = sorted([file.name for file in geom_dir.iterdir() if file.is_dir()])
-    return swaths
-
-
 def get_baseline_perp(topsProc_xml: etree._ElementTree) -> float:
     for swath in [1, 2, 3]:
         bperp_element = topsProc_xml.find(f'.//IW-{swath}_Bperp_at_midrange_for_first_common_burst')
