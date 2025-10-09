@@ -1,13 +1,12 @@
-from re import match
 from unittest.mock import patch
 
 from hyp3_isce2 import packaging
 
 
 def test_get_product_name():
-    with patch.object(packaging, 'token_hex') as patched_token_hex:
+    with patch.object(packaging, 'token_hex') as mock_token_hex:
 
-        patched_token_hex.return_value = 'ab12'
+        mock_token_hex.return_value = 'ab12'
         result = packaging.get_product_name(
             reference_scenes=['S1_056072_IW2_20220814T125829_VV_67BC-BURST',
                               'S1_056071_IW2_20220814T125826_VV_67BC-BURST',
@@ -21,9 +20,9 @@ def test_get_product_name():
             pixel_spacing=20,
             polarization='VV',
         )
-        assert result == 'S1_064-000000s1n00-136229s2n05-136229s3n04_IW_20200604_20200616_VV_INT20_AB12'
+        assert result == 'S1_064_000000s1n00-056069s2n04-000000s3n00_IW_20220814_20220907_VV_INT20_AB12'
 
-        patched_token_hex.return_value = 'cd34'
+        mock_token_hex.return_value = 'cd34'
         result = packaging.get_product_name(
             reference_scenes=[
                 'S1_136233_IW2_20200604T022318_VV_A53B-BURST',
@@ -51,7 +50,7 @@ def test_get_product_name():
             pixel_spacing=40,
             polarization='HH',
         )
-        assert result == 'S1_027-000000s1n00-056069s2n04-000000s3n00_IW_20220814_20220907_HH_INT40_CD34'
+        assert result == 'S1_027_000000s1n00-136229s2n05-136229s3n04_IW_20200604_20200616_HH_INT40_CD34'
 
 
 def test_get_pixel_size():
