@@ -19,9 +19,9 @@ def main():
     parser.add_argument(
         '++process',
         choices=[
-            'insar_tops_burst',
+            'insar_tops_multi_burst',
         ],
-        default='insar_tops_burst',
+        default='insar_tops_multi_burst',
         help='Select the HyP3 entrypoint to use',  # HyP3 entrypoints are specified in `pyproject.toml`
     )
     parser.add_argument(

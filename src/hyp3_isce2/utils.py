@@ -340,21 +340,6 @@ def image_math(image_a_path: str, image_b_path: str, out_path: str, expression: 
     subprocess.run(cmd, check=True)
 
 
-def load_product(xmlname: str):
-    """Load an ISCE2 product from an xml file
-
-    Args:
-        xmlname: The path to the xml file
-
-    Returns:
-        The ISCE2 product
-    """
-    pm = ProductManager()
-    pm.configure()
-    obj = pm.loadProduct(xmlname)
-    return obj
-
-
 def write_isce2_image_from_obj(image_obj, array):
     """Write an ISCE2 image file.
 

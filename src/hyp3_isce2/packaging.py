@@ -2,10 +2,8 @@ import subprocess
 from dataclasses import dataclass
 from datetime import datetime, timezone
 from pathlib import Path
-from secrets import token_hex
 
 import isce
-import numpy as np
 from hyp3lib.aws import upload_file_to_s3
 from hyp3lib.image import create_thumbnail
 from lxml import etree
@@ -14,8 +12,6 @@ from pyproj import CRS
 
 import hyp3_isce2
 import hyp3_isce2.metadata.util
-from hyp3_isce2.burst import BurstPosition
-from hyp3_isce2.slc import get_geometry_from_manifest
 from hyp3_isce2.utils import ParameterFile, get_projection, utm_from_lon_lat
 
 
@@ -46,90 +42,31 @@ def find_product(pattern: str) -> str:
 
 
 def get_product_name(
-    reference: str,
-    secondary: str,
+    reference_scenes: list[str],
+    secondary_scenes: list[str],
+    relative_orbit: int,
     pixel_spacing: int,
-    polarization: str | None = None,
-    slc: bool = True,
+    polarization: str,
 ) -> str:
     """Get the name of the interferogram product.
 
     Args:
-        reference: The reference burst name.
-        secondary: The secondary burst name.
-        pixel_spacing: The spacing of the pixels in the output image.
-        polarization: The polarization of the input data. Only required for SLCs.
-        slc: Whether the input scenes are SLCs or bursts.
+        reference_scenes: List of the reference burst granule banes.
+        secondary_scenes: List of the secondary burst granule names.
+        relative_orbit: Relative orbit number of the input scenes.
+        pixel_spacing: Spacing of the pixels in the output image.
+        polarization: Polarization of input scenes.
 
     Returns:
         The name of the interferogram product.
     """
-    reference_split = reference.split('_')
-    secondary_split = secondary.split('_')
-
-    if slc:
-        parser = etree.XMLParser(encoding='utf-8', recover=True)
-        safe = '{http://www.esa.int/safe/sentinel-1.0}'
-        platform = reference_split[0]
-        reference_date = reference_split[5][0:8]
-        secondary_date = secondary_split[5][0:8]
-        if not polarization:
-            raise ValueError('Polarization is required for SLCs')
-        elif polarization not in ['VV', 'VH', 'HV', 'HH']:
-            raise ValueError('Polarization must be one of VV, VH, HV, or HH')
-        ref_manifest_xml = etree.parse(f'{reference}.SAFE/manifest.safe', parser)
-        metadata_path = './/metadataObject[@ID="measurementOrbitReference"]//xmlData//'
-        relative_orbit_number_query = metadata_path + safe + 'relativeOrbitNumber'
-        orbit_number = ref_manifest_xml.find(relative_orbit_number_query).text.zfill(3)  # type: ignore[union-attr]
-        footprint = get_geometry_from_manifest(Path(f'{reference}.SAFE/manifest.safe'))
-        lons, lats = footprint.exterior.coords.xy
-
-        def lat_string(lat):
-            return ('N' if lat >= 0 else 'S') + f'{("%.1f" % np.abs(lat)).zfill(4)}'.replace('.', '_')  # noqa: UP031
-
-        def lon_string(lon):
-            return ('E' if lon >= 0 else 'W') + f'{("%.1f" % np.abs(lon)).zfill(5)}'.replace('.', '_')  # noqa: UP031
-
-        lat_lims = [lat_string(lat) for lat in [np.min(lats), np.max(lats)]]
-        lon_lims = [lon_string(lon) for lon in [np.min(lons), np.max(lons)]]
-        name_parts = [
-            platform,
-            orbit_number,
-            lon_lims[0],
-            lat_lims[0],
-            lon_lims[1],
-            lat_lims[1],
-        ]
-    else:
-        platform = reference_split[0]
-        burst_id = reference_split[1]
-        image_plus_swath = reference_split[2]
-        reference_date = reference_split[3][0:8]
-        secondary_date = secondary_split[3][0:8]
-        polarization = reference_split[4]
-        name_parts = [platform, burst_id, image_plus_swath]
-    product_type = 'INT'
-    pixel_spacing_str = str(int(pixel_spacing))
-    product_id = token_hex(2).upper()
-    product_name = '_'.join(
-        name_parts
-        + [
-            reference_date,
-            secondary_date,
-            polarization,
-            product_type + pixel_spacing_str,
-            product_id,
-        ]
-    )
-
-    return product_name
+    return 'myProductName' # FIXME
 
 
 def translate_outputs(
     product_name: str,
     pixel_size: float,
     include_radar: bool = False,
-    use_multilooked=False,
 ) -> None:
     """Translate ISCE outputs to a standard GTiff format with a UTM projection.
     Assume you are in the top level of an ISCE run directory
@@ -158,8 +95,6 @@ def translate_outputs(
     ]
 
     suffix = '01'
-    if use_multilooked:
-        suffix += '.multilooked'
 
     if include_radar:
         rdr_datasets = [
@@ -308,17 +243,17 @@ def water_mask(unwrapped_phase: str, water_mask: str) -> None:
 def make_readme(
     product_dir: Path,
     product_name: str,
-    reference_scene: str,
-    secondary_scene: str,
+    reference_scenes: list[str],
+    secondary_scenes: list[str],
     range_looks: int,
     azimuth_looks: int,
     apply_water_mask: bool,
 ) -> None:
     wrapped_phase_path = product_dir / f'{product_name}_wrapped_phase.tif'
     info = gdal.Info(str(wrapped_phase_path), format='json')
-    secondary_granule_datetime_str = secondary_scene.split('_')[3]
+    secondary_granule_datetime_str = secondary_scenes[0].split('_')[3]
     if 'T' not in secondary_granule_datetime_str:
-        secondary_granule_datetime_str = secondary_scene.split('_')[5]
+        secondary_granule_datetime_str = secondary_scenes[0].split('_')[5]
 
     payload = {
         'processing_date': datetime.now(timezone.utc),
@@ -329,8 +264,8 @@ def make_readme(
         'projection': get_projection(info['coordinateSystem']['wkt']),
         'pixel_spacing': info['geoTransform'][1],
         'product_name': product_name,
-        'reference_burst_name': reference_scene,
-        'secondary_burst_name': secondary_scene,
+        'reference_scenes': reference_scenes,
+        'secondary_scenes': secondary_scenes,
         'range_looks': range_looks,
         'azimuth_looks': azimuth_looks,
         'secondary_granule_date': datetime.strptime(secondary_granule_datetime_str, '%Y%m%dT%H%M%S'),
@@ -366,7 +301,6 @@ def make_parameter_file(
     azimuth_looks: int,
     range_looks: int,
     apply_water_mask: bool,
-    multilook_position: BurstPosition | None = None,
     dem_name: str = 'GLO_30',
     dem_resolution: int = 30,
 ) -> None:
@@ -381,7 +315,6 @@ def make_parameter_file(
         processing_path: Path to the processing directory
         azimuth_looks: Number of azimuth looks
         range_looks: Number of range looks
-        multilook_position: Burst position for multilooked radar geometry products
         dem_name: Name of the DEM that is use
         dem_resolution: Resolution of the DEM
     """
@@ -452,25 +385,14 @@ def make_parameter_file(
         speckle_filter=True,
         water_mask=apply_water_mask,
     )
-    if multilook_position:
-        parameter_file.radar_n_lines = multilook_position.n_lines
-        parameter_file.radar_n_samples = multilook_position.n_samples
-        parameter_file.radar_first_valid_line = multilook_position.first_valid_line
-        parameter_file.radar_n_valid_lines = multilook_position.n_valid_lines
-        parameter_file.radar_first_valid_sample = multilook_position.first_valid_sample
-        parameter_file.radar_n_valid_samples = multilook_position.n_valid_samples
-        parameter_file.multilook_azimuth_time_interval = multilook_position.azimuth_time_interval
-        parameter_file.multilook_range_pixel_size = multilook_position.range_pixel_size
-        parameter_file.radar_sensing_stop = multilook_position.sensing_stop
-
     parameter_file.write(out_path)
 
 
-def upload_product_to_s3(product_dir, output_zip, bucket, bucket_prefix):
+def upload_product_to_s3(product_dir: Path, output_zip: Path, bucket: str, bucket_prefix: str) -> None:
     for browse in product_dir.glob('*.png'):
         create_thumbnail(browse, output_dir=product_dir)
 
-    upload_file_to_s3(Path(output_zip), bucket, bucket_prefix)
+    upload_file_to_s3(output_zip, bucket, bucket_prefix)
 
     for product_file in product_dir.iterdir():
         upload_file_to_s3(product_file, bucket, bucket_prefix)

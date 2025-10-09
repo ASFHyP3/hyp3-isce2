@@ -1,20 +1,57 @@
 from re import match
+from unittest.mock import patch
 
 from hyp3_isce2 import packaging
 
 
 def test_get_product_name():
-    reference_name = 'S1_136231_IW2_20200604T022312_VV_7C85-BURST'
-    secondary_name = 'S1_136231_IW2_20200616T022313_VV_5D11-BURST'
+    with patch.object(packaging, 'token_hex') as patched_token_hex:
 
-    name_20m = packaging.get_product_name(reference_name, secondary_name, pixel_spacing=20, slc=False)
-    name_80m = packaging.get_product_name(reference_name, secondary_name, pixel_spacing=80, slc=False)
+        patched_token_hex.return_value = 'ab12'
+        result = packaging.get_product_name(
+            reference_scenes=['S1_056072_IW2_20220814T125829_VV_67BC-BURST',
+                              'S1_056071_IW2_20220814T125826_VV_67BC-BURST',
+                              'S1_056070_IW2_20220814T125823_VV_67BC-BURST',
+                              'S1_056069_IW2_20220814T125820_VV_67BC-BURST'],
+            secondary_scenes=['S1_056072_IW2_20220907T125830_VV_97A5-BURST',
+                              'S1_056071_IW2_20220907T125827_VV_97A5-BURST',
+                              'S1_056070_IW2_20220907T125824_VV_97A5-BURST',
+                              'S1_056069_IW2_20220907T125822_VV_97A5-BURST'],
+            relative_orbit=64,
+            pixel_spacing=20,
+            polarization='VV',
+        )
+        assert result == 'S1_064-000000s1n00-136229s2n05-136229s3n04_IW_20200604_20200616_VV_INT20_AB12'
 
-    assert match('[A-F0-9]{4}', name_20m[-4:]) is not None
-    assert match('[A-F0-9]{4}', name_80m[-4:]) is not None
-
-    assert name_20m.startswith('S1_136231_IW2_20200604_20200616_VV_INT20')
-    assert name_80m.startswith('S1_136231_IW2_20200604_20200616_VV_INT80')
+        patched_token_hex.return_value = 'cd34'
+        result = packaging.get_product_name(
+            reference_scenes=[
+                'S1_136233_IW2_20200604T022318_VV_A53B-BURST',
+                'S1_136232_IW3_20200604T022316_VV_A53B-BURST',
+                'S1_136232_IW2_20200604T022315_VV_7C85-BURST',
+                'S1_136231_IW3_20200604T022313_VV_7C85-BURST',
+                'S1_136231_IW2_20200604T022312_VV_7C85-BURST',
+                'S1_136230_IW3_20200604T022311_VV_7C85-BURST',
+                'S1_136230_IW2_20200604T022310_VV_7C85-BURST',
+                'S1_136229_IW3_20200604T022308_VV_7C85-BURST',
+                'S1_136229_IW2_20200604T022307_VV_7C85-BURST',
+            ],
+            secondary_scenes=[
+                'S1_136233_IW2_20200616T022319_VV_79C9-BURST',
+                'S1_136232_IW3_20200616T022317_VV_79C9-BURST',
+                'S1_136232_IW2_20200616T022316_VV_5D11-BURST',
+                'S1_136231_IW3_20200616T022314_VV_5D11-BURST',
+                'S1_136231_IW2_20200616T022313_VV_5D11-BURST',
+                'S1_136230_IW3_20200616T022312_VV_5D11-BURST',
+                'S1_136230_IW2_20200616T022311_VV_5D11-BURST',
+                'S1_136229_IW3_20200616T022309_VV_5D11-BURST',
+                'S1_136229_IW2_20200616T022308_VV_5D11-BURST',
+            ],
+            relative_orbit=27,
+            pixel_spacing=40,
+            polarization='HH',
+        )
+        assert result == 'S1_027-000000s1n00-056069s2n04-000000s3n00_IW_20220814_20220907_HH_INT40_CD34'
 
 
 def test_get_pixel_size():
@@ -36,7 +73,6 @@ def test_make_parameter_file(test_data_dir, tmp_path):
         reference_safe_path=data_dir / 'S1A_IW_SLC__1SDV_20250406T022008_20250406T022035_058630_07421F_93A7.SAFE',
         secondary_safe_path=data_dir / 'S1A_IW_SLC__1SDV_20250418T022008_20250418T022035_058805_074946_C7D4.SAFE',
         processing_path=data_dir,
-        multilook_position=None,
         dem_name='GLO_30',
         dem_resolution=30,
     )
@@ -83,7 +119,6 @@ def test_make_parameter_file(test_data_dir, tmp_path):
         reference_safe_path=data_dir / 'S1B_IW_SLC__1SSV_20180628T151555_20180628T151555_011575_015476_33AD.SAFE',
         secondary_safe_path=data_dir / 'S1B_IW_SLC__1SSV_20190705T151602_20190705T151602_017000_01FFC4_26ED.SAFE',
         processing_path=data_dir,
-        multilook_position=None,
         dem_name='GLO_30',
         dem_resolution=30,
     )
