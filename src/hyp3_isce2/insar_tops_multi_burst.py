@@ -41,8 +41,8 @@ def insar_tops_multi_burst(
     polarization = reference_bursts[0].split('_')[4]
 
     insar_tops(
-        reference_safe_dir=reference_safe_path.stem,
-        secondary_safe_dir=secondary_safe_path.stem,
+        reference_safe_dir=reference_safe_path,
+        secondary_safe_dir=secondary_safe_path,
         swaths=swaths,
         polarization=polarization,
         azimuth_looks=azimuth_looks,
@@ -54,7 +54,7 @@ def insar_tops_multi_burst(
     product_name = packaging.get_product_name(
         reference_bursts,
         secondary_bursts,
-        relative_orbit='', # TODO
+        relative_orbit=0, # TODO
         pixel_spacing=int(pixel_size),
         polarization=polarization,
     )
