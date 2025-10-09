@@ -5,17 +5,20 @@ from hyp3_isce2 import packaging
 
 def test_get_product_name():
     with patch.object(packaging, 'token_hex') as mock_token_hex:
-
         mock_token_hex.return_value = 'ab12'
         result = packaging.get_product_name(
-            reference_scenes=['S1_056072_IW2_20220814T125829_VV_67BC-BURST',
-                              'S1_056071_IW2_20220814T125826_VV_67BC-BURST',
-                              'S1_056070_IW2_20220814T125823_VV_67BC-BURST',
-                              'S1_056069_IW2_20220814T125820_VV_67BC-BURST'],
-            secondary_scenes=['S1_056072_IW2_20220907T125830_VV_97A5-BURST',
-                              'S1_056071_IW2_20220907T125827_VV_97A5-BURST',
-                              'S1_056070_IW2_20220907T125824_VV_97A5-BURST',
-                              'S1_056069_IW2_20220907T125822_VV_97A5-BURST'],
+            reference_scenes=[
+                'S1_056072_IW2_20220814T125829_VV_67BC-BURST',
+                'S1_056071_IW2_20220814T125826_VV_67BC-BURST',
+                'S1_056070_IW2_20220814T125823_VV_67BC-BURST',
+                'S1_056069_IW2_20220814T125820_VV_67BC-BURST',
+            ],
+            secondary_scenes=[
+                'S1_056072_IW2_20220907T125830_VV_97A5-BURST',
+                'S1_056071_IW2_20220907T125827_VV_97A5-BURST',
+                'S1_056070_IW2_20220907T125824_VV_97A5-BURST',
+                'S1_056069_IW2_20220907T125822_VV_97A5-BURST',
+            ],
             relative_orbit=64,
             pixel_spacing=20,
             polarization='VV',

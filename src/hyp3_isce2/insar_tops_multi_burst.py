@@ -54,7 +54,7 @@ def insar_tops_multi_burst(
     product_name = packaging.get_product_name(
         reference_bursts,
         secondary_bursts,
-        relative_orbit=0, # TODO
+        relative_orbit=0,  # TODO
         pixel_spacing=int(pixel_size),
         polarization=polarization,
     )
