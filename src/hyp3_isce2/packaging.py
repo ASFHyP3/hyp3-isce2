@@ -264,6 +264,11 @@ def water_mask(unwrapped_phase: str, water_mask: str) -> None:
     subprocess.run(cmd.split(' '), check=True)
 
 
+def _get_data_year(secondary_scenes: list[str]) -> str:
+    max_date = max(_get_burst_date(scene) for scene in secondary_scenes)
+    return max_date[:4]
+
+
 def make_readme(
     product_dir: Path,
     product_name: str,
@@ -275,9 +280,8 @@ def make_readme(
 ) -> None:
     wrapped_phase_path = product_dir / f'{product_name}_wrapped_phase.tif'
     info = gdal.Info(str(wrapped_phase_path), format='json')
-    secondary_granule_datetime_str = secondary_scenes[0].split('_')[3]
-    if 'T' not in secondary_granule_datetime_str:
-        secondary_granule_datetime_str = secondary_scenes[0].split('_')[5]
+
+    data_year = _get_data_year(secondary_scenes)
 
     payload = {
         'processing_date': datetime.now(timezone.utc),
@@ -292,7 +296,7 @@ def make_readme(
         'secondary_scenes': secondary_scenes,
         'range_looks': range_looks,
         'azimuth_looks': azimuth_looks,
-        'secondary_granule_date': datetime.strptime(secondary_granule_datetime_str, '%Y%m%dT%H%M%S'),
+        'data_year': data_year,
         'dem_name': 'GLO-30',
         'dem_pixel_spacing': '30 m',
         'apply_water_mask': apply_water_mask,

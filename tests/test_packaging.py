@@ -3,6 +3,14 @@ from unittest.mock import patch
 from hyp3_isce2 import packaging
 
 
+def test_get_burst_date():
+    assert False  # FIXME
+
+
+def test_get_data_year():
+    assert False  # FIXME
+
+
 def test_get_product_name():
     with patch.object(packaging, 'token_hex') as mock_token_hex:
         mock_token_hex.return_value = 'ab12'
