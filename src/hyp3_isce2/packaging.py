@@ -2,6 +2,7 @@ import subprocess
 from dataclasses import dataclass
 from datetime import datetime, timezone
 from pathlib import Path
+from secrets import token_hex
 
 import isce
 from hyp3lib.aws import upload_file_to_s3
@@ -23,6 +24,17 @@ class ISCE2Dataset:
     dtype: int = gdalconst.GDT_Float32
 
 
+def get_relative_orbit(reference_safe_path: Path) -> int:
+    parser = etree.XMLParser(encoding='utf-8', recover=True)
+    manifest_xml = etree.parse(reference_safe_path / 'manifest.safe', parser)
+    orbit_number = manifest_xml.find(
+        './/metadataObject[@ID="measurementOrbitReference"]//xmlData//'
+        '{http://www.esa.int/safe/sentinel-1.0}relativeOrbitNumber'
+    ).text  # type: ignore[union-attr]
+    assert orbit_number is not None
+    return int(orbit_number)
+
+
 def get_pixel_size(looks: str) -> float:
     return {'20x4': 80.0, '10x2': 40.0, '5x1': 20.0}[looks]
 
@@ -39,6 +51,17 @@ def find_product(pattern: str) -> str:
     search = Path.cwd().glob(pattern)
     product = str(list(search)[0])
     return product
+
+
+def _get_subswath_string(reference_scenes: list[str], swath_number: str) -> str:
+    scenes = [scene for scene in reference_scenes if scene.split('_')[2][2] == swath_number]
+    first_burst_number = min(scenes).split('_')[1] if scenes else '000000'
+    scene_count = len(scenes)
+    return f'{first_burst_number}s{swath_number}n{scene_count:02d}'
+
+
+def _get_burst_date(scene: str) -> str:
+    return scene.split('_')[3].split('T')[0]
 
 
 def get_product_name(
@@ -60,7 +83,19 @@ def get_product_name(
     Returns:
         The name of the interferogram product.
     """
-    return 'myProductName' # FIXME
+    s1 = _get_subswath_string(reference_scenes, '1')
+    s2 = _get_subswath_string(reference_scenes, '2')
+    s3 = _get_subswath_string(reference_scenes, '3')
+
+    # TODO: test the crossing-midnight edge case for ref/sec date?
+    reference_date = min(_get_burst_date(scene) for scene in reference_scenes)
+    secondary_date = max(_get_burst_date(scene) for scene in secondary_scenes)
+
+    product_id = token_hex(2).upper()
+    return (
+        f'S1_{relative_orbit:03d}-{s1}-{s2}-{s3}_IW_{reference_date}_{secondary_date}'
+        f'_{polarization}_INT{pixel_spacing}_{product_id}'
+    )
 
 
 def translate_outputs(
@@ -240,6 +275,11 @@ def water_mask(unwrapped_phase: str, water_mask: str) -> None:
     subprocess.run(cmd.split(' '), check=True)
 
 
+def _get_data_year(secondary_scenes: list[str]) -> str:
+    max_date = max(_get_burst_date(scene) for scene in secondary_scenes)
+    return max_date[:4]
+
+
 def make_readme(
     product_dir: Path,
     product_name: str,
@@ -251,9 +291,8 @@ def make_readme(
 ) -> None:
     wrapped_phase_path = product_dir / f'{product_name}_wrapped_phase.tif'
     info = gdal.Info(str(wrapped_phase_path), format='json')
-    secondary_granule_datetime_str = secondary_scenes[0].split('_')[3]
-    if 'T' not in secondary_granule_datetime_str:
-        secondary_granule_datetime_str = secondary_scenes[0].split('_')[5]
+
+    data_year = _get_data_year(secondary_scenes)
 
     payload = {
         'processing_date': datetime.now(timezone.utc),
@@ -268,7 +307,7 @@ def make_readme(
         'secondary_scenes': secondary_scenes,
         'range_looks': range_looks,
         'azimuth_looks': azimuth_looks,
-        'secondary_granule_date': datetime.strptime(secondary_granule_datetime_str, '%Y%m%dT%H%M%S'),
+        'data_year': data_year,
         'dem_name': 'GLO-30',
         'dem_pixel_spacing': '30 m',
         'apply_water_mask': apply_water_mask,

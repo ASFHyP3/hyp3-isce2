@@ -9,7 +9,6 @@ from shutil import make_archive
 import isce  # noqa: F401
 from burst2safe.burst2safe import burst2safe
 from hyp3lib.util import string_is_true
-from isceobj.TopsProc.runMergeBursts import multilook  # type: ignore[import-not-found]
 from osgeo import gdal
 
 from hyp3_isce2 import packaging
@@ -19,6 +18,7 @@ from hyp3_isce2.burst import (
 from hyp3_isce2.insar_tops import insar_tops
 from hyp3_isce2.logger import configure_root_logger
 from hyp3_isce2.utils import make_browse_image
+
 
 gdal.UseExceptions()
 
@@ -50,11 +50,12 @@ def insar_tops_multi_burst(
         apply_water_mask=apply_water_mask,
     )
 
+    relative_orbit = packaging.get_relative_orbit(reference_safe_path)
     pixel_size = packaging.get_pixel_size(f'{range_looks}x{azimuth_looks}')
     product_name = packaging.get_product_name(
         reference_bursts,
         secondary_bursts,
-        relative_orbit=0, # TODO
+        relative_orbit=relative_orbit,
         pixel_spacing=int(pixel_size),
         polarization=polarization,
     )

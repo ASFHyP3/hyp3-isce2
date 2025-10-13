@@ -1,29 +1,59 @@
-from re import match
 from unittest.mock import patch
 
 from hyp3_isce2 import packaging
 
 
-def test_get_product_name():
-    with patch.object(packaging, 'token_hex') as patched_token_hex:
+def test_get_burst_date():
+    assert packaging._get_burst_date('S1_056072_IW2_20220814T125829_VV_67BC-BURST') == '20220814'
+    assert packaging._get_burst_date('S1_056072_IW2_20220907T125830_VV_97A5-BURST') == '20220907'
 
-        patched_token_hex.return_value = 'ab12'
+
+def test_get_data_year():
+    assert (
+        packaging._get_data_year(
+            [
+                'S1_056072_IW2_20220907T125830_VV_97A5-BURST',
+                'S1_056071_IW2_20220907T125827_VV_97A5-BURST',
+                'S1_056070_IW2_20220907T125824_VV_97A5-BURST',
+            ]
+        )
+        == '2022'
+    )
+    assert (
+        packaging._get_data_year(
+            [
+                'S1_056072_IW2_20220907T125830_VV_97A5-BURST',
+                'S1_056071_IW2_20230907T125827_VV_97A5-BURST',
+                'S1_056070_IW2_20220907T125824_VV_97A5-BURST',
+            ]
+        )
+        == '2023'
+    )
+
+
+def test_get_product_name():
+    with patch.object(packaging, 'token_hex') as mock_token_hex:
+        mock_token_hex.return_value = 'ab12'
         result = packaging.get_product_name(
-            reference_scenes=['S1_056072_IW2_20220814T125829_VV_67BC-BURST',
-                              'S1_056071_IW2_20220814T125826_VV_67BC-BURST',
-                              'S1_056070_IW2_20220814T125823_VV_67BC-BURST',
-                              'S1_056069_IW2_20220814T125820_VV_67BC-BURST'],
-            secondary_scenes=['S1_056072_IW2_20220907T125830_VV_97A5-BURST',
-                              'S1_056071_IW2_20220907T125827_VV_97A5-BURST',
-                              'S1_056070_IW2_20220907T125824_VV_97A5-BURST',
-                              'S1_056069_IW2_20220907T125822_VV_97A5-BURST'],
+            reference_scenes=[
+                'S1_056072_IW2_20220814T125829_VV_67BC-BURST',
+                'S1_056071_IW2_20220814T125826_VV_67BC-BURST',
+                'S1_056070_IW2_20220814T125823_VV_67BC-BURST',
+                'S1_056069_IW2_20220814T125820_VV_67BC-BURST',
+            ],
+            secondary_scenes=[
+                'S1_056072_IW2_20220907T125830_VV_97A5-BURST',
+                'S1_056071_IW2_20220907T125827_VV_97A5-BURST',
+                'S1_056070_IW2_20220907T125824_VV_97A5-BURST',
+                'S1_056069_IW2_20220907T125822_VV_97A5-BURST',
+            ],
             relative_orbit=64,
             pixel_spacing=20,
             polarization='VV',
         )
-        assert result == 'S1_064-000000s1n00-136229s2n05-136229s3n04_IW_20200604_20200616_VV_INT20_AB12'
+        assert result == 'S1_064-000000s1n00-056069s2n04-000000s3n00_IW_20220814_20220907_VV_INT20_AB12'
 
-        patched_token_hex.return_value = 'cd34'
+        mock_token_hex.return_value = 'cd34'
         result = packaging.get_product_name(
             reference_scenes=[
                 'S1_136233_IW2_20200604T022318_VV_A53B-BURST',
@@ -51,7 +81,14 @@ def test_get_product_name():
             pixel_spacing=40,
             polarization='HH',
         )
-        assert result == 'S1_027-000000s1n00-056069s2n04-000000s3n00_IW_20220814_20220907_HH_INT40_CD34'
+        assert result == 'S1_027-000000s1n00-136229s2n05-136229s3n04_IW_20200604_20200616_HH_INT40_CD34'
+
+
+def test_get_relative_orbit(test_data_dir):
+    safe_path = (
+        test_data_dir / 'packaging' / 'slc' / 'S1A_IW_SLC__1SDV_20250406T022008_20250406T022035_058630_07421F_93A7.SAFE'
+    )
+    assert packaging.get_relative_orbit(safe_path) == 108
 
 
 def test_get_pixel_size():
