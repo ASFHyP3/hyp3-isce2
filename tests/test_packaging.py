@@ -9,7 +9,20 @@ def test_get_burst_date():
 
 
 def test_get_data_year():
-    assert False  # FIXME
+    assert packaging._get_data_year(
+        [
+            'S1_056072_IW2_20220907T125830_VV_97A5-BURST',
+            'S1_056071_IW2_20220907T125827_VV_97A5-BURST',
+            'S1_056070_IW2_20220907T125824_VV_97A5-BURST',
+        ]
+    ) == '2022'
+    assert packaging._get_data_year(
+        [
+            'S1_056072_IW2_20220907T125830_VV_97A5-BURST',
+            'S1_056071_IW2_20230907T125827_VV_97A5-BURST',
+            'S1_056070_IW2_20220907T125824_VV_97A5-BURST',
+        ]
+    ) == '2023'
 
 
 def test_get_product_name():
