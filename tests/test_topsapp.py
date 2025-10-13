@@ -1,3 +1,5 @@
+from pathlib import Path
+
 import pytest
 
 from hyp3_isce2.topsapp import TopsappConfig, run_topsapp
@@ -33,8 +35,8 @@ def test_topsapp_burst_config(tmp_path):
 
 
 def test_run_topsapp_burst(tmp_path, monkeypatch):
-    with pytest.raises(IOError):
-        run_topsapp('topsApp.xml')
+    with pytest.raises(IOError, match=r'The config file foo.xml does not exist!'):
+        run_topsapp(config_xml=Path('foo.xml'))
 
     config = TopsappConfig(
         reference_safe='',
@@ -51,11 +53,11 @@ def test_run_topsapp_burst(tmp_path, monkeypatch):
     )
     template_path = config.write_template(tmp_path / 'topsApp.xml')
 
-    with pytest.raises(ValueError, match=r'.*not a valid step.*'):
-        run_topsapp('notastep', config_xml=template_path)
+    with pytest.raises(ValueError, match=r'notastep is not a valid step.*'):
+        run_topsapp(end='notastep', config_xml=template_path)
 
-    with pytest.raises(ValueError, match=r'^If dostep is specified, start and stop cannot be used$'):
-        run_topsapp('preprocess', 'startup', config_xml=template_path)
+    with pytest.raises(ValueError, match=r'stillnotastep is not a valid step.*'):
+        run_topsapp(start='stillnotastep', config_xml=template_path)
 
     monkeypatch.chdir(tmp_path)
-    run_topsapp('preprocess', config_xml=template_path)
+    run_topsapp(start='preprocess', end='preprocess', config_xml=template_path)

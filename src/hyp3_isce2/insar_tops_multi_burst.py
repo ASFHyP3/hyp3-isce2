@@ -6,15 +6,12 @@ import sys
 from pathlib import Path
 from shutil import make_archive
 
-import isce  # noqa: F401
 from burst2safe.burst2safe import burst2safe
 from hyp3lib.util import string_is_true
 from osgeo import gdal
 
 from hyp3_isce2 import packaging
-from hyp3_isce2.burst import (
-    validate_bursts,
-)
+from hyp3_isce2.burst import validate_bursts
 from hyp3_isce2.insar_tops import insar_tops
 from hyp3_isce2.logger import configure_root_logger
 from hyp3_isce2.utils import make_browse_image

@@ -122,33 +122,26 @@ class TopsappConfig:
 
 
 def run_topsapp(
-    dostep: str = '',
-    start: str = '',
-    end: str = '',
+    start: str = 'startup',
+    end: str = 'geocode',
     config_xml: Path = Path('topsApp.xml'),
 ):
     """Run topsApp.py for a granule pair with the desired steps and config file
 
     Args:
-        dostep: The step to run
         start: The step to start at
         end: The step to stop at
         config_xml: The config file to use
 
     Raises:
-        ValueError: If dostep is specified, start and stop cannot be used
         IOError: If the config file does not exist
         ValueError: If the step is not a valid step (see TOPSAPP_STEPS)
     """
     if not config_xml.exists():
         raise OSError(f'The config file {config_xml} does not exist!')
 
-    if dostep and (start or end):
-        raise ValueError('If dostep is specified, start and stop cannot be used')
-
     step_args = []
     options = {
-        'dostep': dostep,
         'start': start,
         'end': end,
     }
