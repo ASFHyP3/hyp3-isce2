@@ -26,8 +26,7 @@ class ISCE2Dataset:
 
 def get_relative_orbit(reference_safe_path: Path) -> int:
     parser = etree.XMLParser(encoding='utf-8', recover=True)
-    manifest_path = reference_safe_path / 'manifest.safe'
-    manifest_xml = etree.parse(manifest_path, parser)
+    manifest_xml = etree.parse(reference_safe_path / 'manifest.safe', parser)
     orbit_number = manifest_xml.find(
         './/metadataObject[@ID="measurementOrbitReference"]//xmlData//'
         '{http://www.esa.int/safe/sentinel-1.0}relativeOrbitNumber'
