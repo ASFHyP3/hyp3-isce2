@@ -84,8 +84,11 @@ def test_get_product_name():
         assert result == 'S1_027_000000s1n00-136229s2n05-136229s3n04_IW_20200604_20200616_HH_INT40_CD34'
 
 
-def test_get_relative_orbit():
-    assert False  # FIXME
+def test_get_relative_orbit(test_data_dir):
+    safe_path = (
+        test_data_dir / 'packaging' / 'slc' / 'S1A_IW_SLC__1SDV_20250406T022008_20250406T022035_058630_07421F_93A7.SAFE'
+    )
+    assert packaging.get_relative_orbit(safe_path) == 108
 
 
 def test_get_pixel_size():
