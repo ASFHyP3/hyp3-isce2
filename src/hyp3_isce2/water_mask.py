@@ -70,6 +70,17 @@ def get_tiles(filename: str) -> list[str]:
     """
     tiles = []
     corners = get_corners(filename)
+
+    # Handle high latitude cases where SLCs may be wider than the tiles
+    width = corners[2][0] - corners[0][0]
+    if width > 5:
+        corners.extend(
+            [
+                [corners[0][0] + width / 2, corners[0][1]],
+                [corners[0][0] + width / 2, corners[1][1]],
+            ]
+        )
+
     for corner in corners:
         tile = TILE_PATH + coord_to_tile(corner)
         if tile not in tiles:
