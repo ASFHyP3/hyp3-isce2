@@ -50,11 +50,12 @@ def insar_tops_multi_burst(
         apply_water_mask=apply_water_mask,
     )
 
+    relative_orbit = packaging.get_relative_orbit(reference_safe_path)
     pixel_size = packaging.get_pixel_size(f'{range_looks}x{azimuth_looks}')
     product_name = packaging.get_product_name(
         reference_bursts,
         secondary_bursts,
-        relative_orbit=0,  # TODO
+        relative_orbit=relative_orbit,
         pixel_spacing=int(pixel_size),
         polarization=polarization,
     )

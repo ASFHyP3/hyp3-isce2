@@ -84,6 +84,10 @@ def test_get_product_name():
         assert result == 'S1_027_000000s1n00-136229s2n05-136229s3n04_IW_20200604_20200616_HH_INT40_CD34'
 
 
+def test_get_relative_orbit():
+    assert False  # FIXME
+
+
 def test_get_pixel_size():
     assert packaging.get_pixel_size('20x4') == 80.0
     assert packaging.get_pixel_size('10x2') == 40.0

@@ -24,6 +24,18 @@ class ISCE2Dataset:
     dtype: int = gdalconst.GDT_Float32
 
 
+def get_relative_orbit(reference_safe_path: Path) -> int:
+    parser = etree.XMLParser(encoding='utf-8', recover=True)
+    manifest_path = reference_safe_path / 'manifest.safe'
+    manifest_xml = etree.parse(manifest_path, parser)
+    orbit_number = manifest_xml.find(
+        './/metadataObject[@ID="measurementOrbitReference"]//xmlData//'
+        '{http://www.esa.int/safe/sentinel-1.0}relativeOrbitNumber'
+    ).text  # type: ignore[union-attr]
+    assert orbit_number is not None
+    return int(orbit_number)
+
+
 def get_pixel_size(looks: str) -> float:
     return {'20x4': 80.0, '10x2': 40.0, '5x1': 20.0}[looks]
 
