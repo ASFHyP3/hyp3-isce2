@@ -4,7 +4,8 @@ from hyp3_isce2 import packaging
 
 
 def test_get_burst_date():
-    assert False  # FIXME
+    assert packaging._get_burst_date('S1_056072_IW2_20220814T125829_VV_67BC-BURST') == '20220814'
+    assert packaging._get_burst_date('S1_056072_IW2_20220907T125830_VV_97A5-BURST') == '20220907'
 
 
 def test_get_data_year():
