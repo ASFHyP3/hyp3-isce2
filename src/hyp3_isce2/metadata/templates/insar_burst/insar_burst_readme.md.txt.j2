@@ -65,19 +65,17 @@ The basic steps in Sentinel-1 Burst InSAR processing are as follows:
 6. Set the Configure file for the InSAR process
 
 *InSAR Processing*
-7. Run topsApp steps 'start' and 'preprocess'
-8. Switch the reference and secondary bursts as necessary
-9. Run topsApp step 'computeBaselines' to 'filter'
-10. Optionally apply the water mask to the wrapped image.
-11. Run topsApp steps 'unwrap' and 'unwrap2stage'
-12. Run step 'geocode'
+7. Run topsApp from 'start' to 'unwrap'
+8. Optionally apply the water mask to the wrapped image.
+9. Run topsApp steps 'unwrap' and 'unwrap2stage'
+10. Run step 'geocode'
 
 *Post-Processing*
-13. translate output files to hyp3-gamma format
-14. write the README text file
-15. write the metadata txt file
-16. zip the output files
-17. upload the files to s3
+11. translate output files to hyp3-gamma format
+12. write the README text file
+13. write the metadata txt file
+14. zip the output files
+15. upload the files to s3
 
 ----------------
 The detailed process, including the calls to ISCE2 software, is as follows:
@@ -117,11 +115,8 @@ The ISCE2 InSAR processing this product uses includes the following ISCE2 topsAp
 - geocode
 
 These steps are run using these calls within hyp3-isce2:
-- topsapp.run_topsapp_burst(start='startup', end='preprocess', config_xml=config_path): Extract the orbits,
-        IPF (Instrument Processing Facility) version, burst data, and antenna pattern if it is necessary
-- topsapp.swap_burst_vrts(): Switch the reference and secondary bursts to use the burst data download from ASF
-- topsapp.run_topsapp_burst(start='computeBaselines', end='unwrap2stage', config_xml=config_path):
-    Run the remaining processing steps including:
+- topsapp.run_topsapp_burst(start='startup', end='unwrap2stage', config_xml=config_path):
+    - Extract the orbits, IPF (Instrument Processing Facility) version, burst data, and antenna pattern if it is necessary
     - Calculate the perpendicular and parallel baselines
     - Verify the DEM file to make sure it covers the bursts
     - Map DEM into the radar coordinates of the reference image. This generates the longitude,
