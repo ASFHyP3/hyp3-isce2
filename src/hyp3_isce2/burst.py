@@ -1,8 +1,4 @@
-import logging
 from datetime import datetime, timedelta
-
-
-log = logging.getLogger(__name__)
 
 
 def _num_swath_pol(scene: str) -> str:
