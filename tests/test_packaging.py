@@ -53,6 +53,26 @@ def test_get_product_name():
         )
         assert result == 'S1_064-000000s1n00-056069s2n04-000000s3n00_IW_20220814_20220907_VV_INT20_AB12'
 
+        # Reference and secondary dates crossing midnight
+        result = packaging.get_product_name(
+            reference_scenes=[
+                'S1_056072_IW2_20220814T125829_VV_67BC-BURST',
+                'S1_056071_IW2_20220813T125826_VV_67BC-BURST',
+                'S1_056070_IW2_20220814T125823_VV_67BC-BURST',
+                'S1_056069_IW2_20220814T125820_VV_67BC-BURST',
+            ],
+            secondary_scenes=[
+                'S1_056072_IW2_20220907T125830_VV_97A5-BURST',
+                'S1_056071_IW2_20220907T125827_VV_97A5-BURST',
+                'S1_056070_IW2_20220908T125824_VV_97A5-BURST',
+                'S1_056069_IW2_20220907T125822_VV_97A5-BURST',
+            ],
+            relative_orbit=64,
+            pixel_spacing=20,
+            polarization='VV',
+        )
+        assert result == 'S1_064-000000s1n00-056069s2n04-000000s3n00_IW_20220813_20220908_VV_INT20_AB12'
+
         mock_token_hex.return_value = 'cd34'
         result = packaging.get_product_name(
             reference_scenes=[

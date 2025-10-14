@@ -87,7 +87,6 @@ def get_product_name(
     s2 = _get_subswath_string(reference_scenes, '2')
     s3 = _get_subswath_string(reference_scenes, '3')
 
-    # TODO: test the crossing-midnight edge case for ref/sec date?
     reference_date = min(_get_burst_date(scene) for scene in reference_scenes)
     secondary_date = max(_get_burst_date(scene) for scene in secondary_scenes)
 
