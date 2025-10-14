@@ -29,25 +29,25 @@ The directory name for this product is: {{ product_name }}
 
 The output directory uses the following naming convention:
 
-**S1_rrr-bbbbbbs1ntt-bbbbbbs2ntt-bbbbbbs3ntt_IW_yyyymmdd_yyyymmdd_pp_INTzz_uuuu**
+S1_rrr-bbbbbbs1ntt-bbbbbbs2ntt-bbbbbbs3ntt_IW_yyyymmdd_yyyymmdd_pp_INTzz_uuuu
 
-- each file starts with **S1**, indicating that the data was acquired by Sentinel-1
-- **rrr** is the relative path (or orbit) number for the bursts included in the product
-- **bbbbbb** indicates the first burst ID for each subswath
-    - if there are no bursts included for a given subswath, the value of **bbbbbb** would be 000000
-- the number following **s** indicates the subswath associated with the burst IDs
+- each file starts with S1, indicating that the data was acquired by Sentinel-1
+- rrr is the relative path (or orbit) number for the bursts included in the product
+- bbbbbb indicates the first burst ID for each subswath
+    - if there are no bursts included for a given subswath, the value of bbbbbb would be 000000
+- the number following s indicates the subswath associated with the burst IDs
     - for example, s1 indicates the first subswath
     - there is a placeholder for each of the three subswaths, even if there aren't bursts included from all three
-- **ntt** indicates the number of bursts included in the product for the given subswath
+- ntt indicates the number of bursts included in the product for the given subswath
     - for example, n02 indicates that there are 2 bursts included for that subswath
-    - if there are no bursts included from that subswath, the value of **tt** would be 00
-- **IW** indicates the beam mode (interferometric wide swath)
-- the first **yyyymmdd** indicates the date the reference bursts were acquired
-- the second **yyyymmdd** indicates the date the secondary bursts were acquired
-- **pp** indicates the polarization of the input bursts
-- **INT** indicates that the product is an interferogram
-- **zz** indicates the pixel spacing of the output InSAR product (20, 40, or 80 meters)
-- **uuuu** is the unique product identifier
+    - if there are no bursts included from that subswath, the value of tt would be 00
+- IW indicates the beam mode (interferometric wide swath)
+- the first yyyymmdd indicates the date the reference bursts were acquired
+- the second yyyymmdd indicates the date the secondary bursts were acquired
+- pp indicates the polarization of the input bursts
+- INT indicates that the product is an interferogram
+- zz indicates the pixel spacing of the output InSAR product (20, 40, or 80 meters)
+- uuuu is the unique product identifier
 
 Files contained in the product directory are named using the directory name followed by a tag indicating the file type.
 
