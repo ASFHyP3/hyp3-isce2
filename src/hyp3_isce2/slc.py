@@ -1,40 +1,8 @@
-import os
 from pathlib import Path
-from zipfile import ZipFile
 
 import lxml.etree as ET
-from hyp3lib.fetch import download_file
-from hyp3lib.scene import get_download_url
 from shapely import geometry
 from shapely.geometry.polygon import Polygon
-
-
-def get_granule(granule: str) -> Path:
-    """Download and unzip a Sentinel-1 SLC granule
-
-    Args:
-        granule: The granule name with no extension
-
-    Returns:
-        The path to the unzipped granule
-    """
-    if Path(f'{granule}.SAFE').exists():
-        print('SAFE file already exists, skipping download.')
-        return Path.cwd() / f'{granule}.SAFE'
-
-    download_url = get_download_url(granule)
-    zip_file = download_file(download_url, chunk_size=10485760)
-    safe_dir = unzip_granule(zip_file, remove=True)
-    return Path.cwd() / safe_dir
-
-
-def unzip_granule(zip_file: Path, remove: bool = False) -> Path:
-    with ZipFile(zip_file) as z:
-        z.extractall()
-        safe_dir = str(zip_file).split('.')[0] + '.SAFE/'
-    if remove:
-        os.remove(zip_file)
-    return Path(str(safe_dir).strip('/'))
 
 
 def get_geometry_from_manifest(manifest_path: Path):

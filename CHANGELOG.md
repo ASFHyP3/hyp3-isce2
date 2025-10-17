@@ -6,6 +6,21 @@ The format is based on [Keep a Changelog](https://keepachangelog.com/en/1.0.0/),
 and this project adheres to [PEP 440](https://www.python.org/dev/peps/pep-0440/)
 and uses [Semantic Versioning](https://semver.org/spec/v2.0.0.html).
 
+## [4.0.0]
+
+This release updates the multi-burst naming convention and removes the single-burst workflow. The multi-burst workflow can still be used to produce single-burst products (by specifying one reference and one secondary scene) using the new naming convention.
+
+### Changed
+- Changed the naming convention for multi-burst products to:
+  ```
+  S1_rrr-bbbbbbs1ntt-bbbbbbs2ntt-bbbbbbs3ntt_IW_yyyymmdd_yyyymmdd_pp_INTzz_uuuu
+  ```
+- Updated the product README template to be accurate for multi-burst products, including an explanation of the new naming convention.
+- Replaced the `insar_tops_burst` entrypoint with a new `insar_tops_multi_burst` entrypoint.
+
+### Removed
+- Removed code that was only required for the single-burst workflow.
+
 ## [3.0.1]
 
 ### Fixed

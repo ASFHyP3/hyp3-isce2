@@ -49,10 +49,10 @@ Homepage = "https://github.com/ASFHyP3/hyp3-ISCE2"
 Documentation = "https://hyp3-docs.asf.alaska.edu"
 
 [project.scripts]
-insar_tops_burst = "hyp3_isce2.insar_tops_burst:main"
+insar_tops_multi_burst = "hyp3_isce2.insar_tops_multi_burst:main"
 
 [project.entry-points.hyp3]
-insar_tops_burst = "hyp3_isce2.insar_tops_burst:main"
+insar_tops_multi_burst = "hyp3_isce2.insar_tops_multi_burst:main"
 
 [tool.pytest.ini_options]
 testpaths = ["tests"]
