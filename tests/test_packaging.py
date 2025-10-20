@@ -51,7 +51,7 @@ def test_get_product_name():
             pixel_spacing=20,
             polarization='VV',
         )
-        assert result == 'S1_064-000000s1n00-056069s2n04-000000s3n00_IW_20220814_20220907_VV_INT20_AB12'
+        assert result == 'S1_064_000000s1n00-056069s2n04-000000s3n00_IW_20220814_20220907_VV_INT20_AB12'
 
         # Reference and secondary dates crossing midnight
         result = packaging.get_product_name(
@@ -71,7 +71,7 @@ def test_get_product_name():
             pixel_spacing=20,
             polarization='VV',
         )
-        assert result == 'S1_064-000000s1n00-056069s2n04-000000s3n00_IW_20220813_20220908_VV_INT20_AB12'
+        assert result == 'S1_064_000000s1n00-056069s2n04-000000s3n00_IW_20220813_20220908_VV_INT20_AB12'
 
         mock_token_hex.return_value = 'cd34'
         result = packaging.get_product_name(
@@ -101,7 +101,7 @@ def test_get_product_name():
             pixel_spacing=40,
             polarization='HH',
         )
-        assert result == 'S1_027-000000s1n00-136229s2n05-136229s3n04_IW_20200604_20200616_HH_INT40_CD34'
+        assert result == 'S1_027_000000s1n00-136229s2n05-136229s3n04_IW_20200604_20200616_HH_INT40_CD34'
 
 
 def test_get_relative_orbit(test_data_dir):

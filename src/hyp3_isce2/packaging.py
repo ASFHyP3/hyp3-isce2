@@ -92,7 +92,7 @@ def get_product_name(
 
     product_id = token_hex(2).upper()
     return (
-        f'S1_{relative_orbit:03d}-{s1}-{s2}-{s3}_IW_{reference_date}_{secondary_date}'
+        f'S1_{relative_orbit:03d}_{s1}-{s2}-{s3}_IW_{reference_date}_{secondary_date}'
         f'_{polarization}_INT{pixel_spacing}_{product_id}'
     )
 
