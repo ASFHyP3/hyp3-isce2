@@ -13,7 +13,7 @@ This release updates the multi-burst naming convention and removes the single-bu
 ### Changed
 - Changed the naming convention for multi-burst products to:
   ```
-  S1_rrr-bbbbbbs1ntt-bbbbbbs2ntt-bbbbbbs3ntt_IW_yyyymmdd_yyyymmdd_pp_INTzz_uuuu
+  S1_rrr_bbbbbbs1ntt-bbbbbbs2ntt-bbbbbbs3ntt_IW_yyyymmdd_yyyymmdd_pp_INTzz_uuuu
   ```
 - Updated the product README template to be accurate for multi-burst products, including an explanation of the new naming convention.
 - Replaced the `insar_tops_burst` entrypoint with a new `insar_tops_multi_burst` entrypoint.
