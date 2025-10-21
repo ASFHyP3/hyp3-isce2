@@ -107,7 +107,6 @@ def translate_outputs(
     Args:
         product_name: Name of the product
         pixel_size: Pixel size
-        use_multilooked: Flag to use multilooked versions of the radar geometry products
     """
     src_ds = gdal.Open('merged/filt_topophase.unw.geo')
     src_geotransform = src_ds.GetGeoTransform()
