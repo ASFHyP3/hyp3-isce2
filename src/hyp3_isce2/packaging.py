@@ -100,7 +100,6 @@ def get_product_name(
 def translate_outputs(
     product_name: str,
     pixel_size: float,
-    include_radar: bool = False,
 ) -> None:
     """Translate ISCE outputs to a standard GTiff format with a UTM projection.
     Assume you are in the top level of an ISCE run directory
@@ -108,7 +107,6 @@ def translate_outputs(
     Args:
         product_name: Name of the product
         pixel_size: Pixel size
-        include_radar: Flag to include the full resolution radar geometry products in the output
         use_multilooked: Flag to use multilooked versions of the radar geometry products
     """
     src_ds = gdal.Open('merged/filt_topophase.unw.geo')
@@ -127,22 +125,6 @@ def translate_outputs(
         ISCE2Dataset('merged/dem.crop', 'dem', [1]),
         ISCE2Dataset('merged/filt_topophase.unw.conncomp.geo', 'conncomp', [1]),
     ]
-
-    suffix = '01'
-
-    if include_radar:
-        rdr_datasets = [
-            ISCE2Dataset(
-                find_product(f'fine_interferogram/IW*/burst_{suffix}.int.vrt'),
-                'wrapped_phase_rdr',
-                [1],
-                gdalconst.GDT_CFloat32,
-            ),
-            ISCE2Dataset(find_product(f'geom_reference/IW*/lat_{suffix}.rdr.vrt'), 'lat_rdr', [1]),
-            ISCE2Dataset(find_product(f'geom_reference/IW*/lon_{suffix}.rdr.vrt'), 'lon_rdr', [1]),
-            ISCE2Dataset(find_product(f'geom_reference/IW*/los_{suffix}.rdr.vrt'), 'los_rdr', [1, 2]),
-        ]
-        datasets += rdr_datasets
 
     for dataset in datasets:
         out_file = str(Path(product_name) / f'{product_name}_{dataset.suffix}.tif')
@@ -205,7 +187,7 @@ def translate_outputs(
     del ds
 
     epsg = utm_from_lon_lat(geotransform[0], geotransform[3])
-    files = [str(path) for path in Path(product_name).glob('*.tif') if not path.name.endswith('rdr.tif')]
+    files = [str(path) for path in Path(product_name).glob('*.tif')]
     for file in files:
         gdal.Warp(
             file,
