@@ -1,13 +1,11 @@
 import shutil
 import subprocess
 from dataclasses import dataclass
-from datetime import datetime
 from pathlib import Path
 
 import isceobj  # type: ignore[import-not-found]
 import numpy as np
 from isceobj.Util.ImageUtil.ImageLib import loadImage  # type: ignore[import-not-found]
-from iscesys.Component.ProductManager import ProductManager  # type: ignore[import-not-found]
 from osgeo import gdal, osr
 
 
@@ -63,15 +61,6 @@ class ParameterFile:
     unwrapping_type: str
     speckle_filter: bool
     water_mask: bool
-    radar_n_lines: int | None = None
-    radar_n_samples: int | None = None
-    radar_first_valid_line: int | None = None
-    radar_n_valid_lines: int | None = None
-    radar_first_valid_sample: int | None = None
-    radar_n_valid_samples: int | None = None
-    multilook_azimuth_time_interval: float | None = None
-    multilook_range_pixel_size: float | None = None
-    radar_sensing_stop: datetime | None = None
 
     def __str__(self):
         output_strings = [
@@ -101,22 +90,6 @@ class ParameterFile:
             f'Speckle filter: {"yes" if self.speckle_filter else "no"}\n',
             f'Water mask: {"yes" if self.water_mask else "no"}\n',
         ]
-
-        # TODO could use a more robust way to check if radar data is present
-        if self.radar_n_lines:
-            radar_data = [
-                f'Radar n lines: {self.radar_n_lines}\n',
-                f'Radar n samples: {self.radar_n_samples}\n',
-                f'Radar first valid line: {self.radar_first_valid_line}\n',
-                f'Radar n valid lines: {self.radar_n_valid_lines}\n',
-                f'Radar first valid sample: {self.radar_first_valid_sample}\n',
-                f'Radar n valid samples: {self.radar_n_valid_samples}\n',
-                f'Multilook azimuth time interval: {self.multilook_azimuth_time_interval}\n',
-                f'Multilook range pixel size: {self.multilook_range_pixel_size}\n',
-                f'Radar sensing stop: {datetime.strftime(self.radar_sensing_stop, "%Y-%m-%dT%H:%M:%S.%f")}\n',  # type: ignore[arg-type]
-            ]
-            output_strings += radar_data
-
         return ''.join(output_strings)
 
     def __repr__(self):
@@ -338,21 +311,6 @@ def image_math(image_a_path: str, image_b_path: str, out_path: str, expression: 
         expression,
     ]
     subprocess.run(cmd, check=True)
-
-
-def load_product(xmlname: str):
-    """Load an ISCE2 product from an xml file
-
-    Args:
-        xmlname: The path to the xml file
-
-    Returns:
-        The ISCE2 product
-    """
-    pm = ProductManager()
-    pm.configure()
-    obj = pm.loadProduct(xmlname)
-    return obj
 
 
 def write_isce2_image_from_obj(image_obj, array):
