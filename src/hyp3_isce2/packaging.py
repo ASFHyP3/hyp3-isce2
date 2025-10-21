@@ -74,11 +74,11 @@ def get_product_name(
     """Get the name of the interferogram product.
 
     Args:
-        reference_scenes: List of the reference burst granule banes.
+        reference_scenes: List of the reference burst granule names.
         secondary_scenes: List of the secondary burst granule names.
         relative_orbit: Relative orbit number of the input scenes.
         pixel_spacing: Spacing of the pixels in the output image.
-        polarization: Polarization of input scenes.
+        polarization: Polarization of the input scenes.
 
     Returns:
         The name of the interferogram product.
