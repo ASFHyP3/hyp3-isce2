@@ -37,7 +37,6 @@ TOPSAPP_GEOCODE_LIST = [
     'merged/filt_topophase.unw',
     'merged/los.rdr',
     'merged/filt_topophase.flat',
-    'merged/topophase.cor',
     'merged/filt_topophase.unw.conncomp',
 ]
 
