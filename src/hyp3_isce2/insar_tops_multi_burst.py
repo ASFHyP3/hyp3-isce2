@@ -3,6 +3,7 @@
 import argparse
 import logging
 import sys
+import warnings
 from pathlib import Path
 from shutil import make_archive
 
@@ -93,9 +94,17 @@ def insar_tops_multi_burst(
     return product_dir, Path(output_zip)
 
 
+# TODO: tests
+def oldest_granule_first(g1: str, g2: str) -> tuple[list[str], list[str]]:
+    if g1.split('_')[3] <= g2.split('_')[3]:
+        return [g1], [g2]
+    return [g2], [g1]
+
+
 def main():
     """HyP3 entrypoint for the burst TOPS workflow"""
     parser = argparse.ArgumentParser(description=__doc__, formatter_class=argparse.ArgumentDefaultsHelpFormatter)
+    parser.add_argument('--granules', type=str.split, nargs='+', help='List of scenes')
     parser.add_argument('--reference', type=str.split, nargs='+', help='List of reference scenes')
     parser.add_argument('--secondary', type=str.split, nargs='+', help='List of secondary scenes')
     parser.add_argument(
@@ -115,8 +124,26 @@ def main():
 
     args = parser.parse_args()
 
-    reference = [item for sublist in args.reference for item in sublist]
-    secondary = [item for sublist in args.secondary for item in sublist]
+    if not (
+        (args.reference is not None and args.secondary is not None and args.granules is None)
+        or (args.reference is None and args.secondary is None and args.granules is not None)
+    ):
+        raise ValueError('Expected either --reference and --secondary or --granules')
+
+    if args.granules is not None:
+        warnings.warn(
+            '--granules is deprecated. Please use --reference and --secondary.',
+            UserWarning,
+        )
+        granules = [item for sublist in args.granules for item in sublist]
+        if len(granules) != 2:
+            parser.error('--granules must specify exactly two granules')
+        reference, secondary = oldest_granule_first(granules[0], granules[1])
+    else:
+        assert args.reference is not None and args.secondary is not None
+        reference = [item for sublist in args.reference for item in sublist]
+        secondary = [item for sublist in args.secondary for item in sublist]
+
     range_looks, azimuth_looks = args.looks.split('x')
 
     configure_root_logger()
