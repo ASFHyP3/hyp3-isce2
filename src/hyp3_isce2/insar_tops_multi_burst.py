@@ -137,7 +137,7 @@ def main():
         )
         granules = [item for sublist in args.granules for item in sublist]
         if len(granules) != 2:
-            parser.error('--granules must specify exactly two granules')
+            raise ValueError('--granules must specify exactly two granules')
         reference, secondary = oldest_granule_first(granules[0], granules[1])
     else:
         assert args.reference is not None and args.secondary is not None
