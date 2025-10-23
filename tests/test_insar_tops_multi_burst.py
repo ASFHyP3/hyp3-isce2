@@ -3,48 +3,31 @@ import pytest
 from hyp3_isce2 import insar_tops_multi_burst
 
 
+REF_SEC_GRANULES_ERROR = r'^Expected either --reference and --secondary or --granules$'
+
+TWO_GRANULES_ERROR = r'^--granules must specify exactly two granules$'
+
+
 # TODO:
+#  - other errors?
 #  - other nested list format
 #  - other function behavior
-def test_parse_reference_secondary():
-    error_str = r'^Expected either --reference and --secondary or --granules$'
-
-    with pytest.raises(ValueError, match=error_str):
+@pytest.mark.parametrize(
+    'reference_arg,secondary_arg,granules_arg,error_pattern',
+    [
+        (None, None, None, REF_SEC_GRANULES_ERROR),
+        ([['foo']], None, None, REF_SEC_GRANULES_ERROR),
+        (None, [['foo']], None, REF_SEC_GRANULES_ERROR),
+        ([['foo']], None, [['foo']], REF_SEC_GRANULES_ERROR),
+        (None, [['foo']], [['foo']], REF_SEC_GRANULES_ERROR),
+        ([['foo']], [['foo']], [['foo']], REF_SEC_GRANULES_ERROR),
+        (None, None, [[]], TWO_GRANULES_ERROR),
+        (None, None, [['foo']], TWO_GRANULES_ERROR),
+        (None, None, [['foo', 'foo', 'foo']], TWO_GRANULES_ERROR),
+    ],
+)
+def test_parse_reference_secondary_errors(reference_arg, secondary_arg, granules_arg, error_pattern):
+    with pytest.raises(ValueError, match=error_pattern):
         insar_tops_multi_burst._parse_reference_secondary(
-            reference_arg=[['foo']], secondary_arg=None, granules_arg=None
-        )
-
-    with pytest.raises(ValueError, match=error_str):
-        insar_tops_multi_burst._parse_reference_secondary(
-            reference_arg=None, secondary_arg=[['foo']], granules_arg=None
-        )
-
-    with pytest.raises(ValueError, match=error_str):
-        insar_tops_multi_burst._parse_reference_secondary(
-            reference_arg=[['foo']], secondary_arg=None, granules_arg=[['foo']]
-        )
-
-    with pytest.raises(ValueError, match=error_str):
-        insar_tops_multi_burst._parse_reference_secondary(
-            reference_arg=None, secondary_arg=[['foo']], granules_arg=[['foo']]
-        )
-
-    with pytest.raises(ValueError, match=error_str):
-        insar_tops_multi_burst._parse_reference_secondary(
-            reference_arg=[['foo']], secondary_arg=[['foo']], granules_arg=[['foo']]
-        )
-
-    error_str = '^--granules must specify exactly two granules$'
-
-    with pytest.raises(ValueError, match=error_str):
-        insar_tops_multi_burst._parse_reference_secondary(reference_arg=None, secondary_arg=None, granules_arg=[[]])
-
-    with pytest.raises(ValueError, match=error_str):
-        insar_tops_multi_burst._parse_reference_secondary(
-            reference_arg=None, secondary_arg=None, granules_arg=[['foo']]
-        )
-
-    with pytest.raises(ValueError, match=error_str):
-        insar_tops_multi_burst._parse_reference_secondary(
-            reference_arg=None, secondary_arg=None, granules_arg=[['foo', 'foo', 'foo']]
+            reference_arg=reference_arg, secondary_arg=secondary_arg, granules_arg=granules_arg
         )
