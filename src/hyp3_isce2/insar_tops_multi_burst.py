@@ -104,7 +104,6 @@ def _flatten_list(nested_list: list[list[str]]) -> list[str]:
     return [item for sublist in nested_list for item in sublist]
 
 
-# TODO: tests
 def _parse_reference_secondary(
     reference_arg: list[list[str]] | None, secondary_arg: list[list[str]] | None, granules_arg: list[list[str]] | None
 ) -> tuple[list[str], list[str]]:

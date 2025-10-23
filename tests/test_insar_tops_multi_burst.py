@@ -8,10 +8,47 @@ REF_SEC_GRANULES_ERROR = r'^Expected either --reference and --secondary or --gra
 TWO_GRANULES_ERROR = r'^--granules must specify exactly two granules$'
 
 
-# TODO:
-#  - other errors?
-#  - other nested list format
-#  - other function behavior
+@pytest.mark.parametrize(
+    'reference_arg,secondary_arg,granules_arg,expected_result',
+    [
+        ([['ref1']], [['sec1']], None, (['ref1'], ['sec1'])),
+        ([['ref1', 'ref2']], [['sec1', 'sec2']], None, (['ref1', 'ref2'], ['sec1', 'sec2'])),
+        ([['ref1'], ['ref2']], [['sec1'], ['sec2']], None, (['ref1', 'ref2'], ['sec1', 'sec2'])),
+        (
+            None,
+            None,
+            [['S1_136231_IW2_20200604T022312_VV_7C85-BURST', 'S1_136231_IW2_20200616T022313_VV_5D11-BURST']],
+            (['S1_136231_IW2_20200604T022312_VV_7C85-BURST'], ['S1_136231_IW2_20200616T022313_VV_5D11-BURST']),
+        ),
+        (
+            None,
+            None,
+            [['S1_136231_IW2_20200616T022313_VV_5D11-BURST', 'S1_136231_IW2_20200604T022312_VV_7C85-BURST']],
+            (['S1_136231_IW2_20200604T022312_VV_7C85-BURST'], ['S1_136231_IW2_20200616T022313_VV_5D11-BURST']),
+        ),
+        (
+            None,
+            None,
+            [['S1_136231_IW2_20200604T022312_VV_7C85-BURST'], ['S1_136231_IW2_20200616T022313_VV_5D11-BURST']],
+            (['S1_136231_IW2_20200604T022312_VV_7C85-BURST'], ['S1_136231_IW2_20200616T022313_VV_5D11-BURST']),
+        ),
+        (
+            None,
+            None,
+            [['S1_136231_IW2_20200616T022313_VV_5D11-BURST'], ['S1_136231_IW2_20200604T022312_VV_7C85-BURST']],
+            (['S1_136231_IW2_20200604T022312_VV_7C85-BURST'], ['S1_136231_IW2_20200616T022313_VV_5D11-BURST']),
+        ),
+    ],
+)
+def test_parse_reference_secondary(reference_arg, secondary_arg, granules_arg, expected_result):
+    assert (
+        insar_tops_multi_burst._parse_reference_secondary(
+            reference_arg=reference_arg, secondary_arg=secondary_arg, granules_arg=granules_arg
+        )
+        == expected_result
+    )
+
+
 @pytest.mark.parametrize(
     'reference_arg,secondary_arg,granules_arg,error_pattern',
     [
