@@ -17,6 +17,9 @@ This release updates the multi-burst naming convention and removes the single-bu
   ```
 - Updated the product README template to be accurate for multi-burst products, including an explanation of the new naming convention.
 - Replaced the `insar_tops_burst` entrypoint with a new `insar_tops_multi_burst` entrypoint.
+- The pixel size of the outputs of `insar_tops_multi_burst.insar_tops_multi_burst()` is now based on the coarser of range and
+  azimuth looks, allowing processing to complete for values other than 20x4, 10x2, and 5x1. The `insar_tops_multi_burst` CLI
+  entrypoint can still only be invoked with `--looks` of `20x4`, `10x2`, or `5x1`.
 
 ### Removed
 - Removed code that was only required for the single-burst workflow.
