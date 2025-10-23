@@ -117,7 +117,7 @@ def main():
 
     reference = [item for sublist in args.reference for item in sublist]
     secondary = [item for sublist in args.secondary for item in sublist]
-    range_looks, azimuth_looks = (int(l) for l in args.looks.split('x'))
+    range_looks, azimuth_looks = (int(look) for look in args.looks.split('x'))
 
     configure_root_logger()
     log.debug(' '.join(sys.argv))
