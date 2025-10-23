@@ -1,43 +1,50 @@
-import sys
-
 import pytest
 
 from hyp3_isce2 import insar_tops_multi_burst
 
 
-def test_granules_cli(monkeypatch):
+# TODO:
+#  - other nested list format
+#  - other function behavior
+def test_parse_reference_secondary():
     error_str = r'^Expected either --reference and --secondary or --granules$'
 
-    monkeypatch.setattr(sys, 'argv', ['cmd', '--reference', 'foo'])
     with pytest.raises(ValueError, match=error_str):
-        insar_tops_multi_burst.main()
+        insar_tops_multi_burst._parse_reference_secondary(
+            reference_arg=[['foo']], secondary_arg=None, granules_arg=None
+        )
 
-    monkeypatch.setattr(sys, 'argv', ['cmd', '--secondary', 'foo'])
     with pytest.raises(ValueError, match=error_str):
-        insar_tops_multi_burst.main()
+        insar_tops_multi_burst._parse_reference_secondary(
+            reference_arg=None, secondary_arg=[['foo']], granules_arg=None
+        )
 
-    monkeypatch.setattr(sys, 'argv', ['cmd', '--reference', 'foo', '--granules', 'foo'])
     with pytest.raises(ValueError, match=error_str):
-        insar_tops_multi_burst.main()
+        insar_tops_multi_burst._parse_reference_secondary(
+            reference_arg=[['foo']], secondary_arg=None, granules_arg=[['foo']]
+        )
 
-    monkeypatch.setattr(sys, 'argv', ['cmd', '--secondary', 'foo', '--granules', 'foo'])
     with pytest.raises(ValueError, match=error_str):
-        insar_tops_multi_burst.main()
+        insar_tops_multi_burst._parse_reference_secondary(
+            reference_arg=None, secondary_arg=[['foo']], granules_arg=[['foo']]
+        )
 
-    monkeypatch.setattr(sys, 'argv', ['cmd', '--reference', 'foo', '--secondary', 'foo', '--granules', 'foo'])
     with pytest.raises(ValueError, match=error_str):
-        insar_tops_multi_burst.main()
+        insar_tops_multi_burst._parse_reference_secondary(
+            reference_arg=[['foo']], secondary_arg=[['foo']], granules_arg=[['foo']]
+        )
 
     error_str = '^--granules must specify exactly two granules$'
 
-    monkeypatch.setattr(sys, 'argv', ['cmd', '--granules', ''])
     with pytest.raises(ValueError, match=error_str):
-        insar_tops_multi_burst.main()
+        insar_tops_multi_burst._parse_reference_secondary(reference_arg=None, secondary_arg=None, granules_arg=[[]])
 
-    monkeypatch.setattr(sys, 'argv', ['cmd', '--granules', 'foo'])
     with pytest.raises(ValueError, match=error_str):
-        insar_tops_multi_burst.main()
+        insar_tops_multi_burst._parse_reference_secondary(
+            reference_arg=None, secondary_arg=None, granules_arg=[['foo']]
+        )
 
-    monkeypatch.setattr(sys, 'argv', ['cmd', '--granules', 'foo foo foo'])
     with pytest.raises(ValueError, match=error_str):
-        insar_tops_multi_burst.main()
+        insar_tops_multi_burst._parse_reference_secondary(
+            reference_arg=None, secondary_arg=None, granules_arg=[['foo', 'foo', 'foo']]
+        )
