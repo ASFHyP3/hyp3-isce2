@@ -35,8 +35,8 @@ def get_relative_orbit(reference_safe_path: Path) -> int:
     return int(orbit_number)
 
 
-def get_pixel_size(looks: str) -> float:
-    return {'20x4': 80.0, '10x2': 40.0, '5x1': 20.0}[looks]
+def get_pixel_size(range_looks: int, azimuth_looks: int) -> int:
+    return max(range_looks, azimuth_looks * 5) * 4
 
 
 def find_product(pattern: str) -> str:
@@ -99,7 +99,7 @@ def get_product_name(
 
 def translate_outputs(
     product_name: str,
-    pixel_size: float,
+    pixel_size: int,
 ) -> None:
     """Translate ISCE outputs to a standard GTiff format with a UTM projection.
     Assume you are in the top level of an ISCE run directory
