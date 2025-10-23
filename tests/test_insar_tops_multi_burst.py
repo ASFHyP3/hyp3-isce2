@@ -24,6 +24,7 @@ TWO_GRANULES_ERROR = r'^--granules must specify exactly two granules$'
         (None, None, [[]], TWO_GRANULES_ERROR),
         (None, None, [['foo']], TWO_GRANULES_ERROR),
         (None, None, [['foo', 'foo', 'foo']], TWO_GRANULES_ERROR),
+        (None, None, [['foo'], ['foo'], ['foo']], TWO_GRANULES_ERROR),
     ],
 )
 def test_parse_reference_secondary_errors(reference_arg, secondary_arg, granules_arg, error_pattern):
