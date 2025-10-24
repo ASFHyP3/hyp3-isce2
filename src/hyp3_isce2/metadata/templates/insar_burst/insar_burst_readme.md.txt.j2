@@ -154,7 +154,7 @@ about 2.8 cm in line-of-sight displacement (half the wavelength of the Sentinel-
 so areas with fringes that are very close together indicate greater amounts of deformation in the line-of-sight
 direction from the sensor.
 
-The wrapped interferogram file is tagged with wrapped_phase.tif
+The wrapped interferogram file is tagged with _wrapped_phase.tif
 
 ----------------
 ## 2. Unwrapped Interferogram
@@ -236,7 +236,7 @@ The text file is not tagged; it has a .txt extension on the base filename.
 ----------------
 ## 6. Look Vector Maps
 
-Two look vector maps are output with as GeoTIFFs. The look vector refers to the look direction back towards the sensor.
+Two look vector maps are output as GeoTIFFs. The look vector refers to the look direction back towards the sensor.
 The lv_theta (θ) and lv_phi (φ) describe the elevation and orientation angles of the look vector in radians.
 
 The lv_theta map indicates the SAR look vector elevation angle at each pixel, ranging from -π/2 (down) to π/2 (up).
@@ -309,15 +309,15 @@ The basic steps in Sentinel-1 Burst InSAR processing are as follows:
 ----------------
 The detailed process, including the calls to ISCE2 software, is as follows:
 
-The prepare-processing and InSAR processing are combined in the insar_tops_burst function.
+The prepare-processing and InSAR processing are combined in the insar_tops_multi_burst function.
 
 ## Pre-processing ##
- - burst2safe: Download reference and secondary SAFE files containing only the desired bursts
- - get_isce2_burst_bbox: Get the burst bounding boxes for the DEM region of interest
+ - burst2safe.burst2safe: Create reference and secondary SAFE files containing only the desired bursts
+ - get_dem_bounds: Get the DEM region of interest from the reference and secondary scenes
  - download_dem_for_isce2 : Download the DEM file
- - download_aux_cal: Download: the aux cal file
- - downloadSentinelOrbitFile: Download the orbit file
- - topsapp.TopsappBurstConfig: Set the configuration file
+ - download_aux_cal: Download the aux cal files
+ - s1_orbits.fetch_for_scene: Download the orbit files
+ - topsapp.TopsappConfig: Create the ISCE2 configuration file
 
 ## InSAR processing ##
 The ISCE2 InSAR processing this product uses includes the following ISCE2 topsApp steps:
@@ -373,11 +373,10 @@ European Space Agency (ESA) on behalf of the European Commission (EC). Sentinel-
 Synthetic Aperture Radar (SAR) instruments for global, around-the-clock imagery, even through cloud cover.
 
 The Sentinel-1A satellite was launched April 3, 2014, and remains active. The Sentinel-1B satellite was launched
-April 25, 2016, and was active until December 23, 2021. The satellites each have a 12-day repeat cycle and use the
-same orbit pattern, but are offset 180 degrees to allow repeat passes every 6 days while both are active. Since the
-mission ended for S1B, there are some significant gaps in coverage. A reduced acquisition plan will be in place
-until Sentinel-1C is launched (expected in 2023) to replace Sentinel-1B.
-Visit https://hyp3-docs.asf.alaska.edu/sentinel1/ for more information.
+April 25, 2016, and was active until December 23, 2021. The Sentinel-1C satellite was launched December 5, 2024,
+replacing Sentinel-1B in the constellation. The satellites each have a 12-day repeat cycle and use the same orbit
+pattern. When there are two active sensors in the constellation, their orbit patterns are offset 180 degrees to allow
+repeat passes every 6 days. Visit https://hyp3-docs.asf.alaska.edu/sentinel1/ for more information.
 
 More information about the mission is available at:
 https://sentiwiki.copernicus.eu/web/s1-mission
