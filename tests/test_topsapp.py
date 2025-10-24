@@ -1,6 +1,8 @@
+from pathlib import Path
+
 import pytest
 
-from hyp3_isce2.topsapp import TopsappConfig, run_topsapp, swap_burst_vrts
+from hyp3_isce2.topsapp import TopsappConfig, run_topsapp
 
 
 def test_topsapp_burst_config(tmp_path):
@@ -32,24 +34,9 @@ def test_topsapp_burst_config(tmp_path):
         assert '[1]' in template
 
 
-def test_swap_burst_vrts(tmp_path, monkeypatch):
-    ref_vrt_dir = tmp_path / 'reference' / 'tmp'
-    ref_vrt_dir.mkdir(parents=True)
-    (ref_vrt_dir / 'reference.vrt').touch()
-
-    sec_vrt_dir = tmp_path / 'secondary' / 'tmp'
-    sec_vrt_dir.mkdir(parents=True)
-    (sec_vrt_dir / 'secondary.vrt').touch()
-    (sec_vrt_dir / 'bad.vrt').touch()
-
-    monkeypatch.chdir(str(tmp_path))
-    with pytest.raises(ValueError, match=r'There should only be 2 VRT files .*'):
-        swap_burst_vrts()
-
-
 def test_run_topsapp_burst(tmp_path, monkeypatch):
-    with pytest.raises(IOError):
-        run_topsapp('topsApp.xml')
+    with pytest.raises(IOError, match=r'The config file foo.xml does not exist!'):
+        run_topsapp(config_xml=Path('foo.xml'))
 
     config = TopsappConfig(
         reference_safe='',
@@ -66,11 +53,11 @@ def test_run_topsapp_burst(tmp_path, monkeypatch):
     )
     template_path = config.write_template(tmp_path / 'topsApp.xml')
 
-    with pytest.raises(ValueError, match=r'.*not a valid step.*'):
-        run_topsapp('notastep', config_xml=template_path)
+    with pytest.raises(ValueError, match=r'notastep is not a valid step.*'):
+        run_topsapp(end='notastep', config_xml=template_path)
 
-    with pytest.raises(ValueError, match=r'^If dostep is specified, start and stop cannot be used$'):
-        run_topsapp('preprocess', 'startup', config_xml=template_path)
+    with pytest.raises(ValueError, match=r'stillnotastep is not a valid step.*'):
+        run_topsapp(start='stillnotastep', config_xml=template_path)
 
     monkeypatch.chdir(tmp_path)
-    run_topsapp('preprocess', config_xml=template_path)
+    run_topsapp(start='preprocess', end='preprocess', config_xml=template_path)
