@@ -49,12 +49,12 @@ def insar_tops_multi_burst(
     )
 
     relative_orbit = packaging.get_relative_orbit(reference_safe_path)
-    pixel_size = packaging.get_pixel_size(f'{range_looks}x{azimuth_looks}')
+    pixel_size = packaging.get_pixel_size(range_looks, azimuth_looks)
     product_name = packaging.get_product_name(
         reference_bursts,
         secondary_bursts,
         relative_orbit=relative_orbit,
-        pixel_spacing=int(pixel_size),
+        pixel_spacing=pixel_size,
         polarization=polarization,
     )
 
@@ -159,7 +159,7 @@ def main():
     except ValueError as e:
         parser.error(str(e))
 
-    range_looks, azimuth_looks = args.looks.split('x')
+    range_looks, azimuth_looks = (int(look) for look in args.looks.split('x'))
 
     configure_root_logger()
     log.debug(' '.join(sys.argv))

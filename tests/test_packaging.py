@@ -112,9 +112,13 @@ def test_get_relative_orbit(test_data_dir):
 
 
 def test_get_pixel_size():
-    assert packaging.get_pixel_size('20x4') == 80.0
-    assert packaging.get_pixel_size('10x2') == 40.0
-    assert packaging.get_pixel_size('5x1') == 20.0
+    assert packaging.get_pixel_size(20, 4) == 80
+    assert packaging.get_pixel_size(10, 2) == 40
+    assert packaging.get_pixel_size(5, 1) == 20
+
+    assert packaging.get_pixel_size(40, 4) == 160
+    assert packaging.get_pixel_size(10, 4) == 80
+    assert packaging.get_pixel_size(1, 1) == 20
 
 
 def test_make_parameter_file(test_data_dir, tmp_path):
