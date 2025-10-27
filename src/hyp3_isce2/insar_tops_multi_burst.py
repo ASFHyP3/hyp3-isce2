@@ -134,7 +134,7 @@ def main():
     parser = argparse.ArgumentParser(description=__doc__, formatter_class=argparse.ArgumentDefaultsHelpFormatter)
     parser.add_argument('--reference', type=str.split, nargs='+', help='List of reference scenes')
     parser.add_argument('--secondary', type=str.split, nargs='+', help='List of secondary scenes')
-    parser.add_argument('--granules', type=str.split, nargs='+', help='List of scenes')
+    parser.add_argument('--granules', type=str.split, nargs='+', help='Two scene names in any order. The older granule will be used as the reference granule.')
     parser.add_argument(
         '--looks',
         choices=['20x4', '10x2', '5x1'],
