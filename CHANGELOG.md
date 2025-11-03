@@ -9,7 +9,7 @@ and uses [Semantic Versioning](https://semver.org/spec/v2.0.0.html).
 ## [4.1.0]
 
 ### Added
-- Added a new `--granules` CLI parameter that accepts two granule names in any order, where the older granule is considered to be the reference granule. This restores the functionality of the positional `granules` argument that was removed in v4.0.0. The new parameter is considered to be deprecated and will be removed after the [`INSAR_ISCE_BURST`](https://github.com/ASFHyP3/hyp3/blob/v10.11.13/job_spec/INSAR_ISCE_BURST.yml) job type upgrades beyond HyP3 ISCE2 v3.0.1.
+- Added a new `--granules` CLI parameter that accepts two granule names in any order, where the older granule is considered to be the reference granule. This restores the functionality of the positional `granules` argument that was removed in v4.0.0.
 
 ## [4.0.0]
 
