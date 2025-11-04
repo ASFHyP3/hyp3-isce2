@@ -142,7 +142,7 @@ Contributions to the HyP3-ISCE2 plugin are welcome! If you would like to contrib
 Want to talk about HyP3-ISCE2? We would love to hear from you!
 
 Found a bug? Want to request a feature?
-[open an issue](https://github.com/ASFHyP3/asf_tools/issues/new)
+[open an issue](https://github.com/ASFHyP3/hyp3-isce2/issues/new)
 
 General questions? Suggestions? Or just want to talk to the team?
 [chat with us on gitter](https://gitter.im/ASFHyP3/community)

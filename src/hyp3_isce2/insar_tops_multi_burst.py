@@ -3,6 +3,7 @@
 import argparse
 import logging
 import sys
+import warnings
 from pathlib import Path
 from shutil import make_archive
 
@@ -93,11 +94,52 @@ def insar_tops_multi_burst(
     return product_dir, Path(output_zip)
 
 
+def _oldest_granule_first(g1: str, g2: str) -> tuple[list[str], list[str]]:
+    if g1.split('_')[3] <= g2.split('_')[3]:
+        return [g1], [g2]
+    return [g2], [g1]
+
+
+def _flatten_list(nested_list: list[list[str]]) -> list[str]:
+    return [item for sublist in nested_list for item in sublist]
+
+
+def _parse_reference_secondary(
+    reference_arg: list[list[str]] | None, secondary_arg: list[list[str]] | None, granules_arg: list[list[str]] | None
+) -> tuple[list[str], list[str]]:
+    if not (
+        (reference_arg is not None and secondary_arg is not None and granules_arg is None)
+        or (reference_arg is None and secondary_arg is None and granules_arg is not None)
+    ):
+        raise ValueError('Expected either --reference and --secondary or --granules')
+
+    if granules_arg is not None:
+        warnings.warn(
+            '--granules is deprecated. Please use --reference and --secondary.',
+            UserWarning,
+        )
+        granules = _flatten_list(granules_arg)
+        if len(granules) != 2:
+            raise ValueError('--granules must specify exactly two granules')
+        reference, secondary = _oldest_granule_first(granules[0], granules[1])
+    else:
+        assert reference_arg is not None and secondary_arg is not None
+        reference = _flatten_list(reference_arg)
+        secondary = _flatten_list(secondary_arg)
+    return reference, secondary
+
+
 def main():
     """HyP3 entrypoint for the burst TOPS workflow"""
     parser = argparse.ArgumentParser(description=__doc__, formatter_class=argparse.ArgumentDefaultsHelpFormatter)
     parser.add_argument('--reference', type=str.split, nargs='+', help='List of reference scenes')
     parser.add_argument('--secondary', type=str.split, nargs='+', help='List of secondary scenes')
+    parser.add_argument(
+        '--granules',
+        type=str.split,
+        nargs='+',
+        help='Two scene names in any order. The older granule will be used as the reference granule.',
+    )
     parser.add_argument(
         '--looks',
         choices=['20x4', '10x2', '5x1'],
@@ -115,8 +157,13 @@ def main():
 
     args = parser.parse_args()
 
-    reference = [item for sublist in args.reference for item in sublist]
-    secondary = [item for sublist in args.secondary for item in sublist]
+    try:
+        reference, secondary = _parse_reference_secondary(
+            reference_arg=args.reference, secondary_arg=args.secondary, granules_arg=args.granules
+        )
+    except ValueError as e:
+        parser.error(str(e))
+
     range_looks, azimuth_looks = (int(look) for look in args.looks.split('x'))
 
     configure_root_logger()
