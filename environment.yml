@@ -11,6 +11,7 @@ dependencies:
   - pyproj
   - jinja2
   - gdal
+  - libcurl>=8.17.0 # https://github.com/ASFHyP3/hyp3-isce2/issues/390
   - burst2safe>=1.4.5
   - hyp3lib>=4,<5
   - s1_orbits
