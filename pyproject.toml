@@ -26,7 +26,6 @@ dependencies = [
   "pyproj",
   "jinja2",
   "gdal",
-  "libcurl>=8.17.0",
   "hyp3lib>=4,<5",
   "s1_orbits",
   "burst2safe>=1.4.5",
