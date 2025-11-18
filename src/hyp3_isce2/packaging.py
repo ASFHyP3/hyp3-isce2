@@ -1,11 +1,13 @@
+import os
 import subprocess
 from dataclasses import dataclass
 from datetime import datetime, timezone
 from pathlib import Path
 from secrets import token_hex
 
+import boto3
 import isce
-from hyp3lib.aws import upload_file_to_s3
+from hyp3lib.aws import get_content_type, get_tag_set, upload_file_to_s3
 from hyp3lib.image import create_thumbnail
 from lxml import etree
 from osgeo import gdal, gdalconst
@@ -415,3 +417,30 @@ def upload_product_to_s3(product_dir: Path, output_zip: Path, bucket: str, bucke
 
     for product_file in product_dir.iterdir():
         upload_file_to_s3(product_file, bucket, bucket_prefix)
+
+
+def upload_file_to_s3_with_publish_access_keys(
+    path_to_file: Path, bucket: str, prefix: str = '', s3_name: str | None = None
+):
+    try:
+        access_key_id = os.environ['PUBLISH_ACCESS_KEY_ID']
+        access_key_secret = os.environ['PUBLISH_SECRET_ACCESS_KEY']
+    except KeyError:
+        raise ValueError(
+            'Please provide S3 Bucket upload access key credentials via the '
+            'PUBLISH_ACCESS_KEY_ID and PUBLISH_SECRET_ACCESS_KEY environment variables'
+        )
+
+    s3_client = boto3.client('s3', aws_access_key_id=access_key_id, aws_secret_access_key=access_key_secret)
+
+    if s3_name is None:
+        s3_name = path_to_file.name
+    key = str(Path(prefix) / s3_name)
+
+    extra_args = {'ContentType': get_content_type(key)}
+
+    s3_client.upload_file(str(path_to_file), bucket, key, extra_args)
+
+    tag_set = get_tag_set(path_to_file.name)
+
+    s3_client.put_object_tagging(Bucket=bucket, Key=key, Tagging=tag_set)
