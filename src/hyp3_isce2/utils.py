@@ -395,7 +395,7 @@ def get_projection(srs_wkt) -> str:
     return srs.GetAttrValue('projcs')
 
 
-def get_volcsarvatory_prefix(fpath: Path) -> tuple:
+def get_multiburst_prefix(fpath: Path) -> tuple:
     # files will go to the burst set folder
     burst_set = str(fpath.name).replace('-', '_')
     keep = [burst_set.split('_')[i] for i in [1, 2, 3, 4, 9]]

@@ -15,7 +15,7 @@ from hyp3_isce2 import packaging
 from hyp3_isce2.burst import validate_bursts
 from hyp3_isce2.insar_tops import insar_tops
 from hyp3_isce2.logger import configure_root_logger
-from hyp3_isce2.utils import get_volcsarvatory_prefix, make_browse_image
+from hyp3_isce2.utils import get_multiburst_prefix, make_browse_image
 
 
 gdal.UseExceptions()
@@ -188,5 +188,5 @@ def main():
         packaging.upload_product_to_s3(product_dir, output_zip, args.bucket, args.bucket_prefix)
 
     if args.publish_bucket:
-        prefix, s3_name = get_volcsarvatory_prefix(output_zip)
+        prefix, s3_name = get_multiburst_prefix(output_zip)
         packaging.upload_file_to_s3_with_publish_access_keys(output_zip, args.publish_bucket, prefix, s3_name)

@@ -309,9 +309,9 @@ def test_image_math(tmp_path):
     assert np.array_equal(array1 + array2, arrayout)
 
 
-def test_get_opendata_prefix():
+def test_get_multiburst_prefix():
     file = Path('tests/data/S1_044_000000s1n00-000000s2n00-093117s3n03_IW_20180309_20190421_VV_INT80_2746.zip')
     assert (
-        '/'.join([*utils.get_volcsarvatory_prefix(file)])
+        '/'.join([*utils.get_multiburst_prefix(file)])
         == 'multiburst_products/044_000000s1n00_000000s2n00_093117s3n03_INT80/S1_044_000000s1n00-000000s2n00-093117s3n03_IW_20180309_20190421_VV_INT80_0000.zip'
     )
