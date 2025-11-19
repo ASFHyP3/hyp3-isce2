@@ -15,7 +15,7 @@ from hyp3_isce2 import packaging
 from hyp3_isce2.burst import validate_bursts
 from hyp3_isce2.insar_tops import insar_tops
 from hyp3_isce2.logger import configure_root_logger
-from hyp3_isce2.utils import make_browse_image
+from hyp3_isce2.utils import get_multiburst_prefix, make_browse_image
 
 
 gdal.UseExceptions()
@@ -154,6 +154,13 @@ def main():
     )
     parser.add_argument('--bucket', help='AWS S3 bucket HyP3 for upload the final product(s)')
     parser.add_argument('--bucket-prefix', default='', help='Add a bucket prefix to product(s)')
+    parser.add_argument(
+        '--publish-bucket',
+        type=str,
+        default=None,
+        help='Additionally, publish products to this bucket. Necessary credentials must be provided '
+        'via the `PUBLISH_ACCESS_KEY_ID` and `PUBLISH_SECRET_ACCESS_KEY` environment variables.',
+    )
 
     args = parser.parse_args()
 
@@ -179,3 +186,7 @@ def main():
 
     if args.bucket:
         packaging.upload_product_to_s3(product_dir, output_zip, args.bucket, args.bucket_prefix)
+
+    if args.publish_bucket:
+        prefix, s3_name = get_multiburst_prefix(output_zip)
+        packaging.upload_file_to_s3_with_publish_access_keys(output_zip, args.publish_bucket, prefix, s3_name)
