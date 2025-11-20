@@ -198,5 +198,5 @@ def main():
             prefix = args.publish_prefix
         else:
             prefix = get_publish_prefix(output_zip)
-        s3_name = get_publish_name(output_zip) 
+        s3_name = get_publish_name(output_zip)
         packaging.upload_file_to_s3_with_publish_access_keys(output_zip, args.publish_bucket, prefix, s3_name)

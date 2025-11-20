@@ -311,9 +311,12 @@ def test_image_math(tmp_path):
 
 def test_get_publish_prefix():
     file = Path('tests/data/S1_044_000000s1n00-000000s2n00-093117s3n03_IW_20180309_20190421_VV_INT80_2746.zip')
-    assert utils.get_publish_prefix(file)== 'multiburst_products/044_000000s1n00_000000s2n00_093117s3n03_INT80'
+    assert utils.get_publish_prefix(file) == 'multiburst_products/044_000000s1n00_000000s2n00_093117s3n03_INT80'
 
 
 def test_get_publish_name():
     file = Path('tests/data/S1_044_000000s1n00-000000s2n00-093117s3n03_IW_20180309_20190421_VV_INT80_2746.zip')
-    assert utils.get_publish_name(file)=='S1_044_000000s1n00-000000s2n00-093117s3n03_IW_20180309_20190421_VV_INT80_0000.zip'
+    assert (
+        utils.get_publish_name(file)
+        == 'S1_044_000000s1n00-000000s2n00-093117s3n03_IW_20180309_20190421_VV_INT80_0000.zip'
+    )
