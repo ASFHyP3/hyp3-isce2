@@ -395,13 +395,15 @@ def get_projection(srs_wkt) -> str:
     return srs.GetAttrValue('projcs')
 
 
-def get_multiburst_prefix(fpath: Path) -> tuple:
-    # files will go to the burst set folder
-    burst_set = str(fpath.name).replace('-', '_')
-    keep = [burst_set.split('_')[i] for i in [1, 2, 3, 4, 9]]
-    subkeep = str(fpath.name).split('_')[0:-1] + ['0000']
-    dir_name = '_'.join(keep)
-    s3_name = '_'.join(subkeep) + '.zip'
-    prefix = f'multiburst_products/{dir_name}'
+def get_publish_prefix(product: Path) -> str:
+    parts = product.name.split('_')
+    _, path, bursts, _, _, _, _, product_type, _ = parts
+    prefix = f'multiburst_products/{path}_{bursts.replace("-", "_")}_{product_type}'
+    return prefix
 
-    return prefix, s3_name
+
+def get_publish_name(product: Path) -> str:
+    parts = product.name.split('_')
+    parts[-1] = '0000.zip'  # non-unique product identifier
+    name = '_'.join(parts)
+    return name

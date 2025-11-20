@@ -9,7 +9,7 @@ and uses [Semantic Versioning](https://semver.org/spec/v2.0.0.html).
 ## [4.1.2]
 
 ### Added
-- Added a new `--publish-bucket` CLI parameter to `insar_tops_multi_burst` to upload the output file to an external bucket.
+- Added the `--publish-bucket` and `--publish-prefix` CLI parameters to `insar_tops_multi_burst` to upload the output file to an external bucket.
 
 ## [4.1.1]
 
