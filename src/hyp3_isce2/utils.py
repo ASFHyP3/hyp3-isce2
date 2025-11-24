@@ -393,3 +393,17 @@ def get_projection(srs_wkt) -> str:
     srs = osr.SpatialReference()
     srs.ImportFromWkt(srs_wkt)
     return srs.GetAttrValue('projcs')
+
+
+def get_publish_prefix(product: Path) -> str:
+    parts = product.name.split('_')
+    _, path, bursts, _, _, _, _, product_type, _ = parts
+    prefix = f'multiburst_products/{path}_{bursts.replace("-", "_")}_{product_type}'
+    return prefix
+
+
+def get_publish_name(product: Path) -> str:
+    parts = product.name.split('_')
+    parts[-1] = '0000.zip'  # non-unique product identifier
+    name = '_'.join(parts)
+    return name
