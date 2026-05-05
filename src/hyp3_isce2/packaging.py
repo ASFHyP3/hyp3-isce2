@@ -15,7 +15,7 @@ from pyproj import CRS
 
 import hyp3_isce2
 import hyp3_isce2.metadata.util
-from hyp3_isce2.utils import ParameterFile, get_projection, utm_from_lon_lat
+from hyp3_isce2.utils import ParameterFile, get_projection, make_kmz, utm_from_lon_lat
 
 
 @dataclass
