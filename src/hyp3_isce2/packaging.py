@@ -138,6 +138,7 @@ def translate_outputs(
             noData=0,
             creationOptions=['TILED=YES', 'COMPRESS=LZW', 'NUM_THREADS=ALL_CPUS'],
         )
+    make_kmz(f'{product_name}/{product_name}_unw_amp.tif', f'{product_name}/{product_name}_unw_amp.kmz')
 
     # Use numpy.angle to extract the phase component of the complex wrapped interferogram
     wrapped_phase = ISCE2Dataset('filt_topophase.flat.geo', 'wrapped_phase', 1)
@@ -149,6 +150,11 @@ def translate_outputs(
         '--creation-option TILED=YES --creation-option COMPRESS=LZW --creation-option NUM_THREADS=ALL_CPUS'
     )
     subprocess.run(cmd.split(' '), check=True)
+
+    make_kmz(
+        f'{product_name}/{product_name}_{wrapped_phase.suffix}.tif',
+        f'{product_name}/{product_name}_{wrapped_phase.suffix}.kmz',
+    )
 
     ds = gdal.Open('merged/los.rdr.geo', gdal.GA_Update)
     ds.GetRasterBand(1).SetNoDataValue(0)
