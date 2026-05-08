@@ -18,6 +18,7 @@ dependencies:
   - lxml
   - requests
   # For packaging, and testing
+  - matplotlib
   - setuptools
   - setuptools_scm
   - wheel

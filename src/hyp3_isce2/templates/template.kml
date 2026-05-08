@@ -1,0 +1,18 @@
+<?xml version="1.0" encoding="UTF-8"?>
+<kml xmlns="http://www.opengis.net/kml/2.2">
+<GroundOverlay>
+    <name>PNG Overlay</name>
+    <description>Overlay image</description>
+    <Icon>
+        <!-- Path to your PNG file (relative or absolute) -->
+        <href>input_png</href>
+    </Icon>
+    <LatLonBox>
+        <!-- Specify the bounding box for your image -->
+        <north>maxlat</north>
+        <south>minlat</south>
+        <east>maxlon</east>
+        <west>minlon</west>
+    </LatLonBox>
+</GroundOverlay>
+</kml>
