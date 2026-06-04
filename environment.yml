@@ -6,7 +6,7 @@ dependencies:
   - python>=3.10
   - numpy
   - pip
-  - "isce2[version==2.6.4, build_number>=3]"
+  - "isce2[version='==2.6.4', build_number='>=3']"
   - shapely
   - pyproj
   - jinja2
