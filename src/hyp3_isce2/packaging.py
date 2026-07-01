@@ -121,6 +121,7 @@ def translate_outputs(
     del src_ds, target_ds
 
     datasets = [
+        ISCE2Dataset('merged/filt_topophase.unw.geo', 'amp', [1]),
         ISCE2Dataset('merged/filt_topophase.unw.geo', 'unw_phase', [2]),
         ISCE2Dataset('merged/phsig.cor.geo', 'corr', [1]),
         ISCE2Dataset('merged/dem.crop', 'dem', [1]),
@@ -138,7 +139,7 @@ def translate_outputs(
             noData=0,
             creationOptions=['TILED=YES', 'COMPRESS=LZW', 'NUM_THREADS=ALL_CPUS'],
         )
-    make_kmz(f'{product_name}/{product_name}_unw_amp.tif', f'{product_name}/{product_name}_unw_amp.kmz')
+    make_kmz(f'{product_name}/{product_name}_amp.tif', f'{product_name}/{product_name}_amp.kmz')
 
     # Use numpy.angle to extract the phase component of the complex wrapped interferogram
     wrapped_phase = ISCE2Dataset('filt_topophase.flat.geo', 'wrapped_phase', 1)

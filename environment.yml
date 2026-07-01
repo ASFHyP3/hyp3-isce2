@@ -6,7 +6,7 @@ dependencies:
   - python>=3.10
   - numpy
   - pip
-  - isce2=2.6.4
+  - isce2=2.6.5
   - shapely
   - pyproj
   - jinja2
@@ -17,7 +17,7 @@ dependencies:
   - s1_orbits
   - lxml
   - requests
-  # For packaging, and testing
+  # For packaging and testing
   - matplotlib
   - setuptools
   - setuptools_scm

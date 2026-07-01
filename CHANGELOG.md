@@ -6,6 +6,12 @@ The format is based on [Keep a Changelog](https://keepachangelog.com/en/1.0.0/),
 and this project adheres to [PEP 440](https://www.python.org/dev/peps/pep-0440/)
 and uses [Semantic Versioning](https://semver.org/spec/v2.0.0.html).
 
+## [4.1.4]
+
+### Fixed
+- Issue creating amplitude kmz by exporting amplitude band from unwrapped file.
+- Upgraded ISCE2 to v2.6.5 to support Sentinel-1D and Sentinel-1C post orbit repositioning.
+
 ## [4.1.3]
 
 ### Added
