@@ -10,6 +10,7 @@ and uses [Semantic Versioning](https://semver.org/spec/v2.0.0.html).
 
 ### Fixed
 - Issue creating amplitude kmz by exporting amplitude band from unwrapped file.
+- Upgraded ISCE2 to v2.6.5 to support Sentinel-1D and Sentinel-1C post orbit repositioning.
 
 ## [4.1.3]
 
