@@ -1,14 +1,16 @@
 import shutil
 import subprocess
+import zipfile
 from dataclasses import dataclass
-from datetime import datetime
 from pathlib import Path
 
 import isceobj  # type: ignore[import-not-found]
+import matplotlib.pyplot as plt
 import numpy as np
 from isceobj.Util.ImageUtil.ImageLib import loadImage  # type: ignore[import-not-found]
-from iscesys.Component.ProductManager import ProductManager  # type: ignore[import-not-found]
 from osgeo import gdal, osr
+
+from hyp3_isce2.topsapp import TEMPLATE_DIR
 
 
 gdal.UseExceptions()
@@ -63,15 +65,6 @@ class ParameterFile:
     unwrapping_type: str
     speckle_filter: bool
     water_mask: bool
-    radar_n_lines: int | None = None
-    radar_n_samples: int | None = None
-    radar_first_valid_line: int | None = None
-    radar_n_valid_lines: int | None = None
-    radar_first_valid_sample: int | None = None
-    radar_n_valid_samples: int | None = None
-    multilook_azimuth_time_interval: float | None = None
-    multilook_range_pixel_size: float | None = None
-    radar_sensing_stop: datetime | None = None
 
     def __str__(self):
         output_strings = [
@@ -101,22 +94,6 @@ class ParameterFile:
             f'Speckle filter: {"yes" if self.speckle_filter else "no"}\n',
             f'Water mask: {"yes" if self.water_mask else "no"}\n',
         ]
-
-        # TODO could use a more robust way to check if radar data is present
-        if self.radar_n_lines:
-            radar_data = [
-                f'Radar n lines: {self.radar_n_lines}\n',
-                f'Radar n samples: {self.radar_n_samples}\n',
-                f'Radar first valid line: {self.radar_first_valid_line}\n',
-                f'Radar n valid lines: {self.radar_n_valid_lines}\n',
-                f'Radar first valid sample: {self.radar_first_valid_sample}\n',
-                f'Radar n valid samples: {self.radar_n_valid_samples}\n',
-                f'Multilook azimuth time interval: {self.multilook_azimuth_time_interval}\n',
-                f'Multilook range pixel size: {self.multilook_range_pixel_size}\n',
-                f'Radar sensing stop: {datetime.strftime(self.radar_sensing_stop, "%Y-%m-%dT%H:%M:%S.%f")}\n',  # type: ignore[arg-type]
-            ]
-            output_strings += radar_data
-
         return ''.join(output_strings)
 
     def __repr__(self):
@@ -141,6 +118,77 @@ def utm_from_lon_lat(lon: float, lat: float) -> int:
     hemisphere = 32600 if lat >= 0 else 32700
     zone = int(lon // 6 + 30) % 60 + 1
     return hemisphere + zone
+
+
+def write_kml(input_png: Path, bbox: tuple) -> Path:
+    min_x, max_x, min_y, max_y = bbox
+    kml_file = Path(str(input_png).replace('.png', '.kml'))
+    kml_schema = TEMPLATE_DIR / 'template.kml'
+
+    with kml_schema.open('r') as kml:
+        lines = kml.readlines()
+    with kml_file.open('w') as kml:
+        for line in lines:
+            if 'input_png' in line:
+                line = line.replace('input_png', input_png.name)
+            elif 'minlon' in line:
+                line = line.replace('minlon', str(min_x))
+            elif 'maxlon' in line:
+                line = line.replace('maxlon', str(max_x))
+            elif 'minlat' in line:
+                line = line.replace('minlat', str(min_y))
+            elif 'maxlat' in line:
+                line = line.replace('maxlat', str(max_y))
+            kml.write(line)
+    return kml_file
+
+
+def make_kmz(input_tif: str, output_file: str) -> None:
+    with GDALConfigManager(GDAL_PAM_ENABLED='NO'):
+        try:
+            wgs84_path = Path(f'{input_tif.split(".")[0]}_wgs84.tif')
+            gdal.Warp(wgs84_path, input_tif, dstSRS='EPSG:4326')
+
+            ds = gdal.Open(wgs84_path)
+            width = ds.RasterXSize
+            height = ds.RasterYSize
+            band = ds.GetRasterBand(1)
+            data_array = band.ReadAsArray()
+
+            gt = ds.GetGeoTransform()
+
+            min_x = gt[0]  # Upper Left X
+            max_y = gt[3]  # Upper Left Y
+            max_x = gt[0] + width * gt[1]  # Lower Right X
+            min_y = gt[3] + height * gt[5]  # Lower Right Y
+
+            bbox = (min_x, max_x, min_y, max_y)
+
+            data_array[data_array == 0] = np.nan
+            if 'amp' in input_tif:
+                vmin = np.nanpercentile(data_array, 5)
+                vmax = np.nanpercentile(data_array, 95)
+            else:
+                vmin = np.nanmin(data_array)
+                vmax = np.nanmax(data_array)
+            if 'phase' in input_tif:
+                cmap = 'jet'
+            else:
+                cmap = 'gray'
+            png_path = Path(input_tif.replace('.tif', '.png'))
+            plt.imsave(png_path, data_array, vmin=vmin, vmax=vmax, cmap=cmap)
+            kml_file = write_kml(png_path, bbox)
+
+            kmz_path = Path(output_file)
+            with zipfile.ZipFile(kmz_path, 'w', compression=zipfile.ZIP_DEFLATED) as kmz:
+                kmz.write(png_path, arcname=png_path.name)
+                kmz.write(kml_file, arcname=kml_file.name)
+
+            kml_file.unlink()
+            png_path.unlink()
+            wgs84_path.unlink()
+        except Exception as error:
+            print(error)
 
 
 def make_browse_image(input_tif: str, output_png: str) -> None:
@@ -340,21 +388,6 @@ def image_math(image_a_path: str, image_b_path: str, out_path: str, expression: 
     subprocess.run(cmd, check=True)
 
 
-def load_product(xmlname: str):
-    """Load an ISCE2 product from an xml file
-
-    Args:
-        xmlname: The path to the xml file
-
-    Returns:
-        The ISCE2 product
-    """
-    pm = ProductManager()
-    pm.configure()
-    obj = pm.loadProduct(xmlname)
-    return obj
-
-
 def write_isce2_image_from_obj(image_obj, array):
     """Write an ISCE2 image file.
 
@@ -435,3 +468,17 @@ def get_projection(srs_wkt) -> str:
     srs = osr.SpatialReference()
     srs.ImportFromWkt(srs_wkt)
     return srs.GetAttrValue('projcs')
+
+
+def get_publish_prefix(product: Path) -> str:
+    parts = product.name.split('_')
+    _, path, bursts, _, _, _, _, product_type, _ = parts
+    prefix = f'multiburst_products/{path}_{bursts.replace("-", "_")}_{product_type}'
+    return prefix
+
+
+def get_publish_name(product: Path) -> str:
+    parts = product.name.split('_')
+    parts[-1] = '0000.zip'  # non-unique product identifier
+    name = '_'.join(parts)
+    return name

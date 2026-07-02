@@ -2,7 +2,7 @@ from hyp3_isce2 import s1_auxcal
 
 
 def test_download_aux_cal(tmp_path):
-    """This test is slow because it download ~3MB of data.
+    """This test is slow because it downloads ~3MB of data.
     Might want to consider skipping unless doing integration testing.
     """
     aux_cal_dir = tmp_path / 'aux_cal'

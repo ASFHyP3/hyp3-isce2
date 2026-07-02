@@ -6,6 +6,50 @@ The format is based on [Keep a Changelog](https://keepachangelog.com/en/1.0.0/),
 and this project adheres to [PEP 440](https://www.python.org/dev/peps/pep-0440/)
 and uses [Semantic Versioning](https://semver.org/spec/v2.0.0.html).
 
+## [4.1.4]
+
+### Fixed
+- Issue creating amplitude kmz by exporting amplitude band from unwrapped file.
+- Upgraded ISCE2 to v2.6.5 to support Sentinel-1D and Sentinel-1C post orbit repositioning.
+
+## [4.1.3]
+
+### Added
+- Added amplitude file to output product and kmz files for phase and amplitude.
+
+## [4.1.2]
+
+### Added
+- Added the `--publish-bucket` and `--publish-prefix` CLI parameters to `insar_tops_multi_burst` to upload the output file to an external bucket.
+
+## [4.1.1]
+
+### Fixed
+- Pinned to `libcurl>=8.17.0` to fix https://github.com/ASFHyP3/hyp3-isce2/issues/390
+
+## [4.1.0]
+
+### Added
+- Added a new `--granules` CLI parameter that accepts two granule names in any order, where the older granule is considered to be the reference granule. This restores the functionality of the positional `granules` argument that was removed in v4.0.0.
+
+## [4.0.0]
+
+This release updates the multi-burst naming convention and removes the single-burst workflow. The multi-burst workflow can still be used to produce single-burst products (by specifying one reference and one secondary scene) using the new naming convention.
+
+### Changed
+- Changed the naming convention for multi-burst products to:
+  ```
+  S1_rrr_bbbbbbs1ntt-bbbbbbs2ntt-bbbbbbs3ntt_IW_yyyymmdd_yyyymmdd_pp_INTzz_uuuu
+  ```
+- Updated the product README template to be accurate for multi-burst products, including an explanation of the new naming convention.
+- Replaced the `insar_tops_burst` entrypoint with a new `insar_tops_multi_burst` entrypoint.
+- The pixel size of the outputs of `insar_tops_multi_burst.insar_tops_multi_burst()` is now based on the coarser of range and
+  azimuth looks, allowing processing to complete for values other than 20x4, 10x2, and 5x1. The `insar_tops_multi_burst` CLI
+  entrypoint can still only be invoked with `--looks` of `20x4`, `10x2`, or `5x1`.
+
+### Removed
+- Removed code that was only required for the single-burst workflow.
+
 ## [3.0.1]
 
 ### Fixed

@@ -2,18 +2,17 @@
 
 import logging
 from pathlib import Path
-from shutil import copyfile, make_archive
+from shutil import copyfile
 
 from isceobj.TopsProc.runMergeBursts import multilook  # type: ignore[import-not-found]
 from s1_orbits import fetch_for_scene
 
-from hyp3_isce2 import packaging, slc, topsapp
+from hyp3_isce2 import slc, topsapp
 from hyp3_isce2.dem import download_dem_for_isce2
 from hyp3_isce2.s1_auxcal import download_aux_cal
 from hyp3_isce2.utils import (
     image_math,
     isce2_copy,
-    make_browse_image,
     resample_to_radar_io,
 )
 from hyp3_isce2.water_mask import create_water_mask
@@ -23,8 +22,8 @@ log = logging.getLogger(__name__)
 
 
 def insar_tops(
-    reference_scene: str,
-    secondary_scene: str,
+    reference_safe_dir: Path,
+    secondary_safe_dir: Path,
     swaths: list = [1, 2, 3],
     polarization: str = 'VV',
     azimuth_looks: int = 4,
@@ -34,8 +33,8 @@ def insar_tops(
     """Create a full-SLC interferogram
 
     Args:
-        reference_scene: Reference SLC name
-        secondary_scene: Secondary SLC name
+        reference_safe_dir: Reference SLC SAFE directory
+        secondary_safe_dir: Secondary SLC SAFE directory
         swaths: Swaths to process
         polarization: Polarization to use
         azimuth_looks: Number of azimuth looks
@@ -49,10 +48,7 @@ def insar_tops(
     aux_cal_dir = Path('aux_cal')
     dem_dir = Path('dem')
 
-    ref_dir = slc.get_granule(reference_scene)
-    sec_dir = slc.get_granule(secondary_scene)
-
-    roi = slc.get_dem_bounds(ref_dir, sec_dir)
+    roi = slc.get_dem_bounds(reference_safe_dir, secondary_safe_dir)
     log.info(f'DEM ROI: {roi}')
 
     dem_dir.mkdir(exist_ok=True, parents=True)
@@ -66,14 +62,14 @@ def insar_tops(
     download_aux_cal(aux_cal_dir)
 
     orbit_dir.mkdir(exist_ok=True, parents=True)
-    for granule in (reference_scene, secondary_scene):
-        log.info(f'Downloading orbit file for {granule}')
-        orbit_file = fetch_for_scene(granule, dir=orbit_dir)
+    for safe_dir in (reference_safe_dir, secondary_safe_dir):
+        log.info(f'Downloading orbit file for {safe_dir}')
+        orbit_file = fetch_for_scene(safe_dir.stem, dir=orbit_dir)
         log.info(f'Got orbit file {orbit_file} from s1_orbits')
 
     config = topsapp.TopsappConfig(
-        reference_safe=f'{reference_scene}.SAFE',
-        secondary_safe=f'{secondary_scene}.SAFE',
+        reference_safe=reference_safe_dir.name,
+        secondary_safe=secondary_safe_dir.name,
         polarization=polarization,
         orbit_directory=str(orbit_dir),
         aux_cal_directory=str(aux_cal_dir),
@@ -118,95 +114,3 @@ def insar_tops(
     topsapp.run_topsapp(start='geocode', end='geocode', config_xml=config_path)
 
     return Path('merged')
-
-
-def insar_tops_packaged(
-    reference: str,
-    secondary: str,
-    swaths: list = [1, 2, 3],
-    polarization: str = 'VV',
-    azimuth_looks: int = 4,
-    range_looks: int = 20,
-    apply_water_mask: bool = True,
-    reference_bursts=None,
-    secondary_bursts=None,
-    bucket: str | None = None,
-    bucket_prefix: str = '',
-) -> None:
-    """Create a full-SLC interferogram
-
-    Args:
-        reference: Reference SLC name
-        secondary: Secondary SLC name
-        swaths: Swaths to process
-        polarization: Polarization to use
-        azimuth_looks: Number of azimuth looks
-        range_looks: Number of range looks
-        apply_water_mask: Apply water mask to unwrapped phase
-        reference_bursts: Names of the reference bursts that comprise the reference SLC
-        secondary_bursts: Names of the secondary bursts that comprise the secondary SLC
-        bucket: AWS S3 bucket to upload the final product to
-        bucket_prefix: Bucket prefix to prefix to use when uploading the final product
-
-    Returns:
-        Path to the output files
-    """
-    pixel_size = packaging.get_pixel_size(f'{range_looks}x{azimuth_looks}')
-
-    log.info('Begin ISCE2 TopsApp run')
-
-    insar_tops(
-        reference_scene=reference,
-        secondary_scene=secondary,
-        swaths=swaths,
-        polarization=polarization,
-        azimuth_looks=azimuth_looks,
-        range_looks=range_looks,
-        apply_water_mask=apply_water_mask,
-    )
-
-    log.info('ISCE2 TopsApp run completed successfully')
-
-    product_name = packaging.get_product_name(
-        reference,
-        secondary,
-        pixel_spacing=int(pixel_size),
-        polarization=polarization,
-        slc=True,
-    )
-
-    product_dir = Path(product_name)
-    product_dir.mkdir(parents=True, exist_ok=True)
-
-    packaging.translate_outputs(product_name, pixel_size=pixel_size)
-
-    unwrapped_phase = f'{product_name}/{product_name}_unw_phase.tif'
-    if apply_water_mask:
-        packaging.water_mask(unwrapped_phase, f'{product_name}/{product_name}_water_mask.tif')
-
-    reference_scenes = [reference] if reference_bursts is None else reference_bursts
-    secondary_scenes = [secondary] if secondary_bursts is None else secondary_bursts
-    make_browse_image(unwrapped_phase, f'{product_name}/{product_name}_unw_phase.png')
-    packaging.make_readme(
-        product_dir=product_dir,
-        product_name=product_name,
-        reference_scene=reference,
-        secondary_scene=secondary,
-        range_looks=range_looks,
-        azimuth_looks=azimuth_looks,
-        apply_water_mask=apply_water_mask,
-    )
-    packaging.make_parameter_file(
-        Path(f'{product_name}/{product_name}.txt'),
-        reference_scenes=reference_scenes,
-        secondary_scenes=secondary_scenes,
-        reference_safe_path=Path(f'{reference}.SAFE'),
-        secondary_safe_path=Path(f'{secondary}.SAFE'),
-        processing_path=Path.cwd(),
-        azimuth_looks=azimuth_looks,
-        range_looks=range_looks,
-        apply_water_mask=apply_water_mask,
-    )
-    output_zip = make_archive(base_name=product_name, format='zip', base_dir=product_name)
-    if bucket:
-        packaging.upload_product_to_s3(product_dir, output_zip, bucket, bucket_prefix)
