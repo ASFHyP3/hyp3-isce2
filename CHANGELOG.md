@@ -50,6 +50,11 @@ This release updates the multi-burst naming convention and removes the single-bu
 ### Removed
 - Removed code that was only required for the single-burst workflow.
 
+## [3.0.2]
+
+### Fixed
+- Backported upgrade of ISCE2 to v2.6.5 to support Sentinel-1D and Sentinel-1C post orbit repositioning from v4.1.4.
+
 ## [3.0.1]
 
 ### Fixed
